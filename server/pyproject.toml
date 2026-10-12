@@ -1,0 +1,30 @@
+[project]
+name = "truesite-server"
+version = "0.1.0"
+description = "TrueSite API (FastAPI) that also serves the built web app"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "fastapi==0.143.0",
+    "uvicorn[standard]==0.54.0",
+    "pydantic==2.14.0",
+    "python-multipart==0.0.32",
+    "google-genai==2.29.0",
+    "httpx==0.28.1",
+    "google-cloud-firestore==2.34.1",
+    "google-cloud-storage==3.17.0",
+]
+
+[dependency-groups]
+dev = [
+    "pytest==9.1.1",
+    "httpx2==2.13.1",  # Starlette 1.7's TestClient imports httpx2; plain httpx only warns
+]
+
+[tool.uv]
+package = false  # run from server/: `uvicorn --factory app.main:create_app`
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "-q"
+filterwarnings = ["error"]
