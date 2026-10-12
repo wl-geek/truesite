@@ -77,8 +77,8 @@
 
 ```
 Phone / tablet browser: one web app, same origin as the API
-  camera (getUserMedia) → QR detection (BarcodeDetector where available, else jsQR in a Web Worker)
-  → pose (homography + refinement + calibration + smoothing)
+  camera (getUserMedia) → QR detection (zxing-wasm in a Web Worker, every device)
+  → pose (homography + IPPE flip handling + refinement + calibration + smoothing)
   three.js scene: glTF model + anchor → live overlay · model viewer · ID-buffer render (visible elements)
   React UI: findings, element panel, issues, calibration, desk and sample modes
         │ HTTPS
@@ -87,10 +87,11 @@ Cloud Run: FastAPI service (also serves the built web app)
   GET  /api/projects/{pid}   manifest: model URL, elements, anchors
   POST /api/check            snapshot + render + visible elements → Gemini → validate → severity (code)
   POST /api/ask              element properties + question → Gemini → grounded answer
-  /api/issues                draft (Gemini) · save · list, scoped to the browser session
-  rate limits · daily cap · upload limits · saved results for sample photos
+  POST /api/issues/draft      run + mark → Gemini → draft ; /api/issues save · list (session-scoped)
+  GET  /api/runs/… · /api/saved-results/…   session-scoped images · labelled saved results
+  rate limits · daily cap · upload limits
         │
-        ├─ Gemini (gemini-3.8-flash, JSON schema output)
+        ├─ Gemini (gemini-3.8-flash on Agent Platform, location global; JSON schema output)
         ├─ Firestore: check runs, findings, issues, daily counter
         ├─ Cloud Storage: snapshots, renders, model files (lifecycle deletion)
         └─ Secret Manager: only if the Gemini API key path is used
@@ -102,21 +103,21 @@ Offline BIM pipeline (Python CLI): IFC → model.glb (IfcConvert, element GUIDs 
 **Why a web app:** judges open a link, with nothing to install, on iPhone or Android. The live overlay needs only the camera and our own pose maths. It does not need WebXR, which iPhone Safari lacks. Nothing in the core holds a long-lived connection, so Cloud Run runs with ordinary request timeouts.
 
 **Gemini access, decided on day 1:**
-- **Preferred:** Gemini on Google Cloud's Agent Platform (Vertex AI), called with the Cloud Run service account. There is no key to leak, and it uses more of Google Cloud.
+- **Preferred:** Gemini on Google Cloud's Agent Platform (Vertex AI), called with the Cloud Run service account. There is no key to leak, and it uses more of Google Cloud. `gemini-3.8-flash` is GA there but served only from the `global` location (and the US/EU multi-regions), not Singapore, so model calls use `global` while Cloud Run, Firestore and storage stay in `asia-southeast1`.
 - **Fallback:** if `gemini-3.8-flash` is not listed there for a usable endpoint, use the Gemini Developer API with a billing-enabled key held in Secret Manager.
 - Both use the same `google-genai` client code; the switch is configuration only.
 
 ### 5.1 Repository layout (new repo, created 11 Oct)
 ```
 truesite/
-  web/     Vite + TypeScript + React; three.js; src/{camera,qr,pose,calib,scene,check,ask,issues,ui}
-  server/  FastAPI: app/{main,gemini,schemas,validate,severity,store,limits}.py ; tests/
-  bim/     make_demo_model.py (scripted fallback model) · convert.py ·
-           models/<project>/{model.ifc, model.glb, elements.json, anchors.json}
-  tools/   qr_sheets.py → printable PDFs (QR, 10 cm check bar, footprint outline on the A3 sheet)
-  infra/   Dockerfile · deploy.sh
+  Dockerfile · .dockerignore · .gcloudignore   (at the root: `gcloud run deploy --source .` only uses a root Dockerfile)
+  web/     Vite + TypeScript + React; three.js; src/{api,pose,camera,qr,scene,check,ui}
+  server/  FastAPI: app/{main,config,schemas,projects,gemini_client,fake_gemini,validate,severity,services,store,store_gcp,limits,uploads,spa}.py ; tests/
+  bim/     truesite_bim/{make_demo_model,convert,extract_elements,glb_reader,pipeline,qr_sheets}.py ·
+           models/<project>/{model.ifc, model.glb, elements.json, anchors.json}  (qr_sheets → printable PDFs: QR, 10 cm check bar, footprint outline)
+  infra/   gcloud.sh · lifecycle.json
   brand/   logo set
-  docs/specs/  this file
+  docs/    specs/ (this file) · plans/ (implementation plan + interface contract)
 ```
 
 ## 6. Data contracts
@@ -138,9 +139,11 @@ truesite/
 ```json
 { "guid": "2O2Fr$t4X7Zf8NOew3FLOH", "ifc_class": "IfcWall", "name": "Partition P-01",
   "storey": "Level 1", "bbox_m": [[0,0,0],[3.2,0.1,2.7]], "load_bearing": false,
-  "props": { "Pset_WallCommon.FireRating": "60 min", "Qto.Width_mm": 100, "Material": "Gypsum board",
+  "props": { "Pset_WallCommon.FireRating": "60 min", "Qto_WallBaseQuantities.Width_mm": 100, "Material": "Gypsum board",
              "TrueSite_Notes.Install": "Sleeve S-104 before boarding" } }
 ```
+
+elements.json is a top-level JSON array. Quantities are named `<QtoName>.<Quantity>_mm`. `load_bearing` is `null` when no property set says.
 
 **POST /api/check** is a multipart request with three parts:
 
@@ -192,12 +195,12 @@ Boxes use Gemini's convention: `[ymin, xmin, ymax, xmax]`, normalised to 0–100
 
 **Issue:** `{ id, session_id, project_id, guid, finding_ref, title, description, suggested_action, severity, photo_url, crop_box, created_at, status: "open" }`. Gemini drafts it; the user edits and saves it.
 
-**Sessions:** there are no accounts. Each browser gets a random session ID, stored locally. Check runs and issues are visible only to that session, plus a read-only set of seeded demo issues. So a judge never sees a stranger's uploads.
+**Sessions:** there are no accounts. Each browser gets a random session ID (a UUID v4), stored locally and sent as `X-Session-Id`. Check runs and issues are visible only to that session, plus a read-only set of seeded demo issues. So a judge never sees a stranger's uploads.
 
 ## 7. Core algorithms
 
 ### 7.1 Pose from the QR code
-1. **Detect.** Use `BarcodeDetector` on Android Chrome (native and fast), otherwise jsQR in a Web Worker on frames downscaled to about 640 px. Both return the code's four corners.
+1. **Detect.** zxing-wasm in a Web Worker on every device. Measured: about 5× faster than jsQR (5.5 ms vs 26 ms per 640×480 frame) and robust to noise that defeats jsQR. `BarcodeDetector` does not exist on iOS. It returns the code's four corners in the symbol's own orientation, which are then scaled back to video pixels.
 2. **Initial pose.** The corners' marker-plane coordinates are (±s/2, ±s/2), where s is the printed size. Compute the homography (4-point DLT), decompose it with the camera intrinsics, and re-orthonormalise the rotation (SVD).
 3. **Refine.** Run a few Gauss–Newton steps on the corner reprojection error.
 4. **Planar ambiguity.** A small, tilted square has two plausible poses (the "flip"). Keep both candidates and choose the one with lower error, preferring the one closer to the previous frame.
@@ -211,8 +214,8 @@ Boxes use Gemini's convention: `[ymin, xmin, ymax, xmax]`, normalised to 0–100
 
 ### 7.2 Calibration (no tape measure needed)
 - Square pixels and the principal point at the image centre leave one unknown: the focal length.
-- The user slowly tilts the phone around the QR for about 10 seconds. Each tilted view's homography gives two constraints on the focal length (planar self-calibration), and the app takes a robust median across about 30 views. Near-head-on views carry no information and are skipped.
-- The result is stored per device and camera resolution.
+- The user slowly tilts the phone around the QR for about 10 seconds. Each tilted view's homography gives two constraints on the focal length (planar self-calibration), and the app takes a robust median across about 30 views. Views where the code's plane is within 15° of the image plane carry no information and are skipped. In simulation this recovers f to within 1%.
+- The result is stored per device, camera resolution and orientation.
 - Fallback: a default 63° horizontal field of view, plus a manual slider.
 
 ### 7.3 Which elements are visible
@@ -241,7 +244,7 @@ Boxes use Gemini's convention: `[ymin, xmin, ymax, xmax]`, normalised to 0–100
 | QR not in the snapshot | Refuse: "Keep the code in view when you take the photo" |
 | Check bar doesn't measure 10 cm | User enters the measured length; QR size corrected for that device |
 | `image_quality` is not good | Findings shown greyed with the reason, plus a retake prompt |
-| Gemini timeout (30 s) or server error | One retry with backoff, then "Check failed — try again"; the snapshot stays on the device |
+| Gemini timeout (25 s per attempt) or server error | One retry, then "Check failed — try again"; the snapshot stays on the device |
 | Response fails parsing or schema | One retry; invalid individual findings are dropped and logged |
 | Rate limit or daily cap reached; Gemini unavailable | Plain message. Sample photos show their last real result, labelled "Saved result from <date>" |
 | Saving to Firestore or Cloud Storage fails | Findings still shown; the issue shows "Couldn't save — retry" |
@@ -265,13 +268,13 @@ Boxes use Gemini's convention: `[ymin, xmin, ymax, xmax]`, normalised to 0–100
 - Uploads are scoped to the browser session (§6) and deleted by a Cloud Storage lifecycle rule 30 days after upload. All demo data is deleted after judging ends.
 
 **Cost and abuse**
-- About 1–3 US cents per check at the introductory price: two high-resolution images and a prompt in, JSON out, with thinking tokens billed as output. Verify against billing on day 3.
+- About 1.1–1.7 US cents per check at the introductory price: two high-resolution images (about 1,120 tokens each) and about 2,000 text tokens in; JSON plus low-level thinking out. Output is capped at 8,192 tokens, so the worst case is about 3.5 cents. Verify against billing on day 3.
 - Limits:
   - 10 checks per IP per hour
   - 300 checks per day across all users, counted in Firestore
   - uploads up to 4 MB
   - Cloud Run at most 2 instances
-- Worst case is about US$10 per day, plus a budget alert on the project.
+- Worst case is about US$10.50 per day, plus a budget alert on the project.
 
 ## 10. Testing and evaluation
 
@@ -351,7 +354,8 @@ Never cut the live overlay, the as-built check, sample-photo mode or desk mode.
 
 | Risk | Mitigation |
 |---|---|
-| Pose jumpy, flipped or inaccurate on some phones | Refinement, flip handling, calibration, smoothing, a larger code, the quality badge, and measured, published error |
+| Pose jumpy, flipped or inaccurate on some phones | Refinement, IPPE flip handling with the previous frame as a prior, calibration, smoothing, a larger code, the quality badge, and measured, published error. Start within about 1 m of the code so the first frame is unambiguous |
+| iPhone Pro switches lenses at close range (changes the focal length) | Test the `zoom` constraint on day 2; recalibrate if the overlay scale jumps |
 | iPhone camera quirks | Start the camera on a tap; `playsinline`; HTTPS; test on day 2 |
 | Gemini over- or under-reports deviations | Numbered marks and boxes, a "can't judge" option, the confidence threshold, honest evaluation. If weak on day 3, add a third image (the photo with model outlines drawn over it) or try a larger Gemini model |
 | `gemini-3.8-flash` not on Agent Platform | Developer API fallback, the same client code (§5) |
