@@ -1,0 +1,250 @@
+[
+  {
+    "guid": "1sDjjCkT9Kw8ilXSdV1_Bx",
+    "ifc_class": "IfcColumn",
+    "name": "Column C-01",
+    "storey": "Level 1",
+    "bbox_m": [
+      [
+        0.1,
+        0.1,
+        0.0
+      ],
+      [
+        0.4,
+        0.4,
+        2.7
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_ColumnCommon.LoadBearing": true,
+      "Pset_ColumnCommon.IsExternal": false,
+      "Qto_ColumnBaseQuantities.Length_mm": 2700,
+      "TrueSite_Notes.Install": "Cast with walls; do not core drill without engineer approval",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "COLUMN"
+    }
+  },
+  {
+    "guid": "0xiWtZgcHGc98LYwuOS0h8",
+    "ifc_class": "IfcDoor",
+    "name": "Door D-01",
+    "storey": "Level 1",
+    "bbox_m": [
+      [
+        0.975,
+        -0.015,
+        0.0
+      ],
+      [
+        1.925,
+        0.105,
+        2.125
+      ]
+    ],
+    "load_bearing": null,
+    "props": {
+      "Pset_DoorCommon.FireRating": "30 min",
+      "Pset_DoorCommon.IsExternal": true,
+      "TrueSite_Notes.Install": "Hang door after floor finish; check swing clears column",
+      "Material": "Timber (oak veneer)",
+      "PredefinedType": "DOOR"
+    }
+  },
+  {
+    "guid": "3Zobvs6Y5Lix3HQ0iNMuiz",
+    "ifc_class": "IfcPipeSegment",
+    "name": "Sleeve S-104",
+    "storey": "Level 1",
+    "bbox_m": [
+      [
+        3.85,
+        1.45,
+        0.5504
+      ],
+      [
+        4.05,
+        1.55,
+        0.6496
+      ]
+    ],
+    "load_bearing": null,
+    "props": {
+      "Qto_PipeSegmentBaseQuantities.Length_mm": 200,
+      "Qto_PipeSegmentBaseQuantities.OuterDiameter_mm": 100,
+      "TrueSite_Notes.Install": "Sleeve S-104 before boarding",
+      "TrueSite_Notes.Service": "Chilled water",
+      "Material": "uPVC",
+      "PredefinedType": "SLEEVE",
+      "ObjectType": "SLEEVE"
+    }
+  },
+  {
+    "guid": "17mkW5LUDIguhZiRni4WtE",
+    "ifc_class": "IfcSlab",
+    "name": "Floor Slab FS-01",
+    "storey": "Level 1",
+    "bbox_m": [
+      [
+        0.0,
+        0.0,
+        -0.15
+      ],
+      [
+        4.0,
+        3.0,
+        0.0
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_SlabCommon.LoadBearing": true,
+      "Pset_SlabCommon.IsExternal": false,
+      "Qto_SlabBaseQuantities.Depth_mm": 150,
+      "Qto_SlabBaseQuantities.GrossArea_m2": 12,
+      "Material": "Concrete C30/37",
+      "PredefinedType": "FLOOR"
+    }
+  },
+  {
+    "guid": "0befc3XgvRoBPECyCR_evt",
+    "ifc_class": "IfcWall",
+    "name": "Partition P-01 West",
+    "storey": "Level 1",
+    "bbox_m": [
+      [
+        0.0,
+        0.1,
+        0.0
+      ],
+      [
+        0.1,
+        2.9,
+        2.7
+      ]
+    ],
+    "load_bearing": false,
+    "props": {
+      "Pset_WallCommon.LoadBearing": false,
+      "Pset_WallCommon.FireRating": "30 min",
+      "Pset_WallCommon.IsExternal": false,
+      "Qto_WallBaseQuantities.Length_mm": 2800,
+      "Qto_WallBaseQuantities.Width_mm": 100,
+      "Qto_WallBaseQuantities.Height_mm": 2700,
+      "Material": "Gypsum board",
+      "PredefinedType": "PARTITIONING"
+    }
+  },
+  {
+    "guid": "3_ybKYsEvR8e9fWnAHdJk$",
+    "ifc_class": "IfcWall",
+    "name": "Partition P-02 East",
+    "storey": "Level 1",
+    "bbox_m": [
+      [
+        3.9,
+        0.1,
+        0.0
+      ],
+      [
+        4.0,
+        2.9,
+        2.7
+      ]
+    ],
+    "load_bearing": false,
+    "props": {
+      "Pset_WallCommon.LoadBearing": false,
+      "Pset_WallCommon.FireRating": "30 min",
+      "Pset_WallCommon.IsExternal": false,
+      "Qto_WallBaseQuantities.Length_mm": 2800,
+      "Qto_WallBaseQuantities.Width_mm": 100,
+      "Qto_WallBaseQuantities.Height_mm": 2700,
+      "Material": "Gypsum board",
+      "PredefinedType": "PARTITIONING"
+    }
+  },
+  {
+    "guid": "2tPY__OdfVNuvoaOAuF9Qe",
+    "ifc_class": "IfcWall",
+    "name": "Wall W-01 South",
+    "storey": "Level 1",
+    "bbox_m": [
+      [
+        0.0,
+        0.0,
+        0.0
+      ],
+      [
+        4.0,
+        0.1,
+        2.7
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_WallCommon.LoadBearing": true,
+      "Pset_WallCommon.FireRating": "60 min",
+      "Pset_WallCommon.IsExternal": true,
+      "Qto_WallBaseQuantities.Length_mm": 4000,
+      "Qto_WallBaseQuantities.Width_mm": 100,
+      "Qto_WallBaseQuantities.Height_mm": 2700,
+      "Material": "Concrete C30/37",
+      "PredefinedType": "SOLIDWALL"
+    }
+  },
+  {
+    "guid": "08$kKO7CLV3O8LjbwHKS7P",
+    "ifc_class": "IfcWall",
+    "name": "Wall W-02 North",
+    "storey": "Level 1",
+    "bbox_m": [
+      [
+        0.0,
+        2.9,
+        0.0
+      ],
+      [
+        4.0,
+        3.0,
+        2.7
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_WallCommon.LoadBearing": true,
+      "Pset_WallCommon.FireRating": "60 min",
+      "Pset_WallCommon.IsExternal": true,
+      "Qto_WallBaseQuantities.Length_mm": 4000,
+      "Qto_WallBaseQuantities.Width_mm": 100,
+      "Qto_WallBaseQuantities.Height_mm": 2700,
+      "Material": "Concrete C30/37",
+      "PredefinedType": "SOLIDWALL"
+    }
+  },
+  {
+    "guid": "0RU6H0fCHH_h_beBjidszj",
+    "ifc_class": "IfcWindow",
+    "name": "Window WN-01",
+    "storey": "Level 1",
+    "bbox_m": [
+      [
+        2.0,
+        2.925,
+        0.9
+      ],
+      [
+        3.2,
+        2.975,
+        2.1
+      ]
+    ],
+    "load_bearing": null,
+    "props": {
+      "Pset_WindowCommon.IsExternal": true,
+      "Material": "Aluminium frame + glass",
+      "PredefinedType": "WINDOW"
+    }
+  }
+]

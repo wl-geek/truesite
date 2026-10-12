@@ -1,0 +1,68 @@
+[
+  {
+    "anchor_id": "D1",
+    "project_id": "room1",
+    "qr_size_m": 0.12,
+    "position_m": [
+      2.0,
+      -1.6,
+      -0.15
+    ],
+    "normal": [
+      0,
+      0,
+      1
+    ],
+    "up": [
+      0,
+      1,
+      0
+    ],
+    "scale": 0.05,
+    "label": "Desk sheet A4 (1:20)"
+  },
+  {
+    "anchor_id": "D2",
+    "project_id": "room1",
+    "qr_size_m": 0.15,
+    "position_m": [
+      -2.0,
+      1.5,
+      -0.15
+    ],
+    "normal": [
+      0,
+      0,
+      1
+    ],
+    "up": [
+      0,
+      1,
+      0
+    ],
+    "scale": 0.05,
+    "label": "Physical model sheet A3 (1:20)"
+  },
+  {
+    "anchor_id": "A1",
+    "project_id": "room1",
+    "qr_size_m": 0.23,
+    "position_m": [
+      0.1,
+      1.5,
+      1.35
+    ],
+    "normal": [
+      1.0,
+      0.0,
+      0.0
+    ],
+    "up": [
+      0.0,
+      0.0,
+      1.0
+    ],
+    "scale": 1.0,
+    "label": "Wall sheet A3 (1:1)"
+  }
+]
