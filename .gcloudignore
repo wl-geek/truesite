@@ -1,0 +1,15 @@
+# What `gcloud run deploy --source .` uploads to Cloud Build. Without this file
+# gcloud derives one from .gitignore -- which would silently drop any
+# git-ignored file the build needs (e.g. generated model.glb in web/public).
+.gcloudignore
+.git
+.gitignore
+**/node_modules/
+**/.venv/
+**/__pycache__/
+**/.pytest_cache/
+web/dist/
+docs/
+brand/
+.env
+.env.*

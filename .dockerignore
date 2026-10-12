@@ -1,0 +1,16 @@
+# Keep the build context small and never ship local state.
+.git
+**/node_modules
+**/.venv
+**/__pycache__
+**/.pytest_cache
+**/*.pyc
+web/dist
+server/tests
+docs
+brand
+infra
+tools
+*.md
+.env
+.env.*
