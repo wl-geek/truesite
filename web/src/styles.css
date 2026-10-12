@@ -1,0 +1,366 @@
+/* TrueSite base styles: brand tokens, layout, shared components. Mobile first.
+   Later parts put component-specific rules in their own CSS files imported by their components. */
+:root {
+  /* brand */
+  --ink: #0b1f33;
+  --steel: #1c3b5e;
+  --sky: #4e7fb3;
+  --orange: #ff6a13;
+  /* neutrals */
+  --paper: #f4f7fa;
+  --line: #d5dee8;
+  --muted: #546579;
+  --white: #ffffff;
+  /* severity and alignment quality (findings, badges) */
+  --sev-high: #c62828;
+  --sev-medium: #ff6a13;
+  --sev-low: #4e7fb3;
+  --q-good: #2e7d32;
+  --q-fair: #b7791f;
+  --q-poor: #c62828;
+
+  --radius: 12px;
+  --topbar-h: 52px;
+  --font: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font: 15px/1.45 var(--font);
+  color: var(--ink);
+  background: var(--paper);
+  -webkit-text-size-adjust: 100%;
+}
+
+/* ---- app shell ---------------------------------------------------------------------------- */
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+}
+
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: var(--topbar-h);
+  padding: env(safe-area-inset-top) 12px 0;
+  background: var(--ink);
+  color: var(--white);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--white);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: 0.2px;
+  text-decoration: none;
+}
+
+.brand img {
+  border-radius: 7px;
+}
+
+.nav {
+  display: flex;
+  gap: 2px;
+}
+
+.nav a {
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: #c3d3e4;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+}
+
+.nav a[aria-current='page'] {
+  background: var(--steel);
+  color: var(--white);
+}
+
+.page {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 20px 16px 32px;
+}
+
+.page h1 {
+  margin: 0 0 8px;
+  font-size: 22px;
+}
+
+/* ---- model viewer ------------------------------------------------------------------------- */
+.viewer-page {
+  position: relative;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.viewer-stage {
+  position: relative;
+  flex: 1;
+  min-height: 320px;
+}
+
+.viewer-canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.status {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: rgba(11, 31, 51, 0.85);
+  color: var(--white);
+  font-size: 14px;
+  text-align: center;
+}
+
+.status-error {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+  width: min(92%, 420px);
+}
+
+.status-error p {
+  margin: 0;
+}
+
+.hint {
+  position: absolute;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(11, 31, 51, 0.8);
+  color: var(--white);
+  font-size: 13px;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* ---- panels --------------------------------------------------------------------------------- */
+.panel {
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--white);
+}
+
+.element-panel {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 5;
+  max-height: 55dvh;
+  overflow: auto;
+  padding: 14px 16px calc(16px + env(safe-area-inset-bottom));
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -8px 24px rgba(11, 31, 51, 0.18);
+}
+
+@media (min-width: 900px) {
+  .element-panel {
+    top: 12px;
+    right: 12px;
+    bottom: 12px;
+    left: auto;
+    width: 380px;
+    max-height: none;
+    border-radius: var(--radius);
+    box-shadow: 0 8px 24px rgba(11, 31, 51, 0.18);
+  }
+}
+
+.panel-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.panel-head h2 {
+  margin: 2px 0 0;
+  font-size: 18px;
+  line-height: 1.25;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--sky);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 4px 12px;
+  margin: 12px 0;
+  font-size: 14px;
+}
+
+.facts dt {
+  color: var(--muted);
+}
+
+.facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.props {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.props caption {
+  padding: 8px 0 4px;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.props th,
+.props td {
+  padding: 6px 4px;
+  border-top: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+
+.props th {
+  width: 50%;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+}
+
+.note {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* ---- controls ------------------------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid var(--steel);
+  border-radius: 10px;
+  background: var(--white);
+  color: var(--steel);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.btn-primary {
+  background: var(--steel);
+  color: var(--white);
+}
+
+.btn-accent {
+  border-color: var(--orange);
+  background: var(--orange);
+  color: var(--ink);
+}
+
+.btn:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.icon-btn {
+  flex: none;
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.badge-high {
+  background: var(--sev-high);
+  color: var(--white);
+}
+
+.badge-medium {
+  background: var(--sev-medium);
+  color: var(--ink);
+}
+
+.badge-low {
+  background: var(--sev-low);
+  color: var(--white);
+}
+
+:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: 2px;
+}
