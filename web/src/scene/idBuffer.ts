@@ -1,0 +1,100 @@
+/**
+ * Off-screen renders of the model from a camera pose (spec 7.3):
+ *   - renderIdBuffer: every element in a unique flat colour, read back to find which are visible;
+ *   - renderDesignImage: an opaque, readable render of the design for Gemini (marks drawn later).
+ * Both render layer 0 only (edges live on EDGE_LAYER) into an RGBA8 target with no MSAA, then
+ * restore the model's materials, the camera's layers and the renderer's state.
+ */
+import {
+  Color, DoubleSide, Mesh, MeshBasicMaterial, NoToneMapping, RGBAFormat, UnsignedByteType, WebGLRenderTarget,
+  type Camera, type Material, type Scene, type WebGLRenderer,
+} from 'three'
+import { idColor } from './elements'
+import type { LoadedModel } from './loadModel'
+
+export type IdRender = { buf: Uint8Array; width: number; height: number; indexToGuid: string[] }
+
+async function readTarget(renderer: WebGLRenderer, target: WebGLRenderTarget, w: number, h: number): Promise<Uint8Array> {
+  const buf = new Uint8Array(w * h * 4)
+  const r = renderer as WebGLRenderer & { readRenderTargetPixelsAsync?: WebGLRenderer['readRenderTargetPixels'] }
+  // WebGL2 async readback where available; the sync call is the fallback (older Safari).
+  if (typeof r.readRenderTargetPixelsAsync === 'function') await r.readRenderTargetPixelsAsync(target, 0, 0, w, h, buf)
+  else renderer.readRenderTargetPixels(target, 0, 0, w, h, buf)
+  return buf
+}
+
+async function renderWith(renderer: WebGLRenderer, scene: Scene, model: LoadedModel, camera: Camera, w: number, h: number,
+  materialFor: (mesh: Mesh) => Material, clear: Color): Promise<Uint8Array> {
+  const target = new WebGLRenderTarget(w, h, { type: UnsignedByteType, format: RGBAFormat, samples: 0, depthBuffer: true })
+  const originals = new Map<Mesh, Material | Material[]>()
+  for (const mesh of model.meshes) {
+    originals.set(mesh, mesh.material)
+    mesh.material = materialFor(mesh)
+  }
+  const prevTarget = renderer.getRenderTarget()
+  const prevClear = renderer.getClearColor(new Color())
+  const prevAlpha = renderer.getClearAlpha()
+  const prevToneMapping = renderer.toneMapping
+  const prevMask = camera.layers.mask
+  try {
+    camera.layers.set(0)
+    renderer.toneMapping = NoToneMapping
+    renderer.setRenderTarget(target)
+    renderer.setClearColor(clear, 1)
+    renderer.clear()
+    renderer.render(scene, camera)
+    return await readTarget(renderer, target, w, h)
+  } finally {
+    camera.layers.mask = prevMask
+    renderer.setRenderTarget(prevTarget)
+    renderer.setClearColor(prevClear, prevAlpha)
+    renderer.toneMapping = prevToneMapping
+    for (const [mesh, mat] of originals) mesh.material = mat
+    target.dispose()
+  }
+}
+
+/** Visible elements: index i in the colour buffer is indexToGuid[i] (one colour per GUID). */
+export async function renderIdBuffer(renderer: WebGLRenderer, scene: Scene, model: LoadedModel, camera: Camera,
+  width: number, height: number): Promise<IdRender> {
+  const indexToGuid = [...new Set(model.meshes.map((m) => model.meshGuid.get(m)!))]
+  const indexOf = new Map(indexToGuid.map((g, i) => [g, i]))
+  const mats = indexToGuid.map((_, i) => new MeshBasicMaterial({ color: idColor(i), side: DoubleSide }))
+  try {
+    const buf = await renderWith(renderer, scene, model, camera, width, height,
+      (mesh) => mats[indexOf.get(model.meshGuid.get(mesh)!)!], new Color(0, 0, 0))
+    return { buf, width, height, indexToGuid }
+  } finally {
+    mats.forEach((m) => m.dispose())
+  }
+}
+
+const DESIGN_COLOURS: [RegExp, number][] = [
+  [/^IfcWall/, 0xc3d3e4],
+  [/^Ifc(Column|Beam|Slab|Footing|Member|Pile|Plate)$/, 0x86a3c2],
+  [/^Ifc(Door|Window)$/, 0xffb36b],
+  [/^Ifc(Pipe|Duct|Flow|CableCarrier)/, 0xff6a13],
+]
+
+/** An opaque render of the design (top-down RGBA rows) at the photo size, for Gemini's IMAGE 2. */
+export async function renderDesignImage(renderer: WebGLRenderer, scene: Scene, model: LoadedModel, camera: Camera,
+  width: number, height: number, classOf: (guid: string) => string): Promise<ImageData> {
+  const cache = new Map<number, MeshBasicMaterial>()
+  const material = (mesh: Mesh) => {
+    const cls = classOf(model.meshGuid.get(mesh)!)
+    const hex = DESIGN_COLOURS.find(([re]) => re.test(cls))?.[1] ?? 0xd9d9d9
+    if (!cache.has(hex)) cache.set(hex, new MeshBasicMaterial({ color: hex, side: DoubleSide, polygonOffset: true, polygonOffsetFactor: 1 }))
+    return cache.get(hex)!
+  }
+  try {
+    const buf = await renderWith(renderer, scene, model, camera, width, height, material, new Color(0xf4f6f8))
+    const out = new ImageData(width, height)
+    for (let row = 0; row < height; row++) {
+      const src = (height - 1 - row) * width * 4 // GL rows are bottom-up
+      out.data.set(buf.subarray(src, src + width * 4), row * width * 4)
+    }
+    return out
+  } finally {
+    cache.forEach((m) => m.dispose())
+  }
+}

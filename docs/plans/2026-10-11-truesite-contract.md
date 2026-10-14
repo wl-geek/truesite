@@ -268,7 +268,8 @@ export const IFC_TO_THREE: THREE.Matrix4                  // makeRotationX(-Math
 export function applyProjection(camera: THREE.PerspectiveCamera, colMajor: number[]): void   // sets projectionMatrix + projectionMatrixInverse
 // src/scene/idBuffer.ts
 export type IdRender = { buf: Uint8Array; width: number; height: number; indexToGuid: string[] }
-export function renderIdBuffer(renderer: THREE.WebGLRenderer, model: LoadedModel, camera: THREE.Camera, width: number, height: number): Promise<IdRender>
+export function renderIdBuffer(renderer: THREE.WebGLRenderer, scene: THREE.Scene, model: LoadedModel, camera: THREE.Camera, width: number, height: number): Promise<IdRender>
+export function renderDesignImage(renderer, scene, model, camera, width, height, classOf: (guid) => string): Promise<ImageData>   // opaque design render, rows top-down
 // src/scene/pins.ts
 export function findingAnchorPoint(el: Element): [number, number, number]   // IFC coords: bbox centre
 export function makePins(findings: Finding[], elements: Map<string, Element>): THREE.Group        // add under ifcRoot
@@ -277,14 +278,15 @@ export const MAX_MARKS = 25
 export function classPriority(ifcClass: string): number   // 0 structure, 1 openings/services, 2 other
 export function selectMarks(visible: VisibleElement[], indexToGuid: string[], elements: Map<string, Element>, max?: number): MarkedElement[]
 export function keyDims(el: Element): string
-export function drawMarks(ctx: CanvasRenderingContext2D, marks: MarkedElement[], width: number, height: number): void
+export function markCentres(marks, visible, indexToGuid, width, height): Map<number, [number, number]>   // fractions 0..1
+export function drawMarks(ctx: CanvasRenderingContext2D, centres: Map<number, [number, number]>, width: number, height: number): void
 // src/check/snapshot.ts
-export type Snapshot = { photo: Blob; videoW: number; videoH: number; corners: Point[] | null }
-export function captureSnapshot(video: HTMLVideoElement): Promise<Snapshot>   // full-resolution JPEG (long side <= 1600 px, quality 0.85)
+export type Snapshot = { photo: Blob; photoW: number; photoH: number; videoW: number; videoH: number; corners: Point[] | null }
+export function captureSnapshot(video: HTMLVideoElement, qr?: QrWorkerClient): Promise<Snapshot>   // JPEG (long side <= 1600 px, quality 0.85); re-detects the code on the full frame
 // src/check/runCheck.ts
-export type CheckInput = { photo: Blob; videoW: number; videoH: number; K: Intrinsics; pose: Pose; anchor: Anchor & { anchor_id: string; project_id: string };
-                           poseQuality: PoseQuality; model: LoadedModel; renderer: THREE.WebGLRenderer; elements: Map<string, Element>; sampleId?: string }
-export function runCheck(input: CheckInput): Promise<{ response: CheckResponse | null; saved: CheckResult | null; error: ApiError | null }>
+export type CheckInput = { photo: Blob; photoW: number; photoH: number; videoW: number; videoH: number; K: Intrinsics; pose: Pose; anchor: Anchor;
+                           poseQuality: PoseQuality; model: LoadedModel; scene: THREE.Scene; renderer: THREE.WebGLRenderer; elements: ReadonlyMap<string, Element>; sampleId?: string }
+export function runCheck(input: CheckInput): Promise<{ response: CheckResponse | null; saved: CheckResult | null; error: ApiError | null; marks: MarkedElement[]; render: Blob | null }>
 ```
 
 ## 8. Samples
