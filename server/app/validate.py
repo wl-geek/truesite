@@ -18,12 +18,12 @@ DIRECTIONS = set(get_args(Direction))
 IMAGE_QUALITIES = set(get_args(ImageQuality))
 
 
-def _text(value: Any, limit: int) -> str:
+def truncate_text(value: Any, limit: int) -> str:
     s = value.strip() if isinstance(value, str) else ""
     return s if len(s) <= limit else s[: limit - 1] + "…"
 
 
-def _confidence(value: Any) -> float:
+def clamp_confidence(value: Any) -> float:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         return 0.0
     return min(1.0, max(0.0, float(value)))
@@ -80,7 +80,7 @@ def repair_check(raw: dict, ctx: CheckContext, elements: dict[str, Element]) -> 
             continue
         vis = marks[mark]
         status = item.get("status")
-        confidence = _confidence(item.get("confidence"))
+        confidence = clamp_confidence(item.get("confidence"))
         if status not in STATUSES or confidence < CONFIDENCE_FLOOR:
             status = "cannot_judge"
         element = _element(vis.guid, vis.ifc_class, vis.name, elements)
@@ -88,7 +88,7 @@ def repair_check(raw: dict, ctx: CheckContext, elements: dict[str, Element]) -> 
             mark=mark, guid=vis.guid, name=vis.name, ifc_class=vis.ifc_class, status=status, confidence=confidence,
             evidence_box=_box(item.get("evidence_box")),
             offset=_offset(item.get("offset")) if status == "misplaced" else None,
-            explanation=_text(item.get("explanation"), EXPLANATION_MAX),
+            explanation=truncate_text(item.get("explanation"), EXPLANATION_MAX),
             severity=severity_for(element, status),
         )
 
@@ -105,8 +105,8 @@ def repair_check(raw: dict, ctx: CheckContext, elements: dict[str, Element]) -> 
             break
         if not isinstance(item, dict):
             continue
-        description = _text(item.get("description"), DESCRIPTION_MAX)
-        confidence = _confidence(item.get("confidence"))
+        description = truncate_text(item.get("description"), DESCRIPTION_MAX)
+        confidence = clamp_confidence(item.get("confidence"))
         if not description or confidence < CONFIDENCE_FLOOR:
             continue
         unexpected.append(UnexpectedItem(evidence_box=_box(item.get("evidence_box")), description=description,
@@ -115,5 +115,5 @@ def repair_check(raw: dict, ctx: CheckContext, elements: dict[str, Element]) -> 
     return CheckResult(
         project_id=ctx.project_id, anchor_id=ctx.anchor_id, image_quality=image_quality, pose_quality=ctx.pose_quality,
         findings=[findings[m] for m in sorted(findings)], unexpected=unexpected,
-        summary=_text(raw.get("summary"), SUMMARY_MAX), warnings=warnings,
+        summary=truncate_text(raw.get("summary"), SUMMARY_MAX), warnings=warnings,
     )

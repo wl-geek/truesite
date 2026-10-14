@@ -423,3 +423,13 @@ body {
 .sample-list { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
 .sample-results { display: grid; gap: 12px; margin-top: 12px; }
 @media (min-width: 900px) { .sample-results { grid-template-columns: 1.2fr 1fr; align-items: start; } .sample-results > p { grid-column: 1 / -1; } }
+
+/* ---- ask ---------------------------------------------------------------------------------- */
+.ask-box { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 12px; }
+.ask-box h3 { font-size: 15px; margin: 0 0 8px; }
+.ask-form { display: flex; gap: 8px; }
+.ask-form input { flex: 1; min-width: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); font: inherit; }
+.ask-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.chip { border: 1px solid var(--line); background: var(--white); border-radius: 999px; padding: 4px 10px; font: inherit; font-size: 13px; cursor: pointer; }
+.ask-answer { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px; }
+.ask-answer > p:first-child { margin-top: 0; }

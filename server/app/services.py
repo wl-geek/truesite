@@ -11,8 +11,8 @@ from .config import Settings
 from .fake_gemini import FakeGeminiClient
 from .gemini_client import GeminiError
 from .projects import ProjectRepo
-from .schemas import CheckContext, Usage
-from .validate import repair_check
+from .schemas import AskAnswer, AskRequest, CheckContext, Element, Usage
+from .validate import clamp_confidence, repair_check, truncate_text
 
 Checker = Callable[[bytes, bytes, CheckContext], dict]
 
@@ -55,3 +55,21 @@ def http_error_for(err: GeminiError) -> HTTPException:
     status, code = _ERRORS.get(err.kind, (503, "model_unavailable"))
     headers = {"Retry-After": "5"} if status == 503 else None
     return HTTPException(status_code=status, detail={"code": code}, headers=headers)
+
+
+def element_fields(element: Element) -> set[str]:
+    """Names the model may cite: the core fields plus every property name (as gemini_client sends them)."""
+    return {"ifc_class", "name", "storey", "load_bearing", "bbox_m", *element.props}
+
+
+def make_asker(repo: ProjectRepo, client: Any) -> Callable[[AskRequest], AskAnswer]:
+    def ask(req: AskRequest) -> AskAnswer:
+        element = repo.element(req.project_id, req.guid)
+        raw = gemini_client.ask_element(element.model_dump(mode="json"), req.question, client=client)["result"]
+        allowed = element_fields(element)
+        cited = raw.get("cited_properties") if isinstance(raw.get("cited_properties"), list) else []
+        cited = list(dict.fromkeys(c for c in cited if isinstance(c, str) and c in allowed))[:10]
+        answer = truncate_text(raw.get("answer"), 600) or "The element data does not say."
+        return AskAnswer(answer=answer, cited_properties=cited, confidence=clamp_confidence(raw.get("confidence")))
+
+    return ask
