@@ -1,6 +1,6 @@
 # TrueSite — Interface Contract
 
-**Date:** 11 Oct 2026 · Companion to the [design spec](../specs/2026-10-11-truesite-design.md) and the [implementation plan](2026-10-11-truesite-plan.md).
+**Date:** 11 Oct 2026 · Companion to the [design spec](../specs/2026-10-11-truesite-design.md) and the task list in GitHub Issues (order of work in [DEVELOPMENT.md](../../DEVELOPMENT.md)).
 
 Every plan task uses exactly the names, paths, signatures, JSON fields and versions below. If a task needs something not listed here, it adds it in its own files without renaming anything here. JSON on the wire is **snake_case**, and TypeScript types mirror it field for field, with no camelCase mapping.
 
