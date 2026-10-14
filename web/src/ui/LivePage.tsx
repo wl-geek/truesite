@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { ApiError, getProject } from '../api/client'
 import type { Anchor, CheckResult, Finding, ProjectManifest } from '../api/types'
 import { CameraError, startRearCamera, stopCamera, type CameraStart } from '../camera/camera'
-import { loadQrSizeCorrection } from '../camera/intrinsics'
+import { isCalibrated, loadQrSizeCorrection } from '../camera/intrinsics'
 import { saveLastCheck } from '../check/lastCheck'
 import { checkErrorMessage } from '../check/messages'
 import { runCheck } from '../check/runCheck'
@@ -14,6 +14,7 @@ import { effectiveQrSize, findAnchor, isDeskAnchor, isFar } from '../scene/arMat
 import { disposePins, makePins } from '../scene/pins'
 import { disposeModel, loadModel, type LoadedModel } from '../scene/loadModel'
 import { createOverlay, type Overlay, type OverlayState } from '../scene/overlay'
+import { CalibrationPanel } from './CalibrationPanel'
 import { EvidenceView } from './EvidenceView'
 import { FindingsPanel } from './FindingsPanel'
 import { IssueDialog } from './IssueDialog'
@@ -53,6 +54,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   const [selectedMark, setSelectedMark] = useState<number | null>(null)
   const [draftFor, setDraftFor] = useState<Finding | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const [calibrating, setCalibrating] = useState(false)
   const pinsRef = useRef<ReturnType<typeof makePins> | null>(null)
   const elements = useMemo(() => new Map((loaded?.project.elements ?? []).map((e) => [e.guid, e])), [loaded])
 
@@ -99,6 +101,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
       overlay.start()
       overlayRef.current = overlay
       setRunning(true)
+      if (!isCalibrated(camRef.current.width, camRef.current.height)) setCalibrating(true) // first use on this camera
     } catch (e) {
       setCamError(e instanceof CameraError ? e.kind : 'other')
       stopCamera(camRef.current, video)
@@ -205,8 +208,16 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
           </div>
         )}
 
-        {running && !showResults && (
+        {running && calibrating && overlayRef.current && loaded && (
+          <div className="live-calib">
+            <CalibrationPanel overlay={overlayRef.current} anchorId={loaded.anchor.anchor_id} qrSizeM={loaded.anchor.qr_size_m}
+              onClose={() => setCalibrating(false)} />
+          </div>
+        )}
+
+        {running && !showResults && !calibrating && (
           <div className="live-actions">
+            <button type="button" className="btn" onClick={() => setCalibrating(true)} aria-label="Camera setup">Setup</button>
             {outcome && <button type="button" className="btn" onClick={() => setShowResults(true)}>Last results</button>}
             {dev && <button type="button" className="btn" onClick={saveSample} disabled={!state?.tracking}>Save as sample</button>}
             <button type="button" className="btn btn-accent" onClick={check} disabled={checking || !state?.tracking}>
