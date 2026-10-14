@@ -418,3 +418,8 @@ body {
 .evidence-box.sev-unexpected { border: 2px dashed var(--ink); cursor: default; }
 .evidence-selected { box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.9); }
 .viewer-check-btn { position: absolute; right: 16px; bottom: 16px; }
+
+/* ---- samples ------------------------------------------------------------------------------ */
+.sample-list { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.sample-results { display: grid; gap: 12px; margin-top: 12px; }
+@media (min-width: 900px) { .sample-results { grid-template-columns: 1.2fr 1fr; align-items: start; } .sample-results > p { grid-column: 1 / -1; } }

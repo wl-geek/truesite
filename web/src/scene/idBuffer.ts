@@ -76,6 +76,12 @@ const DESIGN_COLOURS: [RegExp, number][] = [
   [/^Ifc(Pipe|Duct|Flow|CableCarrier)/, 0xff6a13],
 ]
 
+/** Render targets hold LINEAR colour; images need sRGB. 8-bit lookup of the sRGB transfer function. */
+const LINEAR_TO_SRGB = Uint8ClampedArray.from({ length: 256 }, (_, i) => {
+  const c = i / 255
+  return Math.round(255 * (c <= 0.0031308 ? 12.92 * c : 1.055 * c ** (1 / 2.4) - 0.055))
+})
+
 /** An opaque render of the design (top-down RGBA rows) at the photo size, for Gemini's IMAGE 2. */
 export async function renderDesignImage(renderer: WebGLRenderer, scene: Scene, model: LoadedModel, camera: Camera,
   width: number, height: number, classOf: (guid: string) => string): Promise<ImageData> {
@@ -91,7 +97,13 @@ export async function renderDesignImage(renderer: WebGLRenderer, scene: Scene, m
     const out = new ImageData(width, height)
     for (let row = 0; row < height; row++) {
       const src = (height - 1 - row) * width * 4 // GL rows are bottom-up
-      out.data.set(buf.subarray(src, src + width * 4), row * width * 4)
+      const dst = row * width * 4
+      for (let i = 0; i < width * 4; i += 4) {
+        out.data[dst + i] = LINEAR_TO_SRGB[buf[src + i]]
+        out.data[dst + i + 1] = LINEAR_TO_SRGB[buf[src + i + 1]]
+        out.data[dst + i + 2] = LINEAR_TO_SRGB[buf[src + i + 2]]
+        out.data[dst + i + 3] = 255
+      }
     }
     return out
   } finally {

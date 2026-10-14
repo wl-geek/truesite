@@ -68,6 +68,10 @@ export async function runCheck(input: CheckInput): Promise<CheckOutcome> {
   const { model, renderer, scene, K, videoW, videoH, photoW, photoH } = input
   const prevMatrix = model.ifcRoot.matrix.clone()
   const prevVisible = model.ifcRoot.visible
+  // Finding pins from an earlier check live under ifcRoot: keep them out of both renders.
+  const pins = model.ifcRoot.getObjectByName('finding-pins')
+  const pinsVisible = pins?.visible ?? false
+  if (pins) pins.visible = false
   let marks: MarkedElement[] = []
   let render: Blob
   try {
@@ -95,6 +99,7 @@ export async function runCheck(input: CheckInput): Promise<CheckOutcome> {
     model.ifcRoot.matrix.copy(prevMatrix)
     model.ifcRoot.visible = prevVisible
     model.ifcRoot.matrixWorldNeedsUpdate = true
+    if (pins) pins.visible = pinsVisible
   }
 
   const context: CheckContext = {

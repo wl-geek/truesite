@@ -6,8 +6,9 @@ import { loadQrSizeCorrection } from '../camera/intrinsics'
 import { saveLastCheck } from '../check/lastCheck'
 import { checkErrorMessage } from '../check/messages'
 import { runCheck } from '../check/runCheck'
-import { captureSnapshot } from '../check/snapshot'
-import { estimatePose, type Pose, type Point2 } from '../pose'
+import { buildSampleMeta } from '../check/sampleMeta'
+import { captureSnapshot, type Snapshot } from '../check/snapshot'
+import { estimatePose, type Intrinsics, type Pose, type Point2, type Quality } from '../pose'
 import { QrWorkerClient } from '../qr/qrClient'
 import { effectiveQrSize, findAnchor, isDeskAnchor, isFar } from '../scene/arMath'
 import { disposePins, makePins } from '../scene/pins'
@@ -104,8 +105,27 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
     }
   }
 
-  // Freeze tracking, take the snapshot, estimate the pose on the full frame (previous raw pose as
-  // the flip prior), run the check, then resume tracking.
+  /** Snapshot + pose on the full frame (the last raw pose is the flip prior). Throws no_pose if the code is not in view. */
+  async function snapshotWithPose(overlay: Overlay, video: HTMLVideoElement, anchor: Anchor): Promise<{ snap: Snapshot; K: Intrinsics; pose: Pose; quality: Quality }> {
+    const last = overlay.lastRaw()
+    const snap = await captureSnapshot(video, qrRef.current ?? undefined)
+    const K = overlay.intrinsics()
+    const s = effectiveQrSize(anchor, loadQrSizeCorrection(anchor.anchor_id))
+    let pose: Pose | null = null
+    let quality: Quality = last?.quality ?? 'poor'
+    if (snap.corners) {
+      const est = estimatePose(snap.corners.map((p) => [p.x, p.y] as Point2), s, K, last?.pose ?? null)
+      if (est) {
+        pose = { R: est.R, t: est.t }
+        quality = est.quality
+      }
+    }
+    if (!pose && last && performance.now() / 1000 - last.tSec < 0.5) pose = last.pose
+    if (!pose) throw new ApiError('no_pose', 0, 'no_pose')
+    return { snap, K, pose, quality }
+  }
+
+  // Freeze tracking, take the snapshot, run the check, then resume tracking.
   async function check() {
     const overlay = overlayRef.current
     const video = videoRef.current
@@ -114,21 +134,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
     setCheckError(null)
     overlay.stop()
     try {
-      const last = overlay.lastRaw()
-      const snap = await captureSnapshot(video, qrRef.current ?? undefined)
-      const K = overlay.intrinsics()
-      const s = effectiveQrSize(loaded.anchor, loadQrSizeCorrection(loaded.anchor.anchor_id))
-      let pose: Pose | null = null
-      let quality = last?.quality ?? 'poor'
-      if (snap.corners) {
-        const est = estimatePose(snap.corners.map((p) => [p.x, p.y] as Point2), s, K, last?.pose ?? null)
-        if (est) {
-          pose = { R: est.R, t: est.t }
-          quality = est.quality
-        }
-      }
-      if (!pose && last && performance.now() / 1000 - last.tSec < 0.5) pose = last.pose
-      if (!pose) throw new ApiError('no_pose', 0, 'no_pose')
+      const { snap, K, pose, quality } = await snapshotWithPose(overlay, video, loaded.anchor)
       const res = await runCheck({
         photo: snap.photo, photoW: snap.photoW, photoH: snap.photoH, videoW: snap.videoW, videoH: snap.videoH, K, pose,
         anchor: loaded.anchor, poseQuality: quality, model: loaded.model, scene: overlay.scene, renderer: overlay.renderer, elements,
@@ -148,6 +154,28 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
     } finally {
       overlay.start()
       setChecking(false)
+    }
+  }
+
+  // Dev only (?dev=1): download photo.jpg + meta.json for public/samples/<sample_id>/ (contract section 8).
+  const dev = new URLSearchParams(window.location.search).has('dev')
+  async function saveSample() {
+    const overlay = overlayRef.current
+    const video = videoRef.current
+    if (!overlay || !video || !loaded) return
+    const id = window.prompt('Sample id (lowercase letters, digits, -)', `${loaded.project.project_id}-${loaded.anchor.anchor_id.toLowerCase()}-1`)
+    if (!id || !/^[a-z0-9][a-z0-9_-]{0,63}$/.test(id)) return
+    overlay.stop()
+    try {
+      const { snap, K, pose } = await snapshotWithPose(overlay, video, loaded.anchor)
+      const meta = buildSampleMeta({ sample_id: id, label: id, project_id: loaded.project.project_id, anchor_id: loaded.anchor.anchor_id },
+        snap.videoW, snap.videoH, K, pose, new Date())
+      download(`${id}-photo.jpg`, snap.photo)
+      download(`${id}-meta.json`, new Blob([JSON.stringify(meta, null, 2)], { type: 'application/json' }))
+    } catch (e) {
+      setCheckError(checkErrorMessage(e instanceof ApiError ? e : new ApiError(String(e), 0)))
+    } finally {
+      overlay.start()
     }
   }
 
@@ -177,6 +205,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
         {running && !showResults && (
           <div className="live-actions">
             {outcome && <button type="button" className="btn" onClick={() => setShowResults(true)}>Last results</button>}
+            {dev && <button type="button" className="btn" onClick={saveSample} disabled={!state?.tracking}>Save as sample</button>}
             <button type="button" className="btn btn-accent" onClick={check} disabled={checking || !state?.tracking}>
               {checking ? 'Checking…' : 'Check as-built'}
             </button>
@@ -218,4 +247,13 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
       </div>
     </main>
   )
+}
+
+function download(name: string, blob: Blob): void {
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = name
+  a.click()
+  setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
