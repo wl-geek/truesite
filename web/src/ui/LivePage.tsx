@@ -97,11 +97,13 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
     setStarting(true)
     setCamError(null)
     try {
+      const motion = await requestMotionPermission() // iOS asks inside this tap; must come before the camera prompt
       camRef.current = await startRearCamera(video)
       qrRef.current = new QrWorkerClient()
       const overlay = createOverlay({
         video, canvas, model: loaded.model, anchor: loaded.anchor, qr: qrRef.current,
         qrSizeCorrection: loadQrSizeCorrection(loaded.anchor.anchor_id), origin: window.location.origin,
+        classOf: (guid) => elements.get(guid)?.ifc_class ?? '', motion,
       })
       overlay.onState(setState)
       overlay.start()
@@ -293,4 +295,16 @@ function download(name: string, blob: Blob): void {
   a.download = name
   a.click()
   setTimeout(() => URL.revokeObjectURL(url), 1000)
+}
+
+/** Motion sensors for look-around. iOS needs an explicit permission from a tap; others just work. */
+async function requestMotionPermission(): Promise<boolean> {
+  const DOE = (window as unknown as { DeviceOrientationEvent?: { requestPermission?: () => Promise<string> } }).DeviceOrientationEvent
+  if (!DOE) return false
+  if (typeof DOE.requestPermission !== 'function') return true
+  try {
+    return (await DOE.requestPermission()) === 'granted'
+  } catch {
+    return false
+  }
 }

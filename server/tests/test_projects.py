@@ -64,7 +64,7 @@ def test_project_ids_and_demo_issues(models: Path) -> None:
 def test_the_committed_room1_project_loads() -> None:
     repo = ProjectRepo(DEFAULT_MODELS_DIR)
     m = repo.manifest("room1")
-    assert (m.name, len(m.elements), sorted(a.anchor_id for a in m.anchors)) == ("Demo room", 9, ["A1", "D1", "D2"])
+    assert (m.name, len(m.elements), sorted(a.anchor_id for a in m.anchors)) == ("Demo room", 9, ["A1", "D1", "D2", "L1"])
     assert repo.glb_path("room1").read_bytes()[:4] == b"glTF"
     issues = [IssueIn.model_validate(row) for row in repo.demo_issues("room1")]
     assert len(issues) == 2 and all(i.guid in repo.elements_by_guid("room1") for i in issues)
@@ -113,3 +113,12 @@ def test_model_glb_is_gzipped_when_asked(client: TestClient) -> None:
 def test_wrong_method_is_json_404(client: TestClient) -> None:
     r = client.post("/api/projects/testproj")
     assert r.status_code == 404 and r.headers["content-type"] == "application/json"
+
+
+def test_the_committed_rooftop_project_loads() -> None:
+    repo = ProjectRepo(DEFAULT_MODELS_DIR)
+    m = repo.manifest("rooftop")
+    classes = {e.ifc_class for e in m.elements}
+    assert len(m.elements) == 160 and classes == {"IfcColumn", "IfcBeam", "IfcReinforcingBar"}
+    assert [a.anchor_id for a in m.anchors] == ["R1", "R2"] and m.anchors[0].scale == 1.0
+    assert repo.demo_issues("rooftop") == []

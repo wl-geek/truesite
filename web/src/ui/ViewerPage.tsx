@@ -32,7 +32,7 @@ export function ViewerPage() {
     let model: LoadedModel | null = null
     setError(null)
     ;(async () => {
-      const project = await getProject(DEFAULT_PROJECT_ID)
+      const project = await getProject(new URLSearchParams(window.location.search).get('project') || DEFAULT_PROJECT_ID)
       model = await loadModel(project.model_url, new Set(project.elements.map((e) => e.guid)))
       if (cancelled) disposeModel(model)
       else setLoaded({ project, model })

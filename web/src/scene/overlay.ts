@@ -13,13 +13,14 @@ import {
 import type { Anchor as ApiAnchor } from '../api/types'
 import { grabFrame } from '../camera/camera'
 import { loadIntrinsics } from '../camera/intrinsics'
-import { modelMatrixIfc, PoseTracker, projectionMatrixGL, type Intrinsics, type Point2, type Pose, type Quality } from '../pose'
+import { modelMatrixIfc, PoseTracker, projectionMatrixGL, type Intrinsics, type Mat3, type Point2, type Pose, type Quality } from '../pose'
 import { parseAnchorLink } from '../qr/link'
 import type { QrResponse } from '../qr/protocol'
 import type { QrWorkerClient } from '../qr/qrClient'
 import { applyProjection } from './arCamera'
 import { effectiveQrSize, poseAnchor, toVideoPixels } from './arMath'
 import type { LoadedModel } from './loadModel'
+import { deviceRotation, lookAroundPose, LOOK_AROUND_MAX_S, type MotionLock } from './motion'
 
 /** Edges live on their own layer so the ID-buffer render (layer 0 only) never sees them. */
 export const EDGE_LAYER = 1
@@ -36,6 +37,8 @@ export type OverlayState = {
   detectMs: number | null
   /** A different anchor's code is in view (its corners are ignored: its printed size may differ). */
   otherAnchor: { projectId: string; anchorId: string } | null
+  /** code: aligned by the QR code · motion: held by the motion sensors (look-around) · lost: hidden */
+  mode: 'code' | 'motion' | 'lost'
 }
 
 /** The latest raw (unsmoothed) pose: the snapshot's flip prior and the pose used for a check. */
@@ -68,6 +71,10 @@ export type OverlayOptions = {
   /** Print-scale correction for this anchor (check-bar step), 1 when unknown. */
   qrSizeCorrection: number
   origin: string
+  /** IFC class of an element, for the construction look (concrete grey, red-orange rebar). */
+  classOf: (guid: string) => string
+  /** Hold the model with the motion sensors when the code leaves the view (permission already granted). */
+  motion: boolean
 }
 
 export function createOverlay(o: OverlayOptions): Overlay {
@@ -82,19 +89,36 @@ export function createOverlay(o: OverlayOptions): Overlay {
   scene.add(model.ifcRoot)
   model.ifcRoot.visible = false
 
-  // Semi-transparent faces + orange edges; original materials are restored on dispose.
+  // Construction look: translucent concrete grey with steel-blue edges, opaque red-orange rebar,
+  // other elements translucent sky blue with orange edges. Originals are restored on dispose.
   const face = new MeshBasicMaterial({ color: 0x4e7fb3, transparent: true, opacity: 0.35, depthWrite: false, side: DoubleSide })
+  const concrete = new MeshBasicMaterial({ color: 0xb9bec4, transparent: true, opacity: 0.32, depthWrite: false, side: DoubleSide })
+  const rebar = new MeshBasicMaterial({ color: 0xe0441b, side: DoubleSide })
   const edgeMat = new LineBasicMaterial({ color: 0xff6a13 })
+  const concreteEdge = new LineBasicMaterial({ color: 0x1c3b5e })
   const originals = new Map<Mesh, Material | Material[]>()
   const edges: LineSegments[] = []
   for (const mesh of model.meshes) {
     originals.set(mesh, mesh.material)
-    mesh.material = face
-    const line = new LineSegments(new EdgesGeometry(mesh.geometry, 25), edgeMat)
+    const cls = o.classOf(model.meshGuid.get(mesh) ?? '')
+    const isRebar = cls === 'IfcReinforcingBar'
+    const isConcrete = /^Ifc(Column|Beam|Slab|Footing|Member|Pile|Plate)$/.test(cls)
+    mesh.material = isRebar ? rebar : isConcrete ? concrete : face
+    if (isRebar) continue // thin bars read fine without edges, and it halves the draw calls
+    const line = new LineSegments(new EdgesGeometry(mesh.geometry, 25), isConcrete ? concreteEdge : edgeMat)
     line.layers.set(EDGE_LAYER)
     mesh.add(line)
     edges.push(line)
   }
+
+  // Look-around: latest device rotation, and the pose + rotation when the code was last seen.
+  let deviceR: Mat3 | null = null
+  let lock: MotionLock | null = null
+  const onOrientation = (e: DeviceOrientationEvent) => {
+    if (e.alpha === null || e.beta === null || e.gamma === null) return
+    deviceR = deviceRotation(e.alpha, e.beta, e.gamma, screen.orientation?.angle ?? 0)
+  }
+  if (o.motion) window.addEventListener('deviceorientation', onOrientation)
 
   const pAnchor = poseAnchor(anchor)
   let s = effectiveQrSize(anchor, o.qrSizeCorrection)
@@ -112,12 +136,13 @@ export function createOverlay(o: OverlayOptions): Overlay {
   let lastSeen = -Infinity
   let projKey = ''
   const listeners = new Set<(s: OverlayState) => void>()
-  let state: OverlayState = { tracking: false, quality: null, provisional: true, distanceM: null, detectMs: null, otherAnchor: null }
+  let state: OverlayState = { tracking: false, quality: null, provisional: true, distanceM: null, detectMs: null, otherAnchor: null, mode: 'lost' }
   let lastEmit = 0
 
   function emit(next: OverlayState): void {
     const now = performance.now()
     const changed = next.tracking !== state.tracking || next.quality !== state.quality || next.provisional !== state.provisional
+      || next.mode !== state.mode
       || (next.otherAnchor?.anchorId ?? null) !== (state.otherAnchor?.anchorId ?? null)
     state = next
     if (changed || now - lastEmit > 250) {
@@ -153,10 +178,12 @@ export function createOverlay(o: OverlayOptions): Overlay {
       model.ifcRoot.matrix.fromArray(modelMatrixIfc(pAnchor, tracked.smoothed))
       model.ifcRoot.matrixWorldNeedsUpdate = true
       model.ifcRoot.visible = true
-      emit({ tracking: true, quality: tracked.quality, provisional: tracked.provisional, distanceM: tracked.raw.distanceM, detectMs: res.ms, otherAnchor })
+      if (deviceR && !tracked.provisional) lock = { R0: tracked.smoothed.R, t0: tracked.smoothed.t, D0: deviceR, tSec }
+      emit({ tracking: true, quality: tracked.quality, provisional: tracked.provisional, distanceM: tracked.raw.distanceM, detectMs: res.ms, otherAnchor, mode: 'code' })
     } else if (tSec - lastSeen > LOST_AFTER_S) {
-      model.ifcRoot.visible = false
-      emit({ tracking: false, quality: null, provisional: true, distanceM: null, detectMs: res.ms, otherAnchor })
+      const canLookAround = o.motion && lock !== null && deviceR !== null && tSec - lock.tSec < LOOK_AROUND_MAX_S
+      model.ifcRoot.visible = canLookAround
+      emit({ tracking: false, quality: null, provisional: true, distanceM: null, detectMs: res.ms, otherAnchor, mode: canLookAround ? 'motion' : 'lost' })
     }
   }
 
@@ -187,6 +214,10 @@ export function createOverlay(o: OverlayOptions): Overlay {
         const fh = img.height
         qr.detect(img).then((res) => onDetection(res, fw, fh, vw, vh)).catch(() => undefined)
       }
+    }
+    if (state.mode === 'motion' && lock && deviceR) {
+      model.ifcRoot.matrix.fromArray(modelMatrixIfc(pAnchor, lookAroundPose(lock, deviceR)))
+      model.ifcRoot.matrixWorldNeedsUpdate = true
     }
     render()
     schedule()
@@ -234,13 +265,13 @@ export function createOverlay(o: OverlayOptions): Overlay {
       this.stop()
       listeners.clear()
       cornerListeners.clear()
+      window.removeEventListener('deviceorientation', onOrientation)
       for (const line of edges) {
         line.removeFromParent()
         line.geometry.dispose()
       }
       for (const [mesh, mat] of originals) mesh.material = mat
-      face.dispose()
-      edgeMat.dispose()
+      for (const m of [face, concrete, rebar, edgeMat, concreteEdge]) m.dispose()
       scene.remove(model.ifcRoot)
       renderer.dispose()
     },

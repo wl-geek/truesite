@@ -31,4 +31,5 @@ verify:
 
 # Printable QR sheets for the start page, pointing at BASE_URL (e.g. the Cloud Run URL or https://<lan-ip>:5173)
 sheets:
-	cd bim && uv run python -m truesite_bim.qr_sheets --base-url $(BASE_URL) --out-dir ../web/public/sheets > /dev/null && ls ../web/public/sheets
+	cd bim && uv run python -m truesite_bim.qr_sheets --base-url $(BASE_URL) --out-dir ../web/public/sheets > /dev/null
+	cd bim && uv run python -m truesite_bim.rooftop --out models/rooftop --base-url $(BASE_URL) --sheets-dir ../web/public/sheets > /dev/null && ls ../web/public/sheets
