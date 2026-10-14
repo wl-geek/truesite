@@ -16,6 +16,7 @@ import { disposeModel, loadModel, type LoadedModel } from '../scene/loadModel'
 import { createOverlay, type Overlay, type OverlayState } from '../scene/overlay'
 import { EvidenceView } from './EvidenceView'
 import { FindingsPanel } from './FindingsPanel'
+import { IssueDialog } from './IssueDialog'
 import { Link } from './Link'
 import { QualityBadge } from './QualityBadge'
 
@@ -50,6 +51,8 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   const [outcome, setOutcome] = useState<Outcome | null>(null)
   const [showResults, setShowResults] = useState(false)
   const [selectedMark, setSelectedMark] = useState<number | null>(null)
+  const [draftFor, setDraftFor] = useState<Finding | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
   const pinsRef = useRef<ReturnType<typeof makePins> | null>(null)
   const elements = useMemo(() => new Map((loaded?.project.elements ?? []).map((e) => [e.guid, e])), [loaded])
 
@@ -212,10 +215,17 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
           </div>
         )}
 
+        {draftFor && (
+        <IssueDialog open projectId={loaded?.project.project_id ?? projectId} runId={outcome?.runId ?? null} mark={draftFor.mark} finding={draftFor}
+          element={elements.get(draftFor.guid) ?? null} onClose={() => setDraftFor(null)}
+          onSaved={() => { setDraftFor(null); setNotice('Issue saved. See it under Issues.') }} />
+      )}
+
         {showResults && outcome && (
           <div className="results-sheet">
             <EvidenceView imageUrl={outcome.photoUrl} result={outcome.result} selectedMark={selectedMark} onSelect={setSelectedMark} />
-            <FindingsPanel result={outcome.result} selectedMark={selectedMark} onSelect={selectFinding} onClose={() => setShowResults(false)} />
+            <FindingsPanel result={outcome.result} selectedMark={selectedMark} onSelect={selectFinding} onDraftIssue={setDraftFor} onClose={() => setShowResults(false)} />
+            {notice && <p className="note" role="status">{notice}</p>}
           </div>
         )}
 
