@@ -33,11 +33,19 @@ BUDGET_AMOUNT="${BUDGET_AMOUNT:-30}"             # in the billing account's curr
 GEMINI_LOCATION="${GEMINI_LOCATION:-global}"     # decided on day 1 by the Gemini spike
 
 setup() {
-  : "${BILLING_ACCOUNT:?set BILLING_ACCOUNT (gcloud billing accounts list)}"
+  # Works for a NEW project (needs BILLING_ACCOUNT) or an EXISTING one created in the console
+  # with billing already linked (leave BILLING_ACCOUNT empty; create the budget in the console).
 
   # ---- 1. Project, billing, defaults ----
-  gcloud projects create "$PROJECT_ID" --name="TrueSite" --set-as-default   # skip if it exists
-  gcloud billing projects link "$PROJECT_ID" --billing-account="$BILLING_ACCOUNT"
+  if gcloud projects describe "$PROJECT_ID" >/dev/null 2>&1; then
+    echo "Using existing project $PROJECT_ID"
+  else
+    : "${BILLING_ACCOUNT:?project $PROJECT_ID does not exist: set BILLING_ACCOUNT (gcloud billing accounts list) to create it}"
+    gcloud projects create "$PROJECT_ID" --name="TrueSite" --set-as-default
+  fi
+  if [ -n "$BILLING_ACCOUNT" ]; then
+    gcloud billing projects link "$PROJECT_ID" --billing-account="$BILLING_ACCOUNT"
+  fi
   gcloud config set project "$PROJECT_ID"
   gcloud config set run/region "$REGION"
 
@@ -48,8 +56,10 @@ setup() {
     aiplatform.googleapis.com billingbudgets.googleapis.com iam.googleapis.com
 
   # ---- 3. Budget alert (alerts only -- a budget never stops spending) ----
-  # Needs Billing Account Administrator or Billing Account Costs Manager.
-  # If it complains about a quota project, add --billing-project="$PROJECT_ID".
+  # Needs Billing Account Administrator or Costs Manager; skipped when the billing owner made it in the console.
+  if [ -z "$BILLING_ACCOUNT" ]; then
+    echo "BILLING_ACCOUNT not set: create the budget alert in the console (Billing -> Budgets & alerts)."
+  else
   gcloud billing budgets create \
     --billing-account="$BILLING_ACCOUNT" \
     --display-name="TrueSite hackathon" \
@@ -61,6 +71,7 @@ setup() {
     --threshold-rule=percent=0.9 \
     --threshold-rule=percent=1.0 \
     --threshold-rule=percent=1.0,basis=forecasted-spend
+  fi
 
   # ---- 4. Runtime service account, least privilege ----
   gcloud iam service-accounts create "$SA_NAME" --display-name="TrueSite Cloud Run runtime"
