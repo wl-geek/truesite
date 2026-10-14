@@ -11,7 +11,7 @@ from truesite_bim import qr_sheets
 PT_PER_MM = 72 / 25.4
 BASE = "https://truesite-7x2k3m4n5q-as.a.run.app"  # realistic legacy *.a.run.app length (QR version 4)
 LONG_BASE = "https://truesite-123456789012.asia-southeast1.run.app"  # new-style Cloud Run URL (QR version 5)
-SHEETS = {"D1": (120.0, (210, 297)), "D2": (150.0, (420, 297)), "A1": (230.0, (297, 420))}
+SHEETS = {"D1": (120.0, (210, 297)), "D2": (150.0, (420, 297)), "L1": (160.0, (210, 297)), "A1": (230.0, (297, 420))}
 
 
 @pytest.fixture(scope="module")
@@ -92,8 +92,8 @@ def test_anchors_json_matches_the_sheets(sheets):
     anchors = json.loads((sheets / "anchors.json").read_text())
     assert anchors == [qr_sheets.anchor_entry(sh, "room1") for sh in qr_sheets.make_sheets()]
     by_id = {a["anchor_id"]: a for a in anchors}
-    assert set(by_id) == {"D1", "D2", "A1"}
-    assert {k: by_id[k]["qr_size_m"] for k in by_id} == {"D1": 0.12, "D2": 0.15, "A1": 0.23}
+    assert set(by_id) == {"D1", "D2", "L1", "A1"}
+    assert {k: by_id[k]["qr_size_m"] for k in by_id} == {"D1": 0.12, "D2": 0.15, "L1": 0.16, "A1": 0.23}
     for a in anchors:
         assert set(a) == {"anchor_id", "project_id", "qr_size_m", "position_m", "normal", "up", "scale", "label"}
         assert a["project_id"] == "room1" and a["label"]

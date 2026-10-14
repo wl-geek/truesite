@@ -48,7 +48,7 @@ WALL_UP = (0.0, 0.0, 1.0)
 @dataclass
 class Sheet:
     anchor_id: str
-    kind: str  # "desk" | "wall"
+    kind: str  # "desk" | "floor" | "wall"
     label: str  # short name the app shows for this anchor
     title: str
     pagesize: tuple[float, float]  # points
@@ -109,6 +109,19 @@ def make_sheets(
             instructions=[
                 "Place the 1:20 physical model exactly on the outline.",
                 "Keep the code flat and fully visible.",
+                *common,
+            ],
+        ),
+        Sheet(
+            "L1", "floor", "Life-size floor sheet A4 (1:1)", "TrueSite floor anchor L1 - life size 1:1", a4, 160.0,
+            (105.0, 180.0), check_bar_mm=(55.0, 40.0), text_box_mm=(15.0, 80.0),
+            position_m=[round(footprint_m[0] / 2, 4), round(footprint_m[1] / 2, 4), 0.0], normal=[0, 0, 1], up=[0, 1, 0],
+            scale=1.0,
+            instructions=[
+                "Lay the sheet flat on the floor in an open space.",
+                "The top edge points to the room's north wall.",
+                "Scan, Start camera, start within 1 m, then step back:",
+                "the demo room appears around you at real size.",
                 *common,
             ],
         ),
@@ -232,7 +245,7 @@ def main(argv: list[str] | None = None) -> None:
     ap.add_argument("--base-url", help="https://<app-host> (no trailing path); omit to write anchors.json only")
     ap.add_argument("--project", default="room1")
     ap.add_argument("--out-dir", type=Path, default=Path("sheets"))
-    ap.add_argument("--anchors-out", type=Path, help="write anchors.json for all three sheets")
+    ap.add_argument("--anchors-out", type=Path, help="write anchors.json for all sheets")
     ap.add_argument("--footprint", type=float, nargs=2, default=(4.0, 3.0), metavar=("X_M", "Y_M"))
     ap.add_argument("--base-z", type=float, default=DESK_BASE_Z,
                     help="model Z of the paper plane for desk anchors (slab underside = -0.15 in the demo)")

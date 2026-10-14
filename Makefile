@@ -1,4 +1,4 @@
-.PHONY: test test-bim test-server test-web dev-server dev-web build docker-build setup deploy verify models
+.PHONY: test test-bim test-server test-web dev-server dev-web build docker-build setup deploy verify models sheets
 
 test: test-bim test-server test-web
 test-bim:
@@ -28,3 +28,7 @@ deploy:
 	bash infra/gcloud.sh deploy
 verify:
 	bash infra/gcloud.sh verify
+
+# Printable QR sheets for the start page, pointing at BASE_URL (e.g. the Cloud Run URL or https://<lan-ip>:5173)
+sheets:
+	cd bim && uv run python -m truesite_bim.qr_sheets --base-url $(BASE_URL) --out-dir ../web/public/sheets > /dev/null && ls ../web/public/sheets

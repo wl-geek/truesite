@@ -44,6 +44,28 @@
     "label": "Physical model sheet A3 (1:20)"
   },
   {
+    "anchor_id": "L1",
+    "project_id": "room1",
+    "qr_size_m": 0.16,
+    "position_m": [
+      2.0,
+      1.5,
+      0.0
+    ],
+    "normal": [
+      0,
+      0,
+      1
+    ],
+    "up": [
+      0,
+      1,
+      0
+    ],
+    "scale": 1.0,
+    "label": "Life-size floor sheet A4 (1:1)"
+  },
+  {
     "anchor_id": "A1",
     "project_id": "room1",
     "qr_size_m": 0.23,

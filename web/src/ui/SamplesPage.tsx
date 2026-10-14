@@ -161,7 +161,7 @@ export function SamplesPage() {
           <FindingsPanel result={outcome.result} selectedMark={selectedMark} onSelect={selectFinding} onDraftIssue={setDraftFor} />
           {notice && <p className="note" role="status">{notice}</p>}
           <p>
-            <button type="button" className="btn btn-primary" onClick={() => navigate('/')}>See the pins on the 3D model</button>
+            <button type="button" className="btn btn-primary" onClick={() => navigate('/model')}>See the pins on the 3D model</button>
           </p>
         </div>
       )}
@@ -170,7 +170,7 @@ export function SamplesPage() {
           element={new Map((loaded?.project.elements ?? []).map((e) => [e.guid, e])).get(draftFor.guid) ?? null} onClose={() => setDraftFor(null)}
           onSaved={() => { setDraftFor(null); setNotice('Issue saved. See it under Issues.') }} />
       )}
-      {loaded === null && outcome === null && <p className="note"><Link to="/">Open the model viewer</Link></p>}
+      {loaded === null && outcome === null && <p className="note"><Link to="/model">Open the model viewer</Link></p>}
     </main>
   )
 }

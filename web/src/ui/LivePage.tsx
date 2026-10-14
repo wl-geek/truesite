@@ -10,7 +10,7 @@ import { buildSampleMeta } from '../check/sampleMeta'
 import { captureSnapshot, type Snapshot } from '../check/snapshot'
 import { estimatePose, type Intrinsics, type Pose, type Point2, type Quality } from '../pose'
 import { QrWorkerClient } from '../qr/qrClient'
-import { effectiveQrSize, findAnchor, isDeskAnchor, isFar } from '../scene/arMath'
+import { coachHint, effectiveQrSize, findAnchor, isDeskAnchor, isFar, scaleLabel } from '../scene/arMath'
 import { makeEvalMarkers, parseEvalPoints } from '../scene/evalMarkers'
 import { disposePins, makePins } from '../scene/pins'
 import { disposeModel, loadModel, type LoadedModel } from '../scene/loadModel'
@@ -202,7 +202,11 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
 
         {running && (
           <div className="live-top">
-            <QualityBadge state={state} />
+            <div className="live-chips">
+              {loaded && <span className="mode-chip">{scaleLabel(loaded.anchor)}</span>}
+              <QualityBadge state={state} />
+            </div>
+            {!checking && <p className="coach">{coachHint(state, desk)}</p>}
             {isFar(state?.distanceM ?? null) && <p className="live-warning">More than 3 m from the code: the overlay is less accurate.</p>}
             {state?.otherAnchor && (
               <p className="live-warning">
@@ -253,11 +257,17 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
             {loaded && (
               <>
                 <p className="eyebrow">{loaded.project.name} · {loaded.anchor.label || loaded.anchor.anchor_id}</p>
-                <h1>Live view</h1>
+                <h1>Live view · {scaleLabel(loaded.anchor)}</h1>
                 <p>
-                  Point the camera at the printed QR code. Start within about 1 m of it, then step back.
-                  {desk && ' Desk mode: the model appears at 1:20 next to the code.'}
+                  {desk
+                    ? 'The model appears as a 1:20 scale model beside the code, like an architect\'s model on the table.'
+                    : 'The model appears at real size, lined up with the place where the code is fixed.'}
                 </p>
+                <ol className="steps">
+                  <li>Tap <strong>Start camera</strong> and allow the camera.</li>
+                  <li>Point at the code from under 1 m away, then step back slowly.</li>
+                  <li>{desk ? 'Walk around the sheet to look at the model.' : 'Aim at the work and tap Check as-built.'}</li>
+                </ol>
                 <button type="button" className="btn btn-primary" onClick={start} disabled={starting}>
                   {starting ? 'Starting…' : 'Start camera'}
                 </button>
@@ -266,7 +276,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
             {camError && <p className="status status-error" role="alert">{CAMERA_ERRORS[camError]}</p>}
             {(camError || error) && (
               <p className="live-links">
-                <Link to="/" className="btn">Open the model viewer</Link> <Link to="/samples" className="btn">Try sample photos</Link>
+                <Link to="/model" className="btn">Open the model viewer</Link> <Link to="/samples" className="btn">Try sample photos</Link>
               </p>
             )}
           </div>

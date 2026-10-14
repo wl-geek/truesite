@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { Anchor, ProjectManifest } from '../api/types'
-import { effectiveQrSize, findAnchor, isDeskAnchor, isFar, poseAnchor, toVideoPixels } from './arMath'
+import { coachHint, effectiveQrSize, findAnchor, isDeskAnchor, isFar, poseAnchor, scaleLabel, toVideoPixels } from './arMath'
 
 const A1: Anchor = { anchor_id: 'A1', project_id: 'room1', qr_size_m: 0.23, position_m: [0.1, 1.5, 1.35], normal: [1, 0, 0], up: [0, 0, 1], scale: 1, label: 'Wall' }
 const D1: Anchor = { ...A1, anchor_id: 'D1', qr_size_m: 0.12, normal: [0, 0, 1], up: [0, 1, 0], scale: 0.05 }
@@ -32,5 +32,17 @@ describe('arMath', () => {
     expect(isFar(null)).toBe(false)
     expect(isFar(2.9)).toBe(false)
     expect(isFar(3.2)).toBe(true)
+  })
+
+  it('labels the scale', () => {
+    expect(scaleLabel(A1)).toBe('Life size · 1:1')
+    expect(scaleLabel(D1)).toBe('Scale model · 1:20')
+  })
+
+  it('coaches the next step', () => {
+    expect(coachHint(null, true)).toMatch(/QR code on the sheet/)
+    expect(coachHint({ tracking: true, provisional: true, distanceM: 2 }, false)).toMatch(/within 1 m/)
+    expect(coachHint({ tracking: true, provisional: false, distanceM: 3.5 }, false)).toMatch(/Move closer/)
+    expect(coachHint({ tracking: true, provisional: false, distanceM: 1.2 }, false)).toMatch(/Check as-built/)
   })
 })
