@@ -13,6 +13,7 @@ import { QrWorkerClient } from '../qr/qrClient'
 import { coachHint, effectiveQrSize, findAnchor, isDeskAnchor, isFar, scaleLabel } from '../scene/arMath'
 import { makeEvalMarkers, parseEvalPoints } from '../scene/evalMarkers'
 import { disposePins, makePins } from '../scene/pins'
+import { buildWalkScene, canQuickLook, exportUsdz, isAndroid, isAppleMobile, openQuickLook, sceneViewerUrl } from '../scene/walkthrough'
 import { disposeModel, loadModel, type LoadedModel } from '../scene/loadModel'
 import { createOverlay, type Overlay, type OverlayState } from '../scene/overlay'
 import { CalibrationPanel } from './CalibrationPanel'
@@ -56,6 +57,9 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   const [draftFor, setDraftFor] = useState<Finding | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [calibrating, setCalibrating] = useState(false)
+  const [usdz, setUsdz] = useState<Blob | null>(null)
+  const quickLook = useMemo(() => isAppleMobile() && canQuickLook(), [])
+  const android = useMemo(() => isAndroid(), [])
   const pinsRef = useRef<ReturnType<typeof makePins> | null>(null)
   const elements = useMemo(() => new Map((loaded?.project.elements ?? []).map((e) => [e.guid, e])), [loaded])
 
@@ -193,6 +197,29 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
     }
   }
 
+  // Walk inside: prepare the USDZ for iPhone's AR viewer in the background so the tap opens it at once.
+  useEffect(() => {
+    if (!loaded || !quickLook) return
+    let cancelled = false
+    const id = setTimeout(() => {
+      const scene = buildWalkScene(loaded.model, (g) => elements.get(g)?.ifc_class ?? '', walkCentre(loaded.anchor, loaded.project))
+      exportUsdz(scene).then((b) => !cancelled && setUsdz(b)).catch(() => undefined)
+    }, 500)
+    return () => {
+      cancelled = true
+      clearTimeout(id)
+    }
+  }, [loaded, quickLook, elements])
+
+  function walkInside() {
+    if (!loaded) return
+    if (quickLook && usdz) openQuickLook(usdz)
+    else if (android) {
+      window.location.href = sceneViewerUrl(new URL(loaded.project.model_url, window.location.origin).href, loaded.project.name, window.location.href)
+    }
+  }
+  const canWalk = quickLook || android
+
   const desk = loaded ? isDeskAnchor(loaded.anchor) : false
   const selectFinding = (f: Finding) => setSelectedMark(f.mark)
 
@@ -270,9 +297,22 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
                   <li>Point at the code from under 1 m away, then step back slowly.</li>
                   <li>{desk ? 'Walk around the sheet to look at the model.' : 'Aim at the work and tap Check as-built.'}</li>
                 </ol>
-                <button type="button" className="btn btn-primary" onClick={start} disabled={starting}>
-                  {starting ? 'Starting…' : 'Start camera'}
-                </button>
+                <div className="live-start-actions">
+                  <button type="button" className="btn btn-primary" onClick={start} disabled={starting}>
+                    {starting ? 'Starting…' : 'Start camera'}
+                  </button>
+                  {canWalk && !desk && (
+                    <button type="button" className="btn btn-accent" onClick={walkInside} disabled={quickLook && !usdz}>
+                      {quickLook && !usdz ? 'Preparing walk-through…' : 'Walk inside (AR)'}
+                    </button>
+                  )}
+                </div>
+                {canWalk && !desk && (
+                  <p className="note">
+                    <strong>Walk inside</strong> opens the model in your phone's own AR viewer at 1:1. It stays put while you
+                    walk through it. Point at the floor, let it place, then walk in.
+                  </p>
+                )}
               </>
             )}
             {camError && <p className="status status-error" role="alert">{CAMERA_ERRORS[camError]}</p>}
@@ -307,4 +347,12 @@ async function requestMotionPermission(): Promise<boolean> {
   } catch {
     return false
   }
+}
+
+/** Where the walk-through model is placed: a floor code's spot, else the middle of the model's footprint. */
+function walkCentre(anchor: Anchor, project: ProjectManifest): [number, number] {
+  if (anchor.normal[2] > 0.9) return [anchor.position_m[0], anchor.position_m[1]]
+  const xs = project.elements.flatMap((e) => [e.bbox_m[0][0], e.bbox_m[1][0]])
+  const ys = project.elements.flatMap((e) => [e.bbox_m[0][1], e.bbox_m[1][1]])
+  return [(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2]
 }
