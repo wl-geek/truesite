@@ -7,6 +7,7 @@ import { disposePins, makePins } from '../scene/pins'
 import { createViewer, type Viewer } from '../scene/viewer'
 import { ElementPanel } from './ElementPanel'
 import { FindingsPanel } from './FindingsPanel'
+import { IssueDialog } from './IssueDialog'
 
 export const DEFAULT_PROJECT_ID = 'room1'
 
@@ -23,6 +24,8 @@ export function ViewerPage() {
   const [lastCheck, setLastCheck] = useState<LastCheck | null>(null)
   const [showCheck, setShowCheck] = useState(false)
   const [selectedMark, setSelectedMark] = useState<number | null>(null)
+  const [draftFor, setDraftFor] = useState<Finding | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -93,7 +96,13 @@ export function ViewerPage() {
         )}
       </div>
       {lastCheck && showCheck && (
-        <FindingsPanel result={lastCheck.result} selectedMark={selectedMark} onSelect={selectFinding} onClose={() => setShowCheck(false)} />
+        <FindingsPanel result={lastCheck.result} selectedMark={selectedMark} onSelect={selectFinding} onDraftIssue={setDraftFor} onClose={() => setShowCheck(false)} />
+      )}
+      {notice && <p className="note viewer-notice" role="status">{notice}</p>}
+      {draftFor && (
+        <IssueDialog open projectId={loaded?.project.project_id ?? DEFAULT_PROJECT_ID} runId={lastCheck?.runId ?? null} mark={draftFor.mark} finding={draftFor}
+          element={elements.get(draftFor.guid) ?? null} onClose={() => setDraftFor(null)}
+          onSaved={() => { setDraftFor(null); setNotice('Issue saved. See it under Issues.') }} />
       )}
       {loaded && element && (
         <ElementPanel projectId={loaded.project.project_id} element={element} onClose={() => setSelected(null)} />

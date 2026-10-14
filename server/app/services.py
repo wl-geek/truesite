@@ -11,7 +11,7 @@ from .config import Settings
 from .fake_gemini import FakeGeminiClient
 from .gemini_client import GeminiError
 from .projects import ProjectRepo
-from .schemas import AskAnswer, AskRequest, CheckContext, Element, Usage
+from .schemas import AskAnswer, AskRequest, CheckContext, CheckRun, Element, IssueDraft, Usage
 from .validate import clamp_confidence, repair_check, truncate_text
 
 Checker = Callable[[bytes, bytes, CheckContext], dict]
@@ -73,3 +73,28 @@ def make_asker(repo: ProjectRepo, client: Any) -> Callable[[AskRequest], AskAnsw
         return AskAnswer(answer=answer, cited_properties=cited, confidence=clamp_confidence(raw.get("confidence")))
 
     return ask
+
+
+class UnknownMark(LookupError):
+    pass
+
+
+def make_drafter(repo: ProjectRepo, client: Any) -> Callable[[CheckRun, int], IssueDraft]:
+    """Issue title/description/next step drafted from one stored finding; severity stays with code."""
+
+    def draft(run: CheckRun, mark: int) -> IssueDraft:
+        findings = run.result.get("findings") if isinstance(run.result.get("findings"), list) else []
+        finding = next((f for f in findings if isinstance(f, dict) and f.get("mark") == mark), None)
+        if finding is None:
+            raise UnknownMark(mark)
+        element = repo.element(run.project_id, finding["guid"])
+        facts = {k: finding.get(k) for k in ("name", "ifc_class", "status", "offset", "explanation", "confidence")}
+        raw = gemini_client.draft_issue(facts, element.model_dump(mode="json"), client=client)["result"]
+        status = str(finding.get("status", "deviation")).replace("_", " ")
+        return IssueDraft(
+            title=truncate_text(raw.get("title"), 80) or truncate_text(f"{element.name}: {status}", 80),
+            description=truncate_text(raw.get("description"), 500),
+            suggested_action=truncate_text(raw.get("suggested_action"), 200),
+        )
+
+    return draft

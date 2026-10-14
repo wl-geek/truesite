@@ -433,3 +433,16 @@ body {
 .chip { border: 1px solid var(--line); background: var(--white); border-radius: 999px; padding: 4px 10px; font: inherit; font-size: 13px; cursor: pointer; }
 .ask-answer { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px; }
 .ask-answer > p:first-child { margin-top: 0; }
+
+/* ---- issues ------------------------------------------------------------------------------- */
+.modal-backdrop { position: fixed; inset: 0; background: rgba(11, 31, 51, 0.55); display: grid; place-items: center; padding: 16px; z-index: 50; }
+.modal { width: min(560px, 100%); max-height: 90vh; overflow-y: auto; }
+.issue-form { display: grid; gap: 10px; }
+.issue-form label { display: grid; gap: 4px; font-size: 14px; font-weight: 600; }
+.issue-form input, .issue-form textarea { font: inherit; font-weight: 400; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.issue-list { list-style: none; padding: 0; display: grid; gap: 10px; }
+.issue-card { display: flex; gap: 12px; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; }
+.issue-card h3 { margin: 2px 0 6px; font-size: 16px; }
+.issue-card p { margin: 4px 0; }
+.issue-thumb { width: 96px; height: 72px; object-fit: cover; border-radius: 6px; flex: none; }

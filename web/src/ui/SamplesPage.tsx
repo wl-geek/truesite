@@ -11,10 +11,11 @@ import { disposeModel, loadModel, type LoadedModel } from '../scene/loadModel'
 import { navigate } from '../router'
 import { EvidenceView } from './EvidenceView'
 import { FindingsPanel } from './FindingsPanel'
+import { IssueDialog } from './IssueDialog'
 import { Link } from './Link'
 
 type Loaded = { project: ProjectManifest; model: LoadedModel; renderer: WebGLRenderer; scene: Scene }
-type Outcome = { result: CheckResult; photoUrl: string; saved: boolean }
+type Outcome = { result: CheckResult; photoUrl: string; saved: boolean; runId: string | null; projectId: string }
 
 async function getJsonFile(url: string): Promise<unknown> {
   const res = await fetch(url)
@@ -33,6 +34,8 @@ export function SamplesPage() {
   const [running, setRunning] = useState<string | null>(null)
   const [outcome, setOutcome] = useState<Outcome | null>(null)
   const [selectedMark, setSelectedMark] = useState<number | null>(null)
+  const [draftFor, setDraftFor] = useState<Finding | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
   const loadedRef = useRef<Loaded | null>(null)
 
   useEffect(() => {
@@ -86,7 +89,7 @@ export function SamplesPage() {
       const result = res.response?.result ?? res.saved
       if (!result) throw res.error ?? new ApiError('check failed', 0)
       if (outcome) URL.revokeObjectURL(outcome.photoUrl)
-      setOutcome({ result, photoUrl: URL.createObjectURL(photo), saved: !res.response })
+      setOutcome({ result, photoUrl: URL.createObjectURL(photo), saved: !res.response, runId: res.response?.run_id ?? null, projectId: meta.project_id })
       saveLastCheck(meta.project_id, { result, runId: res.response?.run_id ?? null, at: new Date().toISOString() })
     } catch (e) {
       setError(e instanceof ApiError ? checkErrorMessage(e) : e instanceof Error ? e.message : 'Check failed — try again.')
@@ -120,11 +123,17 @@ export function SamplesPage() {
       {outcome && (
         <div className="sample-results">
           <EvidenceView imageUrl={outcome.photoUrl} result={outcome.result} selectedMark={selectedMark} onSelect={setSelectedMark} />
-          <FindingsPanel result={outcome.result} selectedMark={selectedMark} onSelect={selectFinding} />
+          <FindingsPanel result={outcome.result} selectedMark={selectedMark} onSelect={selectFinding} onDraftIssue={setDraftFor} />
+          {notice && <p className="note" role="status">{notice}</p>}
           <p>
             <button type="button" className="btn btn-primary" onClick={() => navigate('/')}>See the pins on the 3D model</button>
           </p>
         </div>
+      )}
+      {draftFor && (
+        <IssueDialog open projectId={outcome?.projectId ?? 'room1'} runId={outcome?.runId ?? null} mark={draftFor.mark} finding={draftFor}
+          element={new Map((loaded?.project.elements ?? []).map((e) => [e.guid, e])).get(draftFor.guid) ?? null} onClose={() => setDraftFor(null)}
+          onSaved={() => { setDraftFor(null); setNotice('Issue saved. See it under Issues.') }} />
       )}
       {loaded === null && outcome === null && <p className="note"><Link to="/">Open the model viewer</Link></p>}
     </main>
