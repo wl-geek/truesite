@@ -99,6 +99,38 @@ export function SamplesPage() {
   }
 
   const selectFinding = (f: Finding) => setSelectedMark(f.mark)
+  const dev = new URLSearchParams(window.location.search).has('dev')
+
+  // Dev only (?dev=1): run every sample and download results.json for eval/summarise.py (spec 10).
+  async function runAll() {
+    const results: Record<string, CheckResult> = {}
+    for (const s of samples ?? []) {
+      setRunning(s.sample_id)
+      try {
+        const base = `/samples/${s.sample_id}`
+        const meta = parseSampleMeta(await getJsonFile(`${base}/meta.json`))
+        const photo = await fetch(`${base}/photo.jpg`).then((r) => r.blob())
+        const l = await ensureLoaded(meta.project_id)
+        const anchor = findAnchor(l.project, meta.anchor_id)
+        if (!anchor) continue
+        const bitmap = await createImageBitmap(photo)
+        const res = await runCheck({
+          photo, photoW: bitmap.width, photoH: bitmap.height, videoW: meta.video_w, videoH: meta.video_h, K: meta.K, pose: meta.pose,
+          anchor, poseQuality: 'good', model: l.model, scene: l.scene, renderer: l.renderer,
+          elements: new Map(l.project.elements.map((e) => [e.guid, e])),
+        })
+        bitmap.close()
+        if (res.response) results[s.sample_id] = res.response.result
+      } catch {
+        /* skip a broken sample; the summary counts it as can't judge */
+      }
+    }
+    setRunning(null)
+    const a = document.createElement('a')
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(results, null, 2)], { type: 'application/json' }))
+    a.download = 'results.json'
+    a.click()
+  }
   const ready = useMemo(() => samples ?? [], [samples])
 
   return (
@@ -119,6 +151,9 @@ export function SamplesPage() {
           </li>
         ))}
       </ul>
+      {dev && ready.length > 0 && (
+        <p><button type="button" className="btn" onClick={() => void runAll()} disabled={running !== null}>Run all samples → results.json</button></p>
+      )}
       {error && <p className="status status-error" role="alert">{error}</p>}
       {outcome && (
         <div className="sample-results">
