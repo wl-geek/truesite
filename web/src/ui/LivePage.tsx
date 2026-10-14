@@ -11,6 +11,7 @@ import { captureSnapshot, type Snapshot } from '../check/snapshot'
 import { estimatePose, type Intrinsics, type Pose, type Point2, type Quality } from '../pose'
 import { QrWorkerClient } from '../qr/qrClient'
 import { effectiveQrSize, findAnchor, isDeskAnchor, isFar } from '../scene/arMath'
+import { makeEvalMarkers, parseEvalPoints } from '../scene/evalMarkers'
 import { disposePins, makePins } from '../scene/pins'
 import { disposeModel, loadModel, type LoadedModel } from '../scene/loadModel'
 import { createOverlay, type Overlay, type OverlayState } from '../scene/overlay'
@@ -66,6 +67,11 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
       const anchor = findAnchor(project, anchorId)
       if (!anchor) throw new Error("This QR code isn't set up for this project.")
       model = await loadModel(project.model_url, new Set(project.elements.map((e) => e.guid)))
+      if (new URLSearchParams(window.location.search).has('eval')) {
+        // ?eval=1: green crosses at the surveyed points in web/public/eval/points.json (spec 10)
+        const points = parseEvalPoints(await fetch('/eval/points.json').then((r) => (r.ok ? r.json() : [])).catch(() => []))
+        model.ifcRoot.add(makeEvalMarkers(points))
+      }
       if (cancelled) disposeModel(model)
       else setLoaded({ project, anchor, model })
     })().catch((e: unknown) => {
