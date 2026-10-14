@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { getProject } from '../api/client'
-import type { ProjectManifest } from '../api/types'
+import type { Finding, ProjectManifest } from '../api/types'
+import { loadLastCheck, type LastCheck } from '../check/lastCheck'
 import { disposeModel, loadModel, type LoadedModel } from '../scene/loadModel'
+import { disposePins, makePins } from '../scene/pins'
 import { createViewer, type Viewer } from '../scene/viewer'
 import { ElementPanel } from './ElementPanel'
+import { FindingsPanel } from './FindingsPanel'
 
 export const DEFAULT_PROJECT_ID = 'room1'
 
@@ -17,6 +20,9 @@ export function ViewerPage() {
   const [error, setError] = useState<string | null>(null)
   const [attempt, setAttempt] = useState(0)
   const [selected, setSelected] = useState<string | null>(null)
+  const [lastCheck, setLastCheck] = useState<LastCheck | null>(null)
+  const [showCheck, setShowCheck] = useState(false)
+  const [selectedMark, setSelectedMark] = useState<number | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -42,7 +48,13 @@ export function ViewerPage() {
     const viewer = createViewer(canvas, loaded.model)
     viewerRef.current = viewer
     const off = viewer.onPick(setSelected)
+    // Pins from this session's last as-built check (spec 4.1: findings pinned on the 3D model).
+    const last = loadLastCheck(loaded.project.project_id)
+    setLastCheck(last)
+    const pins = last ? makePins(last.result.findings, new Map(loaded.project.elements.map((e) => [e.guid, e]))) : null
+    if (pins) loaded.model.ifcRoot.add(pins)
     return () => {
+      if (pins) disposePins(pins)
       off()
       viewer.dispose()
       viewerRef.current = null
@@ -55,6 +67,10 @@ export function ViewerPage() {
 
   const elements = useMemo(() => new Map((loaded?.project.elements ?? []).map((e) => [e.guid, e])), [loaded])
   const element = selected ? elements.get(selected) : undefined
+  const selectFinding = (f: Finding) => {
+    setSelectedMark(f.mark)
+    setSelected(f.guid)
+  }
 
   return (
     <main className="viewer-page">
@@ -70,7 +86,15 @@ export function ViewerPage() {
           </div>
         )}
         {loaded && !element && <p className="hint">Tap an element to see its properties.</p>}
+        {lastCheck && !showCheck && (
+          <button type="button" className="btn btn-accent viewer-check-btn" onClick={() => setShowCheck(true)}>
+            Last check results
+          </button>
+        )}
       </div>
+      {lastCheck && showCheck && (
+        <FindingsPanel result={lastCheck.result} selectedMark={selectedMark} onSelect={selectFinding} onClose={() => setShowCheck(false)} />
+      )}
       {loaded && element && (
         <ElementPanel projectId={loaded.project.project_id} element={element} onClose={() => setSelected(null)} />
       )}
