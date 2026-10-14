@@ -39,10 +39,11 @@ export function scaleLabel(anchor: ApiAnchor): string {
   return anchor.scale >= 0.999 ? 'Life size · 1:1' : `Scale model · 1:${Math.round(1 / anchor.scale)}`
 }
 
-export type CoachState = { tracking: boolean; provisional: boolean; distanceM: number | null }
+export type CoachState = { tracking: boolean; provisional: boolean; distanceM: number | null; mode?: 'code' | 'motion' | 'lost' }
 
 /** One short instruction for what to do next in the live view. */
 export function coachHint(s: CoachState | null, desk: boolean): string {
+  if (s?.mode === 'motion') return 'Look around and up. Turn on the spot; point back at the code to re-align.'
   if (!s?.tracking) return desk ? 'Point the camera at the QR code on the sheet.' : 'Point the camera at the QR code.'
   if (s.provisional) return 'Move within 1 m of the code, then step back slowly.'
   if (isFar(s.distanceM)) return 'Move closer to the code for a more accurate overlay.'

@@ -1,0 +1,46 @@
+[
+  {
+    "anchor_id": "R1",
+    "project_id": "rooftop",
+    "qr_size_m": 0.33,
+    "position_m": [
+      4.5,
+      4.5,
+      0.0
+    ],
+    "normal": [
+      0,
+      0,
+      1
+    ],
+    "up": [
+      0,
+      1,
+      0
+    ],
+    "scale": 1.0,
+    "label": "Rooftop floor sheet A2 (1:1)"
+  },
+  {
+    "anchor_id": "R2",
+    "project_id": "rooftop",
+    "qr_size_m": 0.16,
+    "position_m": [
+      4.5,
+      4.5,
+      0.0
+    ],
+    "normal": [
+      0,
+      0,
+      1
+    ],
+    "up": [
+      0,
+      1,
+      0
+    ],
+    "scale": 1.0,
+    "label": "Rooftop floor sheet A4 (1:1)"
+  }
+]
