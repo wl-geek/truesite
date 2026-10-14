@@ -446,3 +446,10 @@ body {
 .issue-card h3 { margin: 2px 0 6px; font-size: 16px; }
 .issue-card p { margin: 4px 0; }
 .issue-thumb { width: 96px; height: 72px; object-fit: cover; border-radius: 6px; flex: none; }
+
+/* ---- calibration -------------------------------------------------------------------------- */
+.live-calib { position: absolute; left: 16px; right: 16px; bottom: 24px; max-width: 520px; margin: 0 auto; }
+.calib-panel h2 { font-size: 17px; margin: 0 0 6px; }
+.calib-panel progress { width: 100%; height: 10px; }
+.bar-input { display: flex; align-items: center; gap: 8px; }
+.bar-input input { width: 90px; padding: 6px 8px; font: inherit; border: 1px solid var(--line); border-radius: var(--radius); }

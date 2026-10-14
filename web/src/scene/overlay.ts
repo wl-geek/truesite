@@ -52,6 +52,10 @@ export type Overlay = {
   lastRaw(): LastPose | null
   intrinsics(): Intrinsics
   setIntrinsics(K: Intrinsics): void
+  /** Apply a new print-scale correction (check-bar step); restarts tracking. */
+  setQrSizeCorrection(factor: number): void
+  /** Every detection of THIS anchor's code: corners in video px (used by calibration). */
+  onCorners(cb: (corners: Point2[], videoW: number, videoH: number) => void): () => void
   dispose(): void
 }
 
@@ -93,7 +97,8 @@ export function createOverlay(o: OverlayOptions): Overlay {
   }
 
   const pAnchor = poseAnchor(anchor)
-  const s = effectiveQrSize(anchor, o.qrSizeCorrection)
+  let s = effectiveQrSize(anchor, o.qrSizeCorrection)
+  const cornerListeners = new Set<(corners: Point2[], videoW: number, videoH: number) => void>()
   let K: Intrinsics = loadIntrinsics(video.videoWidth || 1280, video.videoHeight || 720)
   let kSize = `${video.videoWidth}x${video.videoHeight}`
   let tracker = new PoseTracker(s, K)
@@ -140,6 +145,7 @@ export function createOverlay(o: OverlayOptions): Overlay {
       if (link && (link.projectId !== anchor.project_id || link.anchorId !== anchor.anchor_id)) otherAnchor = link
       else if (link) corners = toVideoPixels(res.detection.corners, fw, fh, vw, vh)
     }
+    if (corners) cornerListeners.forEach((cb) => cb(corners!, vw, vh))
     const tracked = tracker.update(corners, tSec)
     if (tracked) {
       lastSeen = tSec
@@ -216,9 +222,18 @@ export function createOverlay(o: OverlayOptions): Overlay {
       tracker = new PoseTracker(s, K)
       projKey = ''
     },
+    setQrSizeCorrection(factor) {
+      s = effectiveQrSize(anchor, factor)
+      tracker = new PoseTracker(s, K)
+    },
+    onCorners(cb) {
+      cornerListeners.add(cb)
+      return () => cornerListeners.delete(cb)
+    },
     dispose() {
       this.stop()
       listeners.clear()
+      cornerListeners.clear()
       for (const line of edges) {
         line.removeFromParent()
         line.geometry.dispose()
