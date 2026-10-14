@@ -122,3 +122,17 @@ def test_the_committed_rooftop_project_loads() -> None:
     assert len(m.elements) == 160 and classes == {"IfcColumn", "IfcBeam", "IfcReinforcingBar"}
     assert [a.anchor_id for a in m.anchors] == ["R1", "R2"] and m.anchors[0].scale == 1.0
     assert repo.demo_issues("rooftop") == []
+
+
+def test_a_changed_anchors_file_is_picked_up(models) -> None:
+    import json as _json
+    import os
+    repo = ProjectRepo(models)
+    assert [a.anchor_id for a in repo.manifest("testproj").anchors] == ["A1", "D1"]
+    path = models / "testproj" / "anchors.json"
+    rows = _json.loads(path.read_text())
+    rows.append({**rows[0], "anchor_id": "R9"})
+    path.write_text(_json.dumps(rows))
+    st = path.stat()
+    os.utime(path, (st.st_atime, st.st_mtime + 5))  # make sure the mtime moves even on coarse clocks
+    assert [a.anchor_id for a in repo.manifest("testproj").anchors] == ["A1", "D1", "R9"]

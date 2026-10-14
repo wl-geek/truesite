@@ -41,7 +41,7 @@ class _Project:
 class ProjectRepo:
     def __init__(self, models_dir: Path) -> None:
         self.models_dir = Path(models_dir)
-        self._cache: dict[str, _Project] = {}
+        self._cache: dict[str, tuple[tuple[float, ...], _Project]] = {}
         self._lock = threading.Lock()
 
     def _dir(self, project_id: str) -> Path:
@@ -55,15 +55,18 @@ class ProjectRepo:
 
     def _load(self, project_id: str) -> _Project:
         with self._lock:
-            hit = self._cache.get(project_id)
-            if hit is not None:
-                return hit
             d = self._dir(project_id)
+            # Reload when any project file changes (a rebuilt model or a new sheet during development).
+            stamp = tuple((d / n).stat().st_mtime if (d / n).exists() else 0.0
+                          for n in ("project.json", "elements.json", "anchors.json", "model.glb"))
+            hit = self._cache.get(project_id)
+            if hit is not None and hit[0] == stamp:
+                return hit[1]
             meta = json.loads((d / "project.json").read_text(encoding="utf-8"))
             elements = [Element.model_validate(e) for e in json.loads((d / "elements.json").read_text(encoding="utf-8"))]
             anchors = [Anchor.model_validate(a) for a in json.loads((d / "anchors.json").read_text(encoding="utf-8"))]
             project = _Project(project_id, meta["name"], elements, anchors)
-            self._cache[project_id] = project
+            self._cache[project_id] = (stamp, project)
             return project
 
     def project_ids(self) -> list[str]:
