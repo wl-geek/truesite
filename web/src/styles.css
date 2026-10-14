@@ -468,3 +468,5 @@ body {
 .mode-chip { padding: 6px 10px; border-radius: var(--radius); background: var(--orange); color: var(--white); font-size: 14px; font-weight: 700; }
 .coach { margin: 0; padding: 6px 10px; border-radius: var(--radius); background: rgba(255, 255, 255, 0.92); color: var(--ink); font-size: 14px; max-width: 420px; }
 .live-start-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.xr-overlay { position: fixed; inset: 0; pointer-events: none; flex-direction: column; justify-content: space-between; align-items: center; padding: 24px 16px; }
+.xr-overlay > * { pointer-events: auto; }

@@ -14,6 +14,7 @@ import { coachHint, effectiveQrSize, findAnchor, isDeskAnchor, isFar, scaleLabel
 import { makeEvalMarkers, parseEvalPoints } from '../scene/evalMarkers'
 import { disposePins, makePins } from '../scene/pins'
 import { buildWalkScene, canQuickLook, exportUsdz, isAndroid, isAppleMobile, openQuickLook, sceneViewerUrl } from '../scene/walkthrough'
+import { startXrWalk, xrArSupported } from '../scene/xrWalk'
 import { disposeModel, loadModel, type LoadedModel } from '../scene/loadModel'
 import { createOverlay, type Overlay, type OverlayState } from '../scene/overlay'
 import { CalibrationPanel } from './CalibrationPanel'
@@ -60,6 +61,13 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   const [usdz, setUsdz] = useState<Blob | null>(null)
   const quickLook = useMemo(() => isAppleMobile() && canQuickLook(), [])
   const android = useMemo(() => isAndroid(), [])
+  const [xrOk, setXrOk] = useState(false)
+  const [xrPlaced, setXrPlaced] = useState(false)
+  const xrOverlayRef = useRef<HTMLDivElement>(null)
+  const xrStopRef = useRef<(() => void) | null>(null)
+  useEffect(() => {
+    void xrArSupported().then(setXrOk)
+  }, [])
   const pinsRef = useRef<ReturnType<typeof makePins> | null>(null)
   const elements = useMemo(() => new Map((loaded?.project.elements ?? []).map((e) => [e.guid, e])), [loaded])
 
@@ -211,20 +219,43 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
     }
   }, [loaded, quickLook, elements])
 
-  function walkInside() {
+  async function walkInside() {
     if (!loaded) return
+    if (xrOk && xrOverlayRef.current) {
+      // Android Chrome + ARCore: world-tracked walk-through inside TrueSite.
+      xrOverlayRef.current.style.display = 'flex' // dom-overlay root must be visible when the session starts
+      setXrPlaced(false)
+      try {
+        xrStopRef.current = await startXrWalk({
+          model: loaded.model, classOf: (g) => elements.get(g)?.ifc_class ?? '', centreIfc: walkCentre(loaded.anchor, loaded.project),
+          overlay: xrOverlayRef.current, onPlaced: () => setXrPlaced(true),
+          onEnd: () => {
+            if (xrOverlayRef.current) xrOverlayRef.current.style.display = 'none'
+            xrStopRef.current = null
+          },
+        })
+      } catch {
+        xrOverlayRef.current.style.display = 'none'
+        setError("This phone couldn't start AR. Update Google Play Services for AR (ARCore) and Chrome, then try again.")
+      }
+      return
+    }
     if (quickLook && usdz) openQuickLook(usdz)
     else if (android) {
       window.location.href = sceneViewerUrl(new URL(loaded.project.model_url, window.location.origin).href, loaded.project.name, window.location.href)
     }
   }
-  const canWalk = quickLook || android
+  const canWalk = xrOk || quickLook || android
 
   const desk = loaded ? isDeskAnchor(loaded.anchor) : false
   const selectFinding = (f: Finding) => setSelectedMark(f.mark)
 
   return (
     <main className="live-page">
+      <div ref={xrOverlayRef} className="xr-overlay" style={{ display: 'none' }}>
+        <p className="coach">{xrPlaced ? 'Walk through the model. It stays where you placed it.' : 'Point at the floor until the orange ring appears, then tap to place the model.'}</p>
+        <button type="button" className="btn" onClick={() => xrStopRef.current?.()}>Exit</button>
+      </div>
       <div className="live-stage">
         <video ref={videoRef} className="live-video" playsInline muted autoPlay />
         <canvas ref={canvasRef} className="live-canvas" aria-label="Model overlay" />
