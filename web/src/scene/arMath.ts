@@ -33,3 +33,18 @@ export function isFar(distanceM: number | null): boolean {
 export function isDeskAnchor(anchor: ApiAnchor): boolean {
   return anchor.scale < 1
 }
+
+/** "Life size · 1:1" for scale 1, else "Scale model · 1:20" (scale 0.05). */
+export function scaleLabel(anchor: ApiAnchor): string {
+  return anchor.scale >= 0.999 ? 'Life size · 1:1' : `Scale model · 1:${Math.round(1 / anchor.scale)}`
+}
+
+export type CoachState = { tracking: boolean; provisional: boolean; distanceM: number | null }
+
+/** One short instruction for what to do next in the live view. */
+export function coachHint(s: CoachState | null, desk: boolean): string {
+  if (!s?.tracking) return desk ? 'Point the camera at the QR code on the sheet.' : 'Point the camera at the QR code.'
+  if (s.provisional) return 'Move within 1 m of the code, then step back slowly.'
+  if (isFar(s.distanceM)) return 'Move closer to the code for a more accurate overlay.'
+  return desk ? 'Walk around the sheet to look at the model. Keep the code in view.' : 'Aim at the area to check, then tap Check as-built.'
+}

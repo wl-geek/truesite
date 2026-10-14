@@ -23,7 +23,7 @@ import httpx
 from google import genai
 from google.genai import types
 
-import gemini_client as gc
+from app import gemini_client as gc
 
 
 def _mock_transport() -> httpx.MockTransport:
