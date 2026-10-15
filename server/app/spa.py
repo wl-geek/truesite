@@ -5,6 +5,8 @@ Rules (all covered by tests/test_spa.py):
   * /assets/*   -> hashed Vite output, cached for a year; a missing file is a
                    real 404 (never index.html, or a stale lazy chunk would be
                    "loaded" as HTML and fail with a confusing MIME error)
+  * /sheets/*   -> the printable QR sheets, rendered per deploy (infra/gcloud.sh);
+                   a missing one is a real 404, never index.html saved as a .pdf
   * /api, /api/* -> never falls back; unknown API paths are a JSON 404
   * anything else (/, /a/{project}/{anchor}, /viewer, ...) -> index.html
 
@@ -31,6 +33,7 @@ mimetypes.add_type("model/vnd.usdz+zip", ".usdz")  # AR Quick Look needs the rig
 
 IMMUTABLE = "public, max-age=31536000, immutable"
 REVALIDATE = "no-cache"  # browser may store it, but must revalidate (ETag) each time
+NO_FALLBACK = {"assets", "sheets"}  # static-only folders: a missing file is a 404
 
 
 def _first_segment(path: str) -> str:
@@ -57,7 +60,7 @@ class SPAStaticFiles(StaticFiles):
         try:
             response = await super().get_response(path, scope)
         except HTTPException as exc:
-            if exc.status_code != 404 or first == "assets":
+            if exc.status_code != 404 or first in NO_FALLBACK:
                 raise
             response = await super().get_response(self.index, scope)
             response.headers["Cache-Control"] = REVALIDATE

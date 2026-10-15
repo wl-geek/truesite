@@ -24,6 +24,7 @@ models:
 
 setup:
 	bash infra/gcloud.sh setup
+# Renders the QR sheets for the service URL, then deploys (GEMINI_BACKEND=apikey for the AI Studio fallback)
 deploy:
 	bash infra/gcloud.sh deploy
 verify:

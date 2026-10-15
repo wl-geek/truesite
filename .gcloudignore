@@ -13,3 +13,13 @@ docs/
 brand/
 .env
 .env.*
+# Mirrors the private bits of .gitignore. Don't include .gitignore itself: it would drop
+# web/public/sheets, which deploy renders for the service URL and the image must contain.
+*.pem
+*-key.json
+service-account*.json
+*.log
+capture/
+.playwright-mcp/
+.cache/
+bim/sheets/

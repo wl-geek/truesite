@@ -4,7 +4,7 @@
 - [ ] The deployed Cloud Run URL works while signed out on iPhone Safari, Android Chrome and desktop Chrome.
 - [ ] `/samples` runs at least 4 sample checks. Each sample falls back to its saved result if Gemini or the cap is unavailable.
 - [ ] `/a/room1/D1` works with the printed A4 sheet at 1:20, and `/a/room1/A1` works in the room at 1:1.
-- [ ] `/api/health` shows `gemini_mode: live` and `store_backend: gcp`.
+- [ ] `make verify` passes: `/api/health` shows `gemini_mode: live` and `store_backend: gcp`, the start page's sheets are PDFs that link to the service URL, and one Ask round trip works.
 - [ ] Daily caps are set for judging (`DAILY_CHECK_CAP=100`, `DAILY_ASK_CAP=300`). Budget alert is on. Consider `--min 1` during judging to avoid cold starts.
 
 ## Repository (public on submission day)
