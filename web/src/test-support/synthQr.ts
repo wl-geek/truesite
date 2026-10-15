@@ -1,6 +1,7 @@
-// Synthetic QR imaging with exactly known geometry (for tests and in-browser self-tests).
+// Synthetic QR imaging with exactly known geometry, for tests. The blur/noise/downscale helpers live in
+// docs/research/reference/web/synthQr.ts.
 // Pixel-edge convention throughout: pixel (i, j) covers [i, i+1) x [j, j+1).
-import type { Point as Pt } from './protocol'
+import type { Point as Pt } from '../qr/protocol'
 
 /** 3x3 matrix, row-major. */
 export type Mat3 = [number, number, number, number, number, number, number, number, number]
@@ -40,7 +41,6 @@ export function applyH(H: Mat3, x: number, y: number): Pt {
 
 export const rotX = (a: number): Mat3 => [1, 0, 0, 0, Math.cos(a), -Math.sin(a), 0, Math.sin(a), Math.cos(a)]
 export const rotY = (a: number): Mat3 => [Math.cos(a), 0, Math.sin(a), 0, 1, 0, -Math.sin(a), 0, Math.cos(a)]
-export const rotZ = (a: number): Mat3 => [Math.cos(a), -Math.sin(a), 0, Math.sin(a), Math.cos(a), 0, 0, 0, 1]
 
 export interface Intrinsics {
   fx: number
@@ -104,72 +104,6 @@ export function renderQr(mods: ModuleMatrix, H: Mat3, width: number, height: num
       out[o + 3] = 255
     }
   }
-  return out
-}
-
-export interface DegradeOptions {
-  /** box-blur radius in px, applied `passes` times (3 passes ~ Gaussian, sigma ~ radius) */
-  blurRadius?: number
-  passes?: number
-  /** uniform noise amplitude in grey levels (+/-) */
-  noise?: number
-  /** multiplicative left-to-right lighting gradient, e.g. 0.5 -> right edge at 50% */
-  gradient?: number
-  seed?: number
-}
-
-/** Camera-like degradation: blur, sensor noise and uneven lighting. Deterministic (seeded). */
-export function degrade(rgba: Uint8ClampedArray, width: number, height: number, o: DegradeOptions = {}): Uint8ClampedArray {
-  const { blurRadius = 0, passes = 3, noise = 0, gradient = 1, seed = 1 } = o
-  let g = new Float32Array(width * height)
-  for (let i = 0; i < g.length; i++) g[i] = rgba[i * 4]
-  const r = Math.round(blurRadius)
-  for (let p = 0; r > 0 && p < passes; p++) {
-    const tmp = new Float32Array(g.length)
-    for (let y = 0; y < height; y++)
-      for (let x = 0; x < width; x++) {
-        let s = 0, n = 0
-        for (let k = -r; k <= r; k++) { const xx = x + k; if (xx >= 0 && xx < width) { s += g[y * width + xx]; n++ } }
-        tmp[y * width + x] = s / n
-      }
-    const out = new Float32Array(g.length)
-    for (let y = 0; y < height; y++)
-      for (let x = 0; x < width; x++) {
-        let s = 0, n = 0
-        for (let k = -r; k <= r; k++) { const yy = y + k; if (yy >= 0 && yy < height) { s += tmp[yy * width + x]; n++ } }
-        out[y * width + x] = s / n
-      }
-    g = out
-  }
-  let state = seed >>> 0 || 1
-  const rand = () => { state ^= state << 13; state ^= state >>> 17; state ^= state << 5; return ((state >>> 0) / 4294967296) }
-  const res = new Uint8ClampedArray(rgba.length)
-  for (let y = 0; y < height; y++)
-    for (let x = 0; x < width; x++) {
-      const i = y * width + x
-      const light = 1 + (gradient - 1) * (x / (width - 1))
-      const v = g[i] * light + (rand() * 2 - 1) * noise
-      res[i * 4] = res[i * 4 + 1] = res[i * 4 + 2] = v
-      res[i * 4 + 3] = 255
-    }
-  return res
-}
-
-/**
- * 2x2 area-average downscale (what drawImage(video, 0, 0, w/2, h/2) roughly does
- * when shrinking a 1280-wide frame to 640 for detection). Coordinates scale by
- * exactly 0.5 in the pixel-edge convention.
- */
-export function downsample2x(rgba: Uint8ClampedArray, width: number, height: number): Uint8ClampedArray {
-  const w = width >> 1, h = height >> 1
-  const out = new Uint8ClampedArray(w * h * 4)
-  for (let y = 0; y < h; y++)
-    for (let x = 0; x < w; x++)
-      for (let c = 0; c < 4; c++) {
-        const a = rgba[((2 * y) * width + 2 * x) * 4 + c] + rgba[((2 * y) * width + 2 * x + 1) * 4 + c]
-          + rgba[((2 * y + 1) * width + 2 * x) * 4 + c] + rgba[((2 * y + 1) * width + 2 * x + 1) * 4 + c]
-        out[(y * w + x) * 4 + c] = a / 4
-      }
   return out
 }
 

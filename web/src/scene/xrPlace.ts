@@ -110,10 +110,6 @@ export type XrPlaceOptions = {
 
 export type XrPlaceSession = { look: ConstructionLook; rescan(): void; end(): void }
 
-export async function xrCameraAccessSupported(): Promise<boolean> {
-  return !!navigator.xr && (await navigator.xr.isSessionSupported('immersive-ar').catch(() => false))
-}
-
 export async function startXrPlace(o: XrPlaceOptions): Promise<XrPlaceSession> {
   const xr = navigator.xr
   if (!xr) throw new Error('WebXR is not available')
