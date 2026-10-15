@@ -13,7 +13,7 @@ import { QrWorkerClient } from '../qr/qrClient'
 import { coachHint, effectiveQrSize, findAnchor, isDeskAnchor, isFar, scaleLabel } from '../scene/arMath'
 import { makeEvalMarkers, parseEvalPoints } from '../scene/evalMarkers'
 import { disposePins, makePins } from '../scene/pins'
-import { buildWalkScene, canQuickLook, exportUsdz, isAndroid, isAppleMobile, openQuickLook, sceneViewerUrl } from '../scene/walkthrough'
+import { buildWalkScene, canQuickLook, exportUsdz, isAndroid, isAppleMobile, openQuickLook, sceneViewerUrl, usdzUrl } from '../scene/walkthrough'
 import { startXrWalk, xrArSupported } from '../scene/xrWalk'
 import { NEEDED_VIEWS, startXrPlace, type XrPlaceSession, type XrPlaceState } from '../scene/xrPlace'
 import { ModelControls } from './ModelControls'
@@ -61,7 +61,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   const [notice, setNotice] = useState<string | null>(null)
   const [calibrating, setCalibrating] = useState(false)
   const [showControls, setShowControls] = useState(false)
-  const [usdz, setUsdz] = useState<Blob | null>(null)
+  const [usdz, setUsdz] = useState<Blob | string | null>(null)
   const quickLook = useMemo(() => isAppleMobile() && canQuickLook(), [])
   const android = useMemo(() => isAndroid(), [])
   const [xrOk, setXrOk] = useState(false)
@@ -214,10 +214,16 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   useEffect(() => {
     if (!loaded || !quickLook) return
     let cancelled = false
+    // Prefer the build-time file (a plain URL is Apple's well-trodden route); export in the browser only if it's missing.
+    const url = usdzUrl(loaded.project.project_id)
     const id = setTimeout(() => {
-      const scene = buildWalkScene(loaded.model, (g) => elements.get(g)?.ifc_class ?? '', walkCentre(loaded.anchor, loaded.project))
-      exportUsdz(scene).then((b) => !cancelled && setUsdz(b)).catch(() => undefined)
-    }, 500)
+      fetch(url, { method: 'HEAD' }).then((r) => {
+        if (cancelled) return
+        if (r.ok) return setUsdz(url)
+        const scene = buildWalkScene(loaded.model, (g) => elements.get(g)?.ifc_class ?? '', walkCentre(loaded.anchor, loaded.project))
+        return exportUsdz(scene).then((b) => !cancelled && setUsdz(b))
+      }).catch(() => undefined)
+    }, 300)
     return () => {
       cancelled = true
       clearTimeout(id)
@@ -240,9 +246,11 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
         },
       })
     } catch {
-      // No camera access in AR on this phone: fall back to placing on the floor by tap.
+      // No camera access in AR on this phone: life-size models fall back to placing on the floor by tap;
+      // a desk model can't be placed without the code (audit A-03).
       xrOverlayRef.current.style.display = 'none'
-      await walkInside()
+      if (isDeskAnchor(loaded.anchor)) setError("This phone can't read the code inside AR. Use Camera overlay for the desk model.")
+      else await walkInside()
     }
   }
 
@@ -298,7 +306,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
               <div className="xr-scan">
                 <p className="coach">Placed by the code. Walk around and look up: the model stays where it belongs.</p>
                 {xrPlaceRef.current && loaded && (
-                  <ModelControls look={xrPlaceRef.current.look} maxHeightM={Math.max(...loaded.project.elements.map((e) => e.bbox_m[1][2]))} />
+                  <ModelControls look={xrPlaceRef.current.look} maxHeightM={modelSize(loaded.project).height} maxRadiusM={modelSize(loaded.project).span} />
                 )}
               </div>
             )}
@@ -345,7 +353,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
 
         {running && showControls && overlayRef.current && loaded && !showResults && !calibrating && (
           <div className="live-controls">
-            <ModelControls look={overlayRef.current.look} maxHeightM={Math.max(...loaded.project.elements.map((e) => e.bbox_m[1][2]))} />
+            <ModelControls look={overlayRef.current.look} maxHeightM={modelSize(loaded.project).height} maxRadiusM={modelSize(loaded.project).span} />
           </div>
         )}
 
@@ -454,4 +462,12 @@ function walkCentre(anchor: Anchor, project: ProjectManifest): [number, number] 
   const xs = project.elements.flatMap((e) => [e.bbox_m[0][0], e.bbox_m[1][0]])
   const ys = project.elements.flatMap((e) => [e.bbox_m[0][1], e.bbox_m[1][1]])
   return [(Math.min(...xs) + Math.max(...xs)) / 2, (Math.min(...ys) + Math.max(...ys)) / 2]
+}
+
+/** Model height (IFC Z, m) and horizontal span (footprint diagonal, m) for the view controls. */
+function modelSize(project: ProjectManifest): { height: number; span: number } {
+  const b = project.elements.map((e) => e.bbox_m)
+  const min = (i: number) => Math.min(...b.map((x) => x[0][i]))
+  const max = (i: number) => Math.max(...b.map((x) => x[1][i]))
+  return { height: max(2), span: Math.hypot(max(0) - min(0), max(1) - min(1)) }
 }

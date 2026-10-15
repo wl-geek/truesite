@@ -37,8 +37,10 @@ export type ConstructionLook = {
   /** Hide everything above this IFC height (metres), or null for no cut. */
   setSection(heightM: number | null): void
   setLayerVisible(layer: Layer, on: boolean): void
-  /** Call before each render: the cut plane follows the model's placement. */
-  update(): void
+  /** Show only elements whose centre is within this many metres of the viewer (null: all). */
+  setRadius(metres: number | null): void
+  /** Call before each render with the viewer's world position: the cut plane and radius follow the model. */
+  update(viewer?: Vector3): void
   dispose(): void
 }
 
@@ -68,6 +70,13 @@ export function applyConstructionLook(model: LoadedModel, classOf: (guid: string
     edges.push(line)
   }
   let section: number | null = null
+  let radius: number | null = null
+  const layerOn = new Map<Mesh, boolean>(model.meshes.map((m) => [m, true]))
+  const localCentre = new Map<Mesh, Vector3>(model.meshes.map((m) => {
+    m.geometry.computeBoundingBox()
+    return [m, m.geometry.boundingBox!.getCenter(new Vector3())]
+  }))
+  const c = new Vector3()
   const p = new Vector3()
   const n = new Vector3()
   const normalMatrix = new Matrix3()
@@ -83,9 +92,20 @@ export function applyConstructionLook(model: LoadedModel, classOf: (guid: string
       if (h !== null) clip.push(plane)
     },
     setLayerVisible(layer, on) {
-      for (const mesh of byLayer.get(layer) ?? []) mesh.visible = on
+      for (const mesh of byLayer.get(layer) ?? []) {
+        layerOn.set(mesh, on)
+        mesh.visible = on
+      }
     },
-    update() {
+    setRadius(metres) {
+      radius = metres
+      if (metres === null) for (const [mesh, on] of layerOn) mesh.visible = on
+    },
+    update(viewer) {
+      if (radius !== null && viewer) {
+        model.ifcRoot.updateMatrixWorld()
+        for (const [mesh, on] of layerOn) mesh.visible = on && c.copy(localCentre.get(mesh)!).applyMatrix4(mesh.matrixWorld).distanceTo(viewer) <= radius
+      }
       if (section === null) return
       model.ifcRoot.updateMatrixWorld()
       world.copy(model.ifcRoot.matrixWorld)

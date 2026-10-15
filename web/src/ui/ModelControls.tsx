@@ -1,14 +1,16 @@
 import { useState } from 'react'
 import { LAYERS, type ConstructionLook, type Layer } from '../scene/look'
 
-export type ModelControlsProps = { look: ConstructionLook; maxHeightM: number }
+export type ModelControlsProps = { look: ConstructionLook; maxHeightM: number; maxRadiusM?: number }
 
 /** Transparency, section height and layers: the controls field AR users expect. */
-export function ModelControls({ look, maxHeightM }: ModelControlsProps) {
+export function ModelControls({ look, maxHeightM, maxRadiusM = 30 }: ModelControlsProps) {
   const [transparency, setTransparency] = useState(0)
   const [cut, setCut] = useState(maxHeightM)
   const [layers, setLayers] = useState<Record<Layer, boolean>>({ structure: true, rebar: true, openings: true, other: true })
   const top = Math.ceil(maxHeightM * 10) / 10
+  const far = Math.ceil(maxRadiusM)
+  const [radius, setRadius] = useState(far)
 
   return (
     <div className="model-controls">
@@ -21,6 +23,11 @@ export function ModelControls({ look, maxHeightM }: ModelControlsProps) {
         <span>Cut above {cut >= top ? 'off' : `${cut.toFixed(1)} m`}</span>
         <input type="range" min={0} max={top} step={0.1} value={cut}
           onChange={(e) => { const v = Number(e.target.value); setCut(v); look.setSection(v >= top ? null : v) }} />
+      </label>
+      <label>
+        <span>View distance {radius >= far ? 'all' : `${radius} m`}</span>
+        <input type="range" min={2} max={far} step={1} value={radius}
+          onChange={(e) => { const v = Number(e.target.value); setRadius(v); look.setRadius(v >= far ? null : v) }} />
       </label>
       <div className="layer-chips" role="group" aria-label="Layers">
         {LAYERS.map((l) => (

@@ -32,7 +32,8 @@ def test_frame_geometry(built):
 
 def test_anchor_and_project(built):
     anchors = json.loads((built / "anchors.json").read_text())
-    assert anchors == [rooftop.ANCHOR, rooftop.ANCHOR_A4]
+    assert anchors == [rooftop.ANCHOR, rooftop.ANCHOR_A4, *rooftop.VIEW_ANCHORS]
+    assert [a["anchor_id"] for a in anchors] == ["R1", "R2", "V1", "V2", "V3"]
     assert anchors[1]["anchor_id"] == "R2" and anchors[1]["qr_size_m"] == 0.16
     assert anchors[0]["position_m"] == [4.5, 4.5, 0.0] and anchors[0]["scale"] == 1.0
     assert json.loads((built / "project.json").read_text())["project_id"] == "rooftop"
