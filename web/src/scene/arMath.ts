@@ -39,13 +39,40 @@ export function scaleLabel(anchor: ApiAnchor): string {
   return anchor.scale >= 0.999 ? 'Life size · 1:1' : `Scale model · 1:${Math.round(1 / anchor.scale)}`
 }
 
-export type CoachState = { tracking: boolean; provisional: boolean; distanceM: number | null; mode?: 'code' | 'motion' | 'lost' }
+/** No code for this long: the coach switches to tips (spec section 8). */
+export const SEARCH_TIPS_AFTER_S = 5
+
+/** Seconds spent looking for the code: since it was last seen, or since tracking (re)started, whichever is later. */
+export function searchingSeconds(tSec: number, lastSeenSec: number, startedSec: number): number {
+  return tSec - Math.max(lastSeenSec, startedSec)
+}
+
+export type CoachState = { tracking: boolean; provisional: boolean; distanceM: number | null; mode?: 'code' | 'motion' | 'lost'; searchingS?: number }
 
 /** One short instruction for what to do next in the live view. */
 export function coachHint(s: CoachState | null, desk: boolean): string {
   if (s?.mode === 'motion') return 'Look around and up. Turn on the spot; point back at the code to re-align.'
-  if (!s?.tracking) return desk ? 'Point the camera at the QR code on the sheet.' : 'Point the camera at the QR code.'
-  if (s.provisional) return 'Move within 1 m of the code, then step back slowly.'
+  if (!s?.tracking) {
+    if ((s?.searchingS ?? 0) >= SEARCH_TIPS_AFTER_S) return "Can't find the code. Add more light, move within about 1 m and hold the phone steady."
+    return desk ? 'Point the camera at the QR code on the sheet.' : 'Point the camera at the QR code.'
+  }
+  if (s.provisional) return 'Move within about 1 m of the code, then step back slowly.'
   if (isFar(s.distanceM)) return 'Move closer to the code for a more accurate overlay.'
   return desk ? 'Walk around the sheet to look at the model. Keep the code in view.' : 'Aim at the area to check, then tap Check as-built.'
+}
+
+export type CheckAvailability = { enabled: boolean; note: string | null }
+
+/**
+ * Demo sheets that put the model where nothing is built. D1 (desk sheet) shows the room beside a sheet of
+ * paper, so a check would report every element missing; D2 is for our physical 1:20 model and stays checkable.
+ * L1 (floor sheet) is life size: only the part of the demo room that stands around it can be checked.
+ */
+const DEMO_SHEETS: Record<string, CheckAvailability> = {
+  'room1/D1': { enabled: false, note: 'Checks need the real site or our 1:20 model. Try the sample photos.' },
+  'room1/L1': { enabled: true, note: 'Away from the demo room, elements will read as missing.' },
+}
+
+export function checkAvailability(anchor: ApiAnchor): CheckAvailability {
+  return DEMO_SHEETS[`${anchor.project_id}/${anchor.anchor_id}`] ?? { enabled: true, note: null }
 }

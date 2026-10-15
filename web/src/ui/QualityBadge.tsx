@@ -8,13 +8,13 @@ export function QualityBadge({ state }: { state: OverlayState | null }) {
     return <p className="q-badge q-fair" role="status">Look-around · held by motion sensors</p>
   }
   if (!state?.tracking || !state.quality) {
-    return <p className="q-badge q-none" role="status">Point the camera at the QR code</p>
+    return <p className="q-badge q-none" role="status">No code in view</p>
   }
   return (
     <div className={`q-badge q-${state.quality}`} role="status">
       <span>Alignment: {LABEL[state.quality]}</span>
       {state.distanceM !== null && <span> · {state.distanceM.toFixed(1)} m</span>}
-      {state.provisional && <span className="q-hint">Start within 1 m of the code, then step back</span>}
+      {state.provisional && <span className="q-hint">Start within about 1 m of the code, then step back</span>}
     </div>
   )
 }
