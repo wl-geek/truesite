@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { focalFromHfov } from '../pose'
+import { centredIntrinsics, estimatePose, focalFromHfov } from '../pose'
+import { makeMarkerPose, noisyCorners, rng } from '../pose/testing/synth'
 import {
   DEFAULT_HFOV_DEG, intrinsicsKey, isCalibrated, loadIntrinsics, loadQrSizeCorrection, saveIntrinsics, saveQrSizeCorrection,
 } from './intrinsics'
@@ -18,11 +19,29 @@ describe('intrinsics store', () => {
     expect(isCalibrated(1920, 1080)).toBe(false)
   })
 
+  it('measures the default field of view across the long side, so portrait gets the same lens', () => {
+    expect(loadIntrinsics(1080, 1920)).toEqual({ f: focalFromHfov(DEFAULT_HFOV_DEG, 1920), cx: 540, cy: 960 })
+    expect(loadIntrinsics(1080, 1920).f).toBeCloseTo(loadIntrinsics(1920, 1080).f, 9)
+    expect(loadIntrinsics(720, 1280).f).toBeCloseTo(loadIntrinsics(1280, 720).f, 9)
+  })
+
+  it('grades an uncalibrated portrait D1 view good, with the distance within 10%', () => {
+    // A phone whose true focal length is about 4% off the 63 degree prior; D1 is a 12 cm code.
+    const W = 1080, H = 1920, S = 0.12
+    const truth = centredIntrinsics(1507, W, H)
+    const pose = makeMarkerPose({ distance: 0.6, tiltDeg: 20, tiltAzDeg: 30 })
+    const corners = noisyCorners(truth, pose, S, 0.5, rng(3))!
+    const est = estimatePose(corners, S, loadIntrinsics(W, H))!
+    expect(est.quality).toBe('good')
+    expect(Math.abs(est.distanceM - 0.6) / 0.6).toBeLessThan(0.1)
+  })
+
   it('stores calibration per frame size and orientation', () => {
     saveIntrinsics(1920, 1080, 1500)
     expect(loadIntrinsics(1920, 1080).f).toBe(1500)
     expect(isCalibrated(1920, 1080)).toBe(true)
-    expect(loadIntrinsics(1080, 1920).f).toBe(focalFromHfov(DEFAULT_HFOV_DEG, 1080))
+    expect(loadIntrinsics(1080, 1920).f).toBe(focalFromHfov(DEFAULT_HFOV_DEG, 1920))
+    expect(isCalibrated(1080, 1920)).toBe(false)
     expect(intrinsicsKey(1080, 1920)).not.toBe(intrinsicsKey(1920, 1080))
   })
 

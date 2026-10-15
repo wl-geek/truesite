@@ -5,6 +5,10 @@ import { centredIntrinsics, focalFromHfov, type Intrinsics } from '../pose'
 
 export type StoredIntrinsics = { f: number; videoW: number; videoH: number; source: 'calibrated' | 'default'; at: string }
 
+/**
+ * Default field of view across the frame's LONG side. Portrait frames arrive already rotated
+ * (videoWidth < videoHeight), so the default uses max(W, H): the same lens gets the same f.
+ */
 export const DEFAULT_HFOV_DEG = 63
 /** A printer that shrinks or enlarges more than this is a mistake, not a correction. */
 export const QR_SCALE_LIMITS = [0.8, 1.2] as const
@@ -48,7 +52,7 @@ export function isCalibrated(videoW: number, videoH: number): boolean {
 }
 
 export function loadIntrinsics(videoW: number, videoH: number): Intrinsics {
-  const f = stored(videoW, videoH)?.f ?? focalFromHfov(DEFAULT_HFOV_DEG, videoW)
+  const f = stored(videoW, videoH)?.f ?? focalFromHfov(DEFAULT_HFOV_DEG, Math.max(videoW, videoH))
   return centredIntrinsics(f, videoW, videoH)
 }
 

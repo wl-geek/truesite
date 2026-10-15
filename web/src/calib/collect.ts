@@ -22,7 +22,7 @@ export class ViewCollector {
     this.s = s
     this.width = width
     this.height = height
-    this.prior = centredIntrinsics(focalFromHfov(DEFAULT_HFOV_DEG, width), width, height)
+    this.prior = centredIntrinsics(focalFromHfov(DEFAULT_HFOV_DEG, Math.max(width, height)), width, height)
     this.plane = markerCorners(s).map((p) => [p[0], p[1]] as Point2)
   }
 
