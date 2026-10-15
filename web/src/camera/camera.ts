@@ -49,13 +49,38 @@ export async function startRearCamera(video: HTMLVideoElement, constraints = REA
   video.setAttribute('autoplay', '')
   video.muted = true // autoplay without a further gesture
   video.srcObject = stream
-  await new Promise<void>((resolve) => {
-    if (video.readyState >= HTMLMediaElement.HAVE_METADATA) resolve()
-    else video.addEventListener('loadedmetadata', () => resolve(), { once: true })
-  })
-  await video.play()
+  try {
+    await new Promise<void>((resolve) => {
+      if (video.readyState >= HTMLMediaElement.HAVE_METADATA) resolve()
+      else video.addEventListener('loadedmetadata', () => resolve(), { once: true })
+    })
+    await video.play()
+  } catch (e) {
+    // Don't leave the camera on (and its indicator lit) when the video can't play.
+    stream.getTracks().forEach((t) => t.stop())
+    video.srcObject = null
+    throw new CameraError('other', String(e))
+  }
   const [track] = stream.getVideoTracks()
   return { stream, track, settings: track.getSettings(), width: video.videoWidth, height: video.videoHeight }
+}
+
+/**
+ * Interruptions: `onEnded` when the track ends for good (another app took the camera, the OS revoked it),
+ * and the paused video is resumed when the page is visible again (iOS pauses it in the background).
+ * Returns the unwatch function.
+ */
+export function watchCamera(track: MediaStreamTrack, doc: Document, video: HTMLVideoElement, onEnded: () => void): () => void {
+  const ended = () => onEnded()
+  const visible = () => {
+    if (doc.visibilityState === 'visible') video.play().catch(() => undefined)
+  }
+  track.addEventListener('ended', ended)
+  doc.addEventListener('visibilitychange', visible)
+  return () => {
+    track.removeEventListener('ended', ended)
+    doc.removeEventListener('visibilitychange', visible)
+  }
 }
 
 export function stopCamera(cam: CameraStart | null, video?: HTMLVideoElement): void {
