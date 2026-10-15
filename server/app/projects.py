@@ -6,7 +6,8 @@
   anchors.json      list[Anchor]
   demo_issues.json  list[IssueIn-shaped dicts], optional; seeded as session "demo" on startup
 
-Files are parsed once per project and cached (they only change with a new deploy).
+Files are parsed once per project and cached; a project is parsed again when the mtime of project.json,
+elements.json, anchors.json or model.glb changes (a rebuilt model or a new sheet during development).
 """
 from __future__ import annotations
 

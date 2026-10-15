@@ -1,5 +1,12 @@
 # Evaluation (spec section 10): measured numbers only
 
+## 0. Survey A1 first
+The wall anchor A1 in `bim/models/room1/anchors.json` still has the placeholder pose from `bim/truesite_bim/qr_sheets.py` (`WALL_POSITION`): code centre at model (0.1, 1.5, 1.35) m, on the west partition's inner face, 1.5 m north of model y = 0 and 1.35 m above the floor, facing east into the room. The overlay can only be as right as this pose, so before measuring, do one of these:
+- Post the A3 wall sheet so its code centre is exactly there, code upright.
+- Or post it where it suits the room, measure its code centre and facing direction in model metres, then write them in with `uv run python -m truesite_bim.qr_sheets --project room1 --anchors-out models/room1/anchors.json --wall-position X Y Z --wall-normal NX NY NZ` (from `bim/`), then redeploy. The printed sheet doesn't change: its link is still `/a/room1/A1`.
+
+Otherwise every offset below includes the error in where the sheet is posted.
+
 ## 1. Overlay accuracy at 1, 2 and 3 m
 1. Put tape marks on the real features listed in `web/public/eval/points.json`. Each point is in IFC metres; edit the list when the real room model lands.
 2. On the phone, open `/a/room1/A1?eval=1` (HTTPS) and start the camera. Green crosses appear at the points.

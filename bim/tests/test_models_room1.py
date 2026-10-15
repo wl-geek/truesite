@@ -1,7 +1,8 @@
 """The committed demo project bim/models/room1: in sync, GUID-joined, and in the contract's shapes.
 
 These tests fail on purpose when the model is replaced (e.g. by Aung Nyein Chan's IFC) and
-demo_issues.json still points at the old GUIDs. See "Rebuilding room1" in the plan.
+demo_issues.json still points at the old GUIDs. To rebuild: replace models/room1/model.ifc, run
+`make models` (README "Run it locally"), then point demo_issues.json at the new GUIDs.
 """
 import json
 import math

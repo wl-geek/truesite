@@ -34,8 +34,10 @@ truesite/
     truesite_bim/pipeline.py          # run(ifc: Path, out_dir: Path) -> dict ; main()  (refuses if glb GUIDs != elements GUIDs)
     truesite_bim/qr_sheets.py         # make_sheets(...) ; render_sheet(sheet, url, out_pdf) ; anchor_entry(sheet, project_id) ; main()
     truesite_bim/site.py              # steel frame walk-in project: SteelFrame().build() ; s1_sheet() ; s2_sheet() ; main() (--out, --base-url, --sheets-dir, --sheets-only)
-    tests/{conftest.py, test_pipeline.py, test_qr_sheets.py, test_site.py}
+    truesite_bim/rooftop.py           # rooftop project (9 x 9 m two-storey frame, rebar cages): Frame ; r1_sheet() ; r2_sheet() ; view_sheets() ; main() (same flags as site.py)
+    tests/{conftest.py, test_convert.py, test_models_room1.py, test_pipeline.py, test_qr_sheets.py, test_rooftop.py, test_site.py}
     models/room1/{model.ifc, model.glb, elements.json, anchors.json, project.json, demo_issues.json}
+    models/rooftop/{model.ifc, model.glb, elements.json, anchors.json, project.json}   # anchors R1 (A2), R2 (A4), V1–V3 (A4 upright); project.json has a check_note
     models/site/{model.ifc, model.glb, elements.json, anchors.json, project.json}   # anchors S1 (A3), S2 (A4)
     sheets/                             # generated PDFs (git-ignored)
   server/
@@ -54,26 +56,43 @@ truesite/
     app/severity.py    # severity_for
     app/validate.py    # repair_check
     app/services.py    # make_checker, make_asker, make_drafter, error mapping
+    app/security_headers.py  # SecurityHeadersMiddleware (headers in §4)
+    app/deps.py        # FastAPI dependencies shared by the routers (SessionId, StoreDep, RepoDep, enforce_limits, ...); routers never import main.py
+    app/routes/{projects,check,ask,issues}.py   # the §4 endpoints, one router per area
     app/main.py        # create_app (run: uvicorn --factory app.main:create_app)
     tests/...
   web/
     package.json  package-lock.json  vite.config.ts  index.html
     tsconfig.json  tsconfig.app.json  tsconfig.node.json  tsconfig.test.json
-    public/samples/index.json   public/samples/<sample_id>/{photo.jpg, meta.json}
+    public/samples/index.json   public/samples/<sample_id>/{photo.jpg, meta.json}   # none committed yet: /samples says "No sample photos yet."
+    public/eval/points.json     # surveyed points for the ?eval=1 crosses (spec 10)
+    public/sheets/  public/models/   # generated (git-ignored): QR sheet PDFs (make sheets) and Quick Look USDZ files (npm run usdz)
     src/main.tsx  src/App.tsx  src/router.ts  src/session.ts  src/styles.css
     src/api/types.ts  src/api/client.ts
     src/pose/**                 # copied verbatim from research (index.ts public API + tests + testing/synth.ts) ✔
     src/camera/camera.ts  src/camera/intrinsics.ts
+    src/calib/collect.ts        # camera calibration: tilted views of the code -> focal length
     src/qr/protocol.ts  src/qr/zxing.worker.ts  src/qr/qrClient.ts  src/qr/link.ts
+    src/qr/qrHandler.ts  src/qr/zxingOptions.ts    # the worker's message handler and reader options, free of worker globals (tested in node)
     src/scene/elements.ts  src/scene/loadModel.ts  src/scene/arCamera.ts  src/scene/viewer.ts  src/scene/overlay.ts  src/scene/idBuffer.ts  src/scene/pins.ts
+    src/scene/arMath.ts         # pure helpers for the live page and overlay (no DOM, no three.js)
+    src/scene/look.ts           # construction look for every AR mode: transparency, cut-above height, layers
+    src/scene/motion.ts         # look-around: hold the model with the motion sensors when the code leaves the view
+    src/scene/watchdog.ts       # no video frames for 1 s -> hide the model
+    src/scene/evalMarkers.ts    # ?eval=1 crosses at the surveyed points
+    src/scene/placement.ts      # levelled placement for world-tracked AR (gravity up, detected floor)
+    src/scene/xrStart.ts  src/scene/xrPlace.ts  src/scene/xrWalk.ts   # Android WebXR: start/fallback, Start AR (place by code), Walk inside (hit-test)
+    src/scene/walkthrough.ts    # Walk inside via the phone's own AR viewer: AR Quick Look (USDZ) on iPhone/iPad, Scene Viewer on Android
     src/scene/palette.js + palette.d.ts            # colour by element type: kindOf, isSolid, paintOf, materialParams (plain JS: shared with scripts/make-usdz.mjs)
     src/scene/usdzVariants.js + usdzVariants.d.ts  # Quick Look distance variants: usdzPlan, usdzFile, pickUsdzRadius (shared with scripts/make-usdz.mjs)
     scripts/make-usdz.mjs                          # prebuild: public/models/<project>.usdz and <project>-r<R>.usdz (git-ignored)
     src/check/marks.ts  src/check/snapshot.ts  src/check/runCheck.ts
-    src/ui/*.tsx
+    src/check/lastCheck.ts  src/check/messages.ts  src/check/sampleMeta.ts  src/check/sampleRun.ts   # last check per session, error copy, sample photos (§8)
+    src/test-support/{synthQr,qrPng,stubRenderer}.ts   # test-only: synthetic QR views, real QR PNGs, a node stand-in for WebGLRenderer
+    src/ui/*.tsx  src/ui/*.ts                      # pages and panels; the .ts files hold their pure, tested text helpers
   infra/gcloud.sh  infra/lifecycle.json
-  eval/overlay.csv  eval/labels.json  eval/summarise.py
-  docs/specs/  docs/plans/
+  eval/README.md  eval/overlay.csv  eval/labels.json  eval/summarise.py
+  docs/specs/  docs/plans/  docs/research/   docs/BRIEF.md  docs/submission-checklist.md  docs/audit-2026-10-15.md
 ```
 
 ## 3. Conventions (fixed)
@@ -114,16 +133,16 @@ Errors are FastAPI `HTTPException` with `detail = {"code": <code>, ...}`. Paths 
 | GET `/api/health` | — | `{"ok": true, "gemini_mode": "live"\|"fake", "store_backend": "memory"\|"gcp"}` | — |
 | GET `/api/whoami` | — | `{"ip", "x_forwarded_for", "peer"}` (day-1 X-Forwarded-For check) | — |
 | GET `/api/projects/{project_id}` | — | `ProjectManifest` | 404 `unknown_project` |
-| GET `/api/projects/{project_id}/model.glb` | — | glb (`model/gltf-binary`, ETag) | 404 |
-| POST `/api/check` | multipart: `photo` (JPEG ≤ 4 MiB), `render` (PNG ≤ 4 MiB), `context` (JSON string → `CheckContext`); header `X-Session-Id` | `CheckResponse` | 413 · 415 · 422 (loc `["body","context",…]`) · 422 `unknown_element` (a mark's guid is not in the project; before any limit) · 429 `rate_limited` (+`retry_after_s`, `Retry-After`) · 429 `daily_cap` · 503 `busy` (cap check failed) · 503 `model_unavailable` (timeout / unavailable / rate_limited) · 502 `model_bad_output` · 422 `model_blocked` · 500 `model_bad_request` |
-| GET `/api/runs/{run_id}/{photo.jpg\|render.png}` | header `X-Session-Id` | image bytes (owner session only) | 404 |
-| GET `/api/saved-results/{sample_id}` | — | `CheckResult` with `saved_at` set | 404 |
-| POST `/api/ask` | `AskRequest`; header `X-Session-Id` | `AskAnswer` | 404 `unknown_element` · 429 · 503/502/422/500 as for check |
-| POST `/api/issues/draft` | `IssueDraftRequest`; header `X-Session-Id` | `IssueDraft` | 404 `unknown_run` / `unknown_mark` · 429 · model errors as above |
+| GET `/api/projects/{project_id}/model.glb` | — | glb (`model/gltf-binary`, ETag; 304 on a matching `If-None-Match`) | 404 `unknown_project` |
+| POST `/api/check` | multipart: `photo` (JPEG ≤ 4 MiB), `render` (PNG ≤ 4 MiB), `context` (JSON string → `CheckContext`); header `X-Session-Id` | `CheckResponse` | 413 · 415 · 422 (loc `["body","context",…]`) · 404 `unknown_project` · 422 `unknown_element` (a mark's guid is not in the project; before any limit) · 429 `rate_limited` (+`retry_after_s`, `Retry-After`) · 429 `daily_cap` · 503 `busy` (cap check failed) · 503 `model_unavailable` (timeout / unavailable / rate_limited) · 502 `model_bad_output` · 422 `model_blocked` · 500 `model_bad_request` |
+| GET `/api/runs/{run_id}/{photo.jpg\|render.png}` | header `X-Session-Id` | image bytes (owner session only) | 404 `unknown_run` (also another session's run) · 422 (`run_id` not `RUN_ID_PATTERN`, or another file name) |
+| GET `/api/saved-results/{sample_id}` | — | `CheckResult` with `saved_at` set | 404 `unknown_sample` · 422 (`sample_id` not `SAMPLE_ID_PATTERN`) |
+| POST `/api/ask` | `AskRequest`; header `X-Session-Id` | `AskAnswer` | 404 `unknown_project` / `unknown_element` · 429 · 503/502/422/500 as for check |
+| POST `/api/issues/draft` | `IssueDraftRequest`; header `X-Session-Id` | `IssueDraft` | 404 `unknown_run` / `unknown_mark` / `unknown_element` · 429 · model errors as above |
 | POST `/api/issues` | `IssueIn`; header `X-Session-Id` | `Issue` (201) | 404 `unknown_project` / `unknown_element` · 404 `unknown_run` (not this session's stored run: send `run_id` null when the check returned `saved: false`) · 422 |
 | GET `/api/issues` (optional `?project_id=room1`; omitted = every project) | header `X-Session-Id` | `{"issues": Issue[], "demo": Issue[]}` (newest first) | 422 |
 
-Write limits on POST `/api/issues` (no Gemini call, so no daily cap): 404 `unknown_project` / `unknown_element` / `unknown_run` · 429 `rate_limited` (ISSUES_PER_IP_PER_HOUR; +`retry_after_s`, `Retry-After`) · 429 `issue_cap` (the session already has ISSUES_PER_SESSION issues). A `run_id` that does not match `RUN_ID_PATTERN` is a 422 on both issue POSTs.
+Write limits on POST `/api/issues` (no Gemini call, so no daily cap): 404 `unknown_project` / `unknown_element` / `unknown_run` · 429 `rate_limited` (ISSUES_PER_IP_PER_HOUR; +`retry_after_s`, `Retry-After`) · 429 `issue_cap` (the session already has ISSUES_PER_SESSION issues). A `run_id` that does not match `RUN_ID_PATTERN` is a 422 on both issue POSTs. On every route that takes `X-Session-Id`, a missing or malformed header is a 422 (loc `["header","X-Session-Id"]`).
 
 Every response carries the headers from `app/security_headers.py`: `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY`, a `Permissions-Policy` that keeps camera, gyroscope, accelerometer, magnetometer and xr-spatial-tracking for `self`, and the CSP as `Content-Security-Policy-Report-Only` (not enforced yet). `/api` responses that set no `Cache-Control` get `no-store`. `/api/docs` and `/api/openapi.json` exist only with `API_DOCS=1`.
 
@@ -179,7 +198,7 @@ TypeScript (`web/src/api/types.ts`): identical field names. The API's `VisibleEl
 ```python
 # app/config.py — @dataclass(frozen=True) Settings; Settings.from_env() reads these env vars (defaults in brackets):
 #   STATIC_DIR [<repo>/web/dist]  MODELS_DIR [<repo>/bim/models]  MAX_UPLOAD_BYTES [4 MiB]  MAX_BODY_BYTES [9 MiB]
-#   CHECKS_PER_IP_PER_HOUR [10]  ASKS_PER_IP_PER_HOUR [30]  DAILY_CHECK_CAP [300]  DAILY_ASK_CAP [1000]
+#   CHECKS_PER_IP_PER_HOUR [10]  ASKS_PER_IP_PER_HOUR [30]  DAILY_CHECK_CAP [300]  DAILY_ASK_CAP [1000]   (infra/gcloud.sh deploys 100 and 300)
 #   ISSUES_PER_IP_PER_HOUR [30]  ISSUES_PER_SESSION [100]  API_DOCS [off; 1 = Swagger UI at /api/docs]
 #   TRUSTED_PROXY_HOPS [1]  STORE_BACKEND [memory|gcp]  GOOGLE_CLOUD_PROJECT  GCS_BUCKET  FIRESTORE_DATABASE [(default)]
 #   GEMINI_MODE [fake|live]  (live uses GOOGLE_GENAI_USE_ENTERPRISE=true + GOOGLE_CLOUD_PROJECT + GOOGLE_CLOUD_LOCATION=global,
