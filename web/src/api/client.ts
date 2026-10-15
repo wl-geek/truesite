@@ -114,6 +114,7 @@ export function createIssue(req: IssueIn): Promise<Issue> {
   return postJson('/api/issues', req)
 }
 
-export function listIssues(projectId: string): Promise<IssueList> {
-  return getJson(`/api/issues?project_id=${encodeURIComponent(projectId)}`)
+/** This session's issues plus the demo issues; every project when projectId is omitted. */
+export function listIssues(projectId?: string): Promise<IssueList> {
+  return getJson(projectId === undefined ? '/api/issues' : `/api/issues?project_id=${encodeURIComponent(projectId)}`)
 }

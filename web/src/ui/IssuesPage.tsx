@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { fetchRunImage, listIssues } from '../api/client'
 import type { Issue } from '../api/types'
 import { issueDate } from './issueFormat'
-import { DEFAULT_PROJECT_ID } from './ViewerPage'
 
 function Thumb({ runId }: { runId: string }) {
   const [url, setUrl] = useState<string | null>(null)
@@ -22,7 +21,7 @@ function IssueCard({ issue, example }: { issue: Issue; example?: boolean }) {
       {issue.run_id && <Thumb runId={issue.run_id} />}
       <div>
         <p className="eyebrow">
-          {example ? 'Example · ' : ''}{issueDate(issue.created_at)}{issue.severity && <> · <span className={`badge badge-${issue.severity}`}>{issue.severity}</span></>}
+          {example ? 'Example · ' : ''}{issue.project_id} · {issueDate(issue.created_at)}{issue.severity && <> · <span className={`badge badge-${issue.severity}`}>{issue.severity}</span></>}
         </p>
         <h3>{issue.title}</h3>
         {issue.description && <p>{issue.description}</p>}
@@ -32,12 +31,12 @@ function IssueCard({ issue, example }: { issue: Issue; example?: boolean }) {
   )
 }
 
-/** This browser's issues, plus the seeded examples everyone sees (labelled). */
+/** This browser's issues from every project, plus the seeded examples everyone sees (labelled). */
 export function IssuesPage() {
   const [data, setData] = useState<{ issues: Issue[]; demo: Issue[] } | null>(null)
   const [error, setError] = useState(false)
   useEffect(() => {
-    listIssues(DEFAULT_PROJECT_ID).then(setData).catch(() => setError(true))
+    listIssues().then(setData).catch(() => setError(true))
   }, [])
   return (
     <main className="page issues-page">

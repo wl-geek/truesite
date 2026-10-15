@@ -116,7 +116,7 @@ Errors are FastAPI `HTTPException` with `detail = {"code": <code>, ...}`. Paths 
 | POST `/api/ask` | `AskRequest`; header `X-Session-Id` | `AskAnswer` | 404 `unknown_element` · 429 · 503/502/422/500 as for check |
 | POST `/api/issues/draft` | `IssueDraftRequest`; header `X-Session-Id` | `IssueDraft` | 404 `unknown_run` / `unknown_mark` · 429 · model errors as above |
 | POST `/api/issues` | `IssueIn`; header `X-Session-Id` | `Issue` (201) | 422 |
-| GET `/api/issues?project_id=room1` | header `X-Session-Id` | `{"issues": Issue[], "demo": Issue[]}` (newest first) | 422 |
+| GET `/api/issues` (optional `?project_id=room1`; omitted = every project) | header `X-Session-Id` | `{"issues": Issue[], "demo": Issue[]}` (newest first) | 422 |
 
 Client routes (the SPA fallback serves index.html): `/` (viewer, project `room1`), `/a/{project_id}/{anchor_id}` (live AR), `/samples`, `/issues`.
 
@@ -240,7 +240,7 @@ export function fetchRunImage(runId: string, name: 'photo.jpg' | 'render.png'): 
 export function ask(req: AskRequest): Promise<AskAnswer>
 export function draftIssue(req: IssueDraftRequest): Promise<IssueDraft>
 export function createIssue(req: IssueIn): Promise<Issue>
-export function listIssues(projectId: string): Promise<{ issues: Issue[]; demo: Issue[] }>
+export function listIssues(projectId?: string): Promise<{ issues: Issue[]; demo: Issue[] }>   // no projectId: every project
 // src/pose/index.ts — verified public API, unchanged: Intrinsics {f,cx,cy}, Pose {R,t}, Anchor {position_m,normal,up,scale},
 //   centredIntrinsics, focalFromHfov, estimatePose, PoseTracker (update(corners|null, tSec) -> TrackedPose {raw, smoothed, quality, provisional}),
 //   projectionMatrixGL({K, videoW, videoH, viewW, viewH, near, far, fit}), modelMatrixIfc(anchor, pose), IFC_FROM_GLTF_MAT4,
