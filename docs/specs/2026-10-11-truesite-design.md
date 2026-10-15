@@ -158,7 +158,7 @@ elements.json is a top-level JSON array. Quantities are named `<QtoName>.<Quanti
   "visible": [ { "mark": 1, "guid": "...", "ifc_class": "IfcWall", "name": "Partition P-01",
                  "box": [ymin, xmin, ymax, xmax], "key_dims": "100 mm thick, 2700 mm high" } ] }
 ```
-Boxes use Gemini's convention: `[ymin, xmin, ymax, xmax]`, normalised to 0–1000. A check marks at most 25 elements, numbered 1..n, chosen by class priority (structure, then openings and services, then the rest) and then by size.
+Boxes use Gemini's convention: `[ymin, xmin, ymax, xmax]`, normalised to 0–1000. A check marks at most 25 elements, numbered 1..n, chosen by class priority (structure, then openings and services, then the rest, which includes reinforcement) and then by size.
 
 **Gemini response schema.** The server validates it again in Pydantic, because the schema can't cap string length.
 ```json
@@ -186,7 +186,7 @@ Offset directions run from the design position to the built position as seen in 
 
 | Element | missing · misplaced · different_from_design |
 |---|---|
-| Structural: columns, beams, slabs, load-bearing walls | high |
+| Structural: columns, beams, slabs, load-bearing walls, reinforcement (rebar, mesh, tendons) | high |
 | Openings and services (doors, windows, pipes, ducts, sleeves) | medium |
 | Everything else | low |
 | `unexpected` objects | medium (a person should look) |

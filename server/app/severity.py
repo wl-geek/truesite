@@ -6,7 +6,10 @@ from __future__ import annotations
 
 from .schemas import Element, Severity, Status
 
-STRUCTURAL_CLASSES = {"IfcColumn", "IfcBeam", "IfcSlab", "IfcFooting", "IfcMember", "IfcPile", "IfcPlate"}
+STRUCTURAL_CLASSES = {
+    "IfcColumn", "IfcBeam", "IfcSlab", "IfcFooting", "IfcMember", "IfcPile", "IfcPlate",
+    "IfcReinforcingBar", "IfcReinforcingMesh", "IfcTendon",  # reinforcement: high severity, but not first for marks
+}
 WALL_CLASSES = {"IfcWall", "IfcWallStandardCase"}  # structural only when load_bearing is True
 OPENINGS_SERVICES = {
     "IfcDoor", "IfcWindow", "IfcPipeSegment", "IfcPipeFitting", "IfcDuctSegment", "IfcDuctFitting",

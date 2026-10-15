@@ -208,7 +208,8 @@ class Store(Protocol):
     def get_blob(self, key: str) -> bytes | None
 def blob_key(session_id: str, run_id: str, name: str) -> str          # "uploads/<session>/<run>/<name>"
 # app/severity.py
-STRUCTURAL_CLASSES = {"IfcColumn","IfcBeam","IfcSlab","IfcFooting","IfcMember","IfcPile","IfcPlate"}
+STRUCTURAL_CLASSES = {"IfcColumn","IfcBeam","IfcSlab","IfcFooting","IfcMember","IfcPile","IfcPlate",
+                      "IfcReinforcingBar","IfcReinforcingMesh","IfcTendon"}   # rebar rates high; marks still rank it after structure
 WALL_CLASSES = {"IfcWall","IfcWallStandardCase"}                         # structural only when load_bearing is True
 OPENINGS_SERVICES = {"IfcDoor","IfcWindow","IfcPipeSegment","IfcPipeFitting","IfcDuctSegment","IfcDuctFitting",
                      "IfcFlowSegment","IfcFlowFitting","IfcCableCarrierSegment","IfcOpeningElement"}
