@@ -13,7 +13,7 @@ import {
   WebGLRenderTarget, WebGLRenderer,
 } from 'three'
 import type { Anchor as ApiAnchor } from '../api/types'
-import { estimatePose, modelMatrixIfc, type Intrinsics, type Pose } from '../pose'
+import { estimatePose, modelMatrixIfc, type Anchor as PoseAnchor, type Intrinsics, type Pose } from '../pose'
 import { parseAnchorLink } from '../qr/link'
 import type { QrWorkerClient } from '../qr/qrClient'
 import { effectiveQrSize, poseAnchor, toVideoPixels } from './arMath'
@@ -66,6 +66,26 @@ export function viewSpreadDeg(codePos: Vector3, cameras: readonly Vector3[]): nu
   let max = 0
   for (let i = 0; i < dirs.length; i++) for (let j = i + 1; j < dirs.length; j++) max = Math.max(max, dirs[i].angleTo(dirs[j]))
   return (max * 180) / Math.PI
+}
+
+/** One view's estimate from view.transform x modelMatrixIfc(anchor, pose); position = the code's world point. */
+export function toWorldEstimate(viewMatrix: Matrix4, anchor: PoseAnchor, pose: Pose, weight: number): WorldEstimate {
+  const m = viewMatrix.clone().multiply(new Matrix4().fromArray(modelMatrixIfc(anchor, pose)))
+  const quaternion = new Quaternion()
+  m.decompose(new Vector3(), quaternion, new Vector3())
+  const position = new Vector3(...anchor.position_m).applyMatrix4(m) // the code itself, so the ring measures angles around it (audit A-02)
+  return { position, quaternion, weight, cameraPos: new Vector3().setFromMatrixPosition(viewMatrix) }
+}
+
+export type Fused = NonNullable<ReturnType<typeof fuseEstimates>>
+export type PlacementProgress = { fused: Fused | null; views: number; spreadDeg: number; progress: number }
+
+/** How far the scan is: enough views from a wide enough spread of angles around the code. */
+export function placementProgress(estimates: readonly WorldEstimate[]): PlacementProgress {
+  const fused = fuseEstimates(estimates)
+  const spreadDeg = fused ? viewSpreadDeg(fused.position, estimates.map((e) => e.cameraPos)) : 0
+  const progress = Math.min(1, Math.min(estimates.length / NEEDED_VIEWS, spreadDeg / NEEDED_SPREAD_DEG))
+  return { fused, views: estimates.length, spreadDeg, progress }
 }
 
 export type XrPlaceState = { phase: 'scanning' | 'locked'; views: number; spreadDeg: number; progress: number; codeSeen: boolean }
@@ -129,15 +149,12 @@ export async function startXrPlace(o: XrPlaceOptions): Promise<XrPlaceSession> {
   let phase: XrPlaceState['phase'] = 'scanning'
   let frameNo = 0
   const world = new Matrix4()
-  const viewM = new Matrix4()
   const viewerPos = new Vector3()
 
   const emit = (codeSeen: boolean) => {
-    const fused = fuseEstimates(estimates)
-    const spread = fused ? viewSpreadDeg(fused.position, estimates.map((e) => e.cameraPos)) : 0
-    const progress = Math.min(1, Math.min(estimates.length / NEEDED_VIEWS, spread / NEEDED_SPREAD_DEG))
-    o.onState({ phase, views: estimates.length, spreadDeg: spread, progress, codeSeen })
-    return { fused, progress }
+    const p = placementProgress(estimates)
+    o.onState({ phase, views: p.views, spreadDeg: p.spreadDeg, progress: p.progress, codeSeen })
+    return p
   }
 
   function lock(): void {
@@ -183,8 +200,7 @@ export async function startXrPlace(o: XrPlaceOptions): Promise<XrPlaceSession> {
     const img = new ImageData(w, h)
     for (let row = 0; row < h; row++) img.data.set(buf.subarray((h - 1 - row) * w * 4, (h - row) * w * 4), row * w * 4) // GL rows are bottom-up
     const K = intrinsicsFromProjection(view.projectionMatrix, W, H)
-    viewM.fromArray(view.transform.matrix)
-    const camPos = new Vector3().setFromMatrixPosition(viewM)
+    const viewM = new Matrix4().fromArray(view.transform.matrix)
     o.qr.detect(img).then((res) => {
       if (phase !== 'scanning') return
       const link = res.detection ? parseAnchorLink(res.detection.text, window.location.origin) : null
@@ -199,12 +215,8 @@ export async function startXrPlace(o: XrPlaceOptions): Promise<XrPlaceSession> {
         return
       }
       prevPose = { R: est.R, t: est.t }
-      const m = viewM.clone().multiply(new Matrix4().fromArray(modelMatrixIfc(pAnchor, prevPose)))
-      const quaternion = new Quaternion()
-      m.decompose(new Vector3(), quaternion, new Vector3())
-      const position = anchorIfc.clone().applyMatrix4(m) // the code itself, so the ring measures angles around it (audit A-02)
       // Closer, sharper views count more.
-      estimates.push({ position, quaternion, weight: est.widthPx / Math.max(est.rmsPx, 0.5), cameraPos: camPos })
+      estimates.push(toWorldEstimate(viewM, pAnchor, prevPose, est.widthPx / Math.max(est.rmsPx, 0.5)))
       if (estimates.length > 60) estimates.shift()
       const { progress } = emit(true)
       if (progress >= 1) lock()
