@@ -39,6 +39,16 @@ export function HomePage() {
           <a className="btn" href="/sheets/room1-L1.pdf" download>Download A4 floor sheet</a>
         </li>
         <li className="way-card">
+          <h3>Walk through a steel frame · 1:1</h3>
+          <p>
+            Lay sheet S1 (A3) or S2 (A4) flat in an open space of about 20 × 14 m, such as an empty car park, and scan it.
+            An 18 × 12 m steel frame, colour-coded by element type, stands around you. iPad/iPhone: <strong>Walk inside</strong>;
+            Android: <strong>Start AR</strong>.
+          </p>
+          <a className="btn" href="/sheets/site-S1.pdf" download>Download A3 sheet (S1)</a>
+          <a className="btn" href="/sheets/site-S2.pdf" download>Download A4 sheet (S2)</a>
+        </li>
+        <li className="way-card">
           <h3>Explore the model</h3>
           <p>Orbit the 3D model, tap an element to see its data, and ask questions about it.</p>
           <Link to="/model" className="btn">Open the 3D model</Link>
