@@ -1,0 +1,4009 @@
+[
+  {
+    "guid": "0TCaX9h$HQxxSkuhp$WnwI",
+    "ifc_class": "IfcBeam",
+    "name": "Edge beam A1-B1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        0.1525,
+        -0.0825,
+        5.695
+      ],
+      [
+        5.8475,
+        0.0825,
+        6.0
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_BeamCommon.LoadBearing": true,
+      "Pset_BeamCommon.IsExternal": false,
+      "Qto_BeamBaseQuantities.Length_mm": 5695,
+      "TrueSite_Notes.Install": "UB 305 x 165 x 40, S355, bolted to the column caps.",
+      "TrueSite_Notes.Grid": "A1-B1",
+      "Material": "Steel S355",
+      "PredefinedType": "BEAM"
+    }
+  },
+  {
+    "guid": "0y9iOJOWbTe8MLypnJyGm0",
+    "ifc_class": "IfcBeam",
+    "name": "Edge beam A2-B2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        0.1525,
+        11.9175,
+        5.695
+      ],
+      [
+        5.8475,
+        12.0825,
+        6.0
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_BeamCommon.LoadBearing": true,
+      "Pset_BeamCommon.IsExternal": false,
+      "Qto_BeamBaseQuantities.Length_mm": 5695,
+      "TrueSite_Notes.Install": "UB 305 x 165 x 40, S355, bolted to the column caps.",
+      "TrueSite_Notes.Grid": "A2-B2",
+      "Material": "Steel S355",
+      "PredefinedType": "BEAM"
+    }
+  },
+  {
+    "guid": "3UQU68HFjJKBjROo3WWp_N",
+    "ifc_class": "IfcBeam",
+    "name": "Edge beam B1-C1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        6.1525,
+        -0.0825,
+        5.695
+      ],
+      [
+        11.8475,
+        0.0825,
+        6.0
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_BeamCommon.LoadBearing": true,
+      "Pset_BeamCommon.IsExternal": false,
+      "Qto_BeamBaseQuantities.Length_mm": 5695,
+      "TrueSite_Notes.Install": "UB 305 x 165 x 40, S355, bolted to the column caps.",
+      "TrueSite_Notes.Grid": "B1-C1",
+      "Material": "Steel S355",
+      "PredefinedType": "BEAM"
+    }
+  },
+  {
+    "guid": "17C5diBsDTQPE9gX_UpajC",
+    "ifc_class": "IfcBeam",
+    "name": "Edge beam B2-C2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        6.1525,
+        11.9175,
+        5.695
+      ],
+      [
+        11.8475,
+        12.0825,
+        6.0
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_BeamCommon.LoadBearing": true,
+      "Pset_BeamCommon.IsExternal": false,
+      "Qto_BeamBaseQuantities.Length_mm": 5695,
+      "TrueSite_Notes.Install": "UB 305 x 165 x 40, S355, bolted to the column caps.",
+      "TrueSite_Notes.Grid": "B2-C2",
+      "Material": "Steel S355",
+      "PredefinedType": "BEAM"
+    }
+  },
+  {
+    "guid": "3AAZA11FzM$Bk_16DxJTsx",
+    "ifc_class": "IfcBeam",
+    "name": "Edge beam C1-D1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        12.1525,
+        -0.0825,
+        5.695
+      ],
+      [
+        17.8475,
+        0.0825,
+        6.0
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_BeamCommon.LoadBearing": true,
+      "Pset_BeamCommon.IsExternal": false,
+      "Qto_BeamBaseQuantities.Length_mm": 5695,
+      "TrueSite_Notes.Install": "UB 305 x 165 x 40, S355, bolted to the column caps.",
+      "TrueSite_Notes.Grid": "C1-D1",
+      "Material": "Steel S355",
+      "PredefinedType": "BEAM"
+    }
+  },
+  {
+    "guid": "0VoRNwVPjLl9H$xikhyLeq",
+    "ifc_class": "IfcBeam",
+    "name": "Edge beam C2-D2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        12.1525,
+        11.9175,
+        5.695
+      ],
+      [
+        17.8475,
+        12.0825,
+        6.0
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_BeamCommon.LoadBearing": true,
+      "Pset_BeamCommon.IsExternal": false,
+      "Qto_BeamBaseQuantities.Length_mm": 5695,
+      "TrueSite_Notes.Install": "UB 305 x 165 x 40, S355, bolted to the column caps.",
+      "TrueSite_Notes.Grid": "C2-D2",
+      "Material": "Steel S355",
+      "PredefinedType": "BEAM"
+    }
+  },
+  {
+    "guid": "3V1UqV9ybRIeVZNmve6Bxb",
+    "ifc_class": "IfcColumn",
+    "name": "Column A1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.1525,
+        -0.155,
+        0.02
+      ],
+      [
+        0.1525,
+        0.155,
+        6.0
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_ColumnCommon.LoadBearing": true,
+      "Pset_ColumnCommon.IsExternal": false,
+      "Qto_ColumnBaseQuantities.Length_mm": 5980,
+      "TrueSite_Notes.Install": "UC 305 x 305 x 118, S355. Base plate on 4 M24 holding-down bolts, 30 mm grout. Plumb before tightening the bracing.",
+      "TrueSite_Notes.Grid": "A1",
+      "Material": "Steel S355",
+      "PredefinedType": "COLUMN"
+    }
+  },
+  {
+    "guid": "1Ke1D0jTHHfvT3Je_as3VI",
+    "ifc_class": "IfcColumn",
+    "name": "Column A2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.1525,
+        11.845,
+        0.02
+      ],
+      [
+        0.1525,
+        12.155,
+        6.0
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_ColumnCommon.LoadBearing": true,
+      "Pset_ColumnCommon.IsExternal": false,
+      "Qto_ColumnBaseQuantities.Length_mm": 5980,
+      "TrueSite_Notes.Install": "UC 305 x 305 x 118, S355. Base plate on 4 M24 holding-down bolts, 30 mm grout. Plumb before tightening the bracing.",
+      "TrueSite_Notes.Grid": "A2",
+      "Material": "Steel S355",
+      "PredefinedType": "COLUMN"
+    }
+  },
+  {
+    "guid": "1KiWH9IofHnQ6GlriCMpkI",
+    "ifc_class": "IfcColumn",
+    "name": "Column B1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.8475,
+        -0.155,
+        0.02
+      ],
+      [
+        6.1525,
+        0.155,
+        6.0
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_ColumnCommon.LoadBearing": true,
+      "Pset_ColumnCommon.IsExternal": false,
+      "Qto_ColumnBaseQuantities.Length_mm": 5980,
+      "TrueSite_Notes.Install": "UC 305 x 305 x 118, S355. Base plate on 4 M24 holding-down bolts, 30 mm grout. Plumb before tightening the bracing.",
+      "TrueSite_Notes.Grid": "B1",
+      "Material": "Steel S355",
+      "PredefinedType": "COLUMN"
+    }
+  },
+  {
+    "guid": "01K2o3y6PKLvgajzX28n9s",
+    "ifc_class": "IfcColumn",
+    "name": "Column B2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.8475,
+        11.845,
+        0.02
+      ],
+      [
+        6.1525,
+        12.155,
+        6.0
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_ColumnCommon.LoadBearing": true,
+      "Pset_ColumnCommon.IsExternal": false,
+      "Qto_ColumnBaseQuantities.Length_mm": 5980,
+      "TrueSite_Notes.Install": "UC 305 x 305 x 118, S355. Base plate on 4 M24 holding-down bolts, 30 mm grout. Plumb before tightening the bracing.",
+      "TrueSite_Notes.Grid": "B2",
+      "Material": "Steel S355",
+      "PredefinedType": "COLUMN"
+    }
+  },
+  {
+    "guid": "2iA003WaLUuxoes$vAwmeN",
+    "ifc_class": "IfcColumn",
+    "name": "Column C1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.8475,
+        -0.155,
+        0.02
+      ],
+      [
+        12.1525,
+        0.155,
+        6.0
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_ColumnCommon.LoadBearing": true,
+      "Pset_ColumnCommon.IsExternal": false,
+      "Qto_ColumnBaseQuantities.Length_mm": 5980,
+      "TrueSite_Notes.Install": "UC 305 x 305 x 118, S355. Base plate on 4 M24 holding-down bolts, 30 mm grout. Plumb before tightening the bracing.",
+      "TrueSite_Notes.Grid": "C1",
+      "Material": "Steel S355",
+      "PredefinedType": "COLUMN"
+    }
+  },
+  {
+    "guid": "0bjV203UnReg58gQd0PcJ3",
+    "ifc_class": "IfcColumn",
+    "name": "Column C2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.8475,
+        11.845,
+        0.02
+      ],
+      [
+        12.1525,
+        12.155,
+        6.0
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_ColumnCommon.LoadBearing": true,
+      "Pset_ColumnCommon.IsExternal": false,
+      "Qto_ColumnBaseQuantities.Length_mm": 5980,
+      "TrueSite_Notes.Install": "UC 305 x 305 x 118, S355. Base plate on 4 M24 holding-down bolts, 30 mm grout. Plumb before tightening the bracing.",
+      "TrueSite_Notes.Grid": "C2",
+      "Material": "Steel S355",
+      "PredefinedType": "COLUMN"
+    }
+  },
+  {
+    "guid": "2jSfhgdxHITBpJKBF_FtTp",
+    "ifc_class": "IfcColumn",
+    "name": "Column D1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.8475,
+        -0.155,
+        0.02
+      ],
+      [
+        18.1525,
+        0.155,
+        6.0
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_ColumnCommon.LoadBearing": true,
+      "Pset_ColumnCommon.IsExternal": false,
+      "Qto_ColumnBaseQuantities.Length_mm": 5980,
+      "TrueSite_Notes.Install": "UC 305 x 305 x 118, S355. Base plate on 4 M24 holding-down bolts, 30 mm grout. Plumb before tightening the bracing.",
+      "TrueSite_Notes.Grid": "D1",
+      "Material": "Steel S355",
+      "PredefinedType": "COLUMN"
+    }
+  },
+  {
+    "guid": "3El3xbHsDLy8g5jdCpjdk3",
+    "ifc_class": "IfcColumn",
+    "name": "Column D2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.8475,
+        11.845,
+        0.02
+      ],
+      [
+        18.1525,
+        12.155,
+        6.0
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_ColumnCommon.LoadBearing": true,
+      "Pset_ColumnCommon.IsExternal": false,
+      "Qto_ColumnBaseQuantities.Length_mm": 5980,
+      "TrueSite_Notes.Install": "UC 305 x 305 x 118, S355. Base plate on 4 M24 holding-down bolts, 30 mm grout. Plumb before tightening the bracing.",
+      "TrueSite_Notes.Grid": "D2",
+      "Material": "Steel S355",
+      "PredefinedType": "COLUMN"
+    }
+  },
+  {
+    "guid": "3LPP1C8FHIN8PtXQBhf8hQ",
+    "ifc_class": "IfcFooting",
+    "name": "Pad footing A1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.8,
+        -0.8,
+        0.0
+      ],
+      [
+        0.8,
+        0.8,
+        0.02
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_FootingCommon.LoadBearing": true,
+      "TrueSite_Notes.Install": "Pad 1.6 x 1.6 x 0.6 m, C30/37, top flush with the ground. Only the top is modelled: the body is below ground.",
+      "TrueSite_Notes.Grid": "A1",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "PAD_FOOTING"
+    }
+  },
+  {
+    "guid": "1qMwgqk4rLjvBgxELW3YfQ",
+    "ifc_class": "IfcFooting",
+    "name": "Pad footing A2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.8,
+        11.2,
+        0.0
+      ],
+      [
+        0.8,
+        12.8,
+        0.02
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_FootingCommon.LoadBearing": true,
+      "TrueSite_Notes.Install": "Pad 1.6 x 1.6 x 0.6 m, C30/37, top flush with the ground. Only the top is modelled: the body is below ground.",
+      "TrueSite_Notes.Grid": "A2",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "PAD_FOOTING"
+    }
+  },
+  {
+    "guid": "2jylI4Gk5MHApBnGQZbFTk",
+    "ifc_class": "IfcFooting",
+    "name": "Pad footing B1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.2,
+        -0.8,
+        0.0
+      ],
+      [
+        6.8,
+        0.8,
+        0.02
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_FootingCommon.LoadBearing": true,
+      "TrueSite_Notes.Install": "Pad 1.6 x 1.6 x 0.6 m, C30/37, top flush with the ground. Only the top is modelled: the body is below ground.",
+      "TrueSite_Notes.Grid": "B1",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "PAD_FOOTING"
+    }
+  },
+  {
+    "guid": "2v5Alk1DPTYu1vUE5eYHup",
+    "ifc_class": "IfcFooting",
+    "name": "Pad footing B2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.2,
+        11.2,
+        0.0
+      ],
+      [
+        6.8,
+        12.8,
+        0.02
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_FootingCommon.LoadBearing": true,
+      "TrueSite_Notes.Install": "Pad 1.6 x 1.6 x 0.6 m, C30/37, top flush with the ground. Only the top is modelled: the body is below ground.",
+      "TrueSite_Notes.Grid": "B2",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "PAD_FOOTING"
+    }
+  },
+  {
+    "guid": "24HXYhPMXRIOGMGbE9fsnW",
+    "ifc_class": "IfcFooting",
+    "name": "Pad footing C1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.2,
+        -0.8,
+        0.0
+      ],
+      [
+        12.8,
+        0.8,
+        0.02
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_FootingCommon.LoadBearing": true,
+      "TrueSite_Notes.Install": "Pad 1.6 x 1.6 x 0.6 m, C30/37, top flush with the ground. Only the top is modelled: the body is below ground.",
+      "TrueSite_Notes.Grid": "C1",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "PAD_FOOTING"
+    }
+  },
+  {
+    "guid": "2XnfM9llTPpOreZnBlPoPF",
+    "ifc_class": "IfcFooting",
+    "name": "Pad footing C2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.2,
+        11.2,
+        0.0
+      ],
+      [
+        12.8,
+        12.8,
+        0.02
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_FootingCommon.LoadBearing": true,
+      "TrueSite_Notes.Install": "Pad 1.6 x 1.6 x 0.6 m, C30/37, top flush with the ground. Only the top is modelled: the body is below ground.",
+      "TrueSite_Notes.Grid": "C2",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "PAD_FOOTING"
+    }
+  },
+  {
+    "guid": "2cazUinOPIVgVJbTmiJUCD",
+    "ifc_class": "IfcFooting",
+    "name": "Pad footing D1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.2,
+        -0.8,
+        0.0
+      ],
+      [
+        18.8,
+        0.8,
+        0.02
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_FootingCommon.LoadBearing": true,
+      "TrueSite_Notes.Install": "Pad 1.6 x 1.6 x 0.6 m, C30/37, top flush with the ground. Only the top is modelled: the body is below ground.",
+      "TrueSite_Notes.Grid": "D1",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "PAD_FOOTING"
+    }
+  },
+  {
+    "guid": "1CEWBJeNDTtRnf5cn0AFg6",
+    "ifc_class": "IfcFooting",
+    "name": "Pad footing D2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.2,
+        11.2,
+        0.0
+      ],
+      [
+        18.8,
+        12.8,
+        0.02
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_FootingCommon.LoadBearing": true,
+      "TrueSite_Notes.Install": "Pad 1.6 x 1.6 x 0.6 m, C30/37, top flush with the ground. Only the top is modelled: the body is below ground.",
+      "TrueSite_Notes.Grid": "D2",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "PAD_FOOTING"
+    }
+  },
+  {
+    "guid": "0EhpJgAmbT$uritDzRxfFb",
+    "ifc_class": "IfcMember",
+    "name": "Brace roof north A-B (1)",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.0215,
+        5.9785,
+        6.6457
+      ],
+      [
+        6.0215,
+        12.0215,
+        8.2043
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 8616.844,
+      "Material": "Steel S355",
+      "PredefinedType": "BRACE"
+    }
+  },
+  {
+    "guid": "0Cqu_AJeLQHwIVF3PoQ8D6",
+    "ifc_class": "IfcMember",
+    "name": "Brace roof north A-B (2)",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.0215,
+        5.9785,
+        6.6457
+      ],
+      [
+        6.0215,
+        12.0215,
+        8.2043
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 8616.844,
+      "Material": "Steel S355",
+      "PredefinedType": "BRACE"
+    }
+  },
+  {
+    "guid": "1Y0XVwg6vPMREJESrBwSkL",
+    "ifc_class": "IfcMember",
+    "name": "Brace roof north C-D (1)",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.9785,
+        5.9785,
+        6.6457
+      ],
+      [
+        18.0215,
+        12.0215,
+        8.2043
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 8616.844,
+      "Material": "Steel S355",
+      "PredefinedType": "BRACE"
+    }
+  },
+  {
+    "guid": "1VNwucB5fNhR2T7y_ZevFT",
+    "ifc_class": "IfcMember",
+    "name": "Brace roof north C-D (2)",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.9785,
+        5.9785,
+        6.6457
+      ],
+      [
+        18.0215,
+        12.0215,
+        8.2043
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 8616.844,
+      "Material": "Steel S355",
+      "PredefinedType": "BRACE"
+    }
+  },
+  {
+    "guid": "3oTeY$rkLUiPh27MWcqa0F",
+    "ifc_class": "IfcMember",
+    "name": "Brace roof south A-B (1)",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.0215,
+        -0.0215,
+        6.6457
+      ],
+      [
+        6.0215,
+        6.0215,
+        8.2043
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 8616.844,
+      "Material": "Steel S355",
+      "PredefinedType": "BRACE"
+    }
+  },
+  {
+    "guid": "0A_yaNssDNwxikyxrhmhRI",
+    "ifc_class": "IfcMember",
+    "name": "Brace roof south A-B (2)",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.0215,
+        -0.0215,
+        6.6457
+      ],
+      [
+        6.0215,
+        6.0215,
+        8.2043
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 8616.844,
+      "Material": "Steel S355",
+      "PredefinedType": "BRACE"
+    }
+  },
+  {
+    "guid": "1MGJ1GH7LS6RJzfodXXBHB",
+    "ifc_class": "IfcMember",
+    "name": "Brace roof south C-D (1)",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.9785,
+        -0.0215,
+        6.6457
+      ],
+      [
+        18.0215,
+        6.0215,
+        8.2043
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 8616.844,
+      "Material": "Steel S355",
+      "PredefinedType": "BRACE"
+    }
+  },
+  {
+    "guid": "2W2aEJXL9UexZZEcvp5lSa",
+    "ifc_class": "IfcMember",
+    "name": "Brace roof south C-D (2)",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.9785,
+        -0.0215,
+        6.6457
+      ],
+      [
+        18.0215,
+        6.0215,
+        8.2043
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 8616.844,
+      "Material": "Steel S355",
+      "PredefinedType": "BRACE"
+    }
+  },
+  {
+    "guid": "2bbEdvQPjGKvFBFNe6aLpj",
+    "ifc_class": "IfcMember",
+    "name": "Brace wall north A-B (1)",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.0195,
+        11.97,
+        0.3775
+      ],
+      [
+        6.0195,
+        12.03,
+        5.6225
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 7939.773,
+      "TrueSite_Notes.Install": "CHS 60 tension bracing. Tighten after the frame is plumbed.",
+      "Material": "Steel S355",
+      "PredefinedType": "BRACE"
+    }
+  },
+  {
+    "guid": "3dc$IEfZ1Llgo2niDT4qc_",
+    "ifc_class": "IfcMember",
+    "name": "Brace wall north A-B (2)",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.0195,
+        11.97,
+        0.3775
+      ],
+      [
+        6.0195,
+        12.03,
+        5.6225
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 7939.773,
+      "Material": "Steel S355",
+      "PredefinedType": "BRACE"
+    }
+  },
+  {
+    "guid": "0sJyM4dunRJx$IouMIoHfN",
+    "ifc_class": "IfcMember",
+    "name": "Brace wall north C-D (1)",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.9805,
+        11.97,
+        0.3775
+      ],
+      [
+        18.0195,
+        12.03,
+        5.6225
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 7939.773,
+      "TrueSite_Notes.Install": "CHS 60 tension bracing. Tighten after the frame is plumbed.",
+      "Material": "Steel S355",
+      "PredefinedType": "BRACE"
+    }
+  },
+  {
+    "guid": "2CiE_0KgDK$PtHl0_Tt1ON",
+    "ifc_class": "IfcMember",
+    "name": "Brace wall north C-D (2)",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.9805,
+        11.97,
+        0.3775
+      ],
+      [
+        18.0195,
+        12.03,
+        5.6225
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 7939.773,
+      "Material": "Steel S355",
+      "PredefinedType": "BRACE"
+    }
+  },
+  {
+    "guid": "2Qmq0cPSDUReWysG8Jw$Za",
+    "ifc_class": "IfcMember",
+    "name": "Brace wall south A-B (1)",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.0195,
+        -0.03,
+        0.3775
+      ],
+      [
+        6.0195,
+        0.03,
+        5.6225
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 7939.773,
+      "TrueSite_Notes.Install": "CHS 60 tension bracing. Tighten after the frame is plumbed.",
+      "Material": "Steel S355",
+      "PredefinedType": "BRACE"
+    }
+  },
+  {
+    "guid": "3QSwZ6pfzPKfl3eINHSVZp",
+    "ifc_class": "IfcMember",
+    "name": "Brace wall south A-B (2)",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.0195,
+        -0.03,
+        0.3775
+      ],
+      [
+        6.0195,
+        0.03,
+        5.6225
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 7939.773,
+      "Material": "Steel S355",
+      "PredefinedType": "BRACE"
+    }
+  },
+  {
+    "guid": "3F8DLiOVPHLOYjfJmPNeBL",
+    "ifc_class": "IfcMember",
+    "name": "Brace wall south C-D (1)",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.9805,
+        -0.03,
+        0.3775
+      ],
+      [
+        18.0195,
+        0.03,
+        5.6225
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 7939.773,
+      "TrueSite_Notes.Install": "CHS 60 tension bracing. Tighten after the frame is plumbed.",
+      "Material": "Steel S355",
+      "PredefinedType": "BRACE"
+    }
+  },
+  {
+    "guid": "3cIcbHx6rKb9Eyo$SqFSGG",
+    "ifc_class": "IfcMember",
+    "name": "Brace wall south C-D (2)",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.9805,
+        -0.03,
+        0.3775
+      ],
+      [
+        18.0195,
+        0.03,
+        5.6225
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 7939.773,
+      "Material": "Steel S355",
+      "PredefinedType": "BRACE"
+    }
+  },
+  {
+    "guid": "2bSbC$QbzGSg$jwRjiN$L7",
+    "ifc_class": "IfcMember",
+    "name": "Purlin P1 A-B",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        0.0,
+        1.4625,
+        7.125
+      ],
+      [
+        6.0,
+        1.5375,
+        7.325
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 6000,
+      "Material": "Steel S355",
+      "PredefinedType": "PURLIN"
+    }
+  },
+  {
+    "guid": "3SUwSDAKbJwAoCGVSwGAV1",
+    "ifc_class": "IfcMember",
+    "name": "Purlin P1 B-C",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        6.0,
+        1.4625,
+        7.125
+      ],
+      [
+        12.0,
+        1.5375,
+        7.325
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 6000,
+      "Material": "Steel S355",
+      "PredefinedType": "PURLIN"
+    }
+  },
+  {
+    "guid": "3kRSFtzHLV_8rJn$5DCDUU",
+    "ifc_class": "IfcMember",
+    "name": "Purlin P1 C-D",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        12.0,
+        1.4625,
+        7.125
+      ],
+      [
+        18.0,
+        1.5375,
+        7.325
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 6000,
+      "Material": "Steel S355",
+      "PredefinedType": "PURLIN"
+    }
+  },
+  {
+    "guid": "33TDckzPzOG9y4ys$a2qaW",
+    "ifc_class": "IfcMember",
+    "name": "Purlin P2 A-B",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        0.0,
+        2.9625,
+        7.5
+      ],
+      [
+        6.0,
+        3.0375,
+        7.7
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 6000,
+      "Material": "Steel S355",
+      "PredefinedType": "PURLIN"
+    }
+  },
+  {
+    "guid": "2xnR2LrhLKheOMGygfmXaQ",
+    "ifc_class": "IfcMember",
+    "name": "Purlin P2 B-C",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        6.0,
+        2.9625,
+        7.5
+      ],
+      [
+        12.0,
+        3.0375,
+        7.7
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 6000,
+      "Material": "Steel S355",
+      "PredefinedType": "PURLIN"
+    }
+  },
+  {
+    "guid": "3NtT79s59NIwEVfAVKQU88",
+    "ifc_class": "IfcMember",
+    "name": "Purlin P2 C-D",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        12.0,
+        2.9625,
+        7.5
+      ],
+      [
+        18.0,
+        3.0375,
+        7.7
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 6000,
+      "Material": "Steel S355",
+      "PredefinedType": "PURLIN"
+    }
+  },
+  {
+    "guid": "2Bte_pT_LPaRdwsVIgj4RV",
+    "ifc_class": "IfcMember",
+    "name": "Purlin P3 A-B",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        0.0,
+        4.4625,
+        7.875
+      ],
+      [
+        6.0,
+        4.5375,
+        8.075
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 6000,
+      "Material": "Steel S355",
+      "PredefinedType": "PURLIN"
+    }
+  },
+  {
+    "guid": "1oh9myLELKq9rIABmW0kQK",
+    "ifc_class": "IfcMember",
+    "name": "Purlin P3 B-C",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        6.0,
+        4.4625,
+        7.875
+      ],
+      [
+        12.0,
+        4.5375,
+        8.075
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 6000,
+      "Material": "Steel S355",
+      "PredefinedType": "PURLIN"
+    }
+  },
+  {
+    "guid": "39WnaxVxXPiggINsj6bR76",
+    "ifc_class": "IfcMember",
+    "name": "Purlin P3 C-D",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        12.0,
+        4.4625,
+        7.875
+      ],
+      [
+        18.0,
+        4.5375,
+        8.075
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 6000,
+      "Material": "Steel S355",
+      "PredefinedType": "PURLIN"
+    }
+  },
+  {
+    "guid": "0kmDN$_q1Naum_snmXlIyG",
+    "ifc_class": "IfcMember",
+    "name": "Purlin P4 A-B",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        0.0,
+        5.9625,
+        8.25
+      ],
+      [
+        6.0,
+        6.0375,
+        8.45
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 6000,
+      "TrueSite_Notes.Install": "Cold-formed C200 x 75 x 2.5 at 1.5 m centres, lapped over the trusses.",
+      "Material": "Steel S355",
+      "PredefinedType": "PURLIN"
+    }
+  },
+  {
+    "guid": "0hvQ4KhfrU_OvVRQCx2kll",
+    "ifc_class": "IfcMember",
+    "name": "Purlin P4 B-C",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        6.0,
+        5.9625,
+        8.25
+      ],
+      [
+        12.0,
+        6.0375,
+        8.45
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 6000,
+      "TrueSite_Notes.Install": "Cold-formed C200 x 75 x 2.5 at 1.5 m centres, lapped over the trusses.",
+      "Material": "Steel S355",
+      "PredefinedType": "PURLIN"
+    }
+  },
+  {
+    "guid": "0PdAcjUejQ3uNo0UF8HdHv",
+    "ifc_class": "IfcMember",
+    "name": "Purlin P4 C-D",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        12.0,
+        5.9625,
+        8.25
+      ],
+      [
+        18.0,
+        6.0375,
+        8.45
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 6000,
+      "TrueSite_Notes.Install": "Cold-formed C200 x 75 x 2.5 at 1.5 m centres, lapped over the trusses.",
+      "Material": "Steel S355",
+      "PredefinedType": "PURLIN"
+    }
+  },
+  {
+    "guid": "3IOFhmmnzPVAueha0WTrUy",
+    "ifc_class": "IfcMember",
+    "name": "Purlin P5 A-B",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        0.0,
+        7.4625,
+        7.875
+      ],
+      [
+        6.0,
+        7.5375,
+        8.075
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 6000,
+      "Material": "Steel S355",
+      "PredefinedType": "PURLIN"
+    }
+  },
+  {
+    "guid": "2omLnCE8fJ4wBCevqPk982",
+    "ifc_class": "IfcMember",
+    "name": "Purlin P5 B-C",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        6.0,
+        7.4625,
+        7.875
+      ],
+      [
+        12.0,
+        7.5375,
+        8.075
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 6000,
+      "Material": "Steel S355",
+      "PredefinedType": "PURLIN"
+    }
+  },
+  {
+    "guid": "0BkdOoxczKsAvi5no6drni",
+    "ifc_class": "IfcMember",
+    "name": "Purlin P5 C-D",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        12.0,
+        7.4625,
+        7.875
+      ],
+      [
+        18.0,
+        7.5375,
+        8.075
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 6000,
+      "Material": "Steel S355",
+      "PredefinedType": "PURLIN"
+    }
+  },
+  {
+    "guid": "3Kq3e00r5Ieu3qBttRcVWN",
+    "ifc_class": "IfcMember",
+    "name": "Purlin P6 A-B",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        0.0,
+        8.9625,
+        7.5
+      ],
+      [
+        6.0,
+        9.0375,
+        7.7
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 6000,
+      "Material": "Steel S355",
+      "PredefinedType": "PURLIN"
+    }
+  },
+  {
+    "guid": "3VxHhoZ2XGh8z9eekOlQEX",
+    "ifc_class": "IfcMember",
+    "name": "Purlin P6 B-C",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        6.0,
+        8.9625,
+        7.5
+      ],
+      [
+        12.0,
+        9.0375,
+        7.7
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 6000,
+      "Material": "Steel S355",
+      "PredefinedType": "PURLIN"
+    }
+  },
+  {
+    "guid": "2kY9W4dtDMLQ7THPiyPzP8",
+    "ifc_class": "IfcMember",
+    "name": "Purlin P6 C-D",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        12.0,
+        8.9625,
+        7.5
+      ],
+      [
+        18.0,
+        9.0375,
+        7.7
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 6000,
+      "Material": "Steel S355",
+      "PredefinedType": "PURLIN"
+    }
+  },
+  {
+    "guid": "2spkBsBbXGBRMdHORpAXQd",
+    "ifc_class": "IfcMember",
+    "name": "Purlin P7 A-B",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        0.0,
+        10.4625,
+        7.125
+      ],
+      [
+        6.0,
+        10.5375,
+        7.325
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 6000,
+      "Material": "Steel S355",
+      "PredefinedType": "PURLIN"
+    }
+  },
+  {
+    "guid": "1jZm5zcZnJcP5mfgyJdlm_",
+    "ifc_class": "IfcMember",
+    "name": "Purlin P7 B-C",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        6.0,
+        10.4625,
+        7.125
+      ],
+      [
+        12.0,
+        10.5375,
+        7.325
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 6000,
+      "Material": "Steel S355",
+      "PredefinedType": "PURLIN"
+    }
+  },
+  {
+    "guid": "35Hi7LaBbMWgO3cPpowP1p",
+    "ifc_class": "IfcMember",
+    "name": "Purlin P7 C-D",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        12.0,
+        10.4625,
+        7.125
+      ],
+      [
+        18.0,
+        10.5375,
+        7.325
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 6000,
+      "Material": "Steel S355",
+      "PredefinedType": "PURLIN"
+    }
+  },
+  {
+    "guid": "3NbpcE7ZfM69NMTOCUfXyS",
+    "ifc_class": "IfcMember",
+    "name": "Truss T1 bottom chord",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.075,
+        0.0,
+        6.0
+      ],
+      [
+        0.075,
+        12.0,
+        6.15
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 12000,
+      "TrueSite_Notes.Install": "Shop-welded truss: SHS 150 chords, SHS 90 web members, bolted to the column caps.",
+      "TrueSite_Notes.Truss": "T1",
+      "Material": "Steel S355",
+      "PredefinedType": "CHORD"
+    }
+  },
+  {
+    "guid": "32wvdIahnL2fw6DmBiHfs_",
+    "ifc_class": "IfcMember",
+    "name": "Truss T1 diagonal 1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.045,
+        -0.0167,
+        6.0332
+      ],
+      [
+        0.045,
+        1.5167,
+        6.7168
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 1615.549,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "1BkJbW1VTJt9P2yzpiJVAO",
+    "ifc_class": "IfcMember",
+    "name": "Truss T1 diagonal 2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.045,
+        1.4755,
+        6.0373
+      ],
+      [
+        0.045,
+        3.0245,
+        7.0877
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 1789.029,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "1Ef9nboPnT4Rji9OoyDRds",
+    "ifc_class": "IfcMember",
+    "name": "Truss T1 diagonal 3",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.045,
+        2.9699,
+        6.0416
+      ],
+      [
+        0.045,
+        4.5301,
+        7.4584
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 2018.044,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "27nwtbP$rIvgN12YnP3MAu",
+    "ifc_class": "IfcMember",
+    "name": "Truss T1 diagonal 4",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.045,
+        4.466,
+        6.0455
+      ],
+      [
+        0.045,
+        6.034,
+        7.8295
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 2285.963,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "1LYMDCco9PSui1y2qaBE8G",
+    "ifc_class": "IfcMember",
+    "name": "Truss T1 diagonal 5",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.045,
+        5.966,
+        6.0455
+      ],
+      [
+        0.045,
+        7.534,
+        7.8295
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 2285.963,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "2FFxNBUBjR0OjV0vql0wLB",
+    "ifc_class": "IfcMember",
+    "name": "Truss T1 diagonal 6",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.045,
+        7.4699,
+        6.0416
+      ],
+      [
+        0.045,
+        9.0301,
+        7.4584
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 2018.044,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "3OR6pDGM5UVPSpHUL9uriT",
+    "ifc_class": "IfcMember",
+    "name": "Truss T1 diagonal 7",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.045,
+        8.9755,
+        6.0373
+      ],
+      [
+        0.045,
+        10.5245,
+        7.0877
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 1789.029,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "3ds9tNekjL4v4R8hUu$6PR",
+    "ifc_class": "IfcMember",
+    "name": "Truss T1 diagonal 8",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.045,
+        10.4833,
+        6.0332
+      ],
+      [
+        0.045,
+        12.0167,
+        6.7168
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 1615.549,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "3L0u47pgjPpPf1g2wOIzjO",
+    "ifc_class": "IfcMember",
+    "name": "Truss T1 top chord north",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.075,
+        5.9818,
+        6.6022
+      ],
+      [
+        0.075,
+        12.0182,
+        8.2478
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 6184.658,
+      "Material": "Steel S355",
+      "PredefinedType": "CHORD"
+    }
+  },
+  {
+    "guid": "0t7psVb95LGh94A7SCbhMW",
+    "ifc_class": "IfcMember",
+    "name": "Truss T1 top chord south",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.075,
+        -0.0182,
+        6.6022
+      ],
+      [
+        0.075,
+        6.0182,
+        8.2478
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 6184.658,
+      "Material": "Steel S355",
+      "PredefinedType": "CHORD"
+    }
+  },
+  {
+    "guid": "1LoJ$OMqvUTfmm0JRG9Eaf",
+    "ifc_class": "IfcMember",
+    "name": "Truss T1 vertical 1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.045,
+        -0.045,
+        6.075
+      ],
+      [
+        0.045,
+        0.045,
+        6.675
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 600,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "3DxotvtvXRPO2FDrVPxQ9h",
+    "ifc_class": "IfcMember",
+    "name": "Truss T1 vertical 2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.045,
+        1.455,
+        6.075
+      ],
+      [
+        0.045,
+        1.545,
+        7.05
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 975,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "0P9upkhsvVDv2J$sBruTC1",
+    "ifc_class": "IfcMember",
+    "name": "Truss T1 vertical 3",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.045,
+        2.955,
+        6.075
+      ],
+      [
+        0.045,
+        3.045,
+        7.425
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 1350,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "2y$NXXvLTQRxJRKiQGOH$e",
+    "ifc_class": "IfcMember",
+    "name": "Truss T1 vertical 4",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.045,
+        4.455,
+        6.075
+      ],
+      [
+        0.045,
+        4.545,
+        7.8
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 1725,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "0jiSC7fEjPeQWnlAMxdGdh",
+    "ifc_class": "IfcMember",
+    "name": "Truss T1 vertical 5",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.045,
+        5.955,
+        6.075
+      ],
+      [
+        0.045,
+        6.045,
+        8.175
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 2100,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "0SmygB0FrG8QvbuwmM3oOC",
+    "ifc_class": "IfcMember",
+    "name": "Truss T1 vertical 6",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.045,
+        7.455,
+        6.075
+      ],
+      [
+        0.045,
+        7.545,
+        7.8
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 1725,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "2uehpLHUzLTe8DLZsfhnPo",
+    "ifc_class": "IfcMember",
+    "name": "Truss T1 vertical 7",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.045,
+        8.955,
+        6.075
+      ],
+      [
+        0.045,
+        9.045,
+        7.425
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 1350,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "1AsWHZ2CzNavgQIT6vhpu_",
+    "ifc_class": "IfcMember",
+    "name": "Truss T1 vertical 8",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.045,
+        10.455,
+        6.075
+      ],
+      [
+        0.045,
+        10.545,
+        7.05
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 975,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "298j5uCkLTtQF4hCvWCS0h",
+    "ifc_class": "IfcMember",
+    "name": "Truss T1 vertical 9",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.045,
+        11.955,
+        6.075
+      ],
+      [
+        0.045,
+        12.045,
+        6.675
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 600,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "1Y47sv1KXLY9w0F3bMicD5",
+    "ifc_class": "IfcMember",
+    "name": "Truss T2 bottom chord",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.925,
+        0.0,
+        6.0
+      ],
+      [
+        6.075,
+        12.0,
+        6.15
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 12000,
+      "TrueSite_Notes.Install": "Shop-welded truss: SHS 150 chords, SHS 90 web members, bolted to the column caps.",
+      "TrueSite_Notes.Truss": "T2",
+      "Material": "Steel S355",
+      "PredefinedType": "CHORD"
+    }
+  },
+  {
+    "guid": "3mIsXk1KLNw9Rxk2dJZNuT",
+    "ifc_class": "IfcMember",
+    "name": "Truss T2 diagonal 1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.955,
+        -0.0167,
+        6.0332
+      ],
+      [
+        6.045,
+        1.5167,
+        6.7168
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 1615.549,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "2TAd0fyMzT$eYT$YJVGQdj",
+    "ifc_class": "IfcMember",
+    "name": "Truss T2 diagonal 2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.955,
+        1.4755,
+        6.0373
+      ],
+      [
+        6.045,
+        3.0245,
+        7.0877
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 1789.029,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "0zPrUI3xTSEAIYycjzEYl4",
+    "ifc_class": "IfcMember",
+    "name": "Truss T2 diagonal 3",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.955,
+        2.9699,
+        6.0416
+      ],
+      [
+        6.045,
+        4.5301,
+        7.4584
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 2018.044,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "2OR8uNLUHSDx3R$kN7VhJU",
+    "ifc_class": "IfcMember",
+    "name": "Truss T2 diagonal 4",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.955,
+        4.466,
+        6.0455
+      ],
+      [
+        6.045,
+        6.034,
+        7.8295
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 2285.963,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "1HRl$4trjSMuaJR_dlH$8F",
+    "ifc_class": "IfcMember",
+    "name": "Truss T2 diagonal 5",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.955,
+        5.966,
+        6.0455
+      ],
+      [
+        6.045,
+        7.534,
+        7.8295
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 2285.963,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "1Z7j7gBU9O$Qg7Tq68LnTV",
+    "ifc_class": "IfcMember",
+    "name": "Truss T2 diagonal 6",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.955,
+        7.4699,
+        6.0416
+      ],
+      [
+        6.045,
+        9.0301,
+        7.4584
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 2018.044,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "0L1KHx5LTO6A2_gU8MKerz",
+    "ifc_class": "IfcMember",
+    "name": "Truss T2 diagonal 7",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.955,
+        8.9755,
+        6.0373
+      ],
+      [
+        6.045,
+        10.5245,
+        7.0877
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 1789.029,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "3I1cu$nPPNTw1YMbmlK2RB",
+    "ifc_class": "IfcMember",
+    "name": "Truss T2 diagonal 8",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.955,
+        10.4833,
+        6.0332
+      ],
+      [
+        6.045,
+        12.0167,
+        6.7168
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 1615.549,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "2A73sD99XO1wOkTH$7ngpv",
+    "ifc_class": "IfcMember",
+    "name": "Truss T2 top chord north",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.925,
+        5.9818,
+        6.6022
+      ],
+      [
+        6.075,
+        12.0182,
+        8.2478
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 6184.658,
+      "Material": "Steel S355",
+      "PredefinedType": "CHORD"
+    }
+  },
+  {
+    "guid": "3d55Gw8QDT$9Uko7t8aP8p",
+    "ifc_class": "IfcMember",
+    "name": "Truss T2 top chord south",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.925,
+        -0.0182,
+        6.6022
+      ],
+      [
+        6.075,
+        6.0182,
+        8.2478
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 6184.658,
+      "Material": "Steel S355",
+      "PredefinedType": "CHORD"
+    }
+  },
+  {
+    "guid": "2603c4T2DJeBZt0whra$5q",
+    "ifc_class": "IfcMember",
+    "name": "Truss T2 vertical 1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.955,
+        -0.045,
+        6.075
+      ],
+      [
+        6.045,
+        0.045,
+        6.675
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 600,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "1TTe7fuJHMze5SqnuTf1b0",
+    "ifc_class": "IfcMember",
+    "name": "Truss T2 vertical 2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.955,
+        1.455,
+        6.075
+      ],
+      [
+        6.045,
+        1.545,
+        7.05
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 975,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "0GfQXnQB1IJx5hlt64yOJk",
+    "ifc_class": "IfcMember",
+    "name": "Truss T2 vertical 3",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.955,
+        2.955,
+        6.075
+      ],
+      [
+        6.045,
+        3.045,
+        7.425
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 1350,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "3Ovaz0mPzLmQELiicD5ubu",
+    "ifc_class": "IfcMember",
+    "name": "Truss T2 vertical 4",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.955,
+        4.455,
+        6.075
+      ],
+      [
+        6.045,
+        4.545,
+        7.8
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 1725,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "32k1_JChbHiAu_lLWLOl5I",
+    "ifc_class": "IfcMember",
+    "name": "Truss T2 vertical 5",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.955,
+        5.955,
+        6.075
+      ],
+      [
+        6.045,
+        6.045,
+        8.175
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 2100,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "3Bbv7YnXzUxxtTgBgahgPt",
+    "ifc_class": "IfcMember",
+    "name": "Truss T2 vertical 6",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.955,
+        7.455,
+        6.075
+      ],
+      [
+        6.045,
+        7.545,
+        7.8
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 1725,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "3pNsowXM9K0BRPMppbTLuT",
+    "ifc_class": "IfcMember",
+    "name": "Truss T2 vertical 7",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.955,
+        8.955,
+        6.075
+      ],
+      [
+        6.045,
+        9.045,
+        7.425
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 1350,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "0FAjK6gobVbODVTJSdhAUt",
+    "ifc_class": "IfcMember",
+    "name": "Truss T2 vertical 8",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.955,
+        10.455,
+        6.075
+      ],
+      [
+        6.045,
+        10.545,
+        7.05
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 975,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "05sUjN7w9JKwd4Ys0NrF_o",
+    "ifc_class": "IfcMember",
+    "name": "Truss T2 vertical 9",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.955,
+        11.955,
+        6.075
+      ],
+      [
+        6.045,
+        12.045,
+        6.675
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 600,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "1itopkYNbPGv4EHzATcIA0",
+    "ifc_class": "IfcMember",
+    "name": "Truss T3 bottom chord",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.925,
+        0.0,
+        6.0
+      ],
+      [
+        12.075,
+        12.0,
+        6.15
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 12000,
+      "TrueSite_Notes.Install": "Shop-welded truss: SHS 150 chords, SHS 90 web members, bolted to the column caps.",
+      "TrueSite_Notes.Truss": "T3",
+      "Material": "Steel S355",
+      "PredefinedType": "CHORD"
+    }
+  },
+  {
+    "guid": "268QxmTs9UR9RjZm20FWfT",
+    "ifc_class": "IfcMember",
+    "name": "Truss T3 diagonal 1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.955,
+        -0.0167,
+        6.0332
+      ],
+      [
+        12.045,
+        1.5167,
+        6.7168
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 1615.549,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "1TsH1rMyDUvh$$WvmlLckU",
+    "ifc_class": "IfcMember",
+    "name": "Truss T3 diagonal 2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.955,
+        1.4755,
+        6.0373
+      ],
+      [
+        12.045,
+        3.0245,
+        7.0877
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 1789.029,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "16gmIxkv9UUv3kPESBLdZd",
+    "ifc_class": "IfcMember",
+    "name": "Truss T3 diagonal 3",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.955,
+        2.9699,
+        6.0416
+      ],
+      [
+        12.045,
+        4.5301,
+        7.4584
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 2018.044,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "29bVYCTqzIwOEelG5KLfsj",
+    "ifc_class": "IfcMember",
+    "name": "Truss T3 diagonal 4",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.955,
+        4.466,
+        6.0455
+      ],
+      [
+        12.045,
+        6.034,
+        7.8295
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 2285.963,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "0tkQspMLPNVvZz_QPjiLUT",
+    "ifc_class": "IfcMember",
+    "name": "Truss T3 diagonal 5",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.955,
+        5.966,
+        6.0455
+      ],
+      [
+        12.045,
+        7.534,
+        7.8295
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 2285.963,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "0nz5t3aoXRWODMaaaDMiLj",
+    "ifc_class": "IfcMember",
+    "name": "Truss T3 diagonal 6",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.955,
+        7.4699,
+        6.0416
+      ],
+      [
+        12.045,
+        9.0301,
+        7.4584
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 2018.044,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "2SSOZV0r9SphXExlsnC$qx",
+    "ifc_class": "IfcMember",
+    "name": "Truss T3 diagonal 7",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.955,
+        8.9755,
+        6.0373
+      ],
+      [
+        12.045,
+        10.5245,
+        7.0877
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 1789.029,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "2e2Z7iqEfVduEm721KL8wM",
+    "ifc_class": "IfcMember",
+    "name": "Truss T3 diagonal 8",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.955,
+        10.4833,
+        6.0332
+      ],
+      [
+        12.045,
+        12.0167,
+        6.7168
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 1615.549,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "2XSqJ7Zz1NWuCXXC6ZsfTv",
+    "ifc_class": "IfcMember",
+    "name": "Truss T3 top chord north",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.925,
+        5.9818,
+        6.6022
+      ],
+      [
+        12.075,
+        12.0182,
+        8.2478
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 6184.658,
+      "Material": "Steel S355",
+      "PredefinedType": "CHORD"
+    }
+  },
+  {
+    "guid": "29txvextLJMu0owM7wb8WT",
+    "ifc_class": "IfcMember",
+    "name": "Truss T3 top chord south",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.925,
+        -0.0182,
+        6.6022
+      ],
+      [
+        12.075,
+        6.0182,
+        8.2478
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 6184.658,
+      "Material": "Steel S355",
+      "PredefinedType": "CHORD"
+    }
+  },
+  {
+    "guid": "3$ogFVp0fHpvghz7L1e_Hz",
+    "ifc_class": "IfcMember",
+    "name": "Truss T3 vertical 1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.955,
+        -0.045,
+        6.075
+      ],
+      [
+        12.045,
+        0.045,
+        6.675
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 600,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "3giWFD4JzGBuvSPiBEHirD",
+    "ifc_class": "IfcMember",
+    "name": "Truss T3 vertical 2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.955,
+        1.455,
+        6.075
+      ],
+      [
+        12.045,
+        1.545,
+        7.05
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 975,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "11NckKZtTGFAz36xDq7aSZ",
+    "ifc_class": "IfcMember",
+    "name": "Truss T3 vertical 3",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.955,
+        2.955,
+        6.075
+      ],
+      [
+        12.045,
+        3.045,
+        7.425
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 1350,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "0vYypUqLnI4eHTe9OfsrUG",
+    "ifc_class": "IfcMember",
+    "name": "Truss T3 vertical 4",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.955,
+        4.455,
+        6.075
+      ],
+      [
+        12.045,
+        4.545,
+        7.8
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 1725,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "0lHA4tcmvQR8to1I7MQM7l",
+    "ifc_class": "IfcMember",
+    "name": "Truss T3 vertical 5",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.955,
+        5.955,
+        6.075
+      ],
+      [
+        12.045,
+        6.045,
+        8.175
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 2100,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "2kIJL5JLzT4wVji_gw3vbi",
+    "ifc_class": "IfcMember",
+    "name": "Truss T3 vertical 6",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.955,
+        7.455,
+        6.075
+      ],
+      [
+        12.045,
+        7.545,
+        7.8
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 1725,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "0Mgj5_a6nHGPFxlXaYQnNz",
+    "ifc_class": "IfcMember",
+    "name": "Truss T3 vertical 7",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.955,
+        8.955,
+        6.075
+      ],
+      [
+        12.045,
+        9.045,
+        7.425
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 1350,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "3Ar8SO1VXOrfyElLdh_IVq",
+    "ifc_class": "IfcMember",
+    "name": "Truss T3 vertical 8",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.955,
+        10.455,
+        6.075
+      ],
+      [
+        12.045,
+        10.545,
+        7.05
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 975,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "0snKRxGszTux7C6TWPifJX",
+    "ifc_class": "IfcMember",
+    "name": "Truss T3 vertical 9",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.955,
+        11.955,
+        6.075
+      ],
+      [
+        12.045,
+        12.045,
+        6.675
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 600,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "1A4YtYxaHSse8XJ8U0w8AV",
+    "ifc_class": "IfcMember",
+    "name": "Truss T4 bottom chord",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.925,
+        0.0,
+        6.0
+      ],
+      [
+        18.075,
+        12.0,
+        6.15
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 12000,
+      "TrueSite_Notes.Install": "Shop-welded truss: SHS 150 chords, SHS 90 web members, bolted to the column caps.",
+      "TrueSite_Notes.Truss": "T4",
+      "Material": "Steel S355",
+      "PredefinedType": "CHORD"
+    }
+  },
+  {
+    "guid": "3iZmvum3jQQe$NY6Gj4sAn",
+    "ifc_class": "IfcMember",
+    "name": "Truss T4 diagonal 1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.955,
+        -0.0167,
+        6.0332
+      ],
+      [
+        18.045,
+        1.5167,
+        6.7168
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 1615.549,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "2ewnrvTavHhh4RFgd_o$6A",
+    "ifc_class": "IfcMember",
+    "name": "Truss T4 diagonal 2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.955,
+        1.4755,
+        6.0373
+      ],
+      [
+        18.045,
+        3.0245,
+        7.0877
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 1789.029,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "35E8jAI5zMOu1Ql14TThwh",
+    "ifc_class": "IfcMember",
+    "name": "Truss T4 diagonal 3",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.955,
+        2.9699,
+        6.0416
+      ],
+      [
+        18.045,
+        4.5301,
+        7.4584
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 2018.044,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "2VDuclJJ1Mqwz6DKnWI4kb",
+    "ifc_class": "IfcMember",
+    "name": "Truss T4 diagonal 4",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.955,
+        4.466,
+        6.0455
+      ],
+      [
+        18.045,
+        6.034,
+        7.8295
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 2285.963,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "0vQAMiP2XTBx62SICy2fik",
+    "ifc_class": "IfcMember",
+    "name": "Truss T4 diagonal 5",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.955,
+        5.966,
+        6.0455
+      ],
+      [
+        18.045,
+        7.534,
+        7.8295
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 2285.963,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "26wDcp0TDOT8N5aQtuFITk",
+    "ifc_class": "IfcMember",
+    "name": "Truss T4 diagonal 6",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.955,
+        7.4699,
+        6.0416
+      ],
+      [
+        18.045,
+        9.0301,
+        7.4584
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 2018.044,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "1yoV6CPC5R9efZozV5HFZW",
+    "ifc_class": "IfcMember",
+    "name": "Truss T4 diagonal 7",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.955,
+        8.9755,
+        6.0373
+      ],
+      [
+        18.045,
+        10.5245,
+        7.0877
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 1789.029,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "1hJ1OorIvKuR6Vq5PD5Vri",
+    "ifc_class": "IfcMember",
+    "name": "Truss T4 diagonal 8",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.955,
+        10.4833,
+        6.0332
+      ],
+      [
+        18.045,
+        12.0167,
+        6.7168
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 1615.549,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "2YBnrzcdXHbvXtsH_f2cZh",
+    "ifc_class": "IfcMember",
+    "name": "Truss T4 top chord north",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.925,
+        5.9818,
+        6.6022
+      ],
+      [
+        18.075,
+        12.0182,
+        8.2478
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 6184.658,
+      "Material": "Steel S355",
+      "PredefinedType": "CHORD"
+    }
+  },
+  {
+    "guid": "2DOvffzevPfwlUsVCOpLz9",
+    "ifc_class": "IfcMember",
+    "name": "Truss T4 top chord south",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.925,
+        -0.0182,
+        6.6022
+      ],
+      [
+        18.075,
+        6.0182,
+        8.2478
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 6184.658,
+      "Material": "Steel S355",
+      "PredefinedType": "CHORD"
+    }
+  },
+  {
+    "guid": "3EHSDwPwPVOuEGt_Xi8STg",
+    "ifc_class": "IfcMember",
+    "name": "Truss T4 vertical 1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.955,
+        -0.045,
+        6.075
+      ],
+      [
+        18.045,
+        0.045,
+        6.675
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 600,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "0ji4Ml7ZHR7BKVDAnxcSXO",
+    "ifc_class": "IfcMember",
+    "name": "Truss T4 vertical 2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.955,
+        1.455,
+        6.075
+      ],
+      [
+        18.045,
+        1.545,
+        7.05
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 975,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "0eHv0hcbnOKeeqFFi9mTtP",
+    "ifc_class": "IfcMember",
+    "name": "Truss T4 vertical 3",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.955,
+        2.955,
+        6.075
+      ],
+      [
+        18.045,
+        3.045,
+        7.425
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 1350,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "1eDHHo8QzNbg1et4Hq0GBS",
+    "ifc_class": "IfcMember",
+    "name": "Truss T4 vertical 4",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.955,
+        4.455,
+        6.075
+      ],
+      [
+        18.045,
+        4.545,
+        7.8
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 1725,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "0ZBNbMeCDJi9bpgVFxcJa3",
+    "ifc_class": "IfcMember",
+    "name": "Truss T4 vertical 5",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.955,
+        5.955,
+        6.075
+      ],
+      [
+        18.045,
+        6.045,
+        8.175
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 2100,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "3pGSDhLjXOBRRNpIKPBZAd",
+    "ifc_class": "IfcMember",
+    "name": "Truss T4 vertical 6",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.955,
+        7.455,
+        6.075
+      ],
+      [
+        18.045,
+        7.545,
+        7.8
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 1725,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "1$2Yh5h_TVXxUKw$vQe5Aw",
+    "ifc_class": "IfcMember",
+    "name": "Truss T4 vertical 7",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.955,
+        8.955,
+        6.075
+      ],
+      [
+        18.045,
+        9.045,
+        7.425
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 1350,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "1Gd89xYqLRhfPS3lmIqavr",
+    "ifc_class": "IfcMember",
+    "name": "Truss T4 vertical 8",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.955,
+        10.455,
+        6.075
+      ],
+      [
+        18.045,
+        10.545,
+        7.05
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 975,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "3vBTxi15bRzu12DSWM_2vG",
+    "ifc_class": "IfcMember",
+    "name": "Truss T4 vertical 9",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.955,
+        11.955,
+        6.075
+      ],
+      [
+        18.045,
+        12.045,
+        6.675
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_MemberCommon.LoadBearing": true,
+      "Pset_MemberCommon.IsExternal": false,
+      "Qto_MemberBaseQuantities.Length_mm": 600,
+      "Material": "Steel S355",
+      "PredefinedType": "MEMBER"
+    }
+  },
+  {
+    "guid": "3vjhYFXB1S6QTLHQOApFfb",
+    "ifc_class": "IfcReinforcingBar",
+    "name": "Starter bars A1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.32,
+        -0.32,
+        0.0
+      ],
+      [
+        0.32,
+        0.32,
+        1.0
+      ]
+    ],
+    "load_bearing": null,
+    "props": {
+      "TrueSite_Notes.Install": "8 T20 starter bars, 1.0 m above the pad, T10 links. Cap the bar ends until the encasement is cast.",
+      "TrueSite_Notes.Grid": "A1",
+      "Material": "Rebar B500B",
+      "PredefinedType": "ANCHORING"
+    }
+  },
+  {
+    "guid": "2K_$dKBeXNMghmv$iWjic8",
+    "ifc_class": "IfcReinforcingBar",
+    "name": "Starter bars A2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.32,
+        11.68,
+        0.0
+      ],
+      [
+        0.32,
+        12.32,
+        1.0
+      ]
+    ],
+    "load_bearing": null,
+    "props": {
+      "TrueSite_Notes.Install": "8 T20 starter bars, 1.0 m above the pad, T10 links. Cap the bar ends until the encasement is cast.",
+      "TrueSite_Notes.Grid": "A2",
+      "Material": "Rebar B500B",
+      "PredefinedType": "ANCHORING"
+    }
+  },
+  {
+    "guid": "23f9W22PnOvvaxAVyJY2xx",
+    "ifc_class": "IfcReinforcingBar",
+    "name": "Starter bars B1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.68,
+        -0.32,
+        0.0
+      ],
+      [
+        6.32,
+        0.32,
+        1.0
+      ]
+    ],
+    "load_bearing": null,
+    "props": {
+      "TrueSite_Notes.Install": "8 T20 starter bars, 1.0 m above the pad, T10 links. Cap the bar ends until the encasement is cast.",
+      "TrueSite_Notes.Grid": "B1",
+      "Material": "Rebar B500B",
+      "PredefinedType": "ANCHORING"
+    }
+  },
+  {
+    "guid": "3nkW5bPp1N1fmU4WALUbgB",
+    "ifc_class": "IfcReinforcingBar",
+    "name": "Starter bars B2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.68,
+        11.68,
+        0.0
+      ],
+      [
+        6.32,
+        12.32,
+        1.0
+      ]
+    ],
+    "load_bearing": null,
+    "props": {
+      "TrueSite_Notes.Install": "8 T20 starter bars, 1.0 m above the pad, T10 links. Cap the bar ends until the encasement is cast.",
+      "TrueSite_Notes.Grid": "B2",
+      "Material": "Rebar B500B",
+      "PredefinedType": "ANCHORING"
+    }
+  },
+  {
+    "guid": "0M_S5JAF9RZv8G3tyVmlvs",
+    "ifc_class": "IfcReinforcingBar",
+    "name": "Starter bars C1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.68,
+        -0.32,
+        0.0
+      ],
+      [
+        12.32,
+        0.32,
+        1.0
+      ]
+    ],
+    "load_bearing": null,
+    "props": {
+      "TrueSite_Notes.Install": "8 T20 starter bars, 1.0 m above the pad, T10 links. Cap the bar ends until the encasement is cast.",
+      "TrueSite_Notes.Grid": "C1",
+      "Material": "Rebar B500B",
+      "PredefinedType": "ANCHORING"
+    }
+  },
+  {
+    "guid": "09I8BEIrvQaucmJyZeSK16",
+    "ifc_class": "IfcReinforcingBar",
+    "name": "Starter bars C2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.68,
+        11.68,
+        0.0
+      ],
+      [
+        12.32,
+        12.32,
+        1.0
+      ]
+    ],
+    "load_bearing": null,
+    "props": {
+      "TrueSite_Notes.Install": "8 T20 starter bars, 1.0 m above the pad, T10 links. Cap the bar ends until the encasement is cast.",
+      "TrueSite_Notes.Grid": "C2",
+      "Material": "Rebar B500B",
+      "PredefinedType": "ANCHORING"
+    }
+  },
+  {
+    "guid": "2GqNZfoerQ9QGXK6ayrfqi",
+    "ifc_class": "IfcReinforcingBar",
+    "name": "Starter bars D1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.68,
+        -0.32,
+        0.0
+      ],
+      [
+        18.32,
+        0.32,
+        1.0
+      ]
+    ],
+    "load_bearing": null,
+    "props": {
+      "TrueSite_Notes.Install": "8 T20 starter bars, 1.0 m above the pad, T10 links. Cap the bar ends until the encasement is cast.",
+      "TrueSite_Notes.Grid": "D1",
+      "Material": "Rebar B500B",
+      "PredefinedType": "ANCHORING"
+    }
+  },
+  {
+    "guid": "1Ldw$JBdPR0hCDFZiR3e6A",
+    "ifc_class": "IfcReinforcingBar",
+    "name": "Starter bars D2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.68,
+        11.68,
+        0.0
+      ],
+      [
+        18.32,
+        12.32,
+        1.0
+      ]
+    ],
+    "load_bearing": null,
+    "props": {
+      "TrueSite_Notes.Install": "8 T20 starter bars, 1.0 m above the pad, T10 links. Cap the bar ends until the encasement is cast.",
+      "TrueSite_Notes.Grid": "D2",
+      "Material": "Rebar B500B",
+      "PredefinedType": "ANCHORING"
+    }
+  },
+  {
+    "guid": "16Pf0AJo1TFgh5CGEIfEZ2",
+    "ifc_class": "IfcReinforcingBar",
+    "name": "Tie beam cage A1-B1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        0.8,
+        -0.15,
+        0.0
+      ],
+      [
+        5.2,
+        0.15,
+        0.45
+      ]
+    ],
+    "load_bearing": null,
+    "props": {
+      "TrueSite_Notes.Install": "Tie beam 300 x 450, 4 T16 + T10 links @ 200. Not cast yet: check cover and laps before the pour.",
+      "TrueSite_Notes.Grid": "A1-B1",
+      "Material": "Rebar B500B",
+      "PredefinedType": "MAIN"
+    }
+  },
+  {
+    "guid": "28NQPv7PnJ5e2fuYXouZHI",
+    "ifc_class": "IfcReinforcingBar",
+    "name": "Tie beam cage A2-B2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        0.8,
+        11.85,
+        0.0
+      ],
+      [
+        5.2,
+        12.15,
+        0.45
+      ]
+    ],
+    "load_bearing": null,
+    "props": {
+      "TrueSite_Notes.Install": "Tie beam 300 x 450, 4 T16 + T10 links @ 200. Not cast yet: check cover and laps before the pour.",
+      "TrueSite_Notes.Grid": "A2-B2",
+      "Material": "Rebar B500B",
+      "PredefinedType": "MAIN"
+    }
+  },
+  {
+    "guid": "1js85AYMjTiOwsXZ49AiOz",
+    "ifc_class": "IfcReinforcingBar",
+    "name": "Tie beam cage B1-C1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        6.8,
+        -0.15,
+        0.0
+      ],
+      [
+        11.2,
+        0.15,
+        0.45
+      ]
+    ],
+    "load_bearing": null,
+    "props": {
+      "TrueSite_Notes.Install": "Tie beam 300 x 450, 4 T16 + T10 links @ 200. Not cast yet: check cover and laps before the pour.",
+      "TrueSite_Notes.Grid": "B1-C1",
+      "Material": "Rebar B500B",
+      "PredefinedType": "MAIN"
+    }
+  },
+  {
+    "guid": "0uHH0otULHKfQ50yfH9cq$",
+    "ifc_class": "IfcReinforcingBar",
+    "name": "Tie beam cage B2-C2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        6.8,
+        11.85,
+        0.0
+      ],
+      [
+        11.2,
+        12.15,
+        0.45
+      ]
+    ],
+    "load_bearing": null,
+    "props": {
+      "TrueSite_Notes.Install": "Tie beam 300 x 450, 4 T16 + T10 links @ 200. Not cast yet: check cover and laps before the pour.",
+      "TrueSite_Notes.Grid": "B2-C2",
+      "Material": "Rebar B500B",
+      "PredefinedType": "MAIN"
+    }
+  },
+  {
+    "guid": "3KrD25LZPVwvnKlwr7MhnQ",
+    "ifc_class": "IfcReinforcingBar",
+    "name": "Tie beam cage C1-D1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        12.8,
+        -0.15,
+        0.0
+      ],
+      [
+        17.2,
+        0.15,
+        0.45
+      ]
+    ],
+    "load_bearing": null,
+    "props": {
+      "TrueSite_Notes.Install": "Tie beam 300 x 450, 4 T16 + T10 links @ 200. Not cast yet: check cover and laps before the pour.",
+      "TrueSite_Notes.Grid": "C1-D1",
+      "Material": "Rebar B500B",
+      "PredefinedType": "MAIN"
+    }
+  },
+  {
+    "guid": "0Jr$1iVNDHDA$Od7Ej6Jew",
+    "ifc_class": "IfcReinforcingBar",
+    "name": "Tie beam cage C2-D2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        12.8,
+        11.85,
+        0.0
+      ],
+      [
+        17.2,
+        12.15,
+        0.45
+      ]
+    ],
+    "load_bearing": null,
+    "props": {
+      "TrueSite_Notes.Install": "Tie beam 300 x 450, 4 T16 + T10 links @ 200. Not cast yet: check cover and laps before the pour.",
+      "TrueSite_Notes.Grid": "C2-D2",
+      "Material": "Rebar B500B",
+      "PredefinedType": "MAIN"
+    }
+  }
+]
