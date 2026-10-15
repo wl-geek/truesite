@@ -40,6 +40,17 @@ describe('marks', () => {
     expect(keyDims(el('x', 'IfcFurniture', {}, [[0, 0, 0], [0.9, 0.45, 0.75]]))).toBe('900 × 450 × 750 mm')
   })
 
+  it('gives columns and beams a cross-section from the bounding box, and columns a height', () => {
+    expect(keyDims(el('c', 'IfcColumn', { 'Qto_ColumnBaseQuantities.Length_mm': 3300 }, [[-0.2, -0.2, 0], [0.2, 0.2, 3.3]])))
+      .toBe('400 × 400 mm section, 3300 mm high')
+    expect(keyDims(el('b', 'IfcBeam', { 'Qto_BeamBaseQuantities.Length_mm': 2600 }, [[-0.15, 0.2, 2.7], [0.15, 2.8, 3.3]])))
+      .toBe('300 × 600 mm section, 2600 mm long')
+    expect(keyDims(el('b', 'IfcBeam', { 'Qto_BeamBaseQuantities.Length_mm': 2600 }, [[0.2, -0.15, 2.7], [2.8, 0.15, 3.3]])))
+      .toBe('300 × 600 mm section, 2600 mm long') // along X
+    expect(keyDims(el('c', 'IfcColumn', { 'Qto_ColumnBaseQuantities.Width_mm': 300, 'Qto_ColumnBaseQuantities.Length_mm': 2700 })))
+      .toBe('300 mm wide, 2700 mm high') // quantities win over the box
+  })
+
   it('places mark centres as fractions of the ID buffer, using the largest region per GUID', () => {
     const elements = new Map([['w', el('w', 'IfcWall')]])
     const visible = [vis(0, 10, 0, 0), vis(1, 99, 320, 180)]

@@ -24,6 +24,17 @@ function prop(el: Element, suffix: string): number | null {
   return null
 }
 
+/**
+ * Cross-section of a column (plan width x depth) or a beam (width x depth), in mm, from its bounding box.
+ * Null for other classes or a degenerate box.
+ */
+function sectionFromBox(el: Element): [number, number] | null {
+  const [[x0, y0, z0], [x1, y1, z1]] = el.bbox_m
+  const [dx, dy, dz] = [x1 - x0, y1 - y0, z1 - z0].map((v) => Math.round(v * 1000))
+  const s: [number, number] | null = el.ifc_class === 'IfcColumn' ? [dx, dy] : el.ifc_class === 'IfcBeam' ? [Math.min(dx, dy), dz] : null
+  return s && s[0] > 0 && s[1] > 0 ? s : null
+}
+
 /** Short human dimensions for the prompt, e.g. "100 mm thick, 2700 mm high" (<= 80 chars). */
 export function keyDims(el: Element): string {
   const parts: string[] = []
@@ -32,11 +43,13 @@ export function keyDims(el: Element): string {
   const depth = prop(el, '.Depth_mm')
   const height = prop(el, '.Height_mm')
   const length = prop(el, '.Length_mm')
+  const section = !dia && !width && !depth ? sectionFromBox(el) : null
   if (dia) parts.push(`Ø${dia} mm`)
+  if (section) parts.push(`${section[0]} × ${section[1]} mm section`)
   if (width) parts.push(`${width} mm ${el.ifc_class.startsWith('IfcWall') ? 'thick' : 'wide'}`)
   if (depth) parts.push(`${depth} mm deep`)
   if (height) parts.push(`${height} mm high`)
-  if (length) parts.push(`${length} mm long`)
+  if (length) parts.push(`${length} mm ${el.ifc_class === 'IfcColumn' ? 'high' : 'long'}`)
   if (!parts.length) {
     const [[x0, y0, z0], [x1, y1, z1]] = el.bbox_m
     const d = [x1 - x0, y1 - y0, z1 - z0].map((v) => Math.round(v * 1000))
