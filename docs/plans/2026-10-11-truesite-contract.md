@@ -118,7 +118,7 @@ Errors are FastAPI `HTTPException` with `detail = {"code": <code>, ...}`. Paths 
 | POST `/api/issues` | `IssueIn`; header `X-Session-Id` | `Issue` (201) | 422 |
 | GET `/api/issues` (optional `?project_id=room1`; omitted = every project) | header `X-Session-Id` | `{"issues": Issue[], "demo": Issue[]}` (newest first) | 422 |
 
-Client routes (the SPA fallback serves index.html): `/` (viewer, project `room1`), `/a/{project_id}/{anchor_id}` (live AR), `/samples`, `/issues`.
+Client routes (the SPA fallback serves index.html): `/` (start page), `/model` (viewer; `?project={project_id}`, default `room1`), `/a/{project_id}/{anchor_id}` (live AR), `/samples`, `/issues` (every project).
 
 ## 5. Schemas — Python `server/app/schemas.py` (TS mirrors in `web/src/api/types.ts`)
 
@@ -227,10 +227,11 @@ def create_app(settings: Settings | None = None, *, store: Store | None = None, 
 export const SESSION_KEY = 'truesite.session'
 export function getSessionId(): string                   // crypto.randomUUID(), else a v4 built from crypto.getRandomValues
 // src/router.ts
-export type Route = { name: 'viewer' } | { name: 'live'; projectId: string; anchorId: string } | { name: 'samples' } | { name: 'issues' }
-export function parseRoute(pathname: string): Route      // unknown paths -> viewer
+export type Route = { name: 'home' } | { name: 'viewer'; projectId?: string } | { name: 'live'; projectId: string; anchorId: string } | { name: 'samples' } | { name: 'issues' }
+export function parseRoute(pathname: string, search = ''): Route   // unknown paths -> home; viewer projectId from ?project=
+export function viewerPathFor(projectId: string): string // '/model?project=<id>'
 export function navigate(path: string): void             // history.pushState + notify
-export function useRoute(): Route                        // React hook (popstate + navigate)
+export function useRoute(): Route                        // React hook (popstate + navigate); path and query
 // src/api/client.ts
 export class ApiError extends Error { status: number; code?: string; retryAfterS?: number }
 export function getProject(projectId: string): Promise<ProjectManifest>

@@ -3,7 +3,7 @@ import { useMemo, useSyncExternalStore } from 'react'
 /** Client routes (contract section 4). The server's SPA fallback serves index.html for all of them. */
 export type Route =
   | { name: 'home' }
-  | { name: 'viewer' }
+  | { name: 'viewer'; projectId?: string }
   | { name: 'live'; projectId: string; anchorId: string }
   | { name: 'samples' }
   | { name: 'issues' }
@@ -11,8 +11,11 @@ export type Route =
 const LIVE_RE = /^\/a\/([^/]+)\/([^/]+)\/?$/
 const NAV_EVENT = 'truesite:navigate'
 
-/** Unknown paths go to the start page. Live ids are only decoded here; LivePage checks they exist. */
-export function parseRoute(pathname: string): Route {
+/**
+ * Unknown paths go to the start page. Live ids are only decoded here; LivePage checks they exist.
+ * The viewer takes its project from `?project=` (default room1 when absent).
+ */
+export function parseRoute(pathname: string, search = ''): Route {
   const live = LIVE_RE.exec(pathname)
   if (live) {
     try {
@@ -23,8 +26,16 @@ export function parseRoute(pathname: string): Route {
   }
   if (pathname === '/samples' || pathname === '/samples/') return { name: 'samples' }
   if (pathname === '/issues' || pathname === '/issues/') return { name: 'issues' }
-  if (pathname === '/model' || pathname === '/model/') return { name: 'viewer' }
+  if (pathname === '/model' || pathname === '/model/') {
+    const projectId = new URLSearchParams(search).get('project')
+    return projectId ? { name: 'viewer', projectId } : { name: 'viewer' }
+  }
   return { name: 'home' }
+}
+
+/** The model viewer for one project, so links from Live and Samples keep the project. */
+export function viewerPathFor(projectId: string): string {
+  return `/model?project=${encodeURIComponent(projectId)}`
 }
 
 export function navigate(path: string): void {
@@ -41,7 +52,11 @@ function subscribe(onChange: () => void): () => void {
   }
 }
 
+/** Re-renders on path and query changes (e.g. /model?project=rooftop -> /model). */
 export function useRoute(): Route {
-  const pathname = useSyncExternalStore(subscribe, () => window.location.pathname, () => '/')
-  return useMemo(() => parseRoute(pathname), [pathname])
+  const location = useSyncExternalStore(subscribe, () => window.location.pathname + window.location.search, () => '/')
+  return useMemo(() => {
+    const q = location.indexOf('?')
+    return q < 0 ? parseRoute(location) : parseRoute(location.slice(0, q), location.slice(q))
+  }, [location])
 }

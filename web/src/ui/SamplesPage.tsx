@@ -8,7 +8,7 @@ import { runCheck } from '../check/runCheck'
 import { parseSampleIndex, parseSampleMeta, type SampleIndexEntry } from '../check/sampleMeta'
 import { findAnchor } from '../scene/arMath'
 import { disposeModel, loadModel, type LoadedModel } from '../scene/loadModel'
-import { navigate } from '../router'
+import { navigate, viewerPathFor } from '../router'
 import { EvidenceView } from './EvidenceView'
 import { FindingsPanel } from './FindingsPanel'
 import { IssueDialog } from './IssueDialog'
@@ -161,7 +161,7 @@ export function SamplesPage() {
           <FindingsPanel result={outcome.result} selectedMark={selectedMark} onSelect={selectFinding} onDraftIssue={setDraftFor} />
           {notice && <p className="note" role="status">{notice}</p>}
           <p>
-            <button type="button" className="btn btn-primary" onClick={() => navigate('/model')}>See the pins on the 3D model</button>
+            <button type="button" className="btn btn-primary" onClick={() => navigate(viewerPathFor(outcome.projectId))}>See the pins on the 3D model</button>
           </p>
         </div>
       )}

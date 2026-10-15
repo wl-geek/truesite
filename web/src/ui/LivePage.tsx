@@ -10,6 +10,7 @@ import { buildSampleMeta } from '../check/sampleMeta'
 import { captureSnapshot, type Snapshot } from '../check/snapshot'
 import { estimatePose, type Intrinsics, type Pose, type Point2, type Quality } from '../pose'
 import { QrWorkerClient } from '../qr/qrClient'
+import { viewerPathFor } from '../router'
 import { coachHint, effectiveQrSize, findAnchor, isDeskAnchor, isFar, scaleLabel } from '../scene/arMath'
 import { makeEvalMarkers, parseEvalPoints } from '../scene/evalMarkers'
 import { disposePins, makePins } from '../scene/pins'
@@ -417,7 +418,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
             {camError && <p className="status status-error" role="alert">{CAMERA_ERRORS[camError]}</p>}
             {(camError || error) && (
               <p className="live-links">
-                <Link to="/model" className="btn">Open the model viewer</Link> <Link to="/samples" className="btn">Try sample photos</Link>
+                <Link to={viewerPathFor(projectId)} className="btn">Open the model viewer</Link> <Link to="/samples" className="btn">Try sample photos</Link>
               </p>
             )}
           </div>
