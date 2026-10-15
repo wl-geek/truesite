@@ -32,6 +32,9 @@ export function layerOpacity(layer: Layer, t: number): number {
   return Math.max(0.05, base * (1 - 0.95 * Math.min(1, Math.max(0, t))))
 }
 
+/** What the look currently shows: the controls start from it, and the check judges only this. */
+export type LookState = { transparency: number; sectionM: number | null; radiusM: number | null; layers: Record<Layer, boolean> }
+
 export type ConstructionLook = {
   setTransparency(t: number): void
   /** Hide everything above this IFC height (metres), or null for no cut. */
@@ -39,9 +42,21 @@ export type ConstructionLook = {
   setLayerVisible(layer: Layer, on: boolean): void
   /** Show only elements whose centre is within this many metres of the viewer (null: all). */
   setRadius(metres: number | null): void
+  /** A copy of the current settings. */
+  state(): LookState
+  /** The active cut planes in world space (empty with no cut), as of the last update(). */
+  clipPlanes(): Plane[]
   /** Call before each render with the viewer's world position: the cut plane and radius follow the model. */
   update(viewer?: Vector3): void
   dispose(): void
+}
+
+/** A short note for check results when part of the model was hidden or cut, e.g. "Checked as shown: Rebar hidden; cut above 3.3 m." */
+export function viewNote(s: LookState): string | null {
+  const parts = LAYERS.filter((l) => !s.layers[l.id]).map((l) => `${l.label} hidden`)
+  if (s.sectionM !== null) parts.push(`cut above ${s.sectionM.toFixed(1)} m`)
+  if (s.radiusM !== null) parts.push(`view distance ${s.radiusM} m`)
+  return parts.length ? `Checked as shown: ${parts.join('; ')}.` : null
 }
 
 export function applyConstructionLook(model: LoadedModel, classOf: (guid: string) => string, edgeLayer: number): ConstructionLook {
@@ -71,6 +86,8 @@ export function applyConstructionLook(model: LoadedModel, classOf: (guid: string
   }
   let section: number | null = null
   let radius: number | null = null
+  let transparency = 0
+  const shown: Record<Layer, boolean> = { structure: true, rebar: true, openings: true, other: true }
   const layerOn = new Map<Mesh, boolean>(model.meshes.map((m) => [m, true]))
   const localCentre = new Map<Mesh, Vector3>(model.meshes.map((m) => {
     m.geometry.computeBoundingBox()
@@ -84,6 +101,7 @@ export function applyConstructionLook(model: LoadedModel, classOf: (guid: string
 
   const look: ConstructionLook = {
     setTransparency(t) {
+      transparency = t
       for (const layer of Object.keys(mats) as Layer[]) mats[layer].opacity = layerOpacity(layer, t)
     },
     setSection(h) {
@@ -92,6 +110,7 @@ export function applyConstructionLook(model: LoadedModel, classOf: (guid: string
       if (h !== null) clip.push(plane)
     },
     setLayerVisible(layer, on) {
+      shown[layer] = on
       for (const mesh of byLayer.get(layer) ?? []) {
         layerOn.set(mesh, on)
         mesh.visible = on
@@ -100,6 +119,12 @@ export function applyConstructionLook(model: LoadedModel, classOf: (guid: string
     setRadius(metres) {
       radius = metres
       if (metres === null) for (const [mesh, on] of layerOn) mesh.visible = on
+    },
+    state() {
+      return { transparency, sectionM: section, radiusM: radius, layers: { ...shown } }
+    },
+    clipPlanes() {
+      return [...clip]
     },
     update(viewer) {
       if (radius !== null && viewer) {

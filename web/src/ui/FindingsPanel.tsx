@@ -8,6 +8,8 @@ export type FindingsPanelProps = {
   /** Shown on deviations once issue drafting is available (issue #11). */
   onDraftIssue?: (f: Finding) => void
   onClose?: () => void
+  /** "Checked as shown: ..." when layers were hidden or the model was cut during the check (runCheck). */
+  viewNote?: string | null
 }
 
 function Row({ f, selected, onSelect, onDraftIssue }: { f: Finding; selected: boolean; onSelect: (f: Finding) => void; onDraftIssue?: (f: Finding) => void }) {
@@ -30,7 +32,7 @@ function Row({ f, selected, onSelect, onDraftIssue }: { f: Finding; selected: bo
 }
 
 /** Results of an as-built check (spec 4.1, 4.4, 8). Model text is rendered as plain text only. */
-export function FindingsPanel({ result, selectedMark, onSelect, onDraftIssue, onClose }: FindingsPanelProps) {
+export function FindingsPanel({ result, selectedMark, onSelect, onDraftIssue, onClose, viewNote }: FindingsPanelProps) {
   const { deviations, unsure, ok } = groupFindings(result.findings)
   const quality = imageQualityMessage(result.image_quality)
   const greyed = quality !== null
@@ -44,6 +46,7 @@ export function FindingsPanel({ result, selectedMark, onSelect, onDraftIssue, on
         {onClose && <button type="button" className="icon-btn" onClick={onClose} aria-label="Close results">×</button>}
       </header>
       <p className="note">{NOT_A_SURVEY}</p>
+      {viewNote && <p className="note">{viewNote}</p>}
       {result.pose_quality === 'poor' && <p className="warn">The alignment was poor when this photo was taken: treat these results with care.</p>}
       {quality && <p className="warn" role="alert">{quality}</p>}
       {result.summary && <p className="summary">{result.summary}</p>}

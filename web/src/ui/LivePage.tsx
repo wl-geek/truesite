@@ -31,7 +31,7 @@ import { QualityBadge } from './QualityBadge'
 export type LivePageProps = { projectId: string; anchorId: string }
 
 type Loaded = { project: ProjectManifest; anchor: Anchor; model: LoadedModel }
-type Outcome = { result: CheckResult; runId: string | null; photoUrl: string }
+type Outcome = { result: CheckResult; runId: string | null; photoUrl: string; viewNote: string | null }
 
 const CAMERA_ERRORS: Record<CameraError['kind'], string> = {
   insecure: 'The camera only works over a secure (https) connection. Open the https link instead.',
@@ -174,11 +174,12 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
       const res = await runCheck({
         photo: snap.photo, photoW: snap.photoW, photoH: snap.photoH, videoW: snap.videoW, videoH: snap.videoH, K, pose,
         anchor: loaded.anchor, poseQuality: quality, model: loaded.model, scene: overlay.scene, renderer: overlay.renderer, elements,
+        look: overlay.look,
       })
       if (!res.response) throw res.error ?? new ApiError('check failed', 0)
       const result = res.response.result
       if (outcome) URL.revokeObjectURL(outcome.photoUrl)
-      setOutcome({ result, runId: res.response.run_id, photoUrl: URL.createObjectURL(snap.photo) })
+      setOutcome({ result, runId: res.response.run_id, photoUrl: URL.createObjectURL(snap.photo), viewNote: res.viewNote })
       setShowResults(true)
       setSelectedMark(null)
       if (pinsRef.current) disposePins(pinsRef.current)
@@ -383,7 +384,8 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
         {showResults && outcome && (
           <div className="results-sheet">
             <EvidenceView imageUrl={outcome.photoUrl} result={outcome.result} selectedMark={selectedMark} onSelect={setSelectedMark} />
-            <FindingsPanel result={outcome.result} selectedMark={selectedMark} onSelect={selectFinding} onDraftIssue={setDraftFor} onClose={() => setShowResults(false)} />
+            <FindingsPanel result={outcome.result} selectedMark={selectedMark} onSelect={selectFinding} onDraftIssue={setDraftFor} onClose={() => setShowResults(false)}
+              viewNote={outcome.viewNote} />
             {notice && <p className="note" role="status">{notice}</p>}
           </div>
         )}

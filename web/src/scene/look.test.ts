@@ -1,7 +1,7 @@
 import { BoxGeometry, Group, Mesh, MeshBasicMaterial, Vector3 } from 'three'
 import { describe, expect, it } from 'vitest'
 import { buildLoadedModel } from './loadModel'
-import { applyConstructionLook, layerOf, layerOpacity } from './look'
+import { applyConstructionLook, layerOf, layerOpacity, viewNote } from './look'
 
 function model() {
   const g = new Group()
@@ -53,5 +53,55 @@ describe('construction look', () => {
     look.dispose()
     expect(m.meshes[0].material).toBe(original)
     expect(m.meshes.every((x) => x.visible)).toBe(true)
+  })
+})
+
+describe('look state (what the controls and the check read)', () => {
+  it('starts with everything shown, no cut and no fading', () => {
+    const look = applyConstructionLook(model(), (g) => cls[g], 1)
+    expect(look.state()).toEqual({ transparency: 0, sectionM: null, radiusM: null, layers: { structure: true, rebar: true, openings: true, other: true } })
+    expect(look.clipPlanes()).toEqual([])
+    look.dispose()
+  })
+
+  it('reflects the setters, so remounted controls show the real view', () => {
+    const look = applyConstructionLook(model(), (g) => cls[g], 1)
+    look.setTransparency(0.4)
+    look.setSection(3.3)
+    look.setLayerVisible('rebar', false)
+    look.setRadius(5)
+    expect(look.state()).toEqual({ transparency: 0.4, sectionM: 3.3, radiusM: 5, layers: { structure: true, rebar: false, openings: true, other: true } })
+    expect(look.clipPlanes()).toHaveLength(1)
+    look.setSection(null)
+    look.setLayerVisible('rebar', true)
+    look.setRadius(null)
+    expect(look.state().sectionM).toBeNull()
+    expect(look.state().radiusM).toBeNull()
+    expect(look.state().layers.rebar).toBe(true)
+    expect(look.clipPlanes()).toEqual([])
+    look.dispose()
+  })
+
+  it('returns a copy of the state, not the live object', () => {
+    const look = applyConstructionLook(model(), (g) => cls[g], 1)
+    look.state().layers.rebar = false
+    expect(look.state().layers.rebar).toBe(true)
+    look.dispose()
+  })
+})
+
+describe('viewNote', () => {
+  const all = { structure: true, rebar: true, openings: true, other: true }
+  const none = { transparency: 0, sectionM: null, radiusM: null, layers: all }
+  it('says nothing when the whole model was shown (fading does not hide anything)', () => {
+    expect(viewNote({ ...none, transparency: 0.7 })).toBeNull()
+  })
+  it('names hidden layers, the cut and the view distance', () => {
+    expect(viewNote({ ...none, sectionM: 3.3, layers: { ...all, rebar: false } }))
+      .toBe('Checked as shown: Rebar hidden; cut above 3.3 m.')
+    expect(viewNote({ ...none, layers: { ...all, structure: false, openings: false } }))
+      .toBe('Checked as shown: Structure hidden; Doors, windows, services hidden.')
+    expect(viewNote({ ...none, sectionM: 1 })).toBe('Checked as shown: cut above 1.0 m.')
+    expect(viewNote({ ...none, radiusM: 6 })).toBe('Checked as shown: view distance 6 m.')
   })
 })

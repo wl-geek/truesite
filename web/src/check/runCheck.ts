@@ -3,7 +3,7 @@
  * pose -> ID buffer (~640 px) -> numbered marks -> design render at the photo size with marks
  * -> POST /api/check. For sample photos, a failed check falls back to the sample's saved result.
  */
-import { PerspectiveCamera, type Scene, type WebGLRenderer } from 'three'
+import { PerspectiveCamera, Vector3, type Scene, type WebGLRenderer } from 'three'
 import { ApiError, getSavedResult, postCheck } from '../api/client'
 import type { Anchor, CheckContext, CheckResponse, CheckResult, Element, MarkedElement, PoseQuality } from '../api/types'
 import { modelMatrixIfc, projectionMatrixGL, type Intrinsics, type Pose } from '../pose'
@@ -12,6 +12,7 @@ import { poseAnchor } from '../scene/arMath'
 import { visibleFromIdBuffer } from '../scene/elements'
 import { renderDesignImage, renderIdBuffer } from '../scene/idBuffer'
 import type { LoadedModel } from '../scene/loadModel'
+import { viewNote, type ConstructionLook } from '../scene/look'
 import { drawMarks, markCentres, selectMarks } from './marks'
 import { canvasToPng } from './snapshot'
 
@@ -34,6 +35,11 @@ export type CheckInput = {
   renderer: WebGLRenderer
   elements: ReadonlyMap<string, Element>
   sampleId?: string
+  /**
+   * The view controls in use (live AR). The check judges what is shown: hidden layers stay out, and the cut
+   * and view distance are applied at the snapshot pose. Without it (sample photos) the whole model is used.
+   */
+  look?: ConstructionLook
 }
 
 export type CheckOutcome = {
@@ -42,6 +48,8 @@ export type CheckOutcome = {
   error: ApiError | null
   marks: MarkedElement[]
   render: Blob | null
+  /** "Checked as shown: ..." when part of the model was hidden or cut (look.viewNote), else null. */
+  viewNote: string | null
 }
 
 export function shouldUseSaved(err: ApiError, sampleId?: string): boolean {
@@ -64,8 +72,12 @@ function cameraFor(K: Intrinsics, videoW: number, videoH: number, w: number, h: 
   return cam
 }
 
+/** The AR camera sits at the world origin (as in overlay.ts): the look's view distance is measured from there. */
+const CAMERA_AT = new Vector3()
+
 export async function runCheck(input: CheckInput): Promise<CheckOutcome> {
-  const { model, renderer, scene, K, videoW, videoH, photoW, photoH } = input
+  const { model, renderer, scene, K, videoW, videoH, photoW, photoH, look } = input
+  const note = look ? viewNote(look.state()) : null
   const prevMatrix = model.ifcRoot.matrix.clone()
   const prevVisible = model.ifcRoot.visible
   // Finding pins from an earlier check live under ifcRoot: keep them out of both renders.
@@ -78,15 +90,17 @@ export async function runCheck(input: CheckInput): Promise<CheckOutcome> {
     model.ifcRoot.matrix.fromArray(modelMatrixIfc(poseAnchor(input.anchor), input.pose))
     model.ifcRoot.visible = true
     model.ifcRoot.updateMatrixWorld(true)
+    look?.update(CAMERA_AT) // the cut plane and view distance at the snapshot pose
+    const clip = look?.clipPlanes() ?? []
     const { w: iw, h: ih } = idBufferSize(videoW, videoH)
-    const ids = await renderIdBuffer(renderer, scene, model, cameraFor(K, videoW, videoH, iw, ih), iw, ih)
+    const ids = await renderIdBuffer(renderer, scene, model, cameraFor(K, videoW, videoH, iw, ih), iw, ih, clip)
     const visible = visibleFromIdBuffer(ids.buf, iw, ih)
     marks = selectMarks(visible, ids.indexToGuid, input.elements)
     if (!marks.length) {
-      return { response: null, saved: null, error: new ApiError('nothing_visible', 0, 'nothing_visible'), marks, render: null }
+      return { response: null, saved: null, error: new ApiError('nothing_visible', 0, 'nothing_visible'), marks, render: null, viewNote: note }
     }
     const design = await renderDesignImage(renderer, scene, model, cameraFor(K, videoW, videoH, photoW, photoH), photoW, photoH,
-      (guid) => input.elements.get(guid)?.ifc_class ?? '')
+      (guid) => input.elements.get(guid)?.ifc_class ?? '', clip)
     const canvas = document.createElement('canvas')
     canvas.width = photoW
     canvas.height = photoH
@@ -100,6 +114,7 @@ export async function runCheck(input: CheckInput): Promise<CheckOutcome> {
     model.ifcRoot.visible = prevVisible
     model.ifcRoot.matrixWorldNeedsUpdate = true
     if (pins) pins.visible = pinsVisible
+    look?.update(CAMERA_AT) // back to the live pose
   }
 
   const context: CheckContext = {
@@ -107,16 +122,16 @@ export async function runCheck(input: CheckInput): Promise<CheckOutcome> {
     distance_m: poseDistance(input.pose), visible: marks, sample_id: input.sampleId ?? null,
   }
   try {
-    return { response: await postCheck(input.photo, render, context), saved: null, error: null, marks, render }
+    return { response: await postCheck(input.photo, render, context), saved: null, error: null, marks, render, viewNote: note }
   } catch (e) {
     const err = e instanceof ApiError ? e : new ApiError(e instanceof Error ? e.message : String(e), 0)
     if (shouldUseSaved(err, input.sampleId)) {
       try {
-        return { response: null, saved: await getSavedResult(input.sampleId!), error: err, marks, render }
+        return { response: null, saved: await getSavedResult(input.sampleId!), error: err, marks, render, viewNote: note }
       } catch {
         /* no saved result yet: report the original error */
       }
     }
-    return { response: null, saved: null, error: err, marks, render }
+    return { response: null, saved: null, error: err, marks, render, viewNote: note }
   }
 }
