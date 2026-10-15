@@ -6,8 +6,8 @@ import { classPriority, keyDims, markCentres, MAX_MARKS, selectMarks } from './m
 function el(guid: string, ifc_class: string, props: Record<string, unknown> = {}, bbox: Element['bbox_m'] = [[0, 0, 0], [1, 0.1, 2]]): Element {
   return { guid, ifc_class, name: `${ifc_class} ${guid}`, storey: 'L1', bbox_m: bbox, load_bearing: null, props }
 }
-function vis(index: number, pixels: number, cx = 10, cy = 20): VisibleElement {
-  return { index, pixels, coverage: pixels / 1000, box: [0, 0, 100, 100], centroid: { x: cx, y: cy } }
+function vis(index: number, pixels: number, cx = 10, cy = 20, anchor = { x: cx, y: cy }): VisibleElement {
+  return { index, pixels, coverage: pixels / 1000, box: [0, 0, 100, 100], centroid: { x: cx, y: cy }, anchor }
 }
 
 describe('marks', () => {
@@ -45,5 +45,12 @@ describe('marks', () => {
     const visible = [vis(0, 10, 0, 0), vis(1, 99, 320, 180)]
     const marks = selectMarks(visible, ['w', 'w'], elements)
     expect(markCentres(marks, visible, ['w', 'w'], 640, 360).get(1)).toEqual([0.5, 0.5])
+  })
+
+  it('draws each mark at its anchor (on the element), not at the centroid', () => {
+    const elements = new Map([['b', el('b', 'IfcBeam')]])
+    const visible = [vis(0, 500, 320, 180, { x: 64, y: 36 })]
+    const marks = selectMarks(visible, ['b'], elements)
+    expect(markCentres(marks, visible, ['b'], 640, 360).get(1)).toEqual([0.1, 0.1])
   })
 })

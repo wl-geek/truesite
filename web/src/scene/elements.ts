@@ -45,6 +45,50 @@ export interface VisibleElement {
   box: [number, number, number, number]
   /** centroid in image px, top-down */
   centroid: { x: number; y: number }
+  /**
+   * Where the element's mark goes, in image px, top-down: the centroid when that pixel is the element's own,
+   * else the element's pixel furthest from the region's edge (a U shape, or a region split by an occluder).
+   */
+  anchor: { x: number; y: number }
+}
+
+/**
+ * The pixel of element `index` furthest from any other pixel (other elements, background, the frame edge),
+ * as a pixel centre; ties go to the one nearest (cx, cy). Chamfer 3-4 distance over the region's bounding box.
+ */
+function interiorAnchor(buf: Uint8Array, width: number, height: number, index: number,
+  box: { x0: number; y0: number; x1: number; y1: number }, cx: number, cy: number): { x: number; y: number } {
+  const w = box.x1 - box.x0 + 3 // one empty cell of padding on each side
+  const h = box.y1 - box.y0 + 3
+  const d = new Int32Array(w * h)
+  for (let j = 1; j < h - 1; j++) {
+    const y = box.y0 + j - 1
+    for (let i = 1; i < w - 1; i++) {
+      const o = ((height - 1 - y) * width + box.x0 + i - 1) * 4 // GL rows are bottom-up
+      if (decodeId(buf[o], buf[o + 1], buf[o + 2]) === index) d[j * w + i] = 1 << 30
+    }
+  }
+  for (let j = 1; j < h - 1; j++) for (let i = 1; i < w - 1; i++) {
+    const k = j * w + i
+    if (d[k]) d[k] = Math.min(d[k], d[k - 1] + 3, d[k - w] + 3, d[k - w - 1] + 4, d[k - w + 1] + 4)
+  }
+  let best = { x: cx, y: cy }
+  let bestD = -1
+  let bestR = Infinity
+  for (let j = h - 2; j >= 1; j--) for (let i = w - 2; i >= 1; i--) {
+    const k = j * w + i
+    if (!d[k]) continue
+    d[k] = Math.min(d[k], d[k + 1] + 3, d[k + w] + 3, d[k + w + 1] + 4, d[k + w - 1] + 4)
+    const x = box.x0 + i - 1 + 0.5
+    const y = box.y0 + j - 1 + 0.5
+    const r = (x - cx) ** 2 + (y - cy) ** 2
+    if (d[k] > bestD || (d[k] === bestD && r < bestR)) {
+      best = { x, y }
+      bestD = d[k]
+      bestR = r
+    }
+  }
+  return best
 }
 
 /**
@@ -74,13 +118,18 @@ export function visibleFromIdBuffer(buf: Uint8Array, width: number, height: numb
   for (const [index, a] of acc) {
     const coverage = a.n / total
     if (coverage < minCoverage) continue
+    const centroid = { x: a.sx / a.n + 0.5, y: a.sy / a.n + 0.5 }
+    const o = ((height - 1 - Math.floor(centroid.y)) * width + Math.floor(centroid.x)) * 4
+    const anchor = decodeId(buf[o], buf[o + 1], buf[o + 2]) === index
+      ? { ...centroid }
+      : interiorAnchor(buf, width, height, index, a, centroid.x, centroid.y)
     out.push({
       index, pixels: a.n, coverage,
       box: [
         Math.round((a.y0 / height) * 1000), Math.round((a.x0 / width) * 1000),
         Math.round(((a.y1 + 1) / height) * 1000), Math.round(((a.x1 + 1) / width) * 1000),
       ],
-      centroid: { x: a.sx / a.n + 0.5, y: a.sy / a.n + 0.5 },
+      centroid, anchor,
     })
   }
   return out.sort((p, q) => q.pixels - p.pixels)

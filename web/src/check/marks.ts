@@ -62,7 +62,7 @@ export function selectMarks(visible: readonly VisibleElement[], indexToGuid: rea
     .map(({ guid, v, el }, i) => ({ mark: i + 1, guid, ifc_class: el.ifc_class, name: el.name, box: v.box, key_dims: keyDims(el) }))
 }
 
-/** Each mark's centre as a fraction of the frame (0..1), from the ID-buffer centroids. */
+/** Each mark's centre as a fraction of the frame (0..1), from the ID-buffer anchors (a pixel of the element itself). */
 export function markCentres(marks: readonly MarkedElement[], visible: readonly VisibleElement[], indexToGuid: readonly string[],
   width: number, height: number): Map<number, [number, number]> {
   const byGuid = new Map<string, VisibleElement>()
@@ -74,7 +74,7 @@ export function markCentres(marks: readonly MarkedElement[], visible: readonly V
   const out = new Map<number, [number, number]>()
   for (const m of marks) {
     const v = byGuid.get(m.guid)
-    if (v) out.set(m.mark, [v.centroid.x / width, v.centroid.y / height])
+    if (v) out.set(m.mark, [v.anchor.x / width, v.anchor.y / height])
   }
   return out
 }
