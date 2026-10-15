@@ -3,14 +3,17 @@ import { LAYERS, type ConstructionLook, type Layer } from '../scene/look'
 
 export type ModelControlsProps = { look: ConstructionLook; maxHeightM: number; maxRadiusM?: number }
 
-/** Transparency, section height and layers: the controls field AR users expect. */
+/**
+ * Transparency, section height and layers: the controls field AR users expect.
+ * They start from look.state(), so the panel shows the real view each time it mounts again.
+ */
 export function ModelControls({ look, maxHeightM, maxRadiusM = 30 }: ModelControlsProps) {
-  const [transparency, setTransparency] = useState(0)
-  const [cut, setCut] = useState(maxHeightM)
-  const [layers, setLayers] = useState<Record<Layer, boolean>>({ structure: true, rebar: true, openings: true, other: true })
   const top = Math.ceil(maxHeightM * 10) / 10
   const far = Math.ceil(maxRadiusM)
-  const [radius, setRadius] = useState(far)
+  const [transparency, setTransparency] = useState(() => Math.round(look.state().transparency * 100))
+  const [cut, setCut] = useState(() => look.state().sectionM ?? top)
+  const [layers, setLayers] = useState<Record<Layer, boolean>>(() => look.state().layers)
+  const [radius, setRadius] = useState(() => look.state().radiusM ?? far)
 
   return (
     <div className="model-controls">
