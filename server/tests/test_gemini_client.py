@@ -8,6 +8,7 @@ import json
 import httpx
 import pytest
 from google import genai
+from google.auth import exceptions as auth_errors
 from google.genai import errors as genai_errors
 from google.genai import types
 from google.oauth2.credentials import Credentials
@@ -188,6 +189,12 @@ def test_draft_issue_request():
     assert out["result"]["title"].startswith("Door")
 
 
+def test_ask_and_draft_output_is_capped_at_2048_tokens():
+    # Answers are at most 600 characters and drafts 780; 2048 tokens leaves room for LOW thinking (A-28).
+    assert gc.build_ask_request(ELEMENT, "Fire rating?")["config"].max_output_tokens == 2_048
+    assert gc.build_issue_request(GOOD_CHECK["findings"][1], ELEMENT)["config"].max_output_tokens == 2_048
+
+
 def test_labels_added_only_on_agent_platform():
     client = FakeClient(fake_response(GOOD_CHECK), vertexai=True)
     gc.check_asbuilt(PHOTO, RENDER, CONTEXT, client=client)
@@ -198,12 +205,36 @@ def test_labels_added_only_on_agent_platform():
 
 
 def test_unparseable_output_is_retried_once():
-    client = FakeClient(fake_response(None, finish="MAX_TOKENS", as_text='{"findings": [1, 2'),
-                        fake_response(GOOD_CHECK))
+    client = FakeClient(fake_response(None, as_text='{"findings": [1, 2'), fake_response(GOOD_CHECK))
     out = gc.check_asbuilt(PHOTO, RENDER, CONTEXT, client=client)
     assert out["attempts"] == 2 and out["result"] == GOOD_CHECK
     assert len(client.models.calls) == 2
     assert out["usage"]["prompt_tokens"] == 9000 and out["usage"]["cost_usd_est"] == 0.02025  # both billed
+
+
+def test_output_cut_off_at_the_token_cap_is_not_retried():
+    # A retry would hit the same cap and bill it twice (audit A-28).
+    client = FakeClient(fake_response(None, finish="MAX_TOKENS", as_text='{"findings": [1, 2'),
+                        fake_response(GOOD_CHECK))
+    with pytest.raises(gc.GeminiError) as info:
+        gc.check_asbuilt(PHOTO, RENDER, CONTEXT, client=client)
+    assert info.value.kind == "bad_output" and "MAX_TOKENS" in str(info.value)
+    assert len(client.models.calls) == 1
+
+
+@pytest.mark.parametrize("finish", ["SAFETY", "PROHIBITED_CONTENT", "BLOCKLIST", "SPII"])
+def test_safety_stopped_output_is_blocked_and_not_retried(finish):
+    client = FakeClient(fake_response(None, finish=finish, as_text=""), fake_response(GOOD_CHECK))
+    with pytest.raises(gc.GeminiError) as info:
+        gc.check_asbuilt(PHOTO, RENDER, CONTEXT, client=client)
+    assert info.value.kind == "blocked" and finish in str(info.value)
+    assert len(client.models.calls) == 1
+
+
+def test_recitation_stop_is_still_retried():
+    client = FakeClient(fake_response(None, finish="RECITATION", as_text=""), fake_response(GOOD_CHECK))
+    out = gc.check_asbuilt(PHOTO, RENDER, CONTEXT, client=client)
+    assert out["attempts"] == 2 and out["result"] == GOOD_CHECK
 
 
 def test_two_bad_outputs_raise_bad_output():
@@ -243,6 +274,10 @@ def _api_error(cls, code, status):
     (_api_error(genai_errors.ServerError, 504, "DEADLINE_EXCEEDED"), "unavailable", 504),
     (httpx.ReadTimeout("timed out"), "timeout", None),
     (httpx.ConnectError("refused"), "unavailable", None),
+    # Credentials fail at the first request on Agent Platform (ADC is read lazily): a setup error.
+    (auth_errors.DefaultCredentialsError("no ADC"), "bad_request", None),
+    (auth_errors.RefreshError("invalid_grant"), "bad_request", None),
+    (auth_errors.RefreshError("metadata server busy", retryable=True), "unavailable", None),
 ])
 def test_errors_are_translated(exc, kind, status):
     client = FakeClient(exc)
