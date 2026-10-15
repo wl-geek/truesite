@@ -250,7 +250,7 @@ export function listIssues(projectId: string): Promise<{ issues: Issue[]; demo: 
 export type StoredIntrinsics = { f: number; videoW: number; videoH: number; source: 'calibrated' | 'default'; at: string }
 export const DEFAULT_HFOV_DEG = 63
 export function intrinsicsKey(videoW: number, videoH: number): string     // includes orientation, e.g. "1920x1080"
-export function loadIntrinsics(videoW: number, videoH: number): Intrinsics          // stored f, else focalFromHfov(63, W); centred cx, cy
+export function loadIntrinsics(videoW: number, videoH: number): Intrinsics          // stored f, else focalFromHfov(63, max(W, H)): 63° across the long side; centred cx, cy
 export function saveIntrinsics(videoW: number, videoH: number, f: number): void
 export function loadQrSizeCorrection(anchorId: string): number           // multiplier from the check-bar step, default 1
 export function saveQrSizeCorrection(anchorId: string, factor: number): void
