@@ -10,11 +10,11 @@ Google Cloud AI Builder Cup 2026 (JAPAC) · Theme: **Future of Work & Enterprise
 
 ## Try it in 60 seconds (no printer, no site)
 
-1. Open **Samples** and tap a photo. TrueSite runs the real as-built check on a photo taken in our demo room, using the camera pose stored with it.
+1. Open the live demo. On the start page, tap **Open sample photos**, then tap a photo. TrueSite runs the real as-built check on a photo taken in our demo room, using the camera pose stored with it.
 2. Read the findings. Each one has an evidence box on the photo, a rough offset ("about 30 cm right"), and a severity set by TrueSite from the element type.
 3. Tap **Draft issue** on a deviation. Gemini drafts it, you edit it, and you save it. It then appears under **Issues**.
 4. Tap **See the pins on the 3D model**, then tap any element and **Ask** a question ("What's the fire rating?"). Answers come only from that element's model data, and the fields used are shown.
-5. *With a printer:* print the A4 desk sheet (`bim/sheets/room1-D1.pdf`, at 100%) and open `/a/room1/D1` on your phone. The room appears on your desk at 1:20.
+5. *With a printer:* on the start page, tap **Download A4 desk sheet**, print it at 100% and scan the code with your phone camera. The room appears on your desk at 1:20. **Download A4 floor sheet** does the same at 1:1: lay it on the floor and the room stands around you.
 
 > The deviations in our demo room are staged on purpose (the design differs from the room in a few places), so there is something real to find. Findings are labelled **"Visual check, not a survey."**
 
@@ -29,7 +29,7 @@ flowchart LR
   subgraph Phone["Phone browser (one web app)"]
     CAM[Camera] --> QR[zxing-wasm QR worker]
     QR --> POSE["Pose: homography, IPPE flip handling,<br/>LM refinement, One Euro smoothing"]
-    POSE --> AR["three.js overlay<br/>(model at true scale)"]
+    POSE --> AR["three.js overlay at true scale<br/>(Android: WebXR, world-locked)"]
     POSE --> SNAP["Snapshot + ID buffer<br/>→ numbered marks + design render"]
   end
   SNAP -->|photo + render + visible elements| RUN
@@ -48,7 +48,7 @@ flowchart LR
    - Levenberg–Marquardt refinement
    - One Euro smoothing
    - Optional 10-second self-calibration of the focal length.
-3. **Overlay.** The model is drawn at true scale (1:1 on a wall code, 1:20 on a desk code), with an alignment badge and distance.
+3. **Overlay.** The model is drawn at true scale (1:1 on a floor or wall code, 1:20 on a desk code), with an alignment badge and distance. See [AR modes](#ar-modes).
 4. **As-built check.** From the snapshot pose, the browser renders an ID buffer to find the visible elements, then a design render with numbered marks. Gemini compares that render with the photo and returns JSON.
 5. **Server rules.** The server repairs the answer: one finding per mark, clamped boxes, low confidence becomes "can't judge", and offsets are rounded to 10 cm. **Severity comes from the element class in code**, never from the model.
 6. **Act.** Findings are pinned in 3D. Questions are answered from the element's own properties, with the fields cited. Issues are drafted by Gemini and saved by a person.
@@ -61,6 +61,29 @@ flowchart LR
 - **Cloud Build / Artifact Registry**: source deploys.
 - **Secret Manager**: only for the API-key fallback.
 - **Budget alerts.**
+
+## AR modes
+
+Scanning a code opens its live view. Which buttons you get depends on the phone:
+
+| Mode | Phones | What happens |
+|---|---|---|
+| **Start AR (place by code)** | Android Chrome (ARCore) | A WebXR session sends the camera frames to the same QR worker and pose maths. Move slowly left and right until the ring fills: estimates from many angles are fused, then the model is **world-locked**. You can look away from the code, walk under the model and look up. |
+| **Camera overlay** (iPhone: **Start camera**) | Every phone | The model follows the code while it is in view. **Look-around**: when you turn on the spot, the gyroscope holds the model in place. |
+| **Walk inside (AR)** | Android, iPhone | The model at 1:1 in the phone's own world tracking. Android uses a WebXR floor hit-test. iPhone opens AR Quick Look with a USDZ built from the model. |
+
+In the live view, **Transparency**, **Cut above** (a section height), **View distance** and **Layers** (structure, rebar, doors/windows/services, other) keep the model readable over a real place.
+
+**Device status (15 Oct):** On Android over the LAN we have tested the desk overlay, the QR scan and the live *Check as-built*. Not yet confirmed on a device: the place-by-code session, the iPhone Quick Look walk-in, and look-around on iPhone.
+
+## Projects and sheets
+
+| Project | Model | Sheets |
+|---|---|---|
+| `room1` | The 4 × 3 m demo room with its staged deviations | **D1** A4 desk sheet (1:20), **D2** A3 sheet for the 1:20 physical model, **L1** A4 floor sheet (1:1), **A1** A3 wall sheet (1:1, at the surveyed spot) |
+| `rooftop` | A 9 × 9 m two-storey concrete frame (32 columns, 48 beams, 80 rebar cages with starter bars), generated by `bim/truesite_bim/rooftop.py` | **R1** A2 floor sheet with a 33 cm code (the hero demo), **R2** A4 version, **V1–V3** upright A4 viewpoints for tablets without world tracking |
+
+Open the rooftop frame in the viewer at `/model?project=rooftop`. The start page offers D1 and L1 for download. Every sheet is rendered for the deployed URL (see [Deploy](#deploy)).
 
 ## Safety, honesty and cost
 
@@ -86,7 +109,7 @@ flowchart LR
 | Overlay error on a real phone at 1, 2, 3 m | _measured on device, reported here before submission_ |
 | As-built check on labelled photos (hits / misses / false alarms) | _measured, reported here before submission_ |
 
-Simulation numbers are not field accuracy. We publish what we measure.
+Simulation numbers are not field accuracy. We publish what we measure ([how](eval/README.md)).
 
 ## Run it locally
 
@@ -95,18 +118,29 @@ Requirements: Node 20.19+, Python 3.13 with [uv](https://docs.astral.sh/uv/), Do
 ```bash
 make dev-server   # API on :8000 with an offline Gemini stand-in and an in-memory store
 make dev-web      # web app on :5173 (proxies /api); phones: cd web && npm run dev:https
-make test         # BIM (54) + server (260) + web (149) tests and the TypeScript build
+make test         # BIM, server and web tests, plus the TypeScript build
+make sheets BASE_URL=https://<laptop-ip>:5173   # printable sheets for phone tests on the LAN
 ```
 
-Deploy to Google Cloud with `make setup`, `make deploy` and `make verify` (see `infra/gcloud.sh`). Rebuild the model after replacing `bim/models/room1/model.ifc` with `make models`.
+Rebuild the room model after replacing `bim/models/room1/model.ifc` with `make models`.
+
+## Deploy
+
+On Google Cloud, in this order (see `infra/gcloud.sh`):
+
+1. `make setup`, once: APIs, a least-privilege service account, Firestore, the upload bucket, and the budget alert. It is safe to run again.
+2. `make deploy`: renders every QR sheet for the service URL, refuses to deploy unless each sheet links to it, then builds the container on Cloud Build and deploys it to Cloud Run. `GEMINI_BACKEND=apikey make deploy` uses an AI Studio key from Secret Manager instead of Agent Platform.
+3. `make verify`: fails unless `/api/health` reports `"gemini_mode": "live"` and `"store_backend": "gcp"`, the sheets are served as PDFs that link to the URL, and one Ask round trip works.
 
 ## Repository
 
 | Path | What |
 |---|---|
-| `web/` | Vite + React + three.js app: pose maths (`src/pose`), QR worker, AR overlay, check pipeline, UI |
+| `web/` | Vite + React + three.js app: pose maths (`src/pose`), QR worker, AR modes (`src/scene`), check pipeline, UI |
 | `server/` | FastAPI on Cloud Run: Gemini client, validation, severity, limits, Firestore and Cloud Storage store |
-| `bim/` | Offline pipeline: IFC → glb with element GUIDs, `elements.json`, printable QR sheets (ifcopenshell) |
+| `bim/` | Offline pipeline: IFC → glb with element GUIDs, `elements.json`, the rooftop frame, printable QR sheets (ifcopenshell) |
+| `eval/` | Overlay-accuracy and check-quality measurements, and the script that turns them into the tables above |
+| `infra/` | `gcloud.sh`: setup, deploy and verify on Google Cloud |
 | `docs/` | [Design spec](docs/specs/2026-10-11-truesite-design.md), [interface contract](docs/plans/2026-10-11-truesite-contract.md), [research notes](docs/research/research-notes.md), [submission checklist](docs/submission-checklist.md) |
 
 ## Freshness
