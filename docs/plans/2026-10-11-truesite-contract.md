@@ -259,8 +259,9 @@ export function saveQrSizeCorrection(anchorId: string, factor: number): void
 export interface QrDetection { text: string; corners: [Point, Point, Point, Point] }   // symbol order TL,TR,BR,BL, in the pixels of the ImageData sent
 // src/qr/link.ts
 export function parseAnchorLink(text: string, origin: string): { projectId: string; anchorId: string } | null   // accepts our /a/{p}/{a} URLs only
-// src/scene/elements.ts — verified: IFC_GUID_RE, guidOf(obj, known?), idColor(i), decodeId(r,g,b), VisibleElement {index,pixels,coverage,box,centroid},
+// src/scene/elements.ts — verified: IFC_GUID_RE, guidOf(obj, known?), idColor(i), decodeId(r,g,b), VisibleElement {index,pixels,coverage,box,centroid,anchor},
 //   visibleFromIdBuffer(buf, width, height, minCoverage = 0.0005)
+//   anchor (image px, top-down) is where the mark goes: the centroid when that pixel is the element's own, else its pixel furthest from the region's edge.
 // src/scene/loadModel.ts
 export type LoadedModel = { ifcRoot: THREE.Group; gltfScene: THREE.Group; meshes: THREE.Mesh[]; meshGuid: Map<THREE.Mesh, string>; byGuid: Map<string, THREE.Object3D> }
 export function loadModel(url: string, knownGuids: ReadonlySet<string>): Promise<LoadedModel>
@@ -280,7 +281,7 @@ export const MAX_MARKS = 25
 export function classPriority(ifcClass: string): number   // 0 structure, 1 openings/services, 2 other
 export function selectMarks(visible: VisibleElement[], indexToGuid: string[], elements: Map<string, Element>, max?: number): MarkedElement[]
 export function keyDims(el: Element): string
-export function markCentres(marks, visible, indexToGuid, width, height): Map<number, [number, number]>   // fractions 0..1
+export function markCentres(marks, visible, indexToGuid, width, height): Map<number, [number, number]>   // fractions 0..1, from VisibleElement.anchor
 export function drawMarks(ctx: CanvasRenderingContext2D, centres: Map<number, [number, number]>, width: number, height: number): void
 // src/check/snapshot.ts
 export type Snapshot = { photo: Blob; photoW: number; photoH: number; videoW: number; videoH: number; corners: Point[] | null }

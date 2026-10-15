@@ -6,8 +6,8 @@ import { classPriority, keyDims, markCentres, MAX_MARKS, selectMarks } from './m
 function el(guid: string, ifc_class: string, props: Record<string, unknown> = {}, bbox: Element['bbox_m'] = [[0, 0, 0], [1, 0.1, 2]]): Element {
   return { guid, ifc_class, name: `${ifc_class} ${guid}`, storey: 'L1', bbox_m: bbox, load_bearing: null, props }
 }
-function vis(index: number, pixels: number, cx = 10, cy = 20): VisibleElement {
-  return { index, pixels, coverage: pixels / 1000, box: [0, 0, 100, 100], centroid: { x: cx, y: cy } }
+function vis(index: number, pixels: number, cx = 10, cy = 20, anchor = { x: cx, y: cy }): VisibleElement {
+  return { index, pixels, coverage: pixels / 1000, box: [0, 0, 100, 100], centroid: { x: cx, y: cy }, anchor }
 }
 
 describe('marks', () => {
@@ -40,10 +40,28 @@ describe('marks', () => {
     expect(keyDims(el('x', 'IfcFurniture', {}, [[0, 0, 0], [0.9, 0.45, 0.75]]))).toBe('900 × 450 × 750 mm')
   })
 
+  it('gives columns and beams a cross-section from the bounding box, and columns a height', () => {
+    expect(keyDims(el('c', 'IfcColumn', { 'Qto_ColumnBaseQuantities.Length_mm': 3300 }, [[-0.2, -0.2, 0], [0.2, 0.2, 3.3]])))
+      .toBe('400 × 400 mm section, 3300 mm high')
+    expect(keyDims(el('b', 'IfcBeam', { 'Qto_BeamBaseQuantities.Length_mm': 2600 }, [[-0.15, 0.2, 2.7], [0.15, 2.8, 3.3]])))
+      .toBe('300 × 600 mm section, 2600 mm long')
+    expect(keyDims(el('b', 'IfcBeam', { 'Qto_BeamBaseQuantities.Length_mm': 2600 }, [[0.2, -0.15, 2.7], [2.8, 0.15, 3.3]])))
+      .toBe('300 × 600 mm section, 2600 mm long') // along X
+    expect(keyDims(el('c', 'IfcColumn', { 'Qto_ColumnBaseQuantities.Width_mm': 300, 'Qto_ColumnBaseQuantities.Length_mm': 2700 })))
+      .toBe('300 mm wide, 2700 mm high') // quantities win over the box
+  })
+
   it('places mark centres as fractions of the ID buffer, using the largest region per GUID', () => {
     const elements = new Map([['w', el('w', 'IfcWall')]])
     const visible = [vis(0, 10, 0, 0), vis(1, 99, 320, 180)]
     const marks = selectMarks(visible, ['w', 'w'], elements)
     expect(markCentres(marks, visible, ['w', 'w'], 640, 360).get(1)).toEqual([0.5, 0.5])
+  })
+
+  it('draws each mark at its anchor (on the element), not at the centroid', () => {
+    const elements = new Map([['b', el('b', 'IfcBeam')]])
+    const visible = [vis(0, 500, 320, 180, { x: 64, y: 36 })]
+    const marks = selectMarks(visible, ['b'], elements)
+    expect(markCentres(marks, visible, ['b'], 640, 360).get(1)).toEqual([0.1, 0.1])
   })
 })
