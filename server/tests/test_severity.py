@@ -16,6 +16,10 @@ def el(ifc_class: str, load_bearing: bool | None = None) -> Element:
     (el("IfcSlab"), "high"),
     (el("IfcWall", load_bearing=True), "high"),
     (el("IfcWallStandardCase", load_bearing=True), "high"),
+    # Reinforcement is structural: a missing or misplaced bar is a structural defect (audit A-65).
+    (el("IfcReinforcingBar"), "high"),
+    (el("IfcReinforcingMesh"), "high"),
+    (el("IfcTendon"), "high"),
     (el("IfcWall", load_bearing=False), "low"),
     (el("IfcWall", load_bearing=None), "low"),
     (el("IfcDoor"), "medium"),

@@ -18,6 +18,13 @@ describe('marks', () => {
     expect(classPriority('IfcFurniture')).toBe(2)
   })
 
+  it('ranks rebar after structure and openings, so cages never crowd columns out of the 25 marks (audit A-65)', () => {
+    for (const cls of ['IfcReinforcingBar', 'IfcReinforcingMesh', 'IfcTendon']) {
+      expect(classPriority(cls)).toBeGreaterThan(classPriority('IfcColumn'))
+      expect(classPriority(cls)).toBeGreaterThan(classPriority('IfcDoor'))
+    }
+  })
+
   it('selects known elements once each, by priority then size, numbered from 1', () => {
     const elements = new Map([['w', el('w', 'IfcWall')], ['d', el('d', 'IfcDoor')], ['f', el('f', 'IfcFurniture')], ['s', el('s', 'IfcPipeSegment')]])
     const indexToGuid = ['f', 'd', 'w', 's', 'unknown', 'w']
