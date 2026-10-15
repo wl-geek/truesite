@@ -11,10 +11,14 @@ import { anchorCorners, captureSnapshot, fallbackPose, snapshotQuality, type Sna
 import { estimatePose, type Intrinsics, type Pose, type Point2, type Quality } from '../pose'
 import { QrWorkerClient } from '../qr/qrClient'
 import { viewerPathFor } from '../router'
-import { checkAvailability, coachHint, effectiveQrSize, findAnchor, isDeskAnchor, isFar, scaleLabel } from '../scene/arMath'
+import { checkAvailability, coachHint, effectiveQrSize, findAnchor, isDeskAnchor, isFar, scaleLabel, walkInsideFirst } from '../scene/arMath'
 import { makeEvalMarkers, parseEvalPoints } from '../scene/evalMarkers'
+import { paintOf } from '../scene/palette'
 import { disposePins, makePins } from '../scene/pins'
-import { buildWalkScene, canQuickLook, exportUsdz, isAndroid, isAppleMobile, openQuickLook, sceneViewerUrl, usdzUrl } from '../scene/walkthrough'
+import { pickUsdzRadius, usdzPlan } from '../scene/usdzVariants'
+import {
+  appleDeviceName, buildWalkScene, canQuickLook, exportUsdz, isAndroid, isAppleMobile, openQuickLook, sceneViewerUrl, usdzUrl,
+} from '../scene/walkthrough'
 import { startXrWalk, xrArSupported } from '../scene/xrWalk'
 import { NEEDED_VIEWS, startXrPlace, type XrPlaceSession, type XrPlaceState } from '../scene/xrPlace'
 import { xrFallback } from '../scene/xrStart'
@@ -74,7 +78,10 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   const [calibrating, setCalibrating] = useState(false)
   const [showControls, setShowControls] = useState(false)
   const [usdz, setUsdz] = useState<Blob | string | null>(null)
+  // Quick Look has no View distance slider: this picks the build-time distance variant instead (null = all).
+  const [walkRadius, setWalkRadius] = useState<number | null>(null)
   const quickLook = useMemo(() => isAppleMobile() && canQuickLook(), [])
+  const device = useMemo(() => appleDeviceName(), [])
   const android = useMemo(() => isAndroid(), [])
   const [xrOk, setXrOk] = useState(false)
   const [xrPlaced, setXrPlaced] = useState(false)
@@ -93,6 +100,10 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   }, [])
   const pinsRef = useRef<ReturnType<typeof makePins> | null>(null)
   const elements = useMemo(() => new Map((loaded?.project.elements ?? []).map((e) => [e.guid, e])), [loaded])
+  // Colour by element type (palette.js) in every AR mode and the browser-made Quick Look file.
+  const paint = useMemo(() => (guid: string) => { const e = elements.get(guid); return e ? paintOf(e) : undefined }, [elements])
+  // The build-time Quick Look files for this project (scripts/make-usdz.mjs works this out the same way).
+  const plan = useMemo(() => (loaded ? usdzPlan(loaded.project.anchors, loaded.project.elements) : null), [loaded])
 
   useEffect(() => {
     let cancelled = false
@@ -145,7 +156,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
       const overlay = createOverlay({
         video, canvas, model: loaded.model, anchor: loaded.anchor, qr: qrRef.current,
         qrSizeCorrection: loadQrSizeCorrection(loaded.anchor.anchor_id), origin: window.location.origin,
-        classOf: (guid) => elements.get(guid)?.ifc_class ?? '', motion,
+        classOf: (guid) => elements.get(guid)?.ifc_class ?? '', paintOf: paint, motion,
       })
       overlay.onState(setState)
       overlay.start()
@@ -265,8 +276,9 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
     const id = setTimeout(() => {
       fetch(url, { method: 'HEAD' }).then((r) => {
         if (cancelled) return
-        if (r.ok) return setUsdz(url)
-        const scene = buildWalkScene(loaded.model, (g) => elements.get(g)?.ifc_class ?? '', walkCentre(loaded.anchor, loaded.project))
+        // A missing file comes back as the app's index.html (SPA fallback), so check the type too.
+        if (r.ok && !(r.headers.get('content-type') ?? '').includes('text/html')) return setUsdz(url)
+        const scene = buildWalkScene(loaded.model, (g) => elements.get(g)?.ifc_class ?? '', walkCentre(loaded.anchor, loaded.project), paint)
         return exportUsdz(scene).then((b) => !cancelled && setUsdz(b))
       }).catch(() => undefined)
     }, 300)
@@ -274,7 +286,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
       cancelled = true
       clearTimeout(id)
     }
-  }, [loaded, quickLook, elements])
+  }, [loaded, quickLook, elements, paint])
 
   /** Runs one AR start at a time; the AR buttons are disabled meanwhile (audit A-09). */
   async function xrGuard(run: () => Promise<void>) {
@@ -314,7 +326,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
     try {
       qrRef.current ??= new QrWorkerClient()
       xrPlaceRef.current = await startXrPlace({
-        model: loaded.model, anchor: loaded.anchor, classOf: (g) => elements.get(g)?.ifc_class ?? '', qr: qrRef.current,
+        model: loaded.model, anchor: loaded.anchor, classOf: (g) => elements.get(g)?.ifc_class ?? '', paintOf: paint, qr: qrRef.current,
         qrSizeCorrection: loadQrSizeCorrection(loaded.anchor.anchor_id), overlay: xrOverlayRef.current, onState: setXrPlace,
         onEnd: () => {
           hideXrOverlay()
@@ -343,7 +355,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
       setXrPlaced(false)
       try {
         xrStopRef.current = await startXrWalk({
-          model: loaded.model, classOf: (g) => elements.get(g)?.ifc_class ?? '', centreIfc: walkCentre(loaded.anchor, loaded.project),
+          model: loaded.model, classOf: (g) => elements.get(g)?.ifc_class ?? '', paintOf: paint, centreIfc: walkCentre(loaded.anchor, loaded.project),
           overlay: xrOverlayRef.current, onPlaced: () => setXrPlaced(true),
           onEnd: () => {
             hideXrOverlay()
@@ -357,14 +369,27 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
       }
       return
     }
-    if (quickLook && usdz) openQuickLook(usdz)
-    else if (android) {
+    if (quickLook && usdz) {
+      // The build-time file, or its distance variant nearest the View distance setting (written by the same build).
+      // A file made in the browser is always the full model.
+      const setting = walkInsideFirst(loaded.anchor, { quickLook, xrOk }) ? walkRadius : overlayRef.current?.look.state().radiusM ?? null
+      const radius = typeof usdz === 'string' && plan ? pickUsdzRadius(setting, plan) : null
+      openQuickLook(radius === null ? usdz : usdzUrl(loaded.project.project_id, radius))
+    } else if (android) {
       window.location.href = sceneViewerUrl(new URL(loaded.project.model_url, window.location.origin).href, loaded.project.name, window.location.href)
     }
   }
   const canWalk = xrOk || quickLook || android
 
   const desk = loaded ? isDeskAnchor(loaded.anchor) : false
+  // iPhone/iPad on a 1:1 floor code: Walk inside (Quick Look) first, the camera overlay second.
+  const walkFirst = loaded ? walkInsideFirst(loaded.anchor, { quickLook, xrOk }) : false
+  const cameraLabel = xrOk || walkFirst ? 'Camera overlay' : 'Start camera'
+  const walkButton = (className: string) => (
+    <button type="button" className={className} onClick={() => void xrGuard(() => walkInside())} disabled={xrStarting || (quickLook && !usdz)}>
+      {quickLook && !usdz ? 'Preparing walk-through…' : 'Walk inside (AR)'}
+    </button>
+  )
   const placeView = xrPlace ?? XR_PLACE_STARTING
   const checkable = loaded ? checkAvailability(loaded.anchor) : { enabled: true, note: null }
   const selectFinding = (f: Finding) => setSelectedMark(f.mark)
@@ -479,7 +504,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
           <div className="live-start panel">
             {!loaded && !error && <p className="status">Loading the project…</p>}
             {error && <p className="status status-error" role="alert">{error}</p>}
-            {camStopped && <p className="status" role="status">The camera stopped. Tap {xrOk ? 'Camera overlay' : 'Start camera'} to continue.</p>}
+            {camStopped && <p className="status" role="status">The camera stopped. Tap {cameraLabel} to continue.</p>}
             {loaded && (
               <>
                 <p className="eyebrow">{loaded.project.name} · {loaded.anchor.label || loaded.anchor.anchor_id}</p>
@@ -489,7 +514,13 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
                     ? 'The model appears as a 1:20 scale model beside the code, like an architect\'s model on the table.'
                     : 'The model appears at real size, lined up with the place where the code is fixed.'}
                 </p>
-                {xrOk ? (
+                {walkFirst ? (
+                  <ol className="steps">
+                    <li>Stand on the code, point the {device} at the ground a step ahead, then tap <strong>Walk inside (AR)</strong>.</li>
+                    <li>Walk around freely: the model stays where it was placed.</li>
+                    {checkable.enabled && <li>To check the build, use <strong>Camera overlay</strong> and keep the code in view.</li>}
+                  </ol>
+                ) : xrOk ? (
                   <ol className="steps">
                     <li>Tap <strong>Start AR (place by code)</strong> and allow the camera.</li>
                     <li>Point at the code from about 1 m away, then move slowly left and right until the circle is full.</li>
@@ -505,22 +536,33 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
                     <li>{desk ? 'Walk around the sheet to look at the model.' : 'Aim at the work and tap Check as-built.'}</li>
                   </ol>
                 )}
+                {walkFirst && plan && plan.radii.length > 0 && (
+                  <label className="walk-distance">
+                    View distance
+                    <select value={walkRadius ?? ''} onChange={(e) => setWalkRadius(e.target.value === '' ? null : Number(e.target.value))}>
+                      <option value="">All</option>
+                      {[...plan.radii].sort((a, b) => b - a).map((r) => <option key={r} value={r}>{r} m around the code</option>)}
+                    </select>
+                  </label>
+                )}
                 <div className="live-start-actions">
+                  {walkFirst && walkButton('btn btn-primary')}
                   {xrOk && (
                     <button type="button" className="btn btn-primary" onClick={() => void xrGuard(startArPlace)} disabled={xrStarting}>
                       {xrStarting ? 'Starting AR…' : 'Start AR (place by code)'}
                     </button>
                   )}
-                  <button type="button" className={xrOk ? 'btn' : 'btn btn-primary'} onClick={start} disabled={starting}>
-                    {starting ? 'Starting…' : xrOk ? 'Camera overlay' : 'Start camera'}
+                  <button type="button" className={xrOk || walkFirst ? 'btn' : 'btn btn-primary'} onClick={start} disabled={starting}>
+                    {starting ? 'Starting…' : cameraLabel}
                   </button>
-                  {canWalk && !desk && (
-                    <button type="button" className="btn btn-accent" onClick={() => void xrGuard(() => walkInside())} disabled={xrStarting || (quickLook && !usdz)}>
-                      {quickLook && !usdz ? 'Preparing walk-through…' : 'Walk inside (AR)'}
-                    </button>
-                  )}
+                  {canWalk && !desk && !walkFirst && walkButton('btn btn-accent')}
                 </div>
-                {canWalk && !desk && (
+                {walkFirst ? (
+                  <p className="note">
+                    <strong>Walk inside</strong> opens the model in the {device}'s own AR viewer at 1:1. It places the model on the
+                    ground where you point, not on the code itself, so it can sit a little off the sheet.
+                  </p>
+                ) : canWalk && !desk && (
                   <p className="note">
                     <strong>Walk inside</strong> opens the model in your phone's own AR viewer at 1:1. It stays put while you
                     walk through it. Point at the floor, let it place, then walk in.

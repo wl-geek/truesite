@@ -34,6 +34,19 @@ export function isDeskAnchor(anchor: ApiAnchor): boolean {
   return anchor.scale < 1
 }
 
+/** A code lying flat on the floor with the model at 1:1 around it (L1, R1, S1, ...). */
+export function isLifeSizeFloor(anchor: ApiAnchor): boolean {
+  return anchor.normal[2] > 0.9 && anchor.scale >= 0.999
+}
+
+/**
+ * iPhone/iPad (AR Quick Look, no WebXR) on a 1:1 floor code: Walk inside is the main action, because Quick Look
+ * tracks the world while you walk. The camera overlay stays as the second button; Android keeps Start AR first.
+ */
+export function walkInsideFirst(anchor: ApiAnchor, device: { quickLook: boolean; xrOk: boolean }): boolean {
+  return device.quickLook && !device.xrOk && isLifeSizeFloor(anchor)
+}
+
 /** "Life size · 1:1" for scale 1, else "Scale model · 1:20" (scale 0.05). */
 export function scaleLabel(anchor: ApiAnchor): string {
   return anchor.scale >= 0.999 ? 'Life size · 1:1' : `Scale model · 1:${Math.round(1 / anchor.scale)}`
@@ -71,6 +84,8 @@ export type CheckAvailability = { enabled: boolean; note: string | null }
 const DEMO_SHEETS: Record<string, CheckAvailability> = {
   'room1/D1': { enabled: false, note: 'Checks need the real site or our 1:20 model. Try the sample photos.' },
   'room1/L1': { enabled: true, note: 'Away from the demo room, elements will read as missing.' },
+  'site/S1': { enabled: false, note: 'This sheet is for walking through the design: nothing is built here to check. Try the sample photos.' },
+  'site/S2': { enabled: false, note: 'This sheet is for walking through the design: nothing is built here to check. Try the sample photos.' },
 }
 
 export function checkAvailability(anchor: ApiAnchor): CheckAvailability {

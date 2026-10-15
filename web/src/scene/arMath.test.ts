@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import type { Anchor, ProjectManifest } from '../api/types'
-import { checkAvailability, coachHint, effectiveQrSize, findAnchor, isDeskAnchor, isFar, poseAnchor, scaleLabel, searchingSeconds, SEARCH_TIPS_AFTER_S, toVideoPixels } from './arMath'
+import {
+  checkAvailability, coachHint, effectiveQrSize, findAnchor, isDeskAnchor, isFar, isLifeSizeFloor, poseAnchor, scaleLabel, searchingSeconds,
+  SEARCH_TIPS_AFTER_S, toVideoPixels, walkInsideFirst,
+} from './arMath'
 
 const A1: Anchor = { anchor_id: 'A1', project_id: 'room1', qr_size_m: 0.23, position_m: [0.1, 1.5, 1.35], normal: [1, 0, 0], up: [0, 0, 1], scale: 1, label: 'Wall' }
 const D1: Anchor = { ...A1, anchor_id: 'D1', qr_size_m: 0.12, normal: [0, 0, 1], up: [0, 1, 0], scale: 0.05 }
@@ -75,5 +78,20 @@ describe('arMath', () => {
     expect(checkAvailability(L1).note).toMatch(/read as missing/)
     expect(checkAvailability(A1)).toEqual({ enabled: true, note: null })
     expect(checkAvailability({ ...D1, project_id: 'other' })).toEqual({ enabled: true, note: null })
+    // The steel frame is a walk-through of the design in an empty car park: nothing there to check.
+    const S1: Anchor = { ...L1, anchor_id: 'S1', project_id: 'site', position_m: [9, 6, 0] }
+    expect(checkAvailability(S1).enabled).toBe(false)
+    expect(checkAvailability({ ...S1, anchor_id: 'S2' }).note).toMatch(/sample photos/)
+  })
+
+  it('makes Walk inside the main action on iPhone/iPad for 1:1 floor codes only', () => {
+    expect(isLifeSizeFloor(L1)).toBe(true)
+    expect(isLifeSizeFloor(D1)).toBe(false) // desk: 1:20
+    expect(isLifeSizeFloor(A1)).toBe(false) // wall
+    expect(walkInsideFirst(L1, { quickLook: true, xrOk: false })).toBe(true)
+    expect(walkInsideFirst(D1, { quickLook: true, xrOk: false })).toBe(false)
+    expect(walkInsideFirst(A1, { quickLook: true, xrOk: false })).toBe(false) // upright viewpoints keep the camera overlay
+    expect(walkInsideFirst(L1, { quickLook: false, xrOk: true })).toBe(false) // Android: Start AR stays primary
+    expect(walkInsideFirst(L1, { quickLook: false, xrOk: false })).toBe(false)
   })
 })
