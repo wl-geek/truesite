@@ -1,7 +1,7 @@
 """Firestore (Native mode) + Cloud Storage implementation of `Store`.
 
 Data model
-  usage/{YYYY-MM-DD}        {checks, expire_at}                     daily cap counter (UTC day; counts attempts)
+  usage/{YYYY-MM-DD[-ask]}  {checks, expire_at}                     daily cap counters (UTC day; count attempts)
   check_runs/{run_id}       CheckRun fields + expire_at
   issues/{issue_id}         Issue fields + expire_at
   saved_results/{sample_id} {result, saved_at}                       last real result per sample photo
@@ -76,8 +76,11 @@ class FirestoreGcsStore:
         @firestore.transactional version was also correct, but with 3+
         concurrent callers some raised ValueError("Failed to commit
         transaction in 5 attempts") and calls stalled 6-8 s.
+
+        `day` may carry a suffix ("2026-10-15-ask"): only its date part sets
+        expire_at, and the full key stays the document id.
         """
-        expire_at = datetime.fromisoformat(day).replace(tzinfo=timezone.utc) + RETENTION
+        expire_at = datetime.strptime(day[:10], "%Y-%m-%d").replace(tzinfo=timezone.utc) + RETENTION
         result = self.db.collection(USAGE).document(day).set(
             # Exactly one transform in this write, so transform_results[0] is it.
             {"checks": firestore.Increment(1), "expire_at": expire_at},

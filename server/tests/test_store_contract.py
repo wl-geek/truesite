@@ -1,6 +1,15 @@
-"""One contract for every Store implementation (the in-memory one here; Firestore + GCS in Task 5)."""
+"""One contract for every Store implementation.
+
+Params:
+  memory    InMemoryStore (local dev and the route tests)
+  fake-gcp  FirestoreGcsStore on the in-memory Firestore/GCS stand-ins (tests/fake_gcp.py)
+  gcp       FirestoreGcsStore on the Firestore emulator; skipped unless FIRESTORE_EMULATOR_HOST
+            is set (see docs/research/research-notes.md). Blobs still use the GCS stand-in;
+            test_store_gcs_stub.py covers the real storage client.
+"""
 from __future__ import annotations
 
+import os
 import threading
 import uuid
 from datetime import datetime, timedelta, timezone
@@ -9,13 +18,31 @@ import pytest
 
 from app.schemas import CheckRun, Issue
 from app.store import InMemoryStore, Store, blob_key
+from app.store_gcp import FirestoreGcsStore
+
+from .fake_gcp import FakeFirestore, FakeStorage
 
 T0 = datetime(2026, 10, 15, 8, 0, tzinfo=timezone.utc)
 
 
-@pytest.fixture(params=["memory"])
+def _emulator_store() -> FirestoreGcsStore:
+    from google.auth.credentials import AnonymousCredentials
+    from google.cloud import firestore
+
+    # A fresh project id per test keeps the emulator's data apart without a reset call.
+    db = firestore.Client(project=f"demo-truesite-{uuid.uuid4().hex[:12]}", credentials=AnonymousCredentials())
+    return FirestoreGcsStore(bucket="truesite-test", firestore_client=db, storage_client=FakeStorage())
+
+
+@pytest.fixture(params=["memory", "fake-gcp", "gcp"])
 def any_store(request) -> Store:
-    return InMemoryStore()
+    if request.param == "memory":
+        return InMemoryStore()
+    if request.param == "fake-gcp":
+        return FirestoreGcsStore(bucket="truesite-test", firestore_client=FakeFirestore(), storage_client=FakeStorage())
+    if not os.environ.get("FIRESTORE_EMULATOR_HOST"):
+        pytest.skip("set FIRESTORE_EMULATOR_HOST to run the contract against the Firestore emulator")
+    return _emulator_store()
 
 
 def _issue(session: str, title: str, minutes: int = 0, project: str = "room1") -> Issue:
