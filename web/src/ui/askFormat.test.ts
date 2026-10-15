@@ -17,6 +17,9 @@ describe('askFormat', () => {
   it('explains errors', () => {
     expect(askErrorMessage({ status: 429, code: 'rate_limited' })).toMatch(/Too many questions/)
     expect(askErrorMessage({ status: 503, code: 'model_unavailable' })).toBe("Couldn't answer — try again.")
-    expect(askErrorMessage({ status: 0 })).toMatch(/No connection/)
+    expect(askErrorMessage({ status: 0, code: 'network' })).toMatch(/No connection/)
+    expect(askErrorMessage({ status: 0, code: 'timeout' })).toMatch(/too long/)
+    expect(askErrorMessage({ status: 0, code: 'timeout' })).not.toMatch(/connection|network/i)
+    expect(askErrorMessage({ status: 0 })).toBe("Couldn't answer — try again.") // not an HTTP failure: don't blame the network
   })
 })
