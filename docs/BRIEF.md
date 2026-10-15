@@ -44,7 +44,7 @@ Read this first, then `DEVELOPMENT.md` (how to work), the [design spec](specs/20
 
 ## 3. Reference video (what "good" looks like for the base experience)
 
-Wai found a 13-second screen recording of a commercial construction-AR app on a stadium site. The video is not in the repo because it's third-party footage. What it shows:
+Wai found a 13-second screen recording of a commercial construction-AR app on a stadium site. It's third-party footage, so it lives in the private repo `wl-geek/truesite-private`, never here. To get it, from this repo's root run `gh repo clone wl-geek/truesite-private capture` (`capture/` is git-ignored). What it shows:
 
 1. **Marker placement.** A printed QR code is taped (orange tape) to a concrete core or column.
    - On-screen card: *"Scan Marker to Place Model. Approach the Marker until you see the progress circle. Complete the progress circle by shifting from left to right, to view the Marker from a range of angles."*
