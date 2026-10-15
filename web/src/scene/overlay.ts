@@ -6,10 +6,7 @@
  * -> ifcRoot.matrix = modelMatrixIfc(anchor, pose). The AR camera sits at the origin with an
  * identity world matrix; only its projection changes (projectionMatrixGL, object-fit: cover).
  */
-import {
-  DoubleSide, EdgesGeometry, LineBasicMaterial, LineSegments, Mesh, MeshBasicMaterial, PerspectiveCamera, Scene,
-  WebGLRenderer, type Material,
-} from 'three'
+import { PerspectiveCamera, Scene, WebGLRenderer } from 'three'
 import type { Anchor as ApiAnchor } from '../api/types'
 import { grabFrame } from '../camera/camera'
 import { loadIntrinsics } from '../camera/intrinsics'
@@ -20,6 +17,7 @@ import type { QrWorkerClient } from '../qr/qrClient'
 import { applyProjection } from './arCamera'
 import { effectiveQrSize, poseAnchor, toVideoPixels } from './arMath'
 import type { LoadedModel } from './loadModel'
+import { applyConstructionLook, type ConstructionLook } from './look'
 import { deviceRotation, lookAroundPose, LOOK_AROUND_MAX_S, type MotionLock } from './motion'
 
 /** Edges live on their own layer so the ID-buffer render (layer 0 only) never sees them. */
@@ -49,6 +47,7 @@ export type Overlay = {
   readonly scene: Scene
   readonly camera: PerspectiveCamera
   readonly model: LoadedModel
+  readonly look: ConstructionLook
   start(): void
   stop(): void
   onState(cb: (s: OverlayState) => void): () => void
@@ -89,27 +88,9 @@ export function createOverlay(o: OverlayOptions): Overlay {
   scene.add(model.ifcRoot)
   model.ifcRoot.visible = false
 
-  // Construction look: translucent concrete grey with steel-blue edges, opaque red-orange rebar,
-  // other elements translucent sky blue with orange edges. Originals are restored on dispose.
-  const face = new MeshBasicMaterial({ color: 0x4e7fb3, transparent: true, opacity: 0.35, depthWrite: false, side: DoubleSide })
-  const concrete = new MeshBasicMaterial({ color: 0xb9bec4, transparent: true, opacity: 0.32, depthWrite: false, side: DoubleSide })
-  const rebar = new MeshBasicMaterial({ color: 0xe0441b, side: DoubleSide })
-  const edgeMat = new LineBasicMaterial({ color: 0xff6a13 })
-  const concreteEdge = new LineBasicMaterial({ color: 0x1c3b5e })
-  const originals = new Map<Mesh, Material | Material[]>()
-  const edges: LineSegments[] = []
-  for (const mesh of model.meshes) {
-    originals.set(mesh, mesh.material)
-    const cls = o.classOf(model.meshGuid.get(mesh) ?? '')
-    const isRebar = cls === 'IfcReinforcingBar'
-    const isConcrete = /^Ifc(Column|Beam|Slab|Footing|Member|Pile|Plate)$/.test(cls)
-    mesh.material = isRebar ? rebar : isConcrete ? concrete : face
-    if (isRebar) continue // thin bars read fine without edges, and it halves the draw calls
-    const line = new LineSegments(new EdgesGeometry(mesh.geometry, 25), isConcrete ? concreteEdge : edgeMat)
-    line.layers.set(EDGE_LAYER)
-    mesh.add(line)
-    edges.push(line)
-  }
+  // Construction look + transparency, section and layers (scene/look.ts); restored on dispose.
+  renderer.localClippingEnabled = true
+  const look = applyConstructionLook(model, o.classOf, EDGE_LAYER)
 
   // Look-around: latest device rotation, and the pose + rotation when the code was last seen.
   let deviceR: Mat3 | null = null
@@ -199,6 +180,7 @@ export function createOverlay(o: OverlayOptions): Overlay {
       renderer.setSize(cw, ch, false)
       applyProjection(camera, projectionMatrixGL({ K, videoW: vw, videoH: vh, viewW: cw, viewH: ch, near: NEAR_M, far: FAR_M, fit: 'cover' }))
     }
+    look.update()
     renderer.render(scene, camera)
   }
 
@@ -230,7 +212,7 @@ export function createOverlay(o: OverlayOptions): Overlay {
   }
 
   return {
-    renderer, scene, camera, model,
+    renderer, scene, camera, model, look,
     start() {
       if (running) return
       running = true
@@ -266,12 +248,7 @@ export function createOverlay(o: OverlayOptions): Overlay {
       listeners.clear()
       cornerListeners.clear()
       window.removeEventListener('deviceorientation', onOrientation)
-      for (const line of edges) {
-        line.removeFromParent()
-        line.geometry.dispose()
-      }
-      for (const [mesh, mat] of originals) mesh.material = mat
-      for (const m of [face, concrete, rebar, edgeMat, concreteEdge]) m.dispose()
+      look.dispose()
       scene.remove(model.ifcRoot)
       renderer.dispose()
     },

@@ -15,6 +15,8 @@ import { makeEvalMarkers, parseEvalPoints } from '../scene/evalMarkers'
 import { disposePins, makePins } from '../scene/pins'
 import { buildWalkScene, canQuickLook, exportUsdz, isAndroid, isAppleMobile, openQuickLook, sceneViewerUrl } from '../scene/walkthrough'
 import { startXrWalk, xrArSupported } from '../scene/xrWalk'
+import { NEEDED_VIEWS, startXrPlace, type XrPlaceSession, type XrPlaceState } from '../scene/xrPlace'
+import { ModelControls } from './ModelControls'
 import { disposeModel, loadModel, type LoadedModel } from '../scene/loadModel'
 import { createOverlay, type Overlay, type OverlayState } from '../scene/overlay'
 import { CalibrationPanel } from './CalibrationPanel'
@@ -58,6 +60,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   const [draftFor, setDraftFor] = useState<Finding | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [calibrating, setCalibrating] = useState(false)
+  const [showControls, setShowControls] = useState(false)
   const [usdz, setUsdz] = useState<Blob | null>(null)
   const quickLook = useMemo(() => isAppleMobile() && canQuickLook(), [])
   const android = useMemo(() => isAndroid(), [])
@@ -65,6 +68,8 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   const [xrPlaced, setXrPlaced] = useState(false)
   const xrOverlayRef = useRef<HTMLDivElement>(null)
   const xrStopRef = useRef<(() => void) | null>(null)
+  const xrPlaceRef = useRef<XrPlaceSession | null>(null)
+  const [xrPlace, setXrPlace] = useState<XrPlaceState | null>(null)
   useEffect(() => {
     void xrArSupported().then(setXrOk)
   }, [])
@@ -219,6 +224,28 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
     }
   }, [loaded, quickLook, elements])
 
+  // Android: place by the QR code inside AR (camera-access), then ARCore world-tracking holds it.
+  async function startArPlace() {
+    if (!loaded || !xrOverlayRef.current) return
+    xrOverlayRef.current.style.display = 'flex'
+    try {
+      qrRef.current ??= new QrWorkerClient()
+      xrPlaceRef.current = await startXrPlace({
+        model: loaded.model, anchor: loaded.anchor, classOf: (g) => elements.get(g)?.ifc_class ?? '', qr: qrRef.current,
+        qrSizeCorrection: loadQrSizeCorrection(loaded.anchor.anchor_id), overlay: xrOverlayRef.current, onState: setXrPlace,
+        onEnd: () => {
+          if (xrOverlayRef.current) xrOverlayRef.current.style.display = 'none'
+          xrPlaceRef.current = null
+          setXrPlace(null)
+        },
+      })
+    } catch {
+      // No camera access in AR on this phone: fall back to placing on the floor by tap.
+      xrOverlayRef.current.style.display = 'none'
+      await walkInside()
+    }
+  }
+
   async function walkInside() {
     if (!loaded) return
     if (xrOk && xrOverlayRef.current) {
@@ -253,8 +280,39 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   return (
     <main className="live-page">
       <div ref={xrOverlayRef} className="xr-overlay" style={{ display: 'none' }}>
-        <p className="coach">{xrPlaced ? 'Walk through the model. It stays where you placed it.' : 'Point at the floor until the orange ring appears, then tap to place the model.'}</p>
-        <button type="button" className="btn" onClick={() => xrStopRef.current?.()}>Exit</button>
+        {xrPlace ? (
+          <>
+            {xrPlace.phase === 'scanning' ? (
+              <div className="xr-scan">
+                <svg viewBox="0 0 44 44" className="xr-ring" aria-hidden="true">
+                  <circle cx="22" cy="22" r="18" className="xr-ring-bg" />
+                  <circle cx="22" cy="22" r="18" className="xr-ring-fg" style={{ strokeDasharray: `${113 * xrPlace.progress} 113` }} />
+                </svg>
+                <p className="coach">
+                  {xrPlace.codeSeen ? 'Good. Move slowly left and right, keeping the code in view, until the circle is full.'
+                    : 'Point at the QR code from about 1 m away.'}
+                </p>
+                <p className="note">{xrPlace.views}/{NEEDED_VIEWS} views · {Math.round(xrPlace.spreadDeg)}° of angle</p>
+              </div>
+            ) : (
+              <div className="xr-scan">
+                <p className="coach">Placed by the code. Walk around and look up: the model stays where it belongs.</p>
+                {xrPlaceRef.current && loaded && (
+                  <ModelControls look={xrPlaceRef.current.look} maxHeightM={Math.max(...loaded.project.elements.map((e) => e.bbox_m[1][2]))} />
+                )}
+              </div>
+            )}
+            <div className="live-start-actions">
+              {xrPlace.phase === 'locked' && <button type="button" className="btn" onClick={() => xrPlaceRef.current?.rescan()}>Re-scan</button>}
+              <button type="button" className="btn" onClick={() => xrPlaceRef.current?.end()}>Exit</button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="coach">{xrPlaced ? 'Walk through the model. It stays where you placed it.' : 'Point at the floor until the orange ring appears, then tap to place the model.'}</p>
+            <button type="button" className="btn" onClick={() => xrStopRef.current?.()}>Exit</button>
+          </>
+        )}
       </div>
       <div className="live-stage">
         <video ref={videoRef} className="live-video" playsInline muted autoPlay />
@@ -285,9 +343,16 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
           </div>
         )}
 
+        {running && showControls && overlayRef.current && loaded && !showResults && !calibrating && (
+          <div className="live-controls">
+            <ModelControls look={overlayRef.current.look} maxHeightM={Math.max(...loaded.project.elements.map((e) => e.bbox_m[1][2]))} />
+          </div>
+        )}
+
         {running && !showResults && !calibrating && (
           <div className="live-actions">
             <button type="button" className="btn" onClick={() => setCalibrating(true)} aria-label="Camera setup">Setup</button>
+            <button type="button" className="btn" onClick={() => setShowControls((v) => !v)} aria-pressed={showControls}>View</button>
             {outcome && <button type="button" className="btn" onClick={() => setShowResults(true)}>Last results</button>}
             {dev && <button type="button" className="btn" onClick={saveSample} disabled={!state?.tracking}>Save as sample</button>}
             <button type="button" className="btn btn-accent" onClick={check} disabled={checking || !state?.tracking}>
@@ -329,8 +394,11 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
                   <li>{desk ? 'Walk around the sheet to look at the model.' : 'Aim at the work and tap Check as-built.'}</li>
                 </ol>
                 <div className="live-start-actions">
-                  <button type="button" className="btn btn-primary" onClick={start} disabled={starting}>
-                    {starting ? 'Starting…' : 'Start camera'}
+                  {xrOk && (
+                    <button type="button" className="btn btn-primary" onClick={() => void startArPlace()}>Start AR (place by code)</button>
+                  )}
+                  <button type="button" className={xrOk ? 'btn' : 'btn btn-primary'} onClick={start} disabled={starting}>
+                    {starting ? 'Starting…' : xrOk ? 'Camera overlay' : 'Start camera'}
                   </button>
                   {canWalk && !desk && (
                     <button type="button" className="btn btn-accent" onClick={walkInside} disabled={quickLook && !usdz}>

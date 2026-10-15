@@ -470,3 +470,14 @@ body {
 .live-start-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .xr-overlay { position: fixed; inset: 0; pointer-events: none; flex-direction: column; justify-content: space-between; align-items: center; padding: 24px 16px; }
 .xr-overlay > * { pointer-events: auto; }
+.xr-scan { display: flex; flex-direction: column; align-items: center; gap: 8px; max-width: 460px; }
+.xr-ring { width: 72px; height: 72px; transform: rotate(-90deg); }
+.xr-ring circle { fill: none; stroke-width: 5; }
+.xr-ring-bg { stroke: rgba(255, 255, 255, 0.5); }
+.xr-ring-fg { stroke: var(--orange); stroke-linecap: round; transition: stroke-dasharray 0.2s; }
+.model-controls { display: grid; gap: 8px; background: rgba(255, 255, 255, 0.92); border-radius: var(--radius); padding: 10px 12px; width: min(420px, 92vw); font-size: 14px; color: var(--ink); }
+.model-controls label { display: grid; gap: 2px; }
+.model-controls input[type='range'] { width: 100%; }
+.layer-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip-on { background: var(--ink); color: var(--white); border-color: var(--ink); }
+.live-controls { position: absolute; left: 0; right: 0; bottom: 84px; display: flex; justify-content: center; }
