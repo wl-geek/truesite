@@ -17,6 +17,16 @@ describe('FindingsPanel', () => {
     expect(render('Checked as shown: Rebar hidden; cut above 3.3 m.')).toContain('<p class="note">Checked as shown: Rebar hidden; cut above 3.3 m.</p>')
   })
 
+  it('offers Draft issue on deviations only when the photo was good enough (audit A-52)', () => {
+    const finding = { mark: 1, guid: 'g'.repeat(22), name: 'Column', ifc_class: 'IfcColumn', status: 'missing', confidence: 0.9,
+      evidence_box: null, offset: null, explanation: '', severity: 'high' } as const
+    const html = (image_quality: CheckResult['image_quality']) => renderToStaticMarkup(createElement(FindingsPanel, {
+      result: { ...result, image_quality, findings: [finding] }, selectedMark: null, onSelect: () => undefined, onDraftIssue: () => undefined,
+    }))
+    expect(html('good')).toContain('Draft issue')
+    for (const q of ['too_dark', 'blurred', 'marker_far', 'occluded'] as const) expect(html(q)).not.toContain('Draft issue')
+  })
+
   it('adds no note when the whole model was checked', () => {
     expect(render(null)).not.toContain('Checked as shown')
     expect(render()).not.toContain('Checked as shown')

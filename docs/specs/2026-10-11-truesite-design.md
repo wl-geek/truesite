@@ -251,7 +251,7 @@ The prompt also names the printed QR code (the anchor; `distance_m` is the camer
 | Pose quality poor | Red badge; the check is allowed, with a warning stamped on its findings |
 | QR not in the snapshot | Refuse: "Keep the code in view when you take the photo" |
 | Check bar doesn't measure 10 cm | User enters the measured length; QR size corrected for that device |
-| `image_quality` is not good | Findings shown greyed with the reason, plus a retake prompt |
+| `image_quality` is not good | Findings shown greyed with the reason, plus a retake prompt. Their pins on the model are dimmed and Draft issue is hidden |
 | Gemini timeout (25 s per attempt) or server error | One retry, then "Check failed — try again"; the snapshot stays on the device |
 | Response fails parsing or schema | One retry, except when the output was cut off at the token cap (`MAX_TOKENS`): a retry would be cut off and billed again. Invalid individual findings are dropped and logged |
 | Prompt or output stopped by a safety filter | No retry; plain message (422 `model_blocked`) |

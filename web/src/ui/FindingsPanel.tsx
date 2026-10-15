@@ -53,7 +53,8 @@ export function FindingsPanel({ result, selectedMark, onSelect, onDraftIssue, on
       <div className={greyed ? 'findings greyed' : 'findings'}>
         {deviations.length > 0 && (
           <ul aria-label="Possible deviations">
-            {deviations.map((f) => <Row key={f.mark} f={f} selected={f.mark === selectedMark} onSelect={onSelect} onDraftIssue={onDraftIssue} />)}
+            {/* No drafting from a photo that wasn't good enough: retake it first (audit A-52). */}
+            {deviations.map((f) => <Row key={f.mark} f={f} selected={f.mark === selectedMark} onSelect={onSelect} onDraftIssue={greyed ? undefined : onDraftIssue} />)}
           </ul>
         )}
         {result.unexpected.length > 0 && (

@@ -1,3 +1,4 @@
+import type { Mesh, MeshBasicMaterial, SphereGeometry } from 'three'
 import { describe, expect, it } from 'vitest'
 import type { Element, Finding } from '../api/types'
 import { findingAnchorPoint, makePins } from './pins'
@@ -15,5 +16,11 @@ describe('pins', () => {
     expect(makePins([f('misplaced', 'medium')], map).children).toHaveLength(1)
     expect(makePins([f('present_ok', null), f('cannot_judge', null)], map).children).toHaveLength(0)
     expect(makePins([{ ...f('missing', 'high'), guid: 'zz' }], map).children).toHaveLength(0)
+  })
+  it('dims the pins of a check whose photo was not good enough (audit A-52)', () => {
+    const map = new Map([['g1', el]])
+    const opacity = (dim: boolean) => (makePins([f('missing', 'high')], map, { dim }).children[0] as Mesh<SphereGeometry, MeshBasicMaterial>).material.opacity
+    expect(opacity(false)).toBeGreaterThan(0.9)
+    expect(opacity(true)).toBeLessThan(0.5)
   })
 })

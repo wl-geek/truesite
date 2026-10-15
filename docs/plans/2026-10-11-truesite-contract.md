@@ -292,7 +292,7 @@ export function renderDesignImage(renderer, scene, model, camera, width, height,
 //   Both judge what is shown: hidden meshes stay out, and `clip` (the view's cut, look.clipPlanes()) is applied to the override materials.
 // src/scene/pins.ts
 export function findingAnchorPoint(el: Element): [number, number, number]   // IFC coords: bbox centre
-export function makePins(findings: Finding[], elements: Map<string, Element>): THREE.Group        // add under ifcRoot
+export function makePins(findings: Finding[], elements: Map<string, Element>, opts?: { radiusM?: number; dim?: boolean }): THREE.Group   // add under ifcRoot; dim when image_quality isn't "good"
 // src/check/marks.ts
 export const MAX_MARKS = 25
 export function classPriority(ifcClass: string): number   // 0 structure, 1 openings/services, 2 other
