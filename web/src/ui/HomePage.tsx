@@ -33,7 +33,8 @@ export function HomePage() {
           <h3>Life size · 1:1</h3>
           <p>
             Print the A4 floor sheet, lay it flat on the floor of an open space and scan it. The demo room's walls, door
-            and column appear around the sheet at real size. Keep the code in view: the overlay follows the code.
+            and column appear around the sheet at real size. On Android, <strong>Start AR</strong> places the model by the
+            code and it stays put as you walk around; on other phones, keep the code in view.
           </p>
           <a className="btn" href="/sheets/room1-L1.pdf" download>Download A4 floor sheet</a>
         </li>
@@ -50,7 +51,7 @@ export function HomePage() {
         model lines up with the real building at 1:1.
       </p>
       <ol className="steps">
-        <li>Scan the code and tap <strong>Start camera</strong>.</li>
+        <li>Scan the code and tap <strong>Start camera</strong> (<strong>Camera overlay</strong> on Android).</li>
         <li>Start within about 1 m of the code, then step back. The badge shows how well the model is aligned.</li>
         <li>Aim at the work and tap <strong>Check as-built</strong>.</li>
         <li>Review the findings, then draft and save an issue.</li>

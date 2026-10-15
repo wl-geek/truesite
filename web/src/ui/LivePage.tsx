@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { ApiError, getProject } from '../api/client'
 import type { Anchor, CheckResult, Finding, ProjectManifest } from '../api/types'
-import { CameraError, startRearCamera, stopCamera, type CameraStart } from '../camera/camera'
+import { CameraError, startRearCamera, stopCamera, watchCamera, type CameraStart } from '../camera/camera'
 import { isCalibrated, loadQrSizeCorrection } from '../camera/intrinsics'
 import { saveLastCheck } from '../check/lastCheck'
 import { checkErrorMessage } from '../check/messages'
@@ -10,7 +10,7 @@ import { buildSampleMeta } from '../check/sampleMeta'
 import { anchorCorners, captureSnapshot, fallbackPose, snapshotQuality, type Snapshot } from '../check/snapshot'
 import { estimatePose, type Intrinsics, type Pose, type Point2, type Quality } from '../pose'
 import { QrWorkerClient } from '../qr/qrClient'
-import { coachHint, effectiveQrSize, findAnchor, isDeskAnchor, isFar, scaleLabel } from '../scene/arMath'
+import { checkAvailability, coachHint, effectiveQrSize, findAnchor, isDeskAnchor, isFar, scaleLabel } from '../scene/arMath'
 import { makeEvalMarkers, parseEvalPoints } from '../scene/evalMarkers'
 import { disposePins, makePins } from '../scene/pins'
 import { buildWalkScene, canQuickLook, exportUsdz, isAndroid, isAppleMobile, openQuickLook, sceneViewerUrl, usdzUrl } from '../scene/walkthrough'
@@ -31,12 +31,15 @@ export type LivePageProps = { projectId: string; anchorId: string }
 type Loaded = { project: ProjectManifest; anchor: Anchor; model: LoadedModel }
 type Outcome = { result: CheckResult; runId: string | null; photoUrl: string }
 
-const CAMERA_ERRORS: Record<CameraError['kind'], string> = {
+type StartError = CameraError['kind'] | 'webgl'
+
+const CAMERA_ERRORS: Record<StartError, string> = {
   insecure: 'The camera only works over a secure (https) connection. Open the https link instead.',
   denied: 'Camera access was blocked. Allow the camera for this site in your browser settings, then try again.',
   notfound: 'No camera was found on this device.',
   overconstrained: "The camera couldn't start with the settings we need. Try another browser.",
   other: "The camera couldn't start. Close other apps that use it and try again.",
+  webgl: "The camera works, but the 3D overlay couldn't start in this browser. Try another browser, or try the sample photos.",
 }
 
 /** Live AR: the model over the camera view, anchored by the QR code (spec 4.1, 4.2). */
@@ -46,9 +49,11 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   const overlayRef = useRef<Overlay | null>(null)
   const camRef = useRef<CameraStart | null>(null)
   const qrRef = useRef<QrWorkerClient | null>(null)
+  const unwatchCamRef = useRef<(() => void) | null>(null)
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [camError, setCamError] = useState<CameraError['kind'] | null>(null)
+  const [camError, setCamError] = useState<StartError | null>(null)
+  const [camStopped, setCamStopped] = useState(false)
   const [starting, setStarting] = useState(false)
   const [running, setRunning] = useState(false)
   const [state, setState] = useState<OverlayState | null>(null)
@@ -96,6 +101,8 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
     })
     return () => {
       cancelled = true
+      unwatchCamRef.current?.()
+      unwatchCamRef.current = null
       overlayRef.current?.dispose()
       overlayRef.current = null
       qrRef.current?.terminate()
@@ -113,10 +120,13 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
     if (!loaded || !video || !canvas || starting) return
     setStarting(true)
     setCamError(null)
+    setCamStopped(false)
+    let camOk = false
     try {
       const motion = await requestMotionPermission() // iOS asks inside this tap; must come before the camera prompt
       camRef.current = await startRearCamera(video)
-      qrRef.current = new QrWorkerClient()
+      camOk = true
+      qrRef.current ??= new QrWorkerClient() // reuse the worker that Start AR may have made
       const overlay = createOverlay({
         video, canvas, model: loaded.model, anchor: loaded.anchor, qr: qrRef.current,
         qrSizeCorrection: loadQrSizeCorrection(loaded.anchor.anchor_id), origin: window.location.origin,
@@ -125,15 +135,30 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
       overlay.onState(setState)
       overlay.start()
       overlayRef.current = overlay
+      unwatchCamRef.current = watchCamera(camRef.current.track, document, video, cameraEnded)
       setRunning(true)
       if (!isCalibrated(camRef.current.width, camRef.current.height)) setCalibrating(true) // first use on this camera
     } catch (e) {
-      setCamError(e instanceof CameraError ? e.kind : 'other')
+      setCamError(e instanceof CameraError ? e.kind : camOk ? 'webgl' : 'other')
       stopCamera(camRef.current, video)
       camRef.current = null
     } finally {
       setStarting(false)
     }
+  }
+
+  /** The camera track ended (another app took it, the OS revoked it): back to the start panel. */
+  function cameraEnded() {
+    unwatchCamRef.current?.()
+    unwatchCamRef.current = null
+    overlayRef.current?.dispose()
+    overlayRef.current = null
+    stopCamera(camRef.current, videoRef.current ?? undefined)
+    camRef.current = null
+    setState(null)
+    setCalibrating(false)
+    setRunning(false)
+    setCamStopped(true)
   }
 
   /** Snapshot + pose on the full frame (the last raw pose is the flip prior). Throws no_pose if the code is not in view. */
@@ -286,6 +311,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   const canWalk = xrOk || quickLook || android
 
   const desk = loaded ? isDeskAnchor(loaded.anchor) : false
+  const checkable = loaded ? checkAvailability(loaded.anchor) : { enabled: true, note: null }
   const selectFinding = (f: Finding) => setSelectedMark(f.mark)
 
   return (
@@ -336,6 +362,12 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
               <QualityBadge state={state} />
             </div>
             {!checking && <p className="coach">{coachHint(state, desk)}</p>}
+            {!checking && checkable.note && (
+              <p className="coach">
+                {checkable.note}{!checkable.enabled && <> <Link to="/samples">Open sample photos</Link></>}
+              </p>
+            )}
+            {state?.qrFailed && <p className="live-warning" role="alert">The QR reader didn't load. Check your connection and reload.</p>}
             {isFar(state?.distanceM ?? null) && <p className="live-warning">More than 3 m from the code: the overlay is less accurate.</p>}
             {state?.otherAnchor && (
               <p className="live-warning">
@@ -366,7 +398,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
             <button type="button" className="btn" onClick={() => setShowControls((v) => !v)} aria-pressed={showControls}>View</button>
             {outcome && <button type="button" className="btn" onClick={() => setShowResults(true)}>Last results</button>}
             {dev && <button type="button" className="btn" onClick={saveSample} disabled={!state?.tracking}>Save as sample</button>}
-            <button type="button" className="btn btn-accent" onClick={check} disabled={checking || !state?.tracking}>
+            <button type="button" className="btn btn-accent" onClick={check} disabled={checking || !state?.tracking || !checkable.enabled}>
               {checking ? 'Checking…' : 'Check as-built'}
             </button>
           </div>
@@ -390,6 +422,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
           <div className="live-start panel">
             {!loaded && !error && <p className="status">Loading the project…</p>}
             {error && <p className="status status-error" role="alert">{error}</p>}
+            {camStopped && <p className="status" role="status">The camera stopped. Tap {xrOk ? 'Camera overlay' : 'Start camera'} to continue.</p>}
             {loaded && (
               <>
                 <p className="eyebrow">{loaded.project.name} · {loaded.anchor.label || loaded.anchor.anchor_id}</p>
@@ -399,11 +432,22 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
                     ? 'The model appears as a 1:20 scale model beside the code, like an architect\'s model on the table.'
                     : 'The model appears at real size, lined up with the place where the code is fixed.'}
                 </p>
-                <ol className="steps">
-                  <li>Tap <strong>Start camera</strong> and allow the camera.</li>
-                  <li>Point at the code from under 1 m away, then step back slowly.</li>
-                  <li>{desk ? 'Walk around the sheet to look at the model.' : 'Aim at the work and tap Check as-built.'}</li>
-                </ol>
+                {xrOk ? (
+                  <ol className="steps">
+                    <li>Tap <strong>Start AR (place by code)</strong> and allow the camera.</li>
+                    <li>Point at the code from about 1 m away, then move slowly left and right until the circle is full.</li>
+                    <li>
+                      {desk ? 'Walk around the sheet to look at the model.' : 'Walk around and look up: the model stays in place.'}{' '}
+                      {checkable.enabled && <>To check the build, use <strong>Camera overlay</strong> instead.</>}
+                    </li>
+                  </ol>
+                ) : (
+                  <ol className="steps">
+                    <li>Tap <strong>Start camera</strong> and allow the camera.</li>
+                    <li>Point at the code from about 1 m away, then step back slowly.</li>
+                    <li>{desk ? 'Walk around the sheet to look at the model.' : 'Aim at the work and tap Check as-built.'}</li>
+                  </ol>
+                )}
                 <div className="live-start-actions">
                   {xrOk && (
                     <button type="button" className="btn btn-primary" onClick={() => void startArPlace()}>Start AR (place by code)</button>

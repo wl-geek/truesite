@@ -15,10 +15,11 @@ import { parseAnchorLink } from '../qr/link'
 import type { QrResponse } from '../qr/protocol'
 import type { QrWorkerClient } from '../qr/qrClient'
 import { applyProjection } from './arCamera'
-import { effectiveQrSize, poseAnchor, toVideoPixels } from './arMath'
+import { effectiveQrSize, poseAnchor, searchingSeconds, toVideoPixels } from './arMath'
 import type { LoadedModel } from './loadModel'
 import { applyConstructionLook, type ConstructionLook } from './look'
 import { deviceRotation, lookAroundPose, LOOK_AROUND_MAX_S, type MotionLock } from './motion'
+import { createFrameWatchdog } from './watchdog'
 
 /** Edges live on their own layer so the ID-buffer render (layer 0 only) never sees them. */
 export const EDGE_LAYER = 1
@@ -38,6 +39,10 @@ export type OverlayState = {
   otherAnchor: { projectId: string; anchorId: string } | null
   /** code: aligned by the QR code · motion: held by the motion sensors (look-around) · lost: hidden */
   mode: 'code' | 'motion' | 'lost'
+  /** Seconds without the code since it was last seen or tracking (re)started; 0 while tracking (coach tips after 5 s). */
+  searchingS: number
+  /** The QR reader can't decode (its .wasm or worker didn't load). */
+  qrFailed: boolean
 }
 
 /** The latest raw (unsmoothed) pose: the snapshot's flip prior and the pose used for a check. */
@@ -112,19 +117,23 @@ export function createOverlay(o: OverlayOptions): Overlay {
   if (!grabCtx) throw new Error('2D canvas is not available')
 
   let running = false
+  let disposed = false
+  let startedSec = 0
   let rafHandle = 0
   let vfcHandle = 0
   let last: LastPose | null = null
   let lastSeen = -Infinity
   let projKey = ''
   const listeners = new Set<(s: OverlayState) => void>()
-  let state: OverlayState = { tracking: false, quality: null, provisional: true, distanceM: null, detectMs: null, otherAnchor: null, mode: 'lost' }
+  let state: OverlayState = {
+    tracking: false, quality: null, provisional: true, distanceM: null, detectMs: null, otherAnchor: null, mode: 'lost', searchingS: 0, qrFailed: false,
+  }
   let lastEmit = 0
 
   function emit(next: OverlayState): void {
     const now = performance.now()
     const changed = next.tracking !== state.tracking || next.quality !== state.quality || next.provisional !== state.provisional
-      || next.mode !== state.mode
+      || next.mode !== state.mode || next.qrFailed !== state.qrFailed
       || (next.otherAnchor?.anchorId ?? null) !== (state.otherAnchor?.anchorId ?? null)
     state = next
     if (changed || now - lastEmit > 250) {
@@ -144,6 +153,7 @@ export function createOverlay(o: OverlayOptions): Overlay {
 
   function onDetection(res: QrResponse, fw: number, fh: number, vw: number, vh: number): void {
     if (!running) return
+    if (`${vw}x${vh}` !== kSize) return // grabbed before a rotation: K and the tracker are for the new size now
     const tSec = performance.now() / 1000
     let corners: Point2[] | null = null
     let otherAnchor: OverlayState['otherAnchor'] = null
@@ -161,13 +171,23 @@ export function createOverlay(o: OverlayOptions): Overlay {
       model.ifcRoot.matrixWorldNeedsUpdate = true
       model.ifcRoot.visible = true
       if (deviceR && !tracked.provisional) lock = { R0: tracked.smoothed.R, t0: tracked.smoothed.t, D0: deviceR, tSec }
-      emit({ tracking: true, quality: tracked.quality, provisional: tracked.provisional, distanceM: tracked.raw.distanceM, detectMs: res.ms, otherAnchor, mode: 'code' })
+      emit({ tracking: true, quality: tracked.quality, provisional: tracked.provisional, distanceM: tracked.raw.distanceM, detectMs: res.ms, otherAnchor, mode: 'code', searchingS: 0, qrFailed: qr.failed })
     } else if (tSec - lastSeen > LOST_AFTER_S) {
       const canLookAround = o.motion && lock !== null && deviceR !== null && tSec - lock.tSec < LOOK_AROUND_MAX_S
       model.ifcRoot.visible = canLookAround
-      emit({ tracking: false, quality: null, provisional: true, distanceM: null, detectMs: res.ms, otherAnchor, mode: canLookAround ? 'motion' : 'lost' })
+      emit({ tracking: false, quality: null, provisional: true, distanceM: null, detectMs: res.ms, otherAnchor, mode: canLookAround ? 'motion' : 'lost',
+        searchingS: searchingSeconds(tSec, lastSeen, startedSec), qrFailed: qr.failed })
     }
   }
+
+  // No video frames for 1 s (a call, an app switch, another app took the camera): hide the model and say so,
+  // instead of freezing on the last "Good" state with Check enabled.
+  const watchdog = createFrameWatchdog(() => {
+    model.ifcRoot.visible = false
+    emit({ tracking: false, quality: null, provisional: true, distanceM: null, detectMs: null, otherAnchor: null, mode: 'lost',
+      searchingS: searchingSeconds(performance.now() / 1000, lastSeen, startedSec), qrFailed: qr.failed })
+    render()
+  })
 
   function render(): void {
     const cw = canvas.clientWidth
@@ -190,6 +210,7 @@ export function createOverlay(o: OverlayOptions): Overlay {
     const vw = video.videoWidth
     const vh = video.videoHeight
     if (vw && vh && video.readyState >= 2) {
+      watchdog.frame()
       ensureIntrinsics(vw, vh)
       if (!qr.busy) {
         const img = grabFrame(video, grabCtx!, DETECT_WIDTH)
@@ -215,12 +236,15 @@ export function createOverlay(o: OverlayOptions): Overlay {
   return {
     renderer, scene, camera, model, look,
     start() {
-      if (running) return
+      if (running || disposed) return
       running = true
+      startedSec = performance.now() / 1000
+      watchdog.start()
       schedule()
     },
     stop() {
       running = false
+      watchdog.stop()
       if (vfcHandle && 'cancelVideoFrameCallback' in video) video.cancelVideoFrameCallback(vfcHandle)
       if (rafHandle) cancelAnimationFrame(rafHandle)
     },
@@ -246,6 +270,7 @@ export function createOverlay(o: OverlayOptions): Overlay {
     },
     dispose() {
       this.stop()
+      disposed = true
       listeners.clear()
       cornerListeners.clear()
       window.removeEventListener('deviceorientation', onOrientation)

@@ -245,7 +245,8 @@ export function listIssues(projectId: string): Promise<{ issues: Issue[]; demo: 
 //   centredIntrinsics, focalFromHfov, estimatePose, PoseTracker (update(corners|null, tSec) -> TrackedPose {raw, smoothed, quality, provisional}),
 //   projectionMatrixGL({K, videoW, videoH, viewW, viewH, near, far, fit}), modelMatrixIfc(anchor, pose), IFC_FROM_GLTF_MAT4,
 //   selfCalibrateFocal(views, s, cx, cy, opts), viewTiltDeg, gradeQuality, codeWidthPx, PoseSmoother, ...
-// src/camera/camera.ts — verified: CameraStart, CameraError, REAR_CAMERA_CONSTRAINTS, startRearCamera(video), stopCamera(cam, video?), grabFrame(video, ctx, w, h)
+// src/camera/camera.ts — verified: CameraStart, CameraError, REAR_CAMERA_CONSTRAINTS, startRearCamera(video), stopCamera(cam, video?), grabFrame(video, ctx, w, h),
+//   watchCamera(track, doc, video, onEnded) -> unwatch   // track 'ended' -> onEnded; page visible again -> video.play()
 // src/camera/intrinsics.ts
 export type StoredIntrinsics = { f: number; videoW: number; videoH: number; source: 'calibrated' | 'default'; at: string }
 export const DEFAULT_HFOV_DEG = 63
