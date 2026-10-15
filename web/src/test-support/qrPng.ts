@@ -1,7 +1,7 @@
 // Node-only helpers: make a real QR PNG with `qrcode`, decode it with `pngjs`.
 import { PNG } from 'pngjs'
 import QRCode from 'qrcode'
-import type { ModuleMatrix } from '../qr/synthQr'
+import type { ModuleMatrix } from './synthQr'
 
 export interface QrPng {
   png: Buffer

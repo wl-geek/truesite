@@ -4,7 +4,7 @@ import { createRequire } from 'node:module'
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest'
 import { prepareZXingModule, readBarcodes } from 'zxing-wasm/reader'
 import { makeQrPng, type QrPng } from '../test-support/qrPng'
-import { dist, expectedCorners, homographyFromPose, mul3, renderQr, rotX, rotY, type Mat3 } from './synthQr'
+import { dist, expectedCorners, homographyFromPose, mul3, renderQr, rotX, rotY, type Mat3 } from '../test-support/synthQr'
 import { parseAnchorLink } from './link'
 import { ZXING_OPTIONS, toDetection } from './zxingOptions'
 

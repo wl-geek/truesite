@@ -17,6 +17,7 @@ import { disposePins, makePins } from '../scene/pins'
 import { buildWalkScene, canQuickLook, exportUsdz, isAndroid, isAppleMobile, openQuickLook, sceneViewerUrl, usdzUrl } from '../scene/walkthrough'
 import { startXrWalk, xrArSupported } from '../scene/xrWalk'
 import { NEEDED_VIEWS, startXrPlace, type XrPlaceSession, type XrPlaceState } from '../scene/xrPlace'
+import { xrFallback } from '../scene/xrStart'
 import { ModelControls } from './ModelControls'
 import { disposeModel, loadModel, type LoadedModel } from '../scene/loadModel'
 import { createOverlay, type Overlay, type OverlayState } from '../scene/overlay'
@@ -32,6 +33,9 @@ export type LivePageProps = { projectId: string; anchorId: string }
 
 type Loaded = { project: ProjectManifest; anchor: Anchor; model: LoadedModel }
 type Outcome = { result: CheckResult; runId: string | null; photoUrl: string; viewNote: string | null }
+
+/** The place-by-code overlay before the session reports its first state. */
+const XR_PLACE_STARTING: XrPlaceState = { phase: 'scanning', views: 0, spreadDeg: 0, progress: 0, codeSeen: false }
 
 const CAMERA_ERRORS: Record<CameraError['kind'], string> = {
   insecure: 'The camera only works over a secure (https) connection. Open the https link instead.',
@@ -73,6 +77,12 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   const xrStopRef = useRef<(() => void) | null>(null)
   const xrPlaceRef = useRef<XrPlaceSession | null>(null)
   const [xrPlace, setXrPlace] = useState<XrPlaceState | null>(null)
+  // One AR start at a time (the ref blocks a double tap before React re-renders), and which overlay copy to show.
+  const xrBusyRef = useRef(false)
+  const xrCancelRef = useRef(false)
+  const [xrStarting, setXrStarting] = useState(false)
+  const [xrMode, setXrMode] = useState<'place' | 'walk' | null>(null)
+  const [xrNotice, setXrNotice] = useState<string | null>(null)
   useEffect(() => {
     void xrArSupported().then(setXrOk)
   }, [])
@@ -237,9 +247,40 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
     }
   }, [loaded, quickLook, elements])
 
+  /** Runs one AR start at a time; the AR buttons are disabled meanwhile (audit A-09). */
+  async function xrGuard(run: () => Promise<void>) {
+    if (xrBusyRef.current) return
+    xrBusyRef.current = true
+    xrCancelRef.current = false
+    setXrStarting(true)
+    try {
+      await run()
+    } finally {
+      xrBusyRef.current = false
+      setXrStarting(false)
+    }
+  }
+
+  function hideXrOverlay() {
+    if (xrOverlayRef.current) xrOverlayRef.current.style.display = 'none'
+    setXrMode(null)
+  }
+
+  /** Exit: end whichever AR session is live; while one is still starting, end it as soon as it starts. */
+  function exitXr() {
+    if (xrPlaceRef.current) xrPlaceRef.current.end()
+    else if (xrStopRef.current) xrStopRef.current()
+    else {
+      xrCancelRef.current = true
+      hideXrOverlay()
+    }
+  }
+
   // Android: place by the QR code inside AR (camera-access), then ARCore world-tracking holds it.
   async function startArPlace() {
     if (!loaded || !xrOverlayRef.current) return
+    setXrMode('place') // place copy from the first frame, before the session reports its state
+    setXrNotice(null)
     xrOverlayRef.current.style.display = 'flex'
     try {
       qrRef.current ??= new QrWorkerClient()
@@ -247,24 +288,28 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
         model: loaded.model, anchor: loaded.anchor, classOf: (g) => elements.get(g)?.ifc_class ?? '', qr: qrRef.current,
         qrSizeCorrection: loadQrSizeCorrection(loaded.anchor.anchor_id), overlay: xrOverlayRef.current, onState: setXrPlace,
         onEnd: () => {
-          if (xrOverlayRef.current) xrOverlayRef.current.style.display = 'none'
+          hideXrOverlay()
           xrPlaceRef.current = null
           setXrPlace(null)
         },
       })
-    } catch {
-      // No camera access in AR on this phone: life-size models fall back to placing on the floor by tap;
-      // a desk model can't be placed without the code (audit A-03).
-      xrOverlayRef.current.style.display = 'none'
-      if (isDeskAnchor(loaded.anchor)) setError("This phone can't read the code inside AR. Use Camera overlay for the desk model.")
-      else await walkInside()
+      if (xrCancelRef.current) xrPlaceRef.current.end()
+    } catch (e) {
+      // InvalidStateError: a session is already running; no camera access: life-size models are placed on the
+      // floor by tap, with a notice; desk models and anything else: a message, never a silent switch.
+      const f = xrFallback(e, isDeskAnchor(loaded.anchor))
+      if (!xrPlaceRef.current && !xrStopRef.current) hideXrOverlay()
+      if (f.kind === 'walk' && !xrCancelRef.current) await walkInside(f.notice)
+      else if (f.kind === 'message') setError(f.message)
     }
   }
 
-  async function walkInside() {
+  async function walkInside(notice: string | null = null) {
     if (!loaded) return
     if (xrOk && xrOverlayRef.current) {
       // Android Chrome + ARCore: world-tracked walk-through inside TrueSite.
+      setXrMode('walk')
+      setXrNotice(notice)
       xrOverlayRef.current.style.display = 'flex' // dom-overlay root must be visible when the session starts
       setXrPlaced(false)
       try {
@@ -272,12 +317,13 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
           model: loaded.model, classOf: (g) => elements.get(g)?.ifc_class ?? '', centreIfc: walkCentre(loaded.anchor, loaded.project),
           overlay: xrOverlayRef.current, onPlaced: () => setXrPlaced(true),
           onEnd: () => {
-            if (xrOverlayRef.current) xrOverlayRef.current.style.display = 'none'
+            hideXrOverlay()
             xrStopRef.current = null
           },
         })
+        if (xrCancelRef.current) xrStopRef.current()
       } catch {
-        xrOverlayRef.current.style.display = 'none'
+        hideXrOverlay()
         setError("This phone couldn't start AR. Update Google Play Services for AR (ARCore) and Chrome, then try again.")
       }
       return
@@ -290,24 +336,25 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   const canWalk = xrOk || quickLook || android
 
   const desk = loaded ? isDeskAnchor(loaded.anchor) : false
+  const placeView = xrPlace ?? XR_PLACE_STARTING
   const selectFinding = (f: Finding) => setSelectedMark(f.mark)
 
   return (
     <main className="live-page">
       <div ref={xrOverlayRef} className="xr-overlay" style={{ display: 'none' }}>
-        {xrPlace ? (
+        {xrMode === 'place' ? (
           <>
-            {xrPlace.phase === 'scanning' ? (
+            {placeView.phase === 'scanning' ? (
               <div className="xr-scan">
                 <svg viewBox="0 0 44 44" className="xr-ring" aria-hidden="true">
                   <circle cx="22" cy="22" r="18" className="xr-ring-bg" />
-                  <circle cx="22" cy="22" r="18" className="xr-ring-fg" style={{ strokeDasharray: `${113 * xrPlace.progress} 113` }} />
+                  <circle cx="22" cy="22" r="18" className="xr-ring-fg" style={{ strokeDasharray: `${113 * placeView.progress} 113` }} />
                 </svg>
                 <p className="coach">
-                  {xrPlace.codeSeen ? 'Good. Move slowly left and right, keeping the code in view, until the circle is full.'
+                  {placeView.codeSeen ? 'Good. Move slowly left and right, keeping the code in view, until the circle is full.'
                     : 'Point at the QR code from about 1 m away.'}
                 </p>
-                <p className="note">{xrPlace.views}/{NEEDED_VIEWS} views · {Math.round(xrPlace.spreadDeg)}° of angle</p>
+                <p className="note">{placeView.views}/{NEEDED_VIEWS} views · {Math.round(placeView.spreadDeg)}° of angle</p>
               </div>
             ) : (
               <div className="xr-scan">
@@ -318,14 +365,15 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
               </div>
             )}
             <div className="live-start-actions">
-              {xrPlace.phase === 'locked' && <button type="button" className="btn" onClick={() => xrPlaceRef.current?.rescan()}>Re-scan</button>}
-              <button type="button" className="btn" onClick={() => xrPlaceRef.current?.end()}>Exit</button>
+              {placeView.phase === 'locked' && <button type="button" className="btn" onClick={() => xrPlaceRef.current?.rescan()}>Re-scan</button>}
+              <button type="button" className="btn" onClick={exitXr}>Exit</button>
             </div>
           </>
         ) : (
           <>
+            {xrNotice && <p className="live-warning" role="status">{xrNotice}</p>}
             <p className="coach">{xrPlaced ? 'Walk through the model. It stays where you placed it.' : 'Point at the floor until the orange ring appears, then tap to place the model.'}</p>
-            <button type="button" className="btn" onClick={() => xrStopRef.current?.()}>Exit</button>
+            <button type="button" className="btn" onClick={exitXr}>Exit</button>
           </>
         )}
       </div>
@@ -411,13 +459,15 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
                 </ol>
                 <div className="live-start-actions">
                   {xrOk && (
-                    <button type="button" className="btn btn-primary" onClick={() => void startArPlace()}>Start AR (place by code)</button>
+                    <button type="button" className="btn btn-primary" onClick={() => void xrGuard(startArPlace)} disabled={xrStarting}>
+                      {xrStarting ? 'Starting AR…' : 'Start AR (place by code)'}
+                    </button>
                   )}
                   <button type="button" className={xrOk ? 'btn' : 'btn btn-primary'} onClick={start} disabled={starting}>
                     {starting ? 'Starting…' : xrOk ? 'Camera overlay' : 'Start camera'}
                   </button>
                   {canWalk && !desk && (
-                    <button type="button" className="btn btn-accent" onClick={walkInside} disabled={quickLook && !usdz}>
+                    <button type="button" className="btn btn-accent" onClick={() => void xrGuard(() => walkInside())} disabled={xrStarting || (quickLook && !usdz)}>
                       {quickLook && !usdz ? 'Preparing walk-through…' : 'Walk inside (AR)'}
                     </button>
                   )}
