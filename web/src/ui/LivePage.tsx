@@ -194,7 +194,8 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
     }
   }
 
-  // Dev only (?dev=1): download photo.jpg + meta.json for public/samples/<sample_id>/ (contract section 8).
+  // Dev only (?dev=1): downloads <sample_id>-photo.jpg and <sample_id>-meta.json. Packaging (eval/README.md):
+  // move them to public/samples/<sample_id>/photo.jpg and meta.json, and add a row to index.json (contract section 8).
   const dev = new URLSearchParams(window.location.search).has('dev')
   async function saveSample() {
     const overlay = overlayRef.current

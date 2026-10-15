@@ -6,6 +6,7 @@ import { saveLastCheck } from '../check/lastCheck'
 import { checkErrorMessage } from '../check/messages'
 import { runCheck } from '../check/runCheck'
 import { parseSampleIndex, parseSampleMeta, type SampleIndexEntry } from '../check/sampleMeta'
+import { evalRunStatus, sampleCheckInput } from '../check/sampleRun'
 import { findAnchor } from '../scene/arMath'
 import { disposeModel, loadModel, type LoadedModel } from '../scene/loadModel'
 import { navigate, viewerPathFor } from '../router'
@@ -36,6 +37,8 @@ export function SamplesPage() {
   const [selectedMark, setSelectedMark] = useState<number | null>(null)
   const [draftFor, setDraftFor] = useState<Finding | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const [evalStatus, setEvalStatus] = useState<string | null>(null)
+  const evalResults = useRef<Record<string, CheckResult>>({})
   const loadedRef = useRef<Loaded | null>(null)
 
   useEffect(() => {
@@ -80,11 +83,7 @@ export function SamplesPage() {
       const anchor = findAnchor(l.project, meta.anchor_id)
       if (!anchor) throw new Error('This sample belongs to an anchor that no longer exists.')
       const bitmap = await createImageBitmap(photo)
-      const res = await runCheck({
-        photo, photoW: bitmap.width, photoH: bitmap.height, videoW: meta.video_w, videoH: meta.video_h, K: meta.K, pose: meta.pose,
-        anchor, poseQuality: 'good', model: l.model, scene: l.scene, renderer: l.renderer,
-        elements: new Map(l.project.elements.map((e) => [e.guid, e])), sampleId: meta.sample_id,
-      })
+      const res = await runCheck(sampleCheckInput(meta, photo, bitmap, anchor, l))
       bitmap.close()
       const result = res.response?.result ?? res.saved
       if (!result) throw res.error ?? new ApiError('check failed', 0)
@@ -102,30 +101,33 @@ export function SamplesPage() {
   const dev = new URLSearchParams(window.location.search).has('dev')
 
   // Dev only (?dev=1): run every sample and download results.json for eval/summarise.py (spec 10).
+  // Only fresh responses count, never a saved fallback. Results stay on this page, so after the hourly
+  // limit a second tap runs just the samples that failed and downloads everything collected so far.
   async function runAll() {
-    const results: Record<string, CheckResult> = {}
+    const results = evalResults.current
+    const failed: Record<string, string> = {}
+    setEvalStatus(null)
     for (const s of samples ?? []) {
+      if (s.sample_id in results) continue
       setRunning(s.sample_id)
       try {
         const base = `/samples/${s.sample_id}`
         const meta = parseSampleMeta(await getJsonFile(`${base}/meta.json`))
-        const photo = await fetch(`${base}/photo.jpg`).then((r) => r.blob())
+        const photo = await fetch(`${base}/photo.jpg`).then((r) => (r.ok ? r.blob() : Promise.reject(new Error(`HTTP ${r.status}`))))
         const l = await ensureLoaded(meta.project_id)
         const anchor = findAnchor(l.project, meta.anchor_id)
-        if (!anchor) continue
+        if (!anchor) throw new Error(`no anchor ${meta.anchor_id}`)
         const bitmap = await createImageBitmap(photo)
-        const res = await runCheck({
-          photo, photoW: bitmap.width, photoH: bitmap.height, videoW: meta.video_w, videoH: meta.video_h, K: meta.K, pose: meta.pose,
-          anchor, poseQuality: 'good', model: l.model, scene: l.scene, renderer: l.renderer,
-          elements: new Map(l.project.elements.map((e) => [e.guid, e])),
-        })
+        const res = await runCheck(sampleCheckInput(meta, photo, bitmap, anchor, l))
         bitmap.close()
         if (res.response) results[s.sample_id] = res.response.result
-      } catch {
-        /* skip a broken sample; the summary counts it as can't judge */
+        else failed[s.sample_id] = res.error ? checkErrorMessage(res.error) : 'no result'
+      } catch (e) {
+        failed[s.sample_id] = e instanceof ApiError ? checkErrorMessage(e) : e instanceof Error ? e.message : String(e)
       }
     }
     setRunning(null)
+    setEvalStatus(evalRunStatus(samples ?? [], results, failed))
     const a = document.createElement('a')
     a.href = URL.createObjectURL(new Blob([JSON.stringify(results, null, 2)], { type: 'application/json' }))
     a.download = 'results.json'
@@ -154,6 +156,7 @@ export function SamplesPage() {
       {dev && ready.length > 0 && (
         <p><button type="button" className="btn" onClick={() => void runAll()} disabled={running !== null}>Run all samples → results.json</button></p>
       )}
+      {evalStatus && <p className="note" role="status">{evalStatus}</p>}
       {error && <p className="status status-error" role="alert">{error}</p>}
       {outcome && (
         <div className="sample-results">
