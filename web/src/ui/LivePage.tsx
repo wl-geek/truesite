@@ -7,7 +7,7 @@ import { saveLastCheck } from '../check/lastCheck'
 import { checkErrorMessage } from '../check/messages'
 import { runCheck } from '../check/runCheck'
 import { buildSampleMeta } from '../check/sampleMeta'
-import { captureSnapshot, type Snapshot } from '../check/snapshot'
+import { anchorCorners, captureSnapshot, fallbackPose, snapshotQuality, type Snapshot } from '../check/snapshot'
 import { estimatePose, type Intrinsics, type Pose, type Point2, type Quality } from '../pose'
 import { QrWorkerClient } from '../qr/qrClient'
 import { coachHint, effectiveQrSize, findAnchor, isDeskAnchor, isFar, scaleLabel } from '../scene/arMath'
@@ -139,19 +139,22 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   /** Snapshot + pose on the full frame (the last raw pose is the flip prior). Throws no_pose if the code is not in view. */
   async function snapshotWithPose(overlay: Overlay, video: HTMLVideoElement, anchor: Anchor): Promise<{ snap: Snapshot; K: Intrinsics; pose: Pose; quality: Quality }> {
     const last = overlay.lastRaw()
+    const tCapture = performance.now() / 1000 // the tap, before the snapshot's async work
+    const priorTrusted = last !== null && state?.provisional === false
     const snap = await captureSnapshot(video, qrRef.current ?? undefined)
     const K = overlay.intrinsics()
     const s = effectiveQrSize(anchor, loadQrSizeCorrection(anchor.anchor_id))
     let pose: Pose | null = null
     let quality: Quality = last?.quality ?? 'poor'
-    if (snap.corners) {
-      const est = estimatePose(snap.corners.map((p) => [p.x, p.y] as Point2), s, K, last?.pose ?? null)
+    const corners = anchorCorners(snap, anchor, window.location.origin)
+    if (corners) {
+      const est = estimatePose(corners.map((p) => [p.x, p.y] as Point2), s, K, last?.pose ?? null)
       if (est) {
         pose = { R: est.R, t: est.t }
-        quality = est.quality
+        quality = snapshotQuality(est, priorTrusted)
       }
     }
-    if (!pose && last && performance.now() / 1000 - last.tSec < 0.5) pose = last.pose
+    pose ??= fallbackPose(last, tCapture)
     if (!pose) throw new ApiError('no_pose', 0, 'no_pose')
     return { snap, K, pose, quality }
   }

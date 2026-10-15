@@ -255,6 +255,8 @@ export function saveIntrinsics(videoW: number, videoH: number, f: number): void
 export function loadQrSizeCorrection(anchorId: string): number           // multiplier from the check-bar step, default 1
 export function saveQrSizeCorrection(anchorId: string, factor: number): void
 // src/qr/protocol.ts + src/qr/zxing.worker.ts + src/qr/qrClient.ts — verified worker pattern; QrWorkerClient('zxing') is the only detector in core.
+//   Every detect() resolves: a failed read answers detection null with `error` (the worker reloads zxing on the next frame);
+//   a dead worker answers at once. QrWorkerClient.failed is true while the reader can't decode.
 export interface QrDetection { text: string; corners: [Point, Point, Point, Point] }   // symbol order TL,TR,BR,BL, in the pixels of the ImageData sent
 // src/qr/link.ts
 export function parseAnchorLink(text: string, origin: string): { projectId: string; anchorId: string } | null   // accepts our /a/{p}/{a} URLs only
@@ -281,8 +283,9 @@ export function keyDims(el: Element): string
 export function markCentres(marks, visible, indexToGuid, width, height): Map<number, [number, number]>   // fractions 0..1
 export function drawMarks(ctx: CanvasRenderingContext2D, centres: Map<number, [number, number]>, width: number, height: number): void
 // src/check/snapshot.ts
-export type Snapshot = { photo: Blob; photoW: number; photoH: number; videoW: number; videoH: number; corners: Point[] | null }
-export function captureSnapshot(video: HTMLVideoElement, qr?: QrWorkerClient): Promise<Snapshot>   // JPEG (long side <= 1600 px, quality 0.85); re-detects the code on the full frame
+export type Snapshot = { photo: Blob; photoW: number; photoH: number; videoW: number; videoH: number; corners: Point[] | null; text: string | null }
+export function captureSnapshot(video: HTMLVideoElement, qr?: QrWorkerClient): Promise<Snapshot>   // JPEG (long side <= 1600 px, quality 0.85); re-detects the code on the full frame (waits <= 1 s for the reader)
+export function anchorCorners(snap, anchor, origin): Point[] | null   // corners only when `text` is this anchor's link (parseAnchorLink)
 // src/check/runCheck.ts
 export type CheckInput = { photo: Blob; photoW: number; photoH: number; videoW: number; videoH: number; K: Intrinsics; pose: Pose; anchor: Anchor;
                            poseQuality: PoseQuality; model: LoadedModel; scene: THREE.Scene; renderer: THREE.WebGLRenderer; elements: ReadonlyMap<string, Element>; sampleId?: string }
