@@ -1,7 +1,8 @@
 /**
  * Orbit model viewer: its OWN PerspectiveCamera with OrbitControls (never the AR camera, whose
  * projection must not be recomputed), tap-to-pick through the element GUIDs, highlight, resize.
- * Pins and other overlays go under model.ifcRoot, which holds IFC coordinates.
+ * Pins and other overlays go under model.ifcRoot, which holds IFC coordinates. With element data the model is
+ * coloured by type (palette.js), the same as the AR modes and Quick Look.
  */
 import {
   Box3, Color, DirectionalLight, DoubleSide, HemisphereLight, type Material, Mesh, MeshStandardMaterial,
@@ -10,6 +11,7 @@ import {
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { guidOf } from './elements'
 import { IFC_TO_THREE, type LoadedModel } from './loadModel'
+import { materialParams, smoothShaded, type Paint } from './palette'
 
 export type PointerSample = { x: number; y: number; t: number }
 type Rect = { left: number; top: number; width: number; height: number }
@@ -40,6 +42,27 @@ export function frameDistance(radius: number, vfovDeg: number, aspect: number): 
   return radius / Math.sin(Math.min(halfV, halfH))
 }
 
+/**
+ * Colour by element type: each mesh whose element paintOf knows gets its kind's material (solid steel and rebar,
+ * see-through concrete). Returns a function that puts the glb's own materials back.
+ */
+export function applyTypeColours(model: LoadedModel, paintOf: (guid: string) => Paint | undefined): () => void {
+  const originals = new Map<Mesh, Material | Material[]>()
+  const mats = new Map<string, MeshStandardMaterial>()
+  for (const mesh of model.meshes) {
+    const p = paintOf(model.meshGuid.get(mesh) ?? '')
+    if (!p) continue
+    const key = `${p.kind}/${p.solid}`
+    if (!mats.has(key)) mats.set(key, new MeshStandardMaterial({ ...materialParams(p), flatShading: !smoothShaded(p.kind), side: DoubleSide }))
+    originals.set(mesh, mesh.material)
+    mesh.material = mats.get(key)!
+  }
+  return () => {
+    for (const [mesh, mat] of originals) mesh.material = mat
+    for (const m of mats.values()) m.dispose()
+  }
+}
+
 export type Viewer = {
   readonly renderer: WebGLRenderer
   readonly scene: Scene
@@ -57,7 +80,7 @@ export type Viewer = {
   dispose(): void
 }
 
-export function createViewer(canvas: HTMLCanvasElement, model: LoadedModel): Viewer {
+export function createViewer(canvas: HTMLCanvasElement, model: LoadedModel, paintOf?: (guid: string) => Paint | undefined): Viewer {
   const renderer = new WebGLRenderer({ canvas, antialias: true })
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 
@@ -68,6 +91,7 @@ export function createViewer(canvas: HTMLCanvasElement, model: LoadedModel): Vie
   sun.position.set(4, 10, 6)
   scene.add(sun)
 
+  const restoreColours = paintOf ? applyTypeColours(model, paintOf) : () => undefined
   model.ifcRoot.matrix.copy(IFC_TO_THREE)
   scene.add(model.ifcRoot)
   scene.updateMatrixWorld(true)
@@ -168,6 +192,7 @@ export function createViewer(canvas: HTMLCanvasElement, model: LoadedModel): Vie
       canvas.removeEventListener('pointerup', onPointerUp)
       highlight(null)
       highlightMaterial.dispose()
+      restoreColours()
       controls.dispose()
       scene.remove(model.ifcRoot) // the model outlives the viewer (React StrictMode re-mounts)
       renderer.dispose()

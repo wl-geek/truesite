@@ -1,0 +1,46 @@
+[
+  {
+    "anchor_id": "S1",
+    "project_id": "site",
+    "qr_size_m": 0.23,
+    "position_m": [
+      9.0,
+      6.0,
+      0.0
+    ],
+    "normal": [
+      0,
+      0,
+      1
+    ],
+    "up": [
+      0,
+      1,
+      0
+    ],
+    "scale": 1.0,
+    "label": "Steel frame floor sheet A3 (1:1)"
+  },
+  {
+    "anchor_id": "S2",
+    "project_id": "site",
+    "qr_size_m": 0.16,
+    "position_m": [
+      9.0,
+      6.0,
+      0.0
+    ],
+    "normal": [
+      0,
+      0,
+      1
+    ],
+    "up": [
+      0,
+      1,
+      0
+    ],
+    "scale": 1.0,
+    "label": "Steel frame floor sheet A4 (1:1)"
+  }
+]

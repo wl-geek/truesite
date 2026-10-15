@@ -24,7 +24,7 @@ pytestmark = pytest.mark.skipif(BASH is None, reason="needs bash")
 
 PROJECT = "truesite-test"
 SERVICE_URL = "https://truesite-123456789012.asia-southeast1.run.app"  # deterministic URL for the stub's number
-SHEETS = ["room1-D1", "room1-L1", "rooftop-R1", "rooftop-R2"]
+SHEETS = ["room1-D1", "room1-L1", "rooftop-R1", "rooftop-R2", "site-S1", "site-S2"]
 
 # "create" marks a resource kind (e.g. iam-service-accounts) as existing and fails if it already is;
 # "describe"/"list" report it. Every call is logged with the project gcloud would use.
@@ -56,6 +56,7 @@ done
 case "$mod" in
   *qr_sheets) names="room1-D1 room1-D2 room1-L1 room1-A1" ;;
   *rooftop) names="rooftop-R1 rooftop-R2" ;;
+  *site) names="site-S1 site-S2" ;;
 esac
 mkdir -p "$dir"
 for n in $names; do printf '%%PDF-1.4\n(%s/a/x/%s) Tj\n' "${STUB_SHEET_URL:-$url}" "$n" > "$dir/$n.pdf"; done
@@ -110,6 +111,7 @@ def test_deploy_renders_sheets_for_the_service_url_then_deploys(stub) -> None:
     for name in SHEETS:
         assert f"{SERVICE_URL}/a/".encode() in (sheets / f"{name}.pdf").read_bytes()
     assert any("truesite_bim.rooftop --sheets-only" in c for c in calls(log, "uv "))
+    assert any("truesite_bim.site --sheets-only" in c for c in calls(log, "uv "))
     [deploy] = calls(log, "gcloud run deploy")
     assert deploy.startswith(f"project={PROJECT} ")  # never the active gcloud config's project
     assert "DAILY_ASK_CAP=300" in deploy and "GOOGLE_GENAI_USE_ENTERPRISE=true" in deploy

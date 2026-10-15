@@ -34,4 +34,5 @@ verify:
 # Only the PDFs are written: the committed model files stay as they are. Warnings still show (stderr).
 sheets:
 	cd bim && uv run python -m truesite_bim.qr_sheets --base-url $(BASE_URL) --out-dir ../web/public/sheets > /dev/null
-	cd bim && uv run python -m truesite_bim.rooftop --sheets-only --base-url $(BASE_URL) --sheets-dir ../web/public/sheets > /dev/null && ls ../web/public/sheets
+	cd bim && uv run python -m truesite_bim.rooftop --sheets-only --base-url $(BASE_URL) --sheets-dir ../web/public/sheets > /dev/null
+	cd bim && uv run python -m truesite_bim.site --sheets-only --base-url $(BASE_URL) --sheets-dir ../web/public/sheets > /dev/null && ls ../web/public/sheets

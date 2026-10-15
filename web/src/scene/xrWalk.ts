@@ -8,6 +8,7 @@ import {
 } from 'three'
 import type { LoadedModel } from './loadModel'
 import { buildWalkScene } from './walkthrough'
+import { type Paint } from './palette'
 import { endOnFailure } from './xrStart'
 
 export async function xrArSupported(): Promise<boolean> {
@@ -26,6 +27,8 @@ export function yawToFace(forwardX: number, forwardZ: number): number {
 export type XrWalkOptions = {
   model: LoadedModel
   classOf: (guid: string) => string
+  /** Element kind for the colour by type (palette.js), from its elements.json row. */
+  paintOf?: (guid: string) => Paint | undefined
   centreIfc: [number, number]
   /** Element shown over the AR view (instructions, Exit). Must be in the document. */
   overlay: HTMLElement
@@ -53,7 +56,7 @@ async function walkInSession(session: XRSession, o: XrWalkOptions): Promise<() =
   renderer.xr.setReferenceSpaceType('local')
   await renderer.xr.setSession(session)
 
-  const scene = buildWalkScene(o.model, o.classOf, o.centreIfc) // Standard materials: add light
+  const scene = buildWalkScene(o.model, o.classOf, o.centreIfc, o.paintOf) // Standard materials: add light
   scene.add(new HemisphereLight(0xffffff, 0x8899aa, 2.2))
   const sun = new DirectionalLight(0xffffff, 1.4)
   sun.position.set(3, 10, 4)

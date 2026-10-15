@@ -19,6 +19,7 @@ import type { QrWorkerClient } from '../qr/qrClient'
 import { effectiveQrSize, poseAnchor, toVideoPixels } from './arMath'
 import type { LoadedModel } from './loadModel'
 import { applyConstructionLook, type ConstructionLook } from './look'
+import { type Paint } from './palette'
 import { levelledPlacement } from './placement'
 import { EDGE_LAYER } from './overlay'
 import { endOnFailure } from './xrStart'
@@ -101,6 +102,8 @@ export type XrPlaceOptions = {
   model: LoadedModel
   anchor: ApiAnchor
   classOf: (guid: string) => string
+  /** Element kind for the colour by type (palette.js), from its elements.json row. */
+  paintOf?: (guid: string) => Paint | undefined
   qr: QrWorkerClient
   qrSizeCorrection: number
   overlay: HTMLElement
@@ -136,7 +139,7 @@ async function placeInSession(session: XRSession, o: XrPlaceOptions): Promise<Xr
   o.model.ifcRoot.removeFromParent()
   scene.add(o.model.ifcRoot)
   o.model.ifcRoot.visible = false
-  const look = applyConstructionLook(o.model, o.classOf, EDGE_LAYER)
+  const look = applyConstructionLook(o.model, o.classOf, EDGE_LAYER, o.paintOf)
   const baseCamera = new PerspectiveCamera()
   baseCamera.layers.enable(EDGE_LAYER)
 

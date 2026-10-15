@@ -1,5 +1,8 @@
+import { BoxGeometry, Group, Mesh, MeshBasicMaterial, type MeshStandardMaterial } from 'three'
 import { describe, expect, it } from 'vitest'
-import { frameDistance, isTap, pointerToNdc } from './viewer'
+import { buildLoadedModel } from './loadModel'
+import { KIND_COLOURS, type Paint } from './palette'
+import { applyTypeColours, frameDistance, isTap, pointerToNdc } from './viewer'
 
 describe('viewer pointer helpers', () => {
   const rect = { left: 100, top: 50, width: 400, height: 200 }
@@ -29,5 +32,29 @@ describe('frameDistance', () => {
     expect(portrait).toBeGreaterThan(frameDistance(2, 50, 16 / 9))
     const hfov = 2 * Math.atan(Math.tan(rad(25)) * (9 / 19.5))
     expect(2 / portrait).toBeCloseTo(Math.sin(hfov / 2), 9) // the sphere just touches the left and right edges
+  })
+})
+
+describe('viewer colours', () => {
+  it('paints each element by type, see-through concrete, and restores the glb materials', () => {
+    const g = new Group()
+    const original = new MeshBasicMaterial()
+    const names = ['C'.repeat(22), 'F'.repeat(22), 'X'.repeat(22)]
+    for (const name of names) {
+      const m = new Mesh(new BoxGeometry(1, 1, 1), original)
+      m.name = name
+      g.add(m)
+    }
+    const model = buildLoadedModel(g, new Set(names))
+    const paint: Record<string, Paint> = { [names[0]]: { kind: 'column', solid: true }, [names[1]]: { kind: 'concrete', solid: false } }
+    const restore = applyTypeColours(model, (guid) => paint[guid])
+    const [col, pad, unknown] = model.meshes.map((m) => m.material as MeshStandardMaterial)
+    expect(col.color.getHex()).toBe(KIND_COLOURS.column)
+    expect(col.transparent).toBe(false)
+    expect(pad.color.getHex()).toBe(KIND_COLOURS.concrete)
+    expect(pad.transparent && pad.opacity).toBe(0.45)
+    expect(unknown).toBe(original) // no element row: left as the glb has it
+    restore()
+    expect(model.meshes.every((m) => m.material === original)).toBe(true)
   })
 })

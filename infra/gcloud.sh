@@ -37,8 +37,8 @@ GEMINI_LOCATION="${GEMINI_LOCATION:-global}"     # decided on day 1 by the Gemin
 GEMINI_BACKEND="${GEMINI_BACKEND:-enterprise}"
 # Every gcloud call targets PROJECT_ID, whatever project `gcloud config` has active on this machine.
 export CLOUDSDK_CORE_PROJECT="$PROJECT_ID"
-# Sheets deploy must render and verify must find: the start page's downloads and the rooftop demo.
-REQUIRED_SHEETS="room1-D1 room1-L1 rooftop-R1 rooftop-R2"
+# Sheets deploy must render and verify must find: the start page's downloads, the rooftop demo and the steel frame walk-in.
+REQUIRED_SHEETS="room1-D1 room1-L1 rooftop-R1 rooftop-R2 site-S1 site-S2"
 SHEETS_DIR="web/public/sheets"
 # What /api/health must report (smoke against a local fake server: EXPECT_GEMINI_MODE=fake EXPECT_STORE_BACKEND=memory).
 EXPECT_GEMINI_MODE="${EXPECT_GEMINI_MODE:-live}"
@@ -75,6 +75,7 @@ make_sheets() {
   rm -rf "$SHEETS_DIR"
   (cd bim && uv run python -m truesite_bim.qr_sheets --base-url "$url" --out-dir "../$SHEETS_DIR" >/dev/null)
   (cd bim && uv run python -m truesite_bim.rooftop --sheets-only --base-url "$url" --sheets-dir "../$SHEETS_DIR" >/dev/null)
+  (cd bim && uv run python -m truesite_bim.site --sheets-only --base-url "$url" --sheets-dir "../$SHEETS_DIR" >/dev/null)
   for name in $REQUIRED_SHEETS; do
     [ -f "$SHEETS_DIR/$name.pdf" ] || die "$SHEETS_DIR/$name.pdf was not rendered"
   done
