@@ -1,6 +1,15 @@
 """Issues: Gemini drafts from a stored finding, save, list, session scoping and demo issues."""
+import logging
+
+import httpx
+
+from app import services
+
 from .conftest import DEMO_ISSUES, GUID_DOOR, GUID_WALL, new_session, write_project
+from .test_ask_route import CannedClient, no_credentials, raising_client
 from .test_check_route import post as post_check
+
+LABEL = "Visual check, not a survey."
 
 
 def check_run(client, session):
@@ -20,6 +29,55 @@ def test_draft_from_a_finding(client):
     assert r.status_code == 200, r.text
     d = r.json()
     assert d["title"].startswith("Door D-01") and "Visual check, not a survey." in d["description"] and d["suggested_action"]
+    assert d["description"].count(LABEL) == 1  # the fake already writes it: not added twice
+
+
+def draft(client, session, run_id, mark):
+    return client.post("/api/issues/draft", json={"run_id": run_id, "mark": mark}, headers=hdr(session))
+
+
+def test_draft_label_is_added_by_code(client):
+    session = new_session()
+    run_id, mark = check_run(client, session)
+    client.app.state.client = CannedClient({"title": "Door D-01 off", "description": "Door looks about 30 cm left.",
+                                            "suggested_action": "Check on site."})
+    assert draft(client, session, run_id, mark).json()["description"] == "Door looks about 30 cm left. " + LABEL
+    client.app.state.client = CannedClient({"title": "t", "description": "x" * 600, "suggested_action": "s"})
+    long = draft(client, session, run_id, mark).json()["description"]
+    assert len(long) <= 500 and long.endswith(LABEL)
+    client.app.state.client = CannedClient({"title": "t", "description": "", "suggested_action": "s"})
+    assert draft(client, session, run_id, mark).json()["description"] == LABEL
+
+
+def test_draft_failure_is_logged(client, caplog):
+    session = new_session()
+    run_id, mark = check_run(client, session)
+    client.app.state.client = raising_client(httpx.ReadTimeout("slow"))
+    with caplog.at_level(logging.WARNING, logger="truesite"):
+        r = draft(client, session, run_id, mark)
+    assert r.status_code == 503 and r.json()["detail"]["code"] == "model_unavailable"
+    assert any(m.startswith("draft failed") and "timeout" in m for m in caplog.messages)
+
+
+def test_draft_client_setup_error_is_a_json_500_and_uses_no_quota(make_client, monkeypatch):
+    client = make_client(daily_ask_cap=1)
+    session = new_session()
+    run_id, mark = check_run(client, session)
+    client.app.state.client = None
+    build = services.build_client
+    monkeypatch.setattr(services, "build_client", no_credentials)
+    r = draft(client, session, run_id, mark)
+    assert r.status_code == 500 and r.json()["detail"]["code"] == "model_bad_request"
+    monkeypatch.setattr(services, "build_client", build)
+    assert draft(client, session, run_id, mark).status_code == 200  # the cap was not used
+
+
+def test_draft_usage_is_logged(client, caplog):
+    session = new_session()
+    run_id, mark = check_run(client, session)
+    with caplog.at_level(logging.INFO, logger="truesite"):
+        assert draft(client, session, run_id, mark).status_code == 200
+    assert any(m.startswith("draft usage") and "cost_usd_est" in m for m in caplog.messages)
 
 
 def test_draft_is_session_scoped_and_checks_the_mark(client):

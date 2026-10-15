@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 from datetime import timedelta
 from pathlib import Path
 
@@ -24,6 +25,16 @@ def test_health_reports_modes(client: TestClient) -> None:
 def test_whoami_uses_the_right_most_forwarded_entry(client: TestClient, xff: str | None, expected: str) -> None:
     r = client.get("/api/whoami", headers={"X-Forwarded-For": xff} if xff else {})
     assert r.json() == {"ip": expected, "x_forwarded_for": xff, "peer": "198.51.100.7"}
+
+
+def test_info_logs_reach_stderr(dist: Path, models: Path, store: InMemoryStore, clock: Clock) -> None:
+    # uvicorn configures only its own loggers; without this, "truesite" INFO lines (Gemini usage
+    # for Ask and Draft) are dropped by Python's last-resort handler, which shows WARNING and up.
+    create_app(Settings(static_dir=dist, models_dir=models), store=store, now=clock.now)
+    create_app(Settings(static_dir=dist, models_dir=models), store=store, now=clock.now)
+    log = logging.getLogger("truesite")
+    assert log.isEnabledFor(logging.INFO)
+    assert len(log.handlers) == 1  # one handler, however many apps are built
 
 
 def test_app_state_is_filled(dist: Path, models: Path, store: InMemoryStore, clock: Clock) -> None:

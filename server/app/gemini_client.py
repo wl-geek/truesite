@@ -23,6 +23,7 @@ from typing import Annotated, Any, Literal, Optional
 
 import httpx
 from google import genai
+from google.auth import exceptions as auth_errors
 from google.genai import errors as genai_errors
 from google.genai import types
 from pydantic import BaseModel, Field
@@ -32,6 +33,7 @@ log = logging.getLogger("truesite.gemini")
 MODEL_ID = "gemini-3.8-flash"
 REQUEST_TIMEOUT_MS = 25_000  # HttpOptions.timeout is in MILLISECONDS
 MAX_OUTPUT_TOKENS = 8_192  # caps response + thinking tokens together (cost guard)
+ASK_MAX_OUTPUT_TOKENS = 2_048  # Ask (<= 600 chars) and Draft (<= 780 chars) plus LOW thinking
 MAX_MARKS = 25
 
 # Introductory prices, USD per 1M tokens, valid through 31 Dec 2026 (Gemini API and
@@ -280,7 +282,7 @@ def build_ask_request(element: dict, question: str) -> dict:
         response_mime_type="application/json",
         response_json_schema=_ask_schema(fields),
         thinking_config=types.ThinkingConfig(thinking_level=types.ThinkingLevel.LOW),
-        max_output_tokens=4_096,
+        max_output_tokens=ASK_MAX_OUTPUT_TOKENS,
     )
     return {"model": MODEL_ID, "contents": contents, "config": config}
 
@@ -294,7 +296,7 @@ def build_issue_request(finding: dict, element: dict) -> dict:
         response_mime_type="application/json",
         response_json_schema=gemini_json_schema(IssueDraftWire),
         thinking_config=types.ThinkingConfig(thinking_level=types.ThinkingLevel.LOW),
-        max_output_tokens=4_096,
+        max_output_tokens=ASK_MAX_OUTPUT_TOKENS,
     )
     return {"model": MODEL_ID, "contents": contents, "config": config}
 
@@ -320,12 +322,26 @@ def estimate_cost_usd(prompt_tokens: int, output_tokens: int, thought_tokens: in
     return (prompt_tokens * PRICE_IN_PER_M + (output_tokens + thought_tokens) * PRICE_OUT_PER_M) / 1e6
 
 
+# A candidate stopped by one of these filters is reported as "blocked", not retried.
+# RECITATION stays a retryable bad_output: a second sample is usually worded differently.
+_BLOCKED_FINISH = {"SAFETY", "PROHIBITED_CONTENT", "BLOCKLIST", "SPII"}
+
+
+def _finish_reason(response: Any) -> Optional[str]:
+    candidates = getattr(response, "candidates", None)
+    finish = getattr(candidates[0], "finish_reason", None) if candidates else None
+    return None if finish is None else str(getattr(finish, "value", finish))
+
+
 def _parse_json(response: Any) -> dict:
     """response.parsed is a dict when response_json_schema is set and the JSON is
     valid; it is None (no exception) when the text is truncated or fenced."""
     feedback = getattr(response, "prompt_feedback", None)
     if feedback is not None and getattr(feedback, "block_reason", None):
         raise GeminiError("blocked", f"prompt blocked: {feedback.block_reason}")
+    finish = _finish_reason(response)
+    if finish in _BLOCKED_FINISH:
+        raise GeminiError("blocked", f"output stopped: {finish}")
     parsed = getattr(response, "parsed", None)
     if isinstance(parsed, dict):
         return parsed
@@ -336,9 +352,6 @@ def _parse_json(response: Any) -> dict:
     try:
         value = json.loads(text)
     except (json.JSONDecodeError, TypeError) as exc:
-        finish = None
-        if getattr(response, "candidates", None):
-            finish = getattr(response.candidates[0], "finish_reason", None)
         raise GeminiError("bad_output", f"unparseable JSON (finish_reason={finish})") from exc
     if not isinstance(value, dict):
         raise GeminiError("bad_output", "JSON is not an object")
@@ -357,12 +370,17 @@ def _translate(exc: Exception) -> GeminiError:
         return GeminiError("timeout", "Gemini did not answer in time")
     if isinstance(exc, httpx.TransportError):
         return GeminiError("unavailable", f"network error: {exc}")
+    if isinstance(exc, auth_errors.GoogleAuthError):
+        # Agent Platform reads ADC at the first request: missing or refused credentials are a setup error.
+        kind = "unavailable" if getattr(exc, "retryable", False) else "bad_request"
+        return GeminiError(kind, f"credentials: {exc}")
     raise exc
 
 
 def generate_json(request: dict, *, client: Any = None, parse_attempts: int = 2) -> dict:
     """Run one structured request. HTTP-level retry is done by the SDK
-    (RETRY_OPTIONS); a response that does not parse is retried once here."""
+    (RETRY_OPTIONS); a response that does not parse is retried once here, unless it
+    was cut off at max_output_tokens (a retry would be cut off and billed again)."""
     client = client or default_client()
     if getattr(client, "vertexai", False):
         request = {**request, "config": request["config"].model_copy(
@@ -383,6 +401,8 @@ def generate_json(request: dict, *, client: Any = None, parse_attempts: int = 2)
             if err.kind == "blocked":
                 raise
             log.warning("gemini bad output (attempt %d): %s", attempt, err)
+            if _finish_reason(response) == "MAX_TOKENS":
+                raise
             last = err
             continue
         return {

@@ -5,7 +5,10 @@ from types import SimpleNamespace
 
 import httpx
 
+from app import services
+
 from .conftest import GUID_DOOR, GUID_WALL, JPEG, PNG, new_session
+from .test_ask_route import no_credentials
 
 
 def context(**overrides) -> str:
@@ -100,6 +103,16 @@ class TimeoutClient:
         def boom(**_k):
             raise httpx.ReadTimeout("slow")
         self.models = SimpleNamespace(generate_content=boom)
+
+
+def test_client_setup_error_is_a_json_500_and_uses_no_quota(make_client, monkeypatch):
+    client = make_client(daily_check_cap=1)
+    build = services.build_client
+    monkeypatch.setattr(services, "build_client", no_credentials)
+    r = post(client)
+    assert r.status_code == 500 and r.json()["detail"]["code"] == "model_bad_request"
+    monkeypatch.setattr(services, "build_client", build)
+    assert post(client).status_code == 200  # the failed setup did not use the one allowed check
 
 
 def test_model_bad_output_is_502(client):

@@ -33,6 +33,16 @@ def _utcnow() -> datetime:
     return datetime.now(timezone.utc)
 
 
+def _log_info_to_stderr() -> None:
+    """uvicorn configures only its own loggers, so "truesite" INFO lines (Ask and Draft usage)
+    would be dropped by Python's last-resort handler, which shows WARNING and up. Idempotent."""
+    if not log.handlers:
+        handler = logging.StreamHandler()
+        handler.setFormatter(logging.Formatter("%(levelname)s %(name)s: %(message)s"))
+        log.addHandler(handler)
+        log.setLevel(logging.INFO)
+
+
 def build_store(settings: Settings) -> Store:
     if settings.store_backend == "memory":
         return InMemoryStore()
@@ -77,6 +87,7 @@ def create_app(
     limiter_clock: Callable[[], float] | None = None,
 ) -> FastAPI:
     settings = settings or Settings.from_env()
+    _log_info_to_stderr()
     docs = settings.api_docs  # off in production: Swagger UI loads an unpinned jsDelivr script (A-71)
     app = FastAPI(title="TrueSite", docs_url="/api/docs" if docs else None, redoc_url=None,
                   openapi_url="/api/openapi.json" if docs else None)
