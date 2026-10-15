@@ -87,17 +87,31 @@ Wai found a 13-second screen recording of a commercial construction-AR app on a 
 |---|---|---|
 | Deployed Cloud Run URL. Samples check with real Gemini. Live AR on Android (place by code, world-locked) and iPhone (camera overlay). As-built check from the live view. Ask. Issues. Rooftop hero demo. Desk sheet. README, deck and video. | As-built check inside the world-locked Android AR. iPhone Quick Look walk-in verified. Measured accuracy numbers. Voice question. BCF export. | Native apps, VR, user IFC upload, logins, offline mode, survey-grade accuracy claims |
 
-## 6. Current state (15 Oct)
+## 6. Current state (16 Oct)
 
-- **Built and merged:** everything in the spec's core, plus the extras above. All tests are green (`make test`: BIM about 60, server about 270, web about 170).
+- **Built and merged:**
+  - everything in the spec's core, plus the extras above
+  - the steel-frame `site` project for the iPad walk-in
+  - colour by element type
+  - the fixes from the 15 Oct audit: every high and medium finding is fixed (`docs/audit-2026-10-15.md`)
+- **Tests:** all green with `make test`: BIM about 105, server about 385, web about 270.
 - **Phone-tested on Android over the LAN:**
   - desk sheet D1 overlay ✓
   - live *Check as-built* call ✓
   - QR scan ✓
-  - the original look-around and Walk-inside versions were tried and fed into the redesign; the new place-by-code AR has **not been confirmed on a device yet**
-- **Gemini:** the real client is tested with mocks. The free-tier key works but was overloaded (503) on 14 Oct. Paid access is pending the Cloud billing.
-- **Google Cloud:** project `truesite-hack-2026` exists, owned by Wai's Gmail. **Billing is not linked yet:** Michael's free-trial billing account will be linked. Nothing is deployed yet. `infra/gcloud.sh` and `make setup` / `make deploy` / `make verify` are ready (daily check cap 100).
-- **Open work:** see GitHub Issues. Human-only items: deploy billing (#1), samples (#9), measurements (#13), video and deck (#15).
+  - **Not yet confirmed on a device:** the redesigned place-by-code AR (level, on the ground, world-locked), the iPad Quick Look walk-in, and look-around on iPhone. The audit doc lists the exact checks.
+- **Gemini:**
+  - The real client is tested with mocks. The free-tier key works but was overloaded (503) on 14 Oct. Paid access is pending the Cloud billing.
+  - The rooftop setting-out prompt (`check_note`) needs one live call before the shoot.
+- **Google Cloud:**
+  - Project `truesite-hack-2026` exists, owned by Wai's Gmail. **Billing is not linked yet:** Michael's free-trial billing account will be linked. Nothing is deployed yet.
+  - `make setup` / `make deploy` / `make verify` are ready: daily caps of 100 checks and 300 asks; the deploy renders the QR sheets for the service URL; `make verify` ends with `SMOKE OK`.
+- **Open work:** see GitHub Issues. Human-only items:
+  - deploy and billing (#1)
+  - device runs (#33, #35)
+  - samples (#9)
+  - measurements (#13)
+  - video and deck (#15)
 
 ## 7. How we work
 
