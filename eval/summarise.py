@@ -7,7 +7,8 @@
   python eval/summarise.py check eval/labels.json results.json
       labels.json:  {"<sample_id>": {"<guid>": "<expected status>"}}   (staged deviations vs matches)
       results.json: {"<sample_id>": <CheckResult>}                    (downloaded from /samples?dev=1)
-      -> hits, misses, false alarms, correct matches, can't-judge share
+      -> hits, misses, false alarms, correct matches, can't-judge share, not run
+      Exits 1 (after printing the table) when a labelled sample has no result: run those again first.
 
 Definitions (per labelled element):
   hit          expected a deviation, returned a deviation (missing / misplaced / different_from_design)
@@ -15,6 +16,8 @@ Definitions (per labelled element):
   false alarm  expected present_ok, returned a deviation
   match        expected present_ok, returned present_ok
   can't judge  returned cannot_judge, or the element was not in the result (counted separately, never rounded up)
+  not run      the whole sample has no result (an error, or the hourly limit): that says nothing about the
+               model, so it is left out of the can't-judge share
 """
 from __future__ import annotations
 
@@ -26,6 +29,7 @@ from collections import defaultdict
 from pathlib import Path
 
 DEVIATIONS = {"missing", "misplaced", "different_from_design"}
+LABELS = DEVIATIONS | {"present_ok"}
 
 
 def overlay_table(rows: list[dict[str, str]]) -> str:
@@ -40,9 +44,15 @@ def overlay_table(rows: list[dict[str, str]]) -> str:
 
 
 def check_counts(labels: dict[str, dict[str, str]], results: dict[str, dict]) -> dict[str, int]:
-    counts = {"hit": 0, "miss": 0, "false_alarm": 0, "match": 0, "cannot_judge": 0}
+    counts = {"hit": 0, "miss": 0, "false_alarm": 0, "match": 0, "cannot_judge": 0, "not_run": 0}
     for sample_id, expected in labels.items():
-        findings = {f["guid"]: f["status"] for f in results.get(sample_id, {}).get("findings", [])}
+        bad = sorted(f"{sample_id}/{guid}: {want!r}" for guid, want in expected.items() if want not in LABELS)
+        if bad:
+            raise ValueError(f"labels.json: unknown status {', '.join(bad)} (use one of {', '.join(sorted(LABELS))})")
+        if sample_id not in results:
+            counts["not_run"] += len(expected)
+            continue
+        findings = {f["guid"]: f["status"] for f in results[sample_id].get("findings", [])}
         for guid, want in expected.items():
             got = findings.get(guid, "cannot_judge")
             if got == "cannot_judge":
@@ -56,23 +66,30 @@ def check_counts(labels: dict[str, dict[str, str]], results: dict[str, dict]) ->
 
 def check_table(counts: dict[str, int]) -> str:
     total = sum(counts.values())
-    share = f"{100 * counts['cannot_judge'] / total:.0f}%" if total else "—"
+    judged = total - counts["not_run"]  # the share is of the elements the model was actually asked about
+    share = f"{100 * counts['cannot_judge'] / judged:.0f}%" if judged else "—"
     return "\n".join([
-        "| Labelled elements | Hits | Misses | False alarms | Correct matches | Can't judge |",
-        "|---|---|---|---|---|---|",
-        f"| {total} | {counts['hit']} | {counts['miss']} | {counts['false_alarm']} | {counts['match']} | {counts['cannot_judge']} ({share}) |",
+        "| Labelled elements | Hits | Misses | False alarms | Correct matches | Can't judge | Not run |",
+        "|---|---|---|---|---|---|---|",
+        f"| {total} | {counts['hit']} | {counts['miss']} | {counts['false_alarm']} | {counts['match']} "
+        f"| {counts['cannot_judge']} ({share}) | {counts['not_run']} |",
     ])
 
 
 def main(argv: list[str]) -> int:
     if len(argv) >= 2 and argv[0] == "overlay":
-        with open(argv[1], newline="", encoding="utf-8") as fh:
+        with open(argv[1], newline="", encoding="utf-8-sig") as fh:  # -sig: Excel saves CSV with a BOM
             print(overlay_table(list(csv.DictReader(fh))))
         return 0
     if len(argv) >= 3 and argv[0] == "check":
         labels = json.loads(Path(argv[1]).read_text(encoding="utf-8"))
         results = json.loads(Path(argv[2]).read_text(encoding="utf-8"))
         print(check_table(check_counts(labels, results)))
+        not_run = sorted(set(labels) - set(results))
+        if not_run:
+            print(f"not run: {', '.join(not_run)} -- run these samples again before publishing the table",
+                  file=sys.stderr)
+            return 1
         return 0
     print(__doc__)
     return 2
