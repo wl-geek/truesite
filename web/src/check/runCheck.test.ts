@@ -7,14 +7,21 @@ import { poseAnchor } from '../scene/arMath'
 import { buildLoadedModel } from '../scene/loadModel'
 import { applyConstructionLook } from '../scene/look'
 import { stubRenderer } from '../test-support/stubRenderer'
-import { idBufferSize, poseDistance, runCheck, shouldUseSaved } from './runCheck'
+import { idBufferSize, poseDistance, runCheck, shouldUseSaved, storedRunId } from './runCheck'
 import { photoSize } from './snapshot'
 
 describe('runCheck helpers', () => {
-  it('falls back to the saved result only for samples and only on transient failures', () => {
-    for (const status of [0, 429, 502, 503]) expect(shouldUseSaved(new ApiError('x', status), 'room1-door')).toBe(true)
+  it('falls back to the saved result only for samples, on network, limit and server/model failures', () => {
+    for (const status of [0, 429, 500, 502, 503, 504]) expect(shouldUseSaved(new ApiError('x', status), 'room1-door')).toBe(true)
+    expect(shouldUseSaved(new ApiError('x', 500, 'model_bad_request'), 'room1-door')).toBe(true) // Gemini key revoked, model retired
     expect(shouldUseSaved(new ApiError('x', 503))).toBe(false)
-    for (const status of [400, 404, 413, 422, 500]) expect(shouldUseSaved(new ApiError('x', status), 'room1-door')).toBe(false)
+    for (const status of [400, 404, 413, 422]) expect(shouldUseSaved(new ApiError('x', status), 'room1-door')).toBe(false)
+  })
+
+  it('keeps the run id only when the run was stored (issues need a stored run)', () => {
+    expect(storedRunId({ run_id: 'r1', saved: true })).toBe('r1')
+    expect(storedRunId({ run_id: 'r1', saved: false })).toBeNull()
+    expect(storedRunId(null)).toBeNull()
   })
 
   it('sizes the ID buffer at 640 px wide with the video aspect', () => {
