@@ -1,6 +1,6 @@
 """Read-only access to the BIM pipeline's output: MODELS_DIR/<project_id>/...
 
-  project.json      {"project_id", "name"}
+  project.json      {"project_id", "name", "check_note"?}; check_note is added to every check prompt
   model.glb         served by GET /api/projects/{project_id}/model.glb
   elements.json     list[Element]
   anchors.json      list[Anchor]
@@ -27,7 +27,8 @@ class UnknownElement(Exception):
 
 
 class _Project:
-    def __init__(self, project_id: str, name: str, elements: list[Element], anchors: list[Anchor]) -> None:
+    def __init__(self, project_id: str, name: str, elements: list[Element], anchors: list[Anchor],
+                 check_note: str = "") -> None:
         self.manifest = ProjectManifest(
             project_id=project_id,
             name=name,
@@ -36,6 +37,7 @@ class _Project:
             anchors=anchors,
         )
         self.by_guid = {e.guid: e for e in elements}
+        self.check_note = check_note
 
 
 class ProjectRepo:
@@ -65,7 +67,8 @@ class ProjectRepo:
             meta = json.loads((d / "project.json").read_text(encoding="utf-8"))
             elements = [Element.model_validate(e) for e in json.loads((d / "elements.json").read_text(encoding="utf-8"))]
             anchors = [Anchor.model_validate(a) for a in json.loads((d / "anchors.json").read_text(encoding="utf-8"))]
-            project = _Project(project_id, meta["name"], elements, anchors)
+            note = meta.get("check_note")
+            project = _Project(project_id, meta["name"], elements, anchors, note.strip() if isinstance(note, str) else "")
             self._cache[project_id] = (stamp, project)
             return project
 
@@ -78,6 +81,10 @@ class ProjectRepo:
 
     def manifest(self, project_id: str) -> ProjectManifest:
         return self._load(project_id).manifest
+
+    def check_note(self, project_id: str) -> str:
+        """Server-side guidance for the check prompt (project.json "check_note"), "" if none."""
+        return self._load(project_id).check_note
 
     def elements_by_guid(self, project_id: str) -> dict[str, Element]:
         return dict(self._load(project_id).by_guid)

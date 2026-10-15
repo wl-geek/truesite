@@ -35,6 +35,17 @@ ANCHOR = {"anchor_id": "R1", "project_id": PROJECT_ID, "qr_size_m": 0.33, "posit
           "normal": [0, 0, 1], "up": [0, 1, 0], "scale": 1.0, "label": "Rooftop floor sheet A2 (1:1)"}
 # Same spot, A4 with a 16 cm code: for indoor tests, or when A2 printing is not possible (readable to ~3 m).
 ANCHOR_A4 = {**ANCHOR, "anchor_id": "R2", "qr_size_m": 0.16, "label": "Rooftop floor sheet A4 (1:1)"}
+# project.json "check_note": the server adds it to every check prompt for this project. The demo is a
+# setting-out check, with boxes or cones standing in for columns, so tell the model how to judge them.
+CHECK_NOTE = (
+    "Setting-out check: the frame is not built yet. Boxes, cones or tape on the floor stand in for the "
+    "level-1 columns (Column ... L1). Judge each level-1 column by its stand-in's position only: present_ok "
+    "if one sits where the column should be, misplaced if it is nearby but off (direction and rough distance), "
+    "missing if the spot is clearly in view and empty. Never use different_from_design for a stand-in, and do "
+    "not list stand-ins under unexpected. Beams, level-2 columns and all rebar cages are not built yet: "
+    "cannot_judge."
+)
+PROJECT = {"project_id": PROJECT_ID, "name": "Rooftop frame (2 storeys, 1:1)", "check_note": CHECK_NOTE}
 
 
 class Frame:
@@ -194,7 +205,7 @@ def main(argv: list[str] | None = None) -> None:
     report = run_pipeline(ifc, a.out)
     lf = {"encoding": "utf-8", "newline": "\n"}  # LF on every OS, so Windows runs don't dirty the committed files
     (a.out / "anchors.json").write_text(json.dumps([ANCHOR, ANCHOR_A4], indent=2) + "\n", **lf)
-    (a.out / "project.json").write_text(json.dumps({"project_id": PROJECT_ID, "name": "Rooftop frame (2 storeys, 1:1)"}) + "\n", **lf)
+    (a.out / "project.json").write_text(json.dumps(PROJECT) + "\n", **lf)
     if a.base_url:
         base = a.base_url.rstrip("/")
         info = [render_sheet(sh, f"{base}/a/{PROJECT_ID}/{sh.anchor_id}", a.sheets_dir / f"{PROJECT_ID}-{sh.anchor_id}.pdf")

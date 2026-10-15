@@ -35,7 +35,12 @@ def test_anchor_and_project(built):
     assert anchors == [rooftop.ANCHOR, rooftop.ANCHOR_A4]
     assert anchors[1]["anchor_id"] == "R2" and anchors[1]["qr_size_m"] == 0.16
     assert anchors[0]["position_m"] == [4.5, 4.5, 0.0] and anchors[0]["scale"] == 1.0
-    assert json.loads((built / "project.json").read_text())["project_id"] == "rooftop"
+    project = json.loads((built / "project.json").read_text())
+    assert project["project_id"] == "rooftop"
+    # The server adds this note to every check prompt for the project (setting-out demo, audit A-27).
+    assert project["check_note"] == rooftop.CHECK_NOTE and "Setting-out check" in rooftop.CHECK_NOTE
+    committed = Path(__file__).resolve().parents[1] / "models" / "rooftop" / "project.json"
+    assert json.loads(committed.read_text(encoding="utf-8")) == project
 
 
 @pytest.mark.parametrize("name", ["elements.json", "anchors.json", "project.json"])

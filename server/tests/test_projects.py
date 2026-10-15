@@ -122,6 +122,18 @@ def test_the_committed_rooftop_project_loads() -> None:
     assert len(m.elements) == 160 and classes == {"IfcColumn", "IfcBeam", "IfcReinforcingBar"}
     assert [a.anchor_id for a in m.anchors] == ["R1", "R2"] and m.anchors[0].scale == 1.0
     assert repo.demo_issues("rooftop") == []
+    assert "Setting-out check" in repo.check_note("rooftop") and "cannot_judge" in repo.check_note("rooftop")
+    assert repo.check_note("room1") == ""
+
+
+def test_check_note_comes_from_project_json(models) -> None:
+    import json as _json
+    assert ProjectRepo(models).check_note("testproj") == ""
+    (models / "testproj" / "project.json").write_text(
+        _json.dumps({"project_id": "testproj", "name": "Test project", "check_note": "  Setting-out check.  "}))
+    assert ProjectRepo(models).check_note("testproj") == "Setting-out check."
+    with pytest.raises(UnknownProject):
+        ProjectRepo(models).check_note("nope")
 
 
 def test_a_changed_anchors_file_is_picked_up(models) -> None:
