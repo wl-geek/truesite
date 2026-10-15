@@ -21,11 +21,14 @@ DEMO_SESSION = "demo"
 PROJECT_ID_PATTERN = r"^[a-z0-9][a-z0-9_-]{0,31}$"
 ANCHOR_ID_PATTERN = r"^[A-Za-z0-9_-]{1,16}$"
 SAMPLE_ID_PATTERN = r"^[a-z0-9][a-z0-9_-]{0,63}$"
+# secrets.token_urlsafe(16) -> 22 chars. Also a Firestore document id, so never a "/".
+RUN_ID_PATTERN = r"^[A-Za-z0-9_-]{16,32}$"
 PROJECT_ID_RE = re.compile(PROJECT_ID_PATTERN)
 
 ProjectId = Annotated[str, Field(pattern=PROJECT_ID_PATTERN)]
 AnchorId = Annotated[str, Field(pattern=ANCHOR_ID_PATTERN)]
 Guid = Annotated[str, Field(min_length=1, max_length=64)]
+RunId = Annotated[str, Field(pattern=RUN_ID_PATTERN)]
 
 
 def _box_order(box: list[int]) -> list[int]:
@@ -211,7 +214,7 @@ class AskAnswer(BaseModel):
 class IssueDraftRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    run_id: str = Field(min_length=1, max_length=64)
+    run_id: RunId
     mark: int = Field(ge=1, le=25)
 
 
@@ -229,7 +232,7 @@ class IssueIn(BaseModel):
     project_id: ProjectId
     guid: Guid
     finding_ref: str | None = Field(default=None, max_length=64)  # "<run_id>:<mark>"
-    run_id: str | None = Field(default=None, max_length=64)
+    run_id: RunId | None = None
     title: str = Field(min_length=1, max_length=120)
     description: str = Field(default="", max_length=2000)
     suggested_action: str = Field(default="", max_length=600)

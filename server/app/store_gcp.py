@@ -46,6 +46,10 @@ RUNS = "check_runs"
 ISSUES = "issues"
 SAVED = "saved_results"
 
+# Documents one issue list may read. Above ISSUES_PER_SESSION (100), which POST /api/issues
+# enforces, so the query returns all of a session's issues and the sort below sees every one.
+ISSUE_READ_LIMIT = 200
+
 
 class FirestoreGcsStore:
     def __init__(
@@ -111,10 +115,12 @@ class FirestoreGcsStore:
         self.db.collection(ISSUES).document(issue.id).set(data)
 
     def list_issues(self, session_id: str, project_id: str | None = None, limit: int = 200) -> list[Issue]:
+        """Newest first. With no order_by (no composite index), Firestore returns matches by
+        document id, so read up to ISSUE_READ_LIMIT, sort here, then cut to `limit`."""
         query = self.db.collection(ISSUES).where(filter=FieldFilter("session_id", "==", session_id))
         if project_id is not None:
             query = query.where(filter=FieldFilter("project_id", "==", project_id))
-        rows = [Issue.model_validate(doc.to_dict()) for doc in query.limit(500).stream()]
+        rows = [Issue.model_validate(doc.to_dict()) for doc in query.limit(ISSUE_READ_LIMIT).stream()]
         rows.sort(key=lambda i: i.created_at, reverse=True)
         return rows[:limit]
 

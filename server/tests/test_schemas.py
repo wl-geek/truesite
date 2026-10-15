@@ -123,9 +123,10 @@ def test_ask_models() -> None:
 
 
 def test_issue_draft_models() -> None:
-    assert IssueDraftRequest(run_id="abc", mark=3).mark == 3
-    with pytest.raises(ValidationError):
-        IssueDraftRequest(run_id="abc", mark=0)
+    assert IssueDraftRequest(run_id="r" * 22, mark=3).mark == 3
+    for bad in ({"mark": 0}, {"run_id": "abc"}, {"run_id": "x/" * 11}, {"run_id": "r" * 33}):
+        with pytest.raises(ValidationError):
+            IssueDraftRequest.model_validate({"run_id": "r" * 22, "mark": 3, **bad})
     IssueDraft(title="t" * 80, description="d" * 500, suggested_action="s" * 200)
     with pytest.raises(ValidationError):
         IssueDraft(title="t" * 81, description="", suggested_action="")
@@ -135,7 +136,7 @@ def test_issue_in_and_issue() -> None:
     body = IssueIn(project_id="room1", guid=GUID, title="Door D-01 about 30 cm left of design")
     assert (body.description, body.suggested_action, body.severity, body.crop_box) == ("", "", None, None)
     for bad in ({"title": ""}, {"title": "x" * 121}, {"session_id": "demo"}, {"id": "x"}, {"crop_box": [5, 0, 1, 1]},
-                {"severity": "urgent"}, {"description": "x" * 2001}):
+                {"severity": "urgent"}, {"description": "x" * 2001}, {"run_id": "x/" * 11}, {"run_id": "abc"}):
         with pytest.raises(ValidationError):
             IssueIn.model_validate({"project_id": "room1", "guid": GUID, "title": "t", **bad})
     issue = Issue(**body.model_dump(), id="i1", session_id="demo", created_at=T0)
