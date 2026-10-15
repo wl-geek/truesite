@@ -4,10 +4,12 @@
  *   - renderDesignImage: an opaque, readable render of the design for Gemini (marks drawn later).
  * Both render layer 0 only (edges live on EDGE_LAYER) into an RGBA8 target with no MSAA, then
  * restore the model's materials, the camera's layers and the renderer's state.
+ * Both judge what is shown: hidden layers (mesh.visible = false) stay out, and the view's cut-above
+ * planes (look.clipPlanes(), updated at the snapshot pose) are applied to the override materials.
  */
 import {
   Color, DoubleSide, Mesh, MeshBasicMaterial, NoToneMapping, RGBAFormat, UnsignedByteType, WebGLRenderTarget,
-  type Camera, type Material, type Scene, type WebGLRenderer,
+  type Camera, type Material, type Plane, type Scene, type WebGLRenderer,
 } from 'three'
 import { idColor } from './elements'
 import type { LoadedModel } from './loadModel'
@@ -24,7 +26,7 @@ async function readTarget(renderer: WebGLRenderer, target: WebGLRenderTarget, w:
 }
 
 async function renderWith(renderer: WebGLRenderer, scene: Scene, model: LoadedModel, camera: Camera, w: number, h: number,
-  materialFor: (mesh: Mesh) => Material, clear: Color): Promise<Uint8Array> {
+  materialFor: (mesh: Mesh) => Material, clear: Color, clip: readonly Plane[]): Promise<Uint8Array> {
   const target = new WebGLRenderTarget(w, h, { type: UnsignedByteType, format: RGBAFormat, samples: 0, depthBuffer: true })
   const originals = new Map<Mesh, Material | Material[]>()
   for (const mesh of model.meshes) {
@@ -35,10 +37,12 @@ async function renderWith(renderer: WebGLRenderer, scene: Scene, model: LoadedMo
   const prevClear = renderer.getClearColor(new Color())
   const prevAlpha = renderer.getClearAlpha()
   const prevToneMapping = renderer.toneMapping
+  const prevLocalClipping = renderer.localClippingEnabled
   const prevMask = camera.layers.mask
   try {
     camera.layers.set(0)
     renderer.toneMapping = NoToneMapping
+    if (clip.length) renderer.localClippingEnabled = true
     renderer.setRenderTarget(target)
     renderer.setClearColor(clear, 1)
     renderer.clear()
@@ -49,20 +53,24 @@ async function renderWith(renderer: WebGLRenderer, scene: Scene, model: LoadedMo
     renderer.setRenderTarget(prevTarget)
     renderer.setClearColor(prevClear, prevAlpha)
     renderer.toneMapping = prevToneMapping
+    renderer.localClippingEnabled = prevLocalClipping
     for (const [mesh, mat] of originals) mesh.material = mat
     target.dispose()
   }
 }
 
+/** Clipping planes for an override material: the view's cut, or none. */
+const clipFor = (clip: readonly Plane[]) => (clip.length ? [...clip] : null)
+
 /** Visible elements: index i in the colour buffer is indexToGuid[i] (one colour per GUID). */
 export async function renderIdBuffer(renderer: WebGLRenderer, scene: Scene, model: LoadedModel, camera: Camera,
-  width: number, height: number): Promise<IdRender> {
+  width: number, height: number, clip: readonly Plane[] = []): Promise<IdRender> {
   const indexToGuid = [...new Set(model.meshes.map((m) => model.meshGuid.get(m)!))]
   const indexOf = new Map(indexToGuid.map((g, i) => [g, i]))
-  const mats = indexToGuid.map((_, i) => new MeshBasicMaterial({ color: idColor(i), side: DoubleSide }))
+  const mats = indexToGuid.map((_, i) => new MeshBasicMaterial({ color: idColor(i), side: DoubleSide, clippingPlanes: clipFor(clip) }))
   try {
     const buf = await renderWith(renderer, scene, model, camera, width, height,
-      (mesh) => mats[indexOf.get(model.meshGuid.get(mesh)!)!], new Color(0, 0, 0))
+      (mesh) => mats[indexOf.get(model.meshGuid.get(mesh)!)!], new Color(0, 0, 0), clip)
     return { buf, width, height, indexToGuid }
   } finally {
     mats.forEach((m) => m.dispose())
@@ -84,16 +92,18 @@ const LINEAR_TO_SRGB = Uint8ClampedArray.from({ length: 256 }, (_, i) => {
 
 /** An opaque render of the design (top-down RGBA rows) at the photo size, for Gemini's IMAGE 2. */
 export async function renderDesignImage(renderer: WebGLRenderer, scene: Scene, model: LoadedModel, camera: Camera,
-  width: number, height: number, classOf: (guid: string) => string): Promise<ImageData> {
+  width: number, height: number, classOf: (guid: string) => string, clip: readonly Plane[] = []): Promise<ImageData> {
   const cache = new Map<number, MeshBasicMaterial>()
   const material = (mesh: Mesh) => {
     const cls = classOf(model.meshGuid.get(mesh)!)
     const hex = DESIGN_COLOURS.find(([re]) => re.test(cls))?.[1] ?? 0xd9d9d9
-    if (!cache.has(hex)) cache.set(hex, new MeshBasicMaterial({ color: hex, side: DoubleSide, polygonOffset: true, polygonOffsetFactor: 1 }))
+    if (!cache.has(hex)) {
+      cache.set(hex, new MeshBasicMaterial({ color: hex, side: DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, clippingPlanes: clipFor(clip) }))
+    }
     return cache.get(hex)!
   }
   try {
-    const buf = await renderWith(renderer, scene, model, camera, width, height, material, new Color(0xf4f6f8))
+    const buf = await renderWith(renderer, scene, model, camera, width, height, material, new Color(0xf4f6f8), clip)
     const out = new ImageData(width, height)
     for (let row = 0; row < height; row++) {
       const src = (height - 1 - row) * width * 4 // GL rows are bottom-up

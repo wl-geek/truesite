@@ -268,8 +268,9 @@ export const IFC_TO_THREE: THREE.Matrix4                  // makeRotationX(-Math
 export function applyProjection(camera: THREE.PerspectiveCamera, colMajor: number[]): void   // sets projectionMatrix + projectionMatrixInverse
 // src/scene/idBuffer.ts
 export type IdRender = { buf: Uint8Array; width: number; height: number; indexToGuid: string[] }
-export function renderIdBuffer(renderer: THREE.WebGLRenderer, scene: THREE.Scene, model: LoadedModel, camera: THREE.Camera, width: number, height: number): Promise<IdRender>
-export function renderDesignImage(renderer, scene, model, camera, width, height, classOf: (guid) => string): Promise<ImageData>   // opaque design render, rows top-down
+export function renderIdBuffer(renderer: THREE.WebGLRenderer, scene: THREE.Scene, model: LoadedModel, camera: THREE.Camera, width: number, height: number, clip?: readonly THREE.Plane[]): Promise<IdRender>
+export function renderDesignImage(renderer, scene, model, camera, width, height, classOf: (guid) => string, clip?: readonly THREE.Plane[]): Promise<ImageData>   // opaque design render, rows top-down
+//   Both judge what is shown: hidden meshes stay out, and `clip` (the view's cut, look.clipPlanes()) is applied to the override materials.
 // src/scene/pins.ts
 export function findingAnchorPoint(el: Element): [number, number, number]   // IFC coords: bbox centre
 export function makePins(findings: Finding[], elements: Map<string, Element>): THREE.Group        // add under ifcRoot
@@ -285,8 +286,10 @@ export type Snapshot = { photo: Blob; photoW: number; photoH: number; videoW: nu
 export function captureSnapshot(video: HTMLVideoElement, qr?: QrWorkerClient): Promise<Snapshot>   // JPEG (long side <= 1600 px, quality 0.85); re-detects the code on the full frame
 // src/check/runCheck.ts
 export type CheckInput = { photo: Blob; photoW: number; photoH: number; videoW: number; videoH: number; K: Intrinsics; pose: Pose; anchor: Anchor;
-                           poseQuality: PoseQuality; model: LoadedModel; scene: THREE.Scene; renderer: THREE.WebGLRenderer; elements: ReadonlyMap<string, Element>; sampleId?: string }
-export function runCheck(input: CheckInput): Promise<{ response: CheckResponse | null; saved: CheckResult | null; error: ApiError | null; marks: MarkedElement[]; render: Blob | null }>
+                           poseQuality: PoseQuality; model: LoadedModel; scene: THREE.Scene; renderer: THREE.WebGLRenderer; elements: ReadonlyMap<string, Element>; sampleId?: string;
+                           look?: ConstructionLook }   // live AR: hidden layers, cut and view distance apply at the snapshot pose
+export function runCheck(input: CheckInput): Promise<{ response: CheckResponse | null; saved: CheckResult | null; error: ApiError | null; marks: MarkedElement[]; render: Blob | null;
+                           viewNote: string | null }>   // "Checked as shown: Rebar hidden; cut above 3.3 m." or null
 ```
 
 ## 8. Samples
