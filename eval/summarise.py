@@ -66,12 +66,12 @@ def check_table(counts: dict[str, int]) -> str:
 
 def main(argv: list[str]) -> int:
     if len(argv) >= 2 and argv[0] == "overlay":
-        with open(argv[1], newline="") as fh:
+        with open(argv[1], newline="", encoding="utf-8") as fh:
             print(overlay_table(list(csv.DictReader(fh))))
         return 0
     if len(argv) >= 3 and argv[0] == "check":
-        labels = json.loads(Path(argv[1]).read_text())
-        results = json.loads(Path(argv[2]).read_text())
+        labels = json.loads(Path(argv[1]).read_text(encoding="utf-8"))
+        results = json.loads(Path(argv[2]).read_text(encoding="utf-8"))
         print(check_table(check_counts(labels, results)))
         return 0
     print(__doc__)
