@@ -111,10 +111,10 @@ class CheckContext(BaseModel):
     sample_id: str | None = Field(default=None, pattern=SAMPLE_ID_PATTERN)
 
     @model_validator(mode="after")
-    def _unique_marks(self) -> "CheckContext":
-        marks = [v.mark for v in self.visible]
-        if len(marks) != len(set(marks)):
-            raise ValueError("visible[].mark values must be unique")
+    def _marks_1_to_n(self) -> "CheckContext":
+        # The Gemini schema caps the mark at n (gemini_client._check_schema), so marks are exactly 1..n.
+        if sorted(v.mark for v in self.visible) != list(range(1, len(self.visible) + 1)):
+            raise ValueError("visible[].mark values must be 1..n, each once")
         return self
 
 

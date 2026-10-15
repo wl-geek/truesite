@@ -46,6 +46,17 @@ VIEW_ANCHORS = [
     {**ANCHOR_A4, "anchor_id": "V3", "position_m": [4.5, -1.5, 1.3], "normal": [0, -1, 0], "up": [0, 0, 1],
      "label": "Viewpoint 3: outside the south edge, whole frame (A4 upright, code at 1.3 m)"},
 ]
+# project.json "check_note": the server adds it to every check prompt for this project. The demo is a
+# setting-out check, with boxes or cones standing in for columns, so tell the model how to judge them.
+CHECK_NOTE = (
+    "Setting-out check: the frame is not built yet. Boxes, cones or tape on the floor stand in for the "
+    "level-1 columns (Column ... L1). Judge each level-1 column by its stand-in's position only: present_ok "
+    "if one sits where the column should be, misplaced if it is nearby but off (direction and rough distance), "
+    "missing if the spot is clearly in view and empty. Never use different_from_design for a stand-in, and do "
+    "not list stand-ins under unexpected. Beams, level-2 columns and all rebar cages are not built yet: "
+    "cannot_judge."
+)
+PROJECT = {"project_id": PROJECT_ID, "name": "Rooftop frame (2 storeys, 1:1)", "check_note": CHECK_NOTE}
 
 
 class Frame:
@@ -219,7 +230,7 @@ def main(argv: list[str] | None = None) -> None:
     report = run_pipeline(ifc, a.out)
     lf = {"encoding": "utf-8", "newline": "\n"}  # LF on every OS, so Windows runs don't dirty the committed files
     (a.out / "anchors.json").write_text(json.dumps([ANCHOR, ANCHOR_A4, *VIEW_ANCHORS], indent=2) + "\n", **lf)
-    (a.out / "project.json").write_text(json.dumps({"project_id": PROJECT_ID, "name": "Rooftop frame (2 storeys, 1:1)"}) + "\n", **lf)
+    (a.out / "project.json").write_text(json.dumps(PROJECT) + "\n", **lf)
     if a.base_url:
         base = a.base_url.rstrip("/")
         info = [render_sheet(sh, f"{base}/a/{PROJECT_ID}/{sh.anchor_id}", a.sheets_dir / f"{PROJECT_ID}-{sh.anchor_id}.pdf")

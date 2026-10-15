@@ -144,9 +144,9 @@ class ProjectManifest:  project_id, name, model_url: str, elements: list[Element
 
 class VisibleElement:   mark: int 1..25, guid, ifc_class, name = "", box: Box, key_dims: str = "" (<=200)            # extra="forbid"
 class CheckContext:     project_id, anchor_id, pose_quality: PoseQuality, distance_m: float 0..50,
-                        visible: list[VisibleElement] (1..25, unique marks), sample_id: str | None (pattern ^[a-z0-9][a-z0-9_-]{0,63}$)
+                        visible: list[VisibleElement] (1..25, marks exactly 1..n in any order), sample_id: str | None (pattern ^[a-z0-9][a-z0-9_-]{0,63}$)
 
-class Offset:           direction: Direction, approx_cm: int 0..500
+class Offset:           direction: Direction, approx_cm: int 0..500   # design -> built, as seen in the photo; forward = nearer the camera, back = further
 class Finding:          mark, guid, name, ifc_class, status: Status, confidence: float 0..1, evidence_box: Box | None,
                         offset: Offset | None, explanation: str (<=200), severity: Severity | None
 class UnexpectedItem:   evidence_box: Box | None, description: str (<=150), confidence: float, severity: Literal["medium"] = "medium"
@@ -185,6 +185,7 @@ class UnknownElement(Exception): ...
 class ProjectRepo:
     def __init__(self, models_dir: Path) -> None
     def manifest(self, project_id: str) -> ProjectManifest     # model_url = f"/api/projects/{project_id}/model.glb"; name from project.json
+    def check_note(self, project_id: str) -> str               # project.json "check_note" (optional, server-side only), "" if absent
     def elements_by_guid(self, project_id: str) -> dict[str, Element]
     def element(self, project_id: str, guid: str) -> Element
     def glb_path(self, project_id: str) -> Path
@@ -213,7 +214,7 @@ def repair_check(raw: dict, ctx: CheckContext, elements: dict[str, Element]) -> 
 def with_project_identity(ctx: CheckContext, elements: dict[str, Element]) -> CheckContext   # mark names/classes from the project
 # app/services.py
 Checker = Callable[[bytes, bytes, CheckContext], dict]        # returns CheckResult.model_dump(mode="json")
-def make_checker(repo: ProjectRepo, client: Any) -> Checker   # gemini_client.check_asbuilt -> repair_check -> + usage/model_version
+def make_checker(repo: ProjectRepo, client: Any) -> Checker   # gemini_client.check_asbuilt(..., project_note=repo.check_note(...)) -> repair_check -> + usage/model_version
 def make_asker(repo: ProjectRepo, client: Any) -> Callable[[AskRequest], AskAnswer]
 def make_drafter(repo: ProjectRepo, client: Any) -> Callable[[CheckRun, int], IssueDraft]
 def http_error_for(err: GeminiError) -> HTTPException         # timeout|unavailable|rate_limited -> 503 model_unavailable; bad_output -> 502;

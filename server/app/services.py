@@ -51,7 +51,8 @@ def log_usage(what: str, out: dict) -> None:
 
 def make_checker(repo: ProjectRepo, client: Any) -> Checker:
     def check(photo_jpeg: bytes, render_png: bytes, ctx: CheckContext) -> dict:
-        out = gemini_client.check_asbuilt(photo_jpeg, render_png, ctx.model_dump(mode="json"), client=client)
+        out = gemini_client.check_asbuilt(photo_jpeg, render_png, ctx.model_dump(mode="json"),
+                                          project_note=repo.check_note(ctx.project_id), client=client)
         result = repair_check(out["result"], ctx, repo.elements_by_guid(ctx.project_id))
         result = result.model_copy(update={"usage": Usage(**out["usage"]), "model_version": out.get("model_version")})
         return result.model_dump(mode="json")
