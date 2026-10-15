@@ -196,10 +196,11 @@ export async function startXrPlace(o: XrPlaceOptions): Promise<XrPlaceSession> {
     quadMat.map = tex
     quadMat.needsUpdate = true
     const xrEnabled = renderer.xr.enabled
+    const prevRT = renderer.getRenderTarget() // the XR layer's target that three bound for this frame, not null
     renderer.xr.enabled = false
     renderer.setRenderTarget(rt)
     renderer.render(quadScene, quadCam)
-    renderer.setRenderTarget(null)
+    renderer.setRenderTarget(prevRT)
     renderer.xr.enabled = xrEnabled
     const buf = new Uint8Array(w * h * 4)
     renderer.readRenderTargetPixels(rt, 0, 0, w, h, buf)
