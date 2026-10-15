@@ -37,7 +37,8 @@ export function ElementPanel({ projectId, element, onClose }: ElementPanelProps)
           ))}
         </tbody>
       </table>
-      <AskBox projectId={projectId} element={element} />
+      {/* Keyed by element: a new element gets a fresh Ask box, so an earlier (or in-flight) answer never shows under it. */}
+      <AskBox key={element.guid} projectId={projectId} element={element} />
     </aside>
   )
 }

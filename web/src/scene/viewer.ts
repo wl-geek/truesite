@@ -30,6 +30,16 @@ export function isTap(down: PointerSample, up: PointerSample): boolean {
   return Math.hypot(up.x - down.x, up.y - down.y) <= TAP_MAX_MOVE_PX && up.t - down.t <= TAP_MAX_MS
 }
 
+/**
+ * Camera distance that fits a sphere of `radius` in the view: the narrower of the vertical field of view
+ * (`vfovDeg`) and the horizontal one, which is narrower on portrait phones (aspect = width / height < 1).
+ */
+export function frameDistance(radius: number, vfovDeg: number, aspect: number): number {
+  const halfV = (vfovDeg * Math.PI) / 360
+  const halfH = Math.atan(Math.tan(halfV) * aspect)
+  return radius / Math.sin(Math.min(halfV, halfH))
+}
+
 export type Viewer = {
   readonly renderer: WebGLRenderer
   readonly scene: Scene
@@ -41,7 +51,7 @@ export type Viewer = {
   /** Called with the tapped element's GUID (null for empty space). Returns an unsubscribe function. */
   onPick(cb: (guid: string | null) => void): () => void
   highlight(guid: string | null): void
-  /** Point the camera at the whole model. */
+  /** Point the camera at the whole model; it is framed again on resize until the user moves the camera. */
   frame(): void
   resize(): void
   dispose(): void
@@ -65,6 +75,10 @@ export function createViewer(canvas: HTMLCanvasElement, model: LoadedModel): Vie
   const camera = new PerspectiveCamera(50, 1, 0.05, 500)
   const controls = new OrbitControls(camera, canvas)
   controls.enableDamping = true
+  // Reframe on resize (rotation, address bar, panel) until the user orbits, pans or zooms.
+  let userMoved = false
+  const onControlsStart = () => { userMoved = true }
+  controls.addEventListener('start', onControlsStart)
 
   const raycaster = new Raycaster()
   const listeners = new Set<(guid: string | null) => void>()
@@ -98,13 +112,14 @@ export function createViewer(canvas: HTMLCanvasElement, model: LoadedModel): Vie
     if (box.isEmpty()) return
     const centre = box.getCenter(new Vector3())
     const radius = Math.max(box.getSize(new Vector3()).length() / 2, 0.5)
-    const distance = radius / Math.sin((camera.fov * Math.PI) / 360)
+    const distance = frameDistance(radius, camera.fov, camera.aspect)
     camera.position.copy(centre).add(new Vector3(0.75, 0.9, 1).normalize().multiplyScalar(distance))
     camera.near = distance / 100
     camera.far = distance * 20
     camera.updateProjectionMatrix() // fine for this orbit camera; never for the AR camera
     controls.target.copy(centre)
     controls.update()
+    userMoved = false
   }
 
   function resize(): void {
@@ -113,6 +128,7 @@ export function createViewer(canvas: HTMLCanvasElement, model: LoadedModel): Vie
     renderer.setSize(w, h, false)
     camera.aspect = w / h
     camera.updateProjectionMatrix()
+    if (!userMoved) frame()
   }
 
   let down: PointerSample | null = null
@@ -132,8 +148,7 @@ export function createViewer(canvas: HTMLCanvasElement, model: LoadedModel): Vie
 
   const observer = new ResizeObserver(resize)
   observer.observe(canvas)
-  resize()
-  frame()
+  resize() // also frames the model
   renderer.setAnimationLoop(() => {
     controls.update()
     renderer.render(scene, camera)
@@ -148,6 +163,7 @@ export function createViewer(canvas: HTMLCanvasElement, model: LoadedModel): Vie
     dispose() {
       renderer.setAnimationLoop(null)
       observer.disconnect()
+      controls.removeEventListener('start', onControlsStart)
       canvas.removeEventListener('pointerdown', onPointerDown)
       canvas.removeEventListener('pointerup', onPointerUp)
       highlight(null)
