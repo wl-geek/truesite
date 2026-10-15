@@ -533,7 +533,10 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
                   <ol className="steps">
                     <li>Tap <strong>Start camera</strong> and allow the camera.</li>
                     <li>Point at the code from about 1 m away, then step back slowly.</li>
-                    <li>{desk ? 'Walk around the sheet to look at the model.' : 'Aim at the work and tap Check as-built.'}</li>
+                    <li>
+                      {desk ? 'Walk around the sheet to look at the model.'
+                        : checkable.enabled ? 'Aim at the work and tap Check as-built.' : 'Look around the model while the code is in view.'}
+                    </li>
                   </ol>
                 )}
                 {walkFirst && plan && plan.radii.length > 0 && (
