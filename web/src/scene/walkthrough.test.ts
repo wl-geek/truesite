@@ -1,7 +1,8 @@
-import { BoxGeometry, Group, Mesh, MeshBasicMaterial } from 'three'
+import { BoxGeometry, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial } from 'three'
 import { describe, expect, it } from 'vitest'
 import { buildLoadedModel } from './loadModel'
-import { buildWalkScene, exportUsdz, isAndroid, isAppleMobile, recentreOffset, sceneViewerUrl } from './walkthrough'
+import { KIND_COLOURS } from './palette'
+import { appleDeviceName, buildWalkScene, exportUsdz, isAndroid, isAppleMobile, recentreOffset, sceneViewerUrl, usdzUrl } from './walkthrough'
 
 describe('walk inside', () => {
   it('detects phones', () => {
@@ -9,6 +10,17 @@ describe('walk inside', () => {
     expect(isAppleMobile('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', 'MacIntel', 5)).toBe(true) // iPadOS desktop UA
     expect(isAppleMobile('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', 'MacIntel', 0)).toBe(false)
     expect(isAndroid('Mozilla/5.0 (Linux; Android 16; Pixel 10)')).toBe(true)
+  })
+
+  it('names the Apple device for the coaching copy', () => {
+    expect(appleDeviceName('Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X)', 'iPhone', 5)).toBe('iPhone')
+    expect(appleDeviceName('Mozilla/5.0 (iPad; CPU OS 26_0 like Mac OS X)', 'iPad', 5)).toBe('iPad')
+    expect(appleDeviceName('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)', 'MacIntel', 5)).toBe('iPad') // iPadOS desktop UA
+  })
+
+  it('points at the build-time file or its distance variant', () => {
+    expect(usdzUrl('site')).toBe('/models/site.usdz')
+    expect(usdzUrl('site', 8)).toBe('/models/site-r8.usdz')
   })
 
   it('recentres the IFC floor point to the origin in glTF axes', () => {
@@ -35,6 +47,11 @@ describe('walk inside', () => {
     copy.updateMatrixWorld(true)
     const p = copy.getWorldPosition(copy.position.clone())
     expect([p.x, p.y, p.z].map((v) => Math.round(v * 100) / 100)).toEqual([0, 1.65, 0])
+    expect((copy.material as MeshStandardMaterial).color.getHex()).toBe(KIND_COLOURS.column) // colour by type, as in AR
+    const painted = buildWalkScene(model, () => 'IfcMember', [4.5, 4.5], () => ({ kind: 'purlin', solid: true }))
+    const purlin = painted.children[0].children[0] as Mesh
+    expect((purlin.material as MeshStandardMaterial).color.getHex()).toBe(KIND_COLOURS.purlin)
+    expect((purlin.material as MeshStandardMaterial).transparent).toBe(false)
     const blob = await exportUsdz(scene)
     const bytes = new Uint8Array(await blob.arrayBuffer())
     expect(String.fromCharCode(bytes[0], bytes[1])).toBe('PK')

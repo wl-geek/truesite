@@ -1,8 +1,9 @@
 /**
  * The construction look shared by every AR mode, plus the controls field AR users expect:
  * transparency, a horizontal section (cut the model above a height) and layers.
- *   structure: concrete grey, translucent, steel-blue edges   rebar: opaque red-orange, no edges
- *   openings/services and other: translucent sky blue, orange edges
+ * Colour by element type (palette.js, like the reference video): columns blue, beams cyan, truss members green,
+ * purlins yellow, bracing purple, concrete grey, rebar orange-red, openings/services and other sky blue.
+ *   structure: translucent, steel-blue edges   rebar: opaque, no edges   openings and other: translucent, orange edges
  * Edges live on their own layer (kept out of the ID buffer). Originals are restored on dispose.
  */
 import {
@@ -10,6 +11,7 @@ import {
   type Material,
 } from 'three'
 import type { LoadedModel } from './loadModel'
+import { KIND_COLOURS, kindOf, type Kind, type Paint } from './palette'
 
 export type Layer = 'structure' | 'rebar' | 'openings' | 'other'
 export const LAYERS: { id: Layer; label: string }[] = [
@@ -59,24 +61,38 @@ export function viewNote(s: LookState): string | null {
   return parts.length ? `Checked as shown: ${parts.join('; ')}.` : null
 }
 
-export function applyConstructionLook(model: LoadedModel, classOf: (guid: string) => string, edgeLayer: number): ConstructionLook {
-  const mats: Record<Layer, MeshBasicMaterial> = {
-    structure: new MeshBasicMaterial({ color: 0xb9bec4, transparent: true, depthWrite: false, side: DoubleSide }),
-    rebar: new MeshBasicMaterial({ color: 0xe0441b, transparent: true, side: DoubleSide }),
-    openings: new MeshBasicMaterial({ color: 0x4e7fb3, transparent: true, depthWrite: false, side: DoubleSide }),
-    other: new MeshBasicMaterial({ color: 0x4e7fb3, transparent: true, depthWrite: false, side: DoubleSide }),
-  }
-  const edgeMats = { structure: new LineBasicMaterial({ color: 0x1c3b5e }), other: new LineBasicMaterial({ color: 0xff6a13 }) }
+/**
+ * paintOf gives an element's kind from its elements.json row (classes alone can't tell a purlin from a truss
+ * member); without it the kind comes from the class. Display colours only: the ID buffer keeps idColor.
+ */
+export function applyConstructionLook(model: LoadedModel, classOf: (guid: string) => string, edgeLayer: number,
+  paintOf?: (guid: string) => Paint | undefined): ConstructionLook {
   const plane = new Plane()
   const clip: Plane[] = []
-  for (const m of [...Object.values(mats), ...Object.values(edgeMats)]) m.clippingPlanes = clip
+  // One material per layer and kind: the colour comes from the kind, the opacity from the layer.
+  const mats = new Map<string, { layer: Layer; mat: MeshBasicMaterial }>()
+  const materialFor = (layer: Layer, kind: Kind): MeshBasicMaterial => {
+    const key = `${layer}/${kind}`
+    let entry = mats.get(key)
+    if (!entry) {
+      const mat = new MeshBasicMaterial({ color: KIND_COLOURS[kind], transparent: true, depthWrite: layer === 'rebar', side: DoubleSide })
+      mat.clippingPlanes = clip
+      entry = { layer, mat }
+      mats.set(key, entry)
+    }
+    return entry.mat
+  }
+  const edgeMats = { structure: new LineBasicMaterial({ color: 0x1c3b5e }), other: new LineBasicMaterial({ color: 0xff6a13 }) }
+  for (const m of Object.values(edgeMats)) m.clippingPlanes = clip
   const originals = new Map<Mesh, Material | Material[]>()
   const edges: LineSegments[] = []
   const byLayer = new Map<Layer, Mesh[]>()
   for (const mesh of model.meshes) {
     originals.set(mesh, mesh.material)
-    const layer = layerOf(classOf(model.meshGuid.get(mesh) ?? ''))
-    mesh.material = mats[layer]
+    const guid = model.meshGuid.get(mesh) ?? ''
+    const cls = classOf(guid)
+    const layer = layerOf(cls)
+    mesh.material = materialFor(layer, paintOf?.(guid)?.kind ?? kindOf(cls))
     byLayer.set(layer, [...(byLayer.get(layer) ?? []), mesh])
     if (layer === 'rebar') continue // thin bars read fine without edges, and it halves the draw calls
     const line = new LineSegments(new EdgesGeometry(mesh.geometry, 25), layer === 'structure' ? edgeMats.structure : edgeMats.other)
@@ -102,7 +118,7 @@ export function applyConstructionLook(model: LoadedModel, classOf: (guid: string
   const look: ConstructionLook = {
     setTransparency(t) {
       transparency = t
-      for (const layer of Object.keys(mats) as Layer[]) mats[layer].opacity = layerOpacity(layer, t)
+      for (const { layer, mat } of mats.values()) mat.opacity = layerOpacity(layer, t)
     },
     setSection(h) {
       section = h
@@ -148,7 +164,8 @@ export function applyConstructionLook(model: LoadedModel, classOf: (guid: string
         mesh.material = mat
         mesh.visible = true
       }
-      for (const m of [...Object.values(mats), ...Object.values(edgeMats)]) m.dispose()
+      for (const { mat } of mats.values()) mat.dispose()
+      for (const m of Object.values(edgeMats)) m.dispose()
     },
   }
   look.setTransparency(0)

@@ -18,6 +18,7 @@ import { applyProjection } from './arCamera'
 import { effectiveQrSize, poseAnchor, searchingSeconds, toVideoPixels } from './arMath'
 import type { LoadedModel } from './loadModel'
 import { applyConstructionLook, type ConstructionLook } from './look'
+import { type Paint } from './palette'
 import { deviceRotation, lookAroundPose, LOOK_AROUND_MAX_S, type MotionLock } from './motion'
 import { createFrameWatchdog } from './watchdog'
 
@@ -76,8 +77,10 @@ export type OverlayOptions = {
   /** Print-scale correction for this anchor (check-bar step), 1 when unknown. */
   qrSizeCorrection: number
   origin: string
-  /** IFC class of an element, for the construction look (concrete grey, red-orange rebar). */
+  /** IFC class of an element, for the construction look's layers (and its colour when paintOf is absent). */
   classOf: (guid: string) => string
+  /** Element kind for the colour by type (palette.js), from its elements.json row. */
+  paintOf?: (guid: string) => Paint | undefined
   /** Hold the model with the motion sensors when the code leaves the view (permission already granted). */
   motion: boolean
 }
@@ -96,7 +99,7 @@ export function createOverlay(o: OverlayOptions): Overlay {
 
   // Construction look + transparency, section and layers (scene/look.ts); restored on dispose.
   renderer.localClippingEnabled = true
-  const look = applyConstructionLook(model, o.classOf, EDGE_LAYER)
+  const look = applyConstructionLook(model, o.classOf, EDGE_LAYER, o.paintOf)
 
   // Look-around: latest device rotation, and the pose + rotation when the code was last seen.
   let deviceR: Mat3 | null = null

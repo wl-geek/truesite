@@ -2,6 +2,7 @@ import { BoxGeometry, Group, Mesh, MeshBasicMaterial, Vector3 } from 'three'
 import { describe, expect, it } from 'vitest'
 import { buildLoadedModel } from './loadModel'
 import { applyConstructionLook, layerOf, layerOpacity, viewNote } from './look'
+import { KIND_COLOURS, type Paint } from './palette'
 
 function model() {
   const g = new Group()
@@ -53,6 +54,35 @@ describe('construction look', () => {
     look.dispose()
     expect(m.meshes[0].material).toBe(original)
     expect(m.meshes.every((x) => x.visible)).toBe(true)
+  })
+})
+
+describe('colour by element type', () => {
+  it('paints each kind in its palette colour, keeping the layer opacity, and restores the originals', () => {
+    const m = model()
+    const paint: Record<string, Paint> = {
+      ['C'.repeat(22)]: { kind: 'column', solid: true }, ['R'.repeat(22)]: { kind: 'rebar', solid: true }, ['D'.repeat(22)]: { kind: 'purlin', solid: true },
+    }
+    const original = m.meshes[0].material
+    const look = applyConstructionLook(m, (g) => cls[g], 1, (g) => paint[g])
+    const colour = (name: string) => (m.meshes.find((x) => x.name === name)!.material as MeshBasicMaterial)
+    expect(colour('C'.repeat(22)).color.getHex()).toBe(KIND_COLOURS.column)
+    expect(colour('R'.repeat(22)).color.getHex()).toBe(KIND_COLOURS.rebar)
+    expect(colour('D'.repeat(22)).color.getHex()).toBe(KIND_COLOURS.purlin)
+    expect(colour('C'.repeat(22)).opacity).toBeCloseTo(layerOpacity('structure', 0))
+    look.setTransparency(1)
+    expect(colour('C'.repeat(22)).opacity).toBeCloseTo(0.05)
+    expect(colour('R'.repeat(22)).opacity).toBeCloseTo(0.05)
+    look.dispose()
+    expect(m.meshes[0].material).toBe(original)
+  })
+
+  it('falls back to the class alone without element data', () => {
+    const m = model()
+    const look = applyConstructionLook(m, (g) => cls[g], 1)
+    expect((m.meshes[0].material as MeshBasicMaterial).color.getHex()).toBe(KIND_COLOURS.column)
+    expect((m.meshes[2].material as MeshBasicMaterial).color.getHex()).toBe(KIND_COLOURS.opening)
+    look.dispose()
   })
 })
 

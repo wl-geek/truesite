@@ -4,6 +4,7 @@ import type { Finding, ProjectManifest } from '../api/types'
 import { loadLastCheck, type LastCheck } from '../check/lastCheck'
 import { disposeModel, loadModel, type LoadedModel } from '../scene/loadModel'
 import { disposePins, makePins } from '../scene/pins'
+import { paintOf } from '../scene/palette'
 import { createViewer, type Viewer } from '../scene/viewer'
 import { ElementPanel } from './ElementPanel'
 import { FindingsPanel } from './FindingsPanel'
@@ -48,7 +49,8 @@ export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: str
   useEffect(() => {
     const canvas = canvasRef.current
     if (!loaded || !canvas) return
-    const viewer = createViewer(canvas, loaded.model)
+    const rows = new Map(loaded.project.elements.map((e) => [e.guid, e]))
+    const viewer = createViewer(canvas, loaded.model, (guid) => { const e = rows.get(guid); return e ? paintOf(e) : undefined })
     viewerRef.current = viewer
     const off = viewer.onPick(setSelected)
     // Pins from this session's last as-built check (spec 4.1: findings pinned on the 3D model).
