@@ -1,6 +1,8 @@
 """POST /api/ask: a grounded answer about one element, from its own model data only (spec 4.2 step 6)."""
 from __future__ import annotations
 
+import logging
+
 from fastapi import APIRouter, HTTPException, Request
 
 from ..deps import RepoDep, SessionId, SettingsDep, enforce_limits
@@ -9,6 +11,7 @@ from ..projects import UnknownElement, UnknownProject
 from ..schemas import AskAnswer, AskRequest
 from ..services import client_for, http_error_for, make_asker
 
+log = logging.getLogger("truesite.ask")
 router = APIRouter()
 
 
@@ -21,8 +24,10 @@ def ask(request: Request, body: AskRequest, session_id: SessionId, settings: Set
         raise HTTPException(status_code=404, detail={"code": "unknown_project"}) from None
     except UnknownElement:
         raise HTTPException(status_code=404, detail={"code": "unknown_element"}) from None
-    enforce_limits(request, "ask_limiter", "-ask", settings.daily_ask_cap)
     try:
-        return make_asker(repo, client_for(request))(body)
+        asker = make_asker(repo, client_for(request))  # before the cap: a setup error uses no quota
+        enforce_limits(request, "ask_limiter", "-ask", settings.daily_ask_cap)
+        return asker(body)
     except GeminiError as err:
+        log.warning("ask failed: %s", err)
         raise http_error_for(err) from err

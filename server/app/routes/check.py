@@ -57,10 +57,9 @@ async def check(
     except UnknownProject:
         raise HTTPException(status_code=404, detail={"code": "unknown_project"}) from None
 
-    await run_in_threadpool(enforce_limits, request, "check_limiter", "", settings.daily_check_cap)
-
-    checker = make_checker(repo, client_for(request))
     try:
+        checker = make_checker(repo, client_for(request))  # before the cap: a setup error uses no quota
+        await run_in_threadpool(enforce_limits, request, "check_limiter", "", settings.daily_check_cap)
         result = await run_in_threadpool(checker, photo_bytes, render_bytes, ctx)
     except GeminiError as err:
         log.warning("check failed: %s", err)
