@@ -87,7 +87,10 @@ body {
 }
 
 .nav a {
-  padding: 8px 10px;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 10px;
   border-radius: 8px;
   color: #c3d3e4;
   font-weight: 600;
@@ -136,12 +139,11 @@ body {
   touch-action: none;
 }
 
+/* Messages sit in the page flow; only the 3D viewer floats them over its canvas. */
 .status {
-  position: absolute;
-  top: 16px;
-  left: 50%;
-  transform: translateX(-50%);
-  margin: 0;
+  width: fit-content;
+  max-width: 100%;
+  margin: 8px 0;
   padding: 8px 14px;
   border-radius: 10px;
   background: rgba(11, 31, 51, 0.85);
@@ -155,6 +157,14 @@ body {
   gap: 8px;
   justify-items: center;
   width: min(92%, 420px);
+}
+
+.viewer-stage > .status {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
 }
 
 .status-error p {
@@ -178,6 +188,7 @@ body {
 
 /* ---- panels --------------------------------------------------------------------------------- */
 .panel {
+  padding: 14px 16px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--white);
@@ -322,8 +333,8 @@ body {
 
 .icon-btn {
   flex: none;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   border: 0;
   border-radius: 50%;
   background: var(--paper);
@@ -384,8 +395,9 @@ body {
 .q-hint { flex-basis: 100%; font-size: 12px; opacity: 0.9; }
 
 /* ---- check results ------------------------------------------------------------------------ */
-.live-actions { position: absolute; left: 16px; right: 16px; bottom: 24px; display: flex; gap: 8px; justify-content: center; }
-.live-actions .btn { min-width: 140px; }
+.live-actions { position: absolute; left: 16px; right: 16px; bottom: 24px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; justify-content: safe center; }
+.live-actions .btn { flex: 1 1 0; min-width: 0; padding: 0 10px; }
+.live-actions .btn-accent { flex-basis: 100%; } /* Check as-built: its own full-width row */
 .results-sheet { position: absolute; left: 0; right: 0; bottom: 0; max-height: 78%; overflow-y: auto; background: var(--paper); border-radius: 14px 14px 0 0; padding: 12px; display: grid; gap: 12px; }
 @media (min-width: 900px) { .results-sheet { grid-template-columns: 1.2fr 1fr; align-items: start; } }
 .findings-panel h2 { font-size: 17px; }
@@ -428,9 +440,9 @@ body {
 .ask-box { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 12px; }
 .ask-box h3 { font-size: 15px; margin: 0 0 8px; }
 .ask-form { display: flex; gap: 8px; }
-.ask-form input { flex: 1; min-width: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); font: inherit; }
+.ask-form input { flex: 1; min-width: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); font: inherit; font-size: 16px; }
 .ask-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
-.chip { border: 1px solid var(--line); background: var(--white); border-radius: 999px; padding: 4px 10px; font: inherit; font-size: 13px; cursor: pointer; }
+.chip { display: inline-flex; align-items: center; min-height: 44px; border: 1px solid var(--line); background: var(--white); border-radius: 999px; padding: 4px 12px; font: inherit; font-size: 13px; cursor: pointer; }
 .ask-answer { background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px; }
 .ask-answer > p:first-child { margin-top: 0; }
 
@@ -439,7 +451,7 @@ body {
 .modal { width: min(560px, 100%); max-height: 90vh; overflow-y: auto; }
 .issue-form { display: grid; gap: 10px; }
 .issue-form label { display: grid; gap: 4px; font-size: 14px; font-weight: 600; }
-.issue-form input, .issue-form textarea { font: inherit; font-weight: 400; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); }
+.issue-form input, .issue-form textarea { font: inherit; font-size: 16px; font-weight: 400; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); }
 .modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
 .issue-list { list-style: none; padding: 0; display: grid; gap: 10px; }
 .issue-card { display: flex; gap: 12px; background: var(--white); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; }
@@ -452,7 +464,7 @@ body {
 .calib-panel h2 { font-size: 17px; margin: 0 0 6px; }
 .calib-panel progress { width: 100%; height: 10px; }
 .bar-input { display: flex; align-items: center; gap: 8px; }
-.bar-input input { width: 90px; padding: 6px 8px; font: inherit; border: 1px solid var(--line); border-radius: var(--radius); }
+.bar-input input { width: 90px; padding: 6px 8px; font: inherit; font-size: 16px; border: 1px solid var(--line); border-radius: var(--radius); }
 
 /* ---- home + live guidance ----------------------------------------------------------------- */
 .home-page { max-width: 880px; }
@@ -480,4 +492,4 @@ body {
 .model-controls input[type='range'] { width: 100%; }
 .layer-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip-on { background: var(--ink); color: var(--white); border-color: var(--ink); }
-.live-controls { position: absolute; left: 0; right: 0; bottom: 84px; display: flex; justify-content: center; }
+.live-controls { position: absolute; left: 0; right: 0; bottom: 132px; display: flex; justify-content: center; } /* above two rows of live actions */
