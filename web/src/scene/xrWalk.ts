@@ -8,6 +8,7 @@ import {
 } from 'three'
 import type { LoadedModel } from './loadModel'
 import { buildWalkScene } from './walkthrough'
+import { endOnFailure } from './xrStart'
 
 export async function xrArSupported(): Promise<boolean> {
   try {
@@ -41,7 +42,10 @@ export async function startXrWalk(o: XrWalkOptions): Promise<() => void> {
     optionalFeatures: ['dom-overlay', 'local-floor'],
     domOverlay: { root: o.overlay },
   })
+  return endOnFailure(session, () => walkInSession(session, o))
+}
 
+async function walkInSession(session: XRSession, o: XrWalkOptions): Promise<() => void> {
   const canvas = document.createElement('canvas')
   const renderer = new WebGLRenderer({ canvas, alpha: true, antialias: true })
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))

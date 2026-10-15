@@ -21,6 +21,7 @@ import type { LoadedModel } from './loadModel'
 import { applyConstructionLook, type ConstructionLook } from './look'
 import { levelledPlacement } from './placement'
 import { EDGE_LAYER } from './overlay'
+import { endOnFailure } from './xrStart'
 
 /** CV intrinsics (pixels, top-left origin) of a camera image W x H aligned with a view's GL projection. */
 export function intrinsicsFromProjection(P: ArrayLike<number>, W: number, H: number): Intrinsics {
@@ -121,7 +122,10 @@ export async function startXrPlace(o: XrPlaceOptions): Promise<XrPlaceSession> {
     optionalFeatures: ['dom-overlay', 'local-floor'],
     domOverlay: { root: o.overlay },
   })
+  return endOnFailure(session, () => placeInSession(session, o))
+}
 
+async function placeInSession(session: XRSession, o: XrPlaceOptions): Promise<XrPlaceSession> {
   const canvas = document.createElement('canvas')
   const renderer = new WebGLRenderer({ canvas, alpha: true, antialias: true })
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
