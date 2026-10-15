@@ -17,6 +17,7 @@ import { estimatePose, modelMatrixIfc, type Anchor as PoseAnchor, type Intrinsic
 import { parseAnchorLink } from '../qr/link'
 import type { QrWorkerClient } from '../qr/qrClient'
 import { effectiveQrSize, poseAnchor, toVideoPixels } from './arMath'
+import { releaseRenderer } from './glContext'
 import type { LoadedModel } from './loadModel'
 import { applyConstructionLook, type ConstructionLook } from './look'
 import { type Paint } from './palette'
@@ -245,7 +246,7 @@ async function placeInSession(session: XRSession, o: XrPlaceOptions): Promise<Xr
     rt?.dispose()
     quadMat.dispose()
     o.model.ifcRoot.removeFromParent()
-    renderer.dispose()
+    releaseRenderer(renderer)
     o.onEnd()
   })
 

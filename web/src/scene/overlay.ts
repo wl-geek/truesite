@@ -16,6 +16,7 @@ import type { QrResponse } from '../qr/protocol'
 import type { QrWorkerClient } from '../qr/qrClient'
 import { applyProjection } from './arCamera'
 import { effectiveQrSize, poseAnchor, searchingSeconds, toVideoPixels } from './arMath'
+import { releaseRenderer, watchContextLoss } from './glContext'
 import type { LoadedModel } from './loadModel'
 import { applyConstructionLook, type ConstructionLook } from './look'
 import { type Paint } from './palette'
@@ -83,6 +84,8 @@ export type OverlayOptions = {
   paintOf?: (guid: string) => Paint | undefined
   /** Hold the model with the motion sensors when the code leaves the view (permission already granted). */
   motion: boolean
+  /** The WebGL context was lost and not restored (glContext.ts); detection has already stopped. */
+  onContextDead?: () => void
 }
 
 export function createOverlay(o: OverlayOptions): Overlay {
@@ -121,6 +124,7 @@ export function createOverlay(o: OverlayOptions): Overlay {
 
   let running = false
   let disposed = false
+  let contextDead = false
   let startedSec = 0
   let rafHandle = 0
   let vfcHandle = 0
@@ -236,10 +240,10 @@ export function createOverlay(o: OverlayOptions): Overlay {
     else rafHandle = requestAnimationFrame(tick)
   }
 
-  return {
+  const overlay: Overlay = {
     renderer, scene, camera, model, look,
     start() {
-      if (running || disposed) return
+      if (running || disposed || contextDead) return
       running = true
       startedSec = performance.now() / 1000
       watchdog.start()
@@ -274,12 +278,20 @@ export function createOverlay(o: OverlayOptions): Overlay {
     dispose() {
       this.stop()
       disposed = true
+      stopWatch()
       listeners.clear()
       cornerListeners.clear()
       window.removeEventListener('deviceorientation', onOrientation)
       look.dispose()
       scene.remove(model.ifcRoot)
-      renderer.dispose()
+      releaseRenderer(renderer)
     },
   }
+  // A lost context that three can't restore leaves a blank canvas: stop detecting and let the page offer a reload.
+  const stopWatch = watchContextLoss(canvas, () => {
+    contextDead = true // a check's finally{} must not restart detection either
+    overlay.stop()
+    o.onContextDead?.()
+  })
+  return overlay
 }

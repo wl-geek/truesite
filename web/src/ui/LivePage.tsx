@@ -23,6 +23,7 @@ import { startXrWalk, xrArSupported } from '../scene/xrWalk'
 import { NEEDED_VIEWS, startXrPlace, type XrPlaceSession, type XrPlaceState } from '../scene/xrPlace'
 import { xrFallback } from '../scene/xrStart'
 import { ModelControls } from './ModelControls'
+import { freshCanvas } from '../scene/glContext'
 import { disposeModel, loadModel, type LoadedModel } from '../scene/loadModel'
 import { createOverlay, type Overlay, type OverlayState } from '../scene/overlay'
 import { CalibrationPanel } from './CalibrationPanel'
@@ -32,6 +33,7 @@ import { IssueDialog } from './IssueDialog'
 import { Link } from './Link'
 import { UNKNOWN_ANCHOR_MESSAGE, isUnknownProject, liveLoadErrorMessage } from './liveFormat'
 import { QualityBadge } from './QualityBadge'
+import { ReloadPrompt } from './ReloadPrompt'
 
 export type LivePageProps = { projectId: string; anchorId: string }
 
@@ -55,7 +57,9 @@ const CAMERA_ERRORS: Record<StartError, string> = {
 /** Live AR: the model over the camera view, anchored by the QR code (spec 4.1, 4.2). */
 export function LivePage({ projectId, anchorId }: LivePageProps) {
   const videoRef = useRef<HTMLVideoElement>(null)
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+  // Each overlay gets a new canvas (freshCanvas): a released WebGL context can't be used again.
+  const canvasHostRef = useRef<HTMLDivElement>(null)
+  const [glDead, setGlDead] = useState(false)
   const overlayRef = useRef<Overlay | null>(null)
   const camRef = useRef<CameraStart | null>(null)
   const qrRef = useRef<QrWorkerClient | null>(null)
@@ -142,8 +146,8 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   // Must run straight from the tap: iOS only grants the camera inside a user gesture.
   async function start() {
     const video = videoRef.current
-    const canvas = canvasRef.current
-    if (!loaded || !video || !canvas || starting) return
+    const host = canvasHostRef.current
+    if (!loaded || !video || !host || starting) return
     setStarting(true)
     setCamError(null)
     setCamStopped(false)
@@ -154,9 +158,9 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
       camOk = true
       qrRef.current ??= new QrWorkerClient() // reuse the worker that Start AR may have made
       const overlay = createOverlay({
-        video, canvas, model: loaded.model, anchor: loaded.anchor, qr: qrRef.current,
+        video, canvas: freshCanvas(host, 'live-canvas', 'Model overlay'), model: loaded.model, anchor: loaded.anchor, qr: qrRef.current,
         qrSizeCorrection: loadQrSizeCorrection(loaded.anchor.anchor_id), origin: window.location.origin,
-        classOf: (guid) => elements.get(guid)?.ifc_class ?? '', paintOf: paint, motion,
+        classOf: (guid) => elements.get(guid)?.ifc_class ?? '', paintOf: paint, motion, onContextDead: () => setGlDead(true),
       })
       overlay.onState(setState)
       overlay.start()
@@ -179,6 +183,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
     unwatchCamRef.current = null
     overlayRef.current?.dispose()
     overlayRef.current = null
+    canvasHostRef.current?.replaceChildren()
     stopCamera(camRef.current, videoRef.current ?? undefined)
     camRef.current = null
     setState(null)
@@ -434,10 +439,11 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
       </div>
       <div className="live-stage">
         <video ref={videoRef} className="live-video" playsInline muted autoPlay />
-        <canvas ref={canvasRef} className="live-canvas" aria-label="Model overlay" />
+        <div ref={canvasHostRef} />
 
         {running && (
           <div className="live-top">
+            {glDead && <ReloadPrompt />}
             <div className="live-chips">
               {loaded && <span className="mode-chip">{scaleLabel(loaded.anchor)}</span>}
               <QualityBadge state={state} />

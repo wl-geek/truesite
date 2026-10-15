@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { getProject } from '../api/client'
 import type { Finding, ProjectManifest } from '../api/types'
 import { loadLastCheck, type LastCheck } from '../check/lastCheck'
+import { freshCanvas, watchContextLoss } from '../scene/glContext'
 import { disposeModel, loadModel, type LoadedModel } from '../scene/loadModel'
 import { disposePins, makePins } from '../scene/pins'
 import { paintOf } from '../scene/palette'
@@ -9,6 +10,7 @@ import { createViewer, type Viewer } from '../scene/viewer'
 import { ElementPanel } from './ElementPanel'
 import { FindingsPanel } from './FindingsPanel'
 import { IssueDialog } from './IssueDialog'
+import { ReloadPrompt } from './ReloadPrompt'
 
 export const DEFAULT_PROJECT_ID = 'room1'
 
@@ -16,8 +18,10 @@ type Loaded = { project: ProjectManifest; model: LoadedModel }
 
 /** Model viewer (works everywhere): orbit the model, tap an element to see its properties. */
 export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: string }) {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+  // The viewer's canvas is made per viewer (freshCanvas): a released WebGL context can't be used again.
+  const canvasHostRef = useRef<HTMLDivElement>(null)
   const viewerRef = useRef<Viewer | null>(null)
+  const [glDead, setGlDead] = useState(false)
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [attempt, setAttempt] = useState(0)
@@ -46,11 +50,15 @@ export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: str
     }
   }, [attempt, projectId])
 
-  useEffect(() => {
-    const canvas = canvasRef.current
-    if (!loaded || !canvas) return
+  // A layout effect, so the viewer is disposed while its canvas is still in the document: OrbitControls removes
+  // its keydown listener from the canvas's root node, and a detached canvas's root is itself (audit A-56).
+  useLayoutEffect(() => {
+    const host = canvasHostRef.current
+    if (!loaded || !host) return
+    const canvas = freshCanvas(host, 'viewer-canvas', `3D model: ${loaded.project.name}`)
     const rows = new Map(loaded.project.elements.map((e) => [e.guid, e]))
     const viewer = createViewer(canvas, loaded.model, (guid) => { const e = rows.get(guid); return e ? paintOf(e) : undefined })
+    const stopWatch = watchContextLoss(canvas, () => setGlDead(true))
     viewerRef.current = viewer
     const off = viewer.onPick(setSelected)
     // Pins from this session's last as-built check (spec 4.1: findings pinned on the 3D model).
@@ -61,7 +69,9 @@ export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: str
     return () => {
       if (pins) disposePins(pins)
       off()
+      stopWatch()
       viewer.dispose()
+      canvas.remove()
       viewerRef.current = null
     }
   }, [loaded])
@@ -80,8 +90,9 @@ export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: str
   return (
     <main className="viewer-page">
       <div className="viewer-stage">
-        <canvas ref={canvasRef} className="viewer-canvas" aria-label={loaded ? `3D model: ${loaded.project.name}` : '3D model'} />
+        <div ref={canvasHostRef} />
         {!loaded && !error && <p className="status">Loading the model…</p>}
+        {glDead && <ReloadPrompt />}
         {error && (
           <div className="status status-error" role="alert">
             <p>{error}</p>
