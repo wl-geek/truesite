@@ -5,6 +5,7 @@ which no client id can match) are listed for everyone, separately.
 """
 from __future__ import annotations
 
+import logging
 import secrets
 from typing import Annotated
 
@@ -16,6 +17,7 @@ from ..projects import UnknownElement, UnknownProject
 from ..schemas import DEMO_SESSION, PROJECT_ID_PATTERN, Issue, IssueDraft, IssueDraftRequest, IssueIn
 from ..services import UnknownMark, client_for, http_error_for, make_drafter
 
+log = logging.getLogger("truesite.issues")
 router = APIRouter()
 
 
@@ -31,14 +33,16 @@ def draft_issue(request: Request, body: IssueDraftRequest, session_id: SessionId
         raise _not_found("unknown_run")
     if not any(isinstance(f, dict) and f.get("mark") == body.mark for f in run.result.get("findings", [])):
         raise _not_found("unknown_mark")
-    enforce_limits(request, "ask_limiter", "-ask", settings.daily_ask_cap)  # drafting shares the question budget
     try:
-        return make_drafter(repo, client_for(request))(run, body.mark)
+        drafter = make_drafter(repo, client_for(request))  # before the cap: a setup error uses no quota
+        enforce_limits(request, "ask_limiter", "-ask", settings.daily_ask_cap)  # drafting shares the question budget
+        return drafter(run, body.mark)
     except UnknownMark:
         raise _not_found("unknown_mark") from None
     except (UnknownElement, UnknownProject):
         raise _not_found("unknown_element") from None
     except GeminiError as err:
+        log.warning("draft failed: %s", err)
         raise http_error_for(err) from err
 
 

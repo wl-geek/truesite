@@ -248,7 +248,8 @@ Boxes use Gemini's convention: `[ymin, xmin, ymax, xmax]`, normalised to 0–100
 | Check bar doesn't measure 10 cm | User enters the measured length; QR size corrected for that device |
 | `image_quality` is not good | Findings shown greyed with the reason, plus a retake prompt |
 | Gemini timeout (25 s per attempt) or server error | One retry, then "Check failed — try again"; the snapshot stays on the device |
-| Response fails parsing or schema | One retry; invalid individual findings are dropped and logged |
+| Response fails parsing or schema | One retry, except when the output was cut off at the token cap (`MAX_TOKENS`): a retry would be cut off and billed again. Invalid individual findings are dropped and logged |
+| Prompt or output stopped by a safety filter | No retry; plain message (422 `model_blocked`) |
 | Rate limit or daily cap reached; Gemini unavailable | Plain message. Sample photos show their last real result, labelled "Saved result from <date>" |
 | Saving to Firestore or Cloud Storage fails | Findings still shown; the issue shows "Couldn't save — retry" |
 | WebGL context lost | Rebuild the scene automatically |
@@ -271,13 +272,16 @@ Boxes use Gemini's convention: `[ymin, xmin, ymax, xmax]`, normalised to 0–100
 - Uploads are scoped to the browser session (§6) and deleted by a Cloud Storage lifecycle rule 30 days after upload. All demo data is deleted after judging ends.
 
 **Cost and abuse**
-- About 1.1–1.7 US cents per check at the introductory price: two high-resolution images (about 1,120 tokens each) and about 2,000 text tokens in; JSON plus low-level thinking out. Output is capped at 8,192 tokens, so the worst case is about 3.5 cents. Verify against billing on day 3.
+- About 1.1–1.7 US cents per check at the introductory price: two high-resolution images (about 1,120 tokens each) and about 2,000 text tokens in; JSON plus low-level thinking out. Output is capped at 8,192 tokens, so the worst case is about 3.4 cents per call. Verify against billing on day 3.
+- Ask and Draft send one element's data and get a short JSON answer. Output is capped at 2,048 tokens, so the worst case is under 1 cent per call.
+- An answer that doesn't parse is retried once, and both calls are billed. Output cut off at the token cap is not retried.
 - Limits:
-  - 10 checks per IP per hour
-  - 300 checks per day across all users, counted in Firestore
+  - 10 checks and 30 questions per IP per hour
+  - daily caps across all users, counted in Firestore: 300 checks and 1,000 questions plus drafts by default; the deploy sets 100 and 300 for judging
   - uploads up to 4 MB
   - Cloud Run at most 2 instances
-- Worst case is about US$10.50 per day, plus a budget alert on the project.
+- Worst case with the deploy caps, if every call hits its token cap and is retried once: 100 × 6.8 cents + 300 × 1.7 cents, about US$12 per day. With the default caps it would be about US$37. A budget alert is set on the project.
+- Ask and Draft usage is logged per call (`ask usage` / `draft usage`); check usage is stored with each run.
 
 ## 10. Testing and evaluation
 
