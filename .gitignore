@@ -26,3 +26,6 @@ service-account*.json
 # QR sheets are generated per deployment URL (make sheets BASE_URL=...)
 web/public/sheets/
 bim/sheets/
+
+# raw videos / photos for modelling (not committed)
+capture/
