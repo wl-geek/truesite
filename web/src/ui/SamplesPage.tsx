@@ -8,6 +8,7 @@ import { runCheck, storedRunId } from '../check/runCheck'
 import { parseSampleIndex, parseSampleMeta, type SampleIndexEntry } from '../check/sampleMeta'
 import { evalRunStatus, sampleCheckInput } from '../check/sampleRun'
 import { findAnchor } from '../scene/arMath'
+import { releaseRenderer } from '../scene/glContext'
 import { disposeModel, loadModel, type LoadedModel } from '../scene/loadModel'
 import { navigate, viewerPathFor } from '../router'
 import { EvidenceView } from './EvidenceView'
@@ -18,6 +19,13 @@ import { Link } from './Link'
 type Loaded = { project: ProjectManifest; model: LoadedModel; renderer: WebGLRenderer; scene: Scene }
 /** `fallback`: why the live check didn't run when this is the sample's saved result, else null. */
 type Outcome = { result: CheckResult; photoUrl: string; fallback: string | null; runId: string | null; projectId: string }
+
+/** Free an off-screen check renderer, its WebGL context and its model (audit A-56). */
+function releaseLoaded(l: Loaded | null): void {
+  if (!l) return
+  disposeModel(l.model)
+  releaseRenderer(l.renderer)
+}
 
 async function getJsonFile(url: string): Promise<unknown> {
   const res = await fetch(url)
@@ -49,11 +57,8 @@ export function SamplesPage() {
       .catch(() => !cancelled && setSamples([]))
     return () => {
       cancelled = true
-      const l = loadedRef.current
-      if (l) {
-        disposeModel(l.model)
-        l.renderer.dispose()
-      }
+      releaseLoaded(loadedRef.current)
+      loadedRef.current = null
     }
   }, [])
 
@@ -61,6 +66,8 @@ export function SamplesPage() {
     if (loadedRef.current?.project.project_id === projectId) return loadedRef.current
     const project = await getProject(projectId)
     const model = await loadModel(project.model_url, new Set(project.elements.map((e) => e.guid)))
+    // Another project's sample: free the previous model and its WebGL context first (checks run one at a time).
+    releaseLoaded(loadedRef.current)
     const renderer = new WebGLRenderer({ canvas: document.createElement('canvas'), antialias: false })
     const scene = new Scene()
     scene.add(model.ifcRoot)

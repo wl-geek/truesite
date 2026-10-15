@@ -10,6 +10,7 @@ import {
 } from 'three'
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js'
 import { guidOf } from './elements'
+import { releaseRenderer } from './glContext'
 import { IFC_TO_THREE, type LoadedModel } from './loadModel'
 import { materialParams, smoothShaded, type Paint } from './palette'
 
@@ -195,7 +196,7 @@ export function createViewer(canvas: HTMLCanvasElement, model: LoadedModel, pain
       restoreColours()
       controls.dispose()
       scene.remove(model.ifcRoot) // the model outlives the viewer (React StrictMode re-mounts)
-      renderer.dispose()
+      releaseRenderer(renderer)
     },
   }
 }

@@ -6,6 +6,7 @@
 import {
   DirectionalLight, Group, HemisphereLight, Mesh, MeshBasicMaterial, RingGeometry, Vector3, WebGLRenderer,
 } from 'three'
+import { releaseRenderer } from './glContext'
 import type { LoadedModel } from './loadModel'
 import { buildWalkScene } from './walkthrough'
 import { type Paint } from './palette'
@@ -106,7 +107,7 @@ async function walkInSession(session: XRSession, o: XrWalkOptions): Promise<() =
         ;(Array.isArray(obj.material) ? obj.material : [obj.material]).forEach((m) => m.dispose())
       }
     })
-    renderer.dispose()
+    releaseRenderer(renderer)
     o.onEnd()
   })
 
