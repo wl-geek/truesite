@@ -47,6 +47,22 @@ def test_missing_asset_is_404_not_index(client: TestClient) -> None:
     assert r.text != INDEX_HTML
 
 
+def test_missing_sheet_is_404_not_index(client: TestClient) -> None:
+    # The start page links /sheets/room1-D1.pdf with `download`: index.html saved as a .pdf is worse than a 404.
+    r = client.get("/sheets/room1-D1.pdf")
+    assert r.status_code == 404
+    assert r.text != INDEX_HTML
+
+
+def test_sheets_are_served_as_pdf_and_revalidated(client: TestClient, dist: Path) -> None:
+    (dist / "sheets").mkdir()
+    (dist / "sheets" / "room1-D1.pdf").write_bytes(b"%PDF-1.4 sheet")
+    r = client.get("/sheets/room1-D1.pdf")
+    assert r.status_code == 200 and r.content == b"%PDF-1.4 sheet"
+    assert r.headers["content-type"] == "application/pdf"
+    assert r.headers["cache-control"] == "no-cache"  # re-rendered on every deploy, so never immutable
+
+
 def test_other_real_files_are_served(client: TestClient) -> None:
     assert client.get("/favicon.svg").text == "<svg/>"
     r = client.get("/samples/room1-01.jpg")
