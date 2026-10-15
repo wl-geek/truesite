@@ -1,6 +1,7 @@
 """Rooftop demo: a 9 x 9 m two-storey concrete frame with rebar cages, at 1:1 around a floor QR code.
 
-  python -m truesite_bim.rooftop --out models/rooftop [--base-url https://<host> --sheets-dir ../web/public/sheets]
+  python -m truesite_bim.rooftop --out models/rooftop    # rebuild the committed model files
+  python -m truesite_bim.rooftop --sheets-only --base-url https://<host> --sheets-dir ../web/public/sheets
 
 - Grid 3 x 3 bays of 3 m (columns on 0, 3, 6, 9 m in X and Y), two storeys of 3.3 m.
 - 32 columns (400 x 400), 48 beams (300 x 600, top flush with each level).
@@ -22,7 +23,7 @@ from reportlab.lib.pagesizes import A2, A4, portrait
 
 from .make_demo_model import Builder
 from .pipeline import run as run_pipeline
-from .qr_sheets import Sheet, render_sheet
+from .qr_sheets import ANDROID_STEP, IPHONE_LIFE_SIZE_STEP, Sheet, https_base_url, render_sheet, warn_thin_quiet_zone
 
 PROJECT_ID = "rooftop"
 GRID = [0.0, 3.0, 6.0, 9.0]
@@ -163,16 +164,22 @@ class Frame:
         return self.b
 
 
+def qr_mm(anchor: dict) -> float:
+    """A sheet's code size comes from its anchors.json row, so the two can't drift apart."""
+    return round(anchor["qr_size_m"] * 1000, 3)
+
+
 def r1_sheet() -> Sheet:
     page = portrait(A2)  # 420 x 594 mm
     return Sheet(
-        "R1", "floor", ANCHOR["label"], "TrueSite rooftop anchor R1 - life size 1:1", page, 330.0, (210.0, 380.0),
+        "R1", "floor", ANCHOR["label"], "TrueSite rooftop anchor R1 - life size 1:1", page, qr_mm(ANCHOR), (210.0, 380.0),
         check_bar_mm=(160.0, 150.0), text_box_mm=(25.0, 120.0),
         position_m=ANCHOR["position_m"], normal=ANCHOR["normal"], up=ANCHOR["up"], scale=1.0,
         instructions=[
             "Print at 100% on matte paper. Tape all four edges flat to the roof.",
             "Lay it at the centre of the clear area, top edge to 'north' (+Y).",
-            "Scan, Start camera, start within 1 m, then step back and look around.",
+            ANDROID_STEP,
+            IPHONE_LIFE_SIZE_STEP,
             "A 9 x 9 m two-storey concrete frame with rebar rises around you.",
             "Measure the check bar: if it is not 10.0 cm, enter the length in the app.",
         ],
@@ -181,12 +188,13 @@ def r1_sheet() -> Sheet:
 
 def r2_sheet() -> Sheet:
     return Sheet(
-        "R2", "floor", ANCHOR_A4["label"], "TrueSite rooftop anchor R2 (A4) - life size 1:1", portrait(A4), 160.0,
-        (105.0, 180.0), check_bar_mm=(55.0, 40.0), text_box_mm=(15.0, 80.0),
+        "R2", "floor", ANCHOR_A4["label"], "TrueSite rooftop anchor R2 (A4) - life size 1:1", portrait(A4),
+        qr_mm(ANCHOR_A4), (105.0, 180.0), check_bar_mm=(55.0, 18.0), text_box_mm=(15.0, 80.0),
         position_m=ANCHOR_A4["position_m"], normal=ANCHOR_A4["normal"], up=ANCHOR_A4["up"], scale=1.0,
         instructions=[
             "Print at 100%. Lay it flat on the floor, top edge to 'north' (+Y).",
-            "Scan, Start camera, start within 1 m, then step back and look around.",
+            ANDROID_STEP,
+            IPHONE_LIFE_SIZE_STEP,
             "The rooftop frame (9 x 9 m, two storeys) appears around the sheet.",
             "Measure the check bar: if it is not 10.0 cm, enter the length in the app.",
         ],
@@ -195,8 +203,8 @@ def r2_sheet() -> Sheet:
 
 def view_sheets() -> list[Sheet]:
     return [Sheet(
-        v["anchor_id"], "wall", v["label"], f"TrueSite rooftop viewpoint {v['anchor_id']} - life size 1:1", portrait(A4), 160.0,
-        (105.0, 180.0), check_bar_mm=(55.0, 40.0), text_box_mm=(15.0, 80.0),
+        v["anchor_id"], "wall", v["label"], f"TrueSite rooftop viewpoint {v['anchor_id']} - life size 1:1", portrait(A4),
+        qr_mm(v), (105.0, 180.0), check_bar_mm=(55.0, 18.0), text_box_mm=(15.0, 80.0),
         position_m=v["position_m"], normal=v["normal"], up=v["up"], scale=1.0,
         instructions=[
             "Fix the sheet UPRIGHT (stand, pole or car door), code centre 1.3 m above the ground.",
@@ -210,20 +218,27 @@ def view_sheets() -> list[Sheet]:
 def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--out", type=Path, default=Path("models") / PROJECT_ID)
-    ap.add_argument("--base-url", help="render the R1 sheet with links to this host")
+    ap.add_argument("--base-url", type=https_base_url, help="render the R1, R2 and V sheets with links to this host")
     ap.add_argument("--sheets-dir", type=Path, default=Path("sheets"))
+    ap.add_argument("--sheets-only", action="store_true",
+                    help="render the sheets only and leave the model files in --out untouched (needs --base-url)")
     a = ap.parse_args(argv)
-    a.out.mkdir(parents=True, exist_ok=True)
-    ifc = a.out / "model.ifc"
-    Frame().build().write(ifc)
-    report = run_pipeline(ifc, a.out)
-    lf = {"encoding": "utf-8", "newline": "\n"}  # LF on every OS, so Windows runs don't dirty the committed files
-    (a.out / "anchors.json").write_text(json.dumps([ANCHOR, ANCHOR_A4, *VIEW_ANCHORS], indent=2) + "\n", **lf)
-    (a.out / "project.json").write_text(json.dumps({"project_id": PROJECT_ID, "name": "Rooftop frame (2 storeys, 1:1)"}) + "\n", **lf)
+    if a.sheets_only and a.base_url is None:
+        ap.error("--sheets-only needs --base-url")
+    report = None
+    if not a.sheets_only:
+        a.out.mkdir(parents=True, exist_ok=True)
+        ifc = a.out / "model.ifc"
+        Frame().build().write(ifc)
+        report = run_pipeline(ifc, a.out)
+        lf = {"encoding": "utf-8", "newline": "\n"}  # LF on every OS, so Windows runs don't dirty the committed files
+        (a.out / "anchors.json").write_text(json.dumps([ANCHOR, ANCHOR_A4, *VIEW_ANCHORS], indent=2) + "\n", **lf)
+        (a.out / "project.json").write_text(json.dumps({"project_id": PROJECT_ID, "name": "Rooftop frame (2 storeys, 1:1)"}) + "\n", **lf)
     if a.base_url:
-        base = a.base_url.rstrip("/")
-        info = [render_sheet(sh, f"{base}/a/{PROJECT_ID}/{sh.anchor_id}", a.sheets_dir / f"{PROJECT_ID}-{sh.anchor_id}.pdf")
+        info = [render_sheet(sh, f"{a.base_url}/a/{PROJECT_ID}/{sh.anchor_id}", a.sheets_dir / f"{PROJECT_ID}-{sh.anchor_id}.pdf")
                 for sh in (r1_sheet(), r2_sheet(), *view_sheets())]
+        for sheet_info in info:
+            warn_thin_quiet_zone(sheet_info)
         report = {"pipeline": report, "sheets": info}
     print(json.dumps(report, indent=2, default=str)[:1500])
 

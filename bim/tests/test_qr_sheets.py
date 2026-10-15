@@ -6,7 +6,7 @@ import pymupdf
 import pytest
 import zxingcpp
 
-from truesite_bim import qr_sheets
+from truesite_bim import qr_sheets, rooftop
 
 PT_PER_MM = 72 / 25.4
 BASE = "https://truesite-7x2k3m4n5q-as.a.run.app"  # realistic legacy *.a.run.app length (QR version 4)
@@ -129,3 +129,53 @@ def test_anchors_only_mode_needs_no_url(tmp_path):
 def test_cli_needs_an_output():
     with pytest.raises(SystemExit):
         qr_sheets.main(["--project", "room1"])
+
+
+ALL_SHEETS = [*((sh, "room1") for sh in qr_sheets.make_sheets()),
+              *((sh, "rooftop") for sh in (rooftop.r1_sheet(), rooftop.r2_sheet(), *rooftop.view_sheets()))]
+
+
+def text_lines(page) -> list[tuple[pymupdf.Rect, str]]:
+    return [(pymupdf.Rect(line["bbox"]), "".join(s["text"] for s in line["spans"]))
+            for block in page.get_text("dict")["blocks"] for line in block.get("lines", [])]
+
+
+@pytest.mark.parametrize("sheet,project", ALL_SHEETS, ids=[sh.anchor_id for sh, _ in ALL_SHEETS])
+def test_text_clears_the_check_bar_and_other_text(tmp_path, sheet, project):
+    pdf = tmp_path / f"{sheet.anchor_id}.pdf"
+    qr_sheets.render_sheet(sheet, f"{BASE}/a/{project}/{sheet.anchor_id}", pdf)
+    page = pymupdf.open(pdf)[0]
+    lines = text_lines(page)
+    bars = [pymupdf.Rect(d["rect"]) for d in page.get_drawings()
+            if d["rect"].height / PT_PER_MM == pytest.approx(5.0, abs=0.01)]
+    assert bars  # the check bar's segments and outline
+    on_bar = [text for rect, text in lines for bar in bars if rect.intersects(bar)]
+    on_text = [(a, b) for i, (ra, a) in enumerate(lines) for rb, b in lines[i + 1:] if ra.intersects(rb)]
+    assert on_bar == [] and on_text == []
+    margin = 5 * PT_PER_MM  # printers can't reach the last few mm
+    assert all(page.rect.x0 + margin <= r.x0 and r.x1 <= page.rect.x1 - margin and
+               page.rect.y0 + margin <= r.y0 and r.y1 <= page.rect.y1 - margin for r, _ in lines)
+
+
+@pytest.mark.parametrize("sheet", [sh for sh, _ in ALL_SHEETS if sh.anchor_id in {"D1", "L1", "R1", "R2"}],
+                         ids=lambda sh: sh.anchor_id)
+def test_scan_steps_name_the_button_on_each_platform(sheet):
+    # Android's hero flow is Start AR (place by code); iPhone only has Start camera.
+    assert any(line.startswith("Android:") and "Start AR" in line for line in sheet.instructions)
+    assert any(line.startswith("iPhone:") and "Start camera" in line for line in sheet.instructions)
+
+
+def test_quiet_zone_warning_goes_to_stderr_and_stdout_stays_json(tmp_path, capsys):
+    # A very short host gives a version-2 code with big modules: A1's 23 cm code then has < 4 modules of paper.
+    qr_sheets.main(["--base-url", "https://a.io", "--project", "room1", "--out-dir", str(tmp_path)])
+    out, err = capsys.readouterr()
+    assert "WARNING A1" in err and "WARNING" not in out
+    assert {s["anchor_id"] for s in json.loads(out)["sheets"]} == {"D1", "D2", "L1", "A1"}
+
+
+@pytest.mark.parametrize("url", ["http://192.168.1.23:5173", "192.168.1.23:5173"])
+def test_base_url_must_be_https(tmp_path, url):
+    # Phones open the camera only on a secure origin, so a sheet with an http:// link can never work.
+    with pytest.raises(SystemExit):
+        qr_sheets.main(["--base-url", url, "--out-dir", str(tmp_path)])
+    assert not list(tmp_path.glob("*.pdf"))
