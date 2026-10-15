@@ -216,7 +216,7 @@ Boxes use Gemini's convention: `[ymin, xmin, ymax, xmax]`, normalised to 0–100
 - Square pixels and the principal point at the image centre leave one unknown: the focal length.
 - The user slowly tilts the phone around the QR for about 10 seconds. Each tilted view's homography gives two constraints on the focal length (planar self-calibration), and the app takes a robust median across about 30 views. Views where the code's plane is within 15° of the image plane carry no information and are skipped. In simulation this recovers f to within 1%.
 - The result is stored per device, camera resolution and orientation.
-- Fallback: a default 63° horizontal field of view, plus a manual slider.
+- Fallback: a default 63° field of view across the long side of the frame (portrait frames arrive rotated, so the same lens gets the same focal length); calibration can be re-run from Setup.
 
 ### 7.3 Which elements are visible
 1. Render the model off-screen at the snapshot pose, with each element in a unique flat colour (an ID buffer), at about 640 px.

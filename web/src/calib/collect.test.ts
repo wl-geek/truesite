@@ -39,6 +39,16 @@ describe('calibration view collector', () => {
     expect(c.offer(view(K, r, 30) ?? [[0, 0], [1, 0], [1, 1], [0, 1]])).toBe('full')
   })
 
+  it('gates portrait views with the long-side prior, so a 20 degree tilt is not called flat', () => {
+    // Portrait frames arrive rotated (1080 x 1920). With a short-side prior (f ~ 880 px instead of
+    // ~1570) this view measures about 12 degrees and is rejected as flat.
+    const PW = 1080, PH = 1920, PS = 0.12
+    const K = centredIntrinsics(1507, PW, PH)
+    const pose = makeMarkerPose({ distance: 0.6, tiltDeg: 20, tiltAzDeg: 30 })
+    const corners = noisyCorners(K, pose, PS, 0, rng(1))!
+    expect(new ViewCollector(PS, PW, PH).offer(corners)).toBe('accepted')
+  })
+
   it('turns the measured check bar into a print-scale correction', () => {
     expect(scaleFactorFromBar(97)).toBeCloseTo(0.97, 9)
     expect(() => scaleFactorFromBar(70)).toThrow(/reprint/)
