@@ -19,7 +19,7 @@ import functools
 import json
 import logging
 import time
-from typing import Annotated, Any, Literal, Optional
+from typing import Annotated, Any, Optional
 
 import httpx
 from google import genai
@@ -27,6 +27,8 @@ from google.auth import exceptions as auth_errors
 from google.genai import errors as genai_errors
 from google.genai import types
 from pydantic import BaseModel, Field
+
+from .schemas import Direction, ImageQuality, Status  # the contract's wire literals, declared once
 
 log = logging.getLogger("truesite.gemini")
 
@@ -104,9 +106,6 @@ def describe_backend(client: genai.Client) -> dict:
 # validate.py after repair (clamping, truncation, mark checks).
 
 Coord = Annotated[int, Field(ge=0, le=1000)]
-Status = Literal["present_ok", "missing", "misplaced", "different_from_design", "cannot_judge"]
-Direction = Literal["left", "right", "up", "down", "forward", "back", "none"]
-ImageQuality = Literal["good", "too_dark", "blurred", "marker_far", "occluded"]
 
 _BOX_DESC = ("Box on IMAGE 1 (the site photo) as [ymin, xmin, ymax, xmax], integers "
              "normalized to 0-1000. Use [0, 0, 0, 0] when there is nothing to point at.")
@@ -188,7 +187,7 @@ def gemini_json_schema(model: type[BaseModel]) -> dict:
 def _check_schema(n_marks: int) -> dict:
     schema = gemini_json_schema(CheckWire)
     finding = schema["properties"]["findings"]
-    finding["maxItems"] = n_marks
+    finding["minItems"] = finding["maxItems"] = n_marks  # CheckContext marks are exactly 1..n
     finding["items"]["properties"]["mark"]["maximum"] = n_marks
     return schema
 

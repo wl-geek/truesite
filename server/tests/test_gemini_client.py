@@ -143,7 +143,7 @@ def test_check_schema_tracks_marks_and_caps_at_25():
     req = gc.build_check_request(PHOTO, RENDER, many)
     schema = req["config"].response_json_schema
     findings = schema["properties"]["findings"]
-    assert findings["maxItems"] == 25
+    assert findings["minItems"] == findings["maxItems"] == 25  # exactly one finding per mark
     assert findings["items"]["properties"]["mark"] == {
         "description": "The numbered mark from IMAGE 2.", "maximum": 25, "minimum": 1, "type": "integer"}
     box = findings["items"]["properties"]["evidence_box"]
@@ -152,6 +152,11 @@ def test_check_schema_tracks_marks_and_caps_at_25():
     assert schema["required"] == ["image_quality", "findings", "unexpected", "summary"]
     with pytest.raises(ValueError):
         gc.build_check_request(PHOTO, RENDER, {"visible": []})
+
+
+def test_wire_literals_are_the_contract_ones():
+    from app import schemas
+    assert (gc.Status, gc.Direction, gc.ImageQuality) == (schemas.Status, schemas.Direction, schemas.ImageQuality)
 
 
 @pytest.mark.parametrize("schema", [
