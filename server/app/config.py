@@ -25,6 +25,10 @@ def _int(name: str, default: int) -> int:
     return default if raw in (None, "") else int(raw)
 
 
+def _flag(name: str) -> bool:
+    return (os.environ.get(name) or "").strip().lower() in ("1", "true", "yes", "on")
+
+
 def _choice(name: str, default: str, allowed: tuple[str, ...]) -> str:
     value = os.environ.get(name) or default
     if value not in allowed:
@@ -50,6 +54,10 @@ class Settings:
     asks_per_ip_per_hour: int = 30
     daily_check_cap: int = 300
     daily_ask_cap: int = 1000
+    # Saved issues make no Gemini call, so no daily cap: a per-IP write limit and a per-session
+    # total instead (each GET /api/issues reads the session's issues).
+    issues_per_ip_per_hour: int = 30
+    issues_per_session: int = 100
 
     # How many proxies append to X-Forwarded-For in front of us:
     # 1 = Cloud Run's own front end (direct *.run.app URL); 2 = an external HTTPS load balancer too.
@@ -66,6 +74,10 @@ class Settings:
     # or GEMINI_API_KEY as the fallback).
     gemini_mode: str = "fake"
 
+    # Swagger UI at /api/docs and /api/openapi.json. Off unless API_DOCS=1 (make dev-server sets it):
+    # the UI loads an unpinned script from jsDelivr on the app's own origin.
+    api_docs: bool = False
+
     @classmethod
     def from_env(cls) -> "Settings":
         return cls(
@@ -77,6 +89,8 @@ class Settings:
             asks_per_ip_per_hour=_int("ASKS_PER_IP_PER_HOUR", 30),
             daily_check_cap=_int("DAILY_CHECK_CAP", 300),
             daily_ask_cap=_int("DAILY_ASK_CAP", 1000),
+            issues_per_ip_per_hour=_int("ISSUES_PER_IP_PER_HOUR", 30),
+            issues_per_session=_int("ISSUES_PER_SESSION", 100),
             trusted_proxy_hops=_int("TRUSTED_PROXY_HOPS", 1),
             store_backend=_choice("STORE_BACKEND", "memory", STORE_BACKENDS),
             # Cloud Run does not set GOOGLE_CLOUD_PROJECT; infra/gcloud.sh passes it explicitly.
@@ -84,4 +98,5 @@ class Settings:
             gcs_bucket=os.environ.get("GCS_BUCKET") or None,
             firestore_database=os.environ.get("FIRESTORE_DATABASE") or "(default)",
             gemini_mode=_choice("GEMINI_MODE", "fake", GEMINI_MODES),
+            api_docs=_flag("API_DOCS"),
         )

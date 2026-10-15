@@ -10,7 +10,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, HTTPException, Query, Request
 
-from ..deps import NowDep, RepoDep, SessionId, SettingsDep, StoreDep, enforce_limits
+from ..deps import NowDep, RepoDep, SessionId, SettingsDep, StoreDep, enforce_limits, enforce_rate_limit
 from ..gemini_client import GeminiError
 from ..projects import UnknownElement, UnknownProject
 from ..schemas import DEMO_SESSION, PROJECT_ID_PATTERN, Issue, IssueDraft, IssueDraftRequest, IssueIn
@@ -43,13 +43,19 @@ def draft_issue(request: Request, body: IssueDraftRequest, session_id: SessionId
 
 
 @router.post("/api/issues", status_code=201, response_model=Issue)
-def create_issue(body: IssueIn, session_id: SessionId, store: StoreDep, repo: RepoDep, now: NowDep) -> Issue:
+def create_issue(request: Request, body: IssueIn, session_id: SessionId, settings: SettingsDep, store: StoreDep,
+                 repo: RepoDep, now: NowDep) -> Issue:
     try:
         repo.element(body.project_id, body.guid)
     except UnknownProject:
         raise _not_found("unknown_project") from None
     except UnknownElement:
         raise _not_found("unknown_element") from None
+    # No Gemini call, so no daily cap: a per-IP write limit, then a per-session total, which also
+    # bounds what each GET /api/issues reads (A-24). Concurrent posts may pass the total by a few.
+    enforce_rate_limit(request, "issue_limiter")
+    if len(store.list_issues(session_id, limit=settings.issues_per_session)) >= settings.issues_per_session:
+        raise HTTPException(status_code=429, detail={"code": "issue_cap"})
     photo_url = None
     if body.run_id:
         if store.get_check_run(body.run_id, session_id) is None:

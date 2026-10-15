@@ -118,6 +118,10 @@ Errors are FastAPI `HTTPException` with `detail = {"code": <code>, ...}`. Paths 
 | POST `/api/issues` | `IssueIn`; header `X-Session-Id` | `Issue` (201) | 422 |
 | GET `/api/issues` (optional `?project_id=room1`; omitted = every project) | header `X-Session-Id` | `{"issues": Issue[], "demo": Issue[]}` (newest first) | 422 |
 
+Write limits on POST `/api/issues` (no Gemini call, so no daily cap): 404 `unknown_project` / `unknown_element` / `unknown_run` · 429 `rate_limited` (ISSUES_PER_IP_PER_HOUR; +`retry_after_s`, `Retry-After`) · 429 `issue_cap` (the session already has ISSUES_PER_SESSION issues). A `run_id` that does not match `RUN_ID_PATTERN` is a 422 on both issue POSTs.
+
+Every response carries the headers from `app/security_headers.py`: `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY`, a `Permissions-Policy` that keeps camera, gyroscope, accelerometer, magnetometer and xr-spatial-tracking for `self`, and the CSP as `Content-Security-Policy-Report-Only` (not enforced yet). `/api` responses that set no `Cache-Control` get `no-store`. `/api/docs` and `/api/openapi.json` exist only with `API_DOCS=1`.
+
 Client routes (the SPA fallback serves index.html): `/` (start page), `/model` (viewer; `?project={project_id}`, default `room1`), `/a/{project_id}/{anchor_id}` (live AR), `/samples`, `/issues` (every project).
 
 ## 5. Schemas — Python `server/app/schemas.py` (TS mirrors in `web/src/api/types.ts`)
@@ -125,6 +129,7 @@ Client routes (the SPA fallback serves index.html): `/` (start page), `/model` (
 ```python
 SESSION_ID_PATTERN = r"^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
 DEMO_SESSION = "demo"
+RUN_ID_PATTERN = r"^[A-Za-z0-9_-]{16,32}$"                     # secrets.token_urlsafe(16); also a Firestore doc id
 ProjectId = constr(pattern=r"^[a-z0-9][a-z0-9_-]{0,31}$");  AnchorId = constr(pattern=r"^[A-Za-z0-9_-]{1,16}$")
 Box = list[int 0..1000] len 4, ymin<=ymax, xmin<=xmax
 Status = Literal["present_ok","missing","misplaced","different_from_design","cannot_judge"]
@@ -155,9 +160,9 @@ class CheckRun:         run_id, session_id, project_id, anchor_id, created_at: d
 
 class AskRequest:       project_id, guid, question: str 1..300
 class AskAnswer:        answer: str (<=600), cited_properties: list[str], confidence: float 0..1
-class IssueDraftRequest: run_id: str, mark: int 1..25
+class IssueDraftRequest: run_id: str (RUN_ID_PATTERN), mark: int 1..25
 class IssueDraft:       title: str (<=80), description: str (<=500), suggested_action: str (<=200)
-class IssueIn:          project_id, guid, finding_ref: str | None ("<run_id>:<mark>"), run_id: str | None, title (1..120),
+class IssueIn:          project_id, guid, finding_ref: str | None ("<run_id>:<mark>"), run_id: str | None (RUN_ID_PATTERN), title (1..120),
                         description (<=2000) = "", suggested_action (<=600) = "", severity: Severity | None, crop_box: Box | None
 class Issue(IssueIn):   id, session_id, photo_url: str | None, created_at: datetime, status: Literal["open","closed"] = "open"
 ```
@@ -170,6 +175,7 @@ TypeScript (`web/src/api/types.ts`): identical field names. The API's `VisibleEl
 # app/config.py — @dataclass(frozen=True) Settings; Settings.from_env() reads these env vars (defaults in brackets):
 #   STATIC_DIR [<repo>/web/dist]  MODELS_DIR [<repo>/bim/models]  MAX_UPLOAD_BYTES [4 MiB]  MAX_BODY_BYTES [9 MiB]
 #   CHECKS_PER_IP_PER_HOUR [10]  ASKS_PER_IP_PER_HOUR [30]  DAILY_CHECK_CAP [300]  DAILY_ASK_CAP [1000]
+#   ISSUES_PER_IP_PER_HOUR [30]  ISSUES_PER_SESSION [100]  API_DOCS [off; 1 = Swagger UI at /api/docs]
 #   TRUSTED_PROXY_HOPS [1]  STORE_BACKEND [memory|gcp]  GOOGLE_CLOUD_PROJECT  GCS_BUCKET  FIRESTORE_DATABASE [(default)]
 #   GEMINI_MODE [fake|live]  (live uses GOOGLE_GENAI_USE_ENTERPRISE=true + GOOGLE_CLOUD_PROJECT + GOOGLE_CLOUD_LOCATION=global,
 #                             or GEMINI_API_KEY as the fallback backend)
@@ -217,6 +223,7 @@ def create_app(settings: Settings | None = None, *, store: Store | None = None, 
                client: Any = None, now: Callable[[], datetime] = _utcnow, limiter_clock: Callable[[], float] | None = None) -> FastAPI
 #   On startup, seeds each project's demo_issues.json into the store as session "demo" with ids "demo-<project>-<n>" (upsert, idempotent).
 #   Blocking work (Gemini, store) runs in the threadpool (plain def endpoints or run_in_threadpool).
+#   Middleware, outermost first: SecurityHeadersMiddleware (app/security_headers.py), BodySizeLimitMiddleware, GZip.
 #   Gemini timeouts: REQUEST_TIMEOUT_MS = 25_000 per attempt, one SDK retry; Cloud Run --timeout 120.
 ```
 
@@ -322,7 +329,7 @@ Samples are captured with the app itself (dev-only "Save as sample" button behin
 
 **Server routing.** `app/main.py` (Part 1) builds the app and `app.state`:
 - `settings`, `store`, `repo`, `client`, `now`
-- `check_limiter` (CHECKS_PER_IP_PER_HOUR / 3600 s) and `ask_limiter` (ASKS_PER_IP_PER_HOUR / 3600 s)
+- `check_limiter` (CHECKS_PER_IP_PER_HOUR / 3600 s), `ask_limiter` (ASKS_PER_IP_PER_HOUR / 3600 s) and `issue_limiter` (ISSUES_PER_IP_PER_HOUR / 3600 s)
 
 It then includes routers. Each router module exposes `router = APIRouter()` and gets everything through `app/deps.py` (Part 1):
 
@@ -335,6 +342,8 @@ def get_client(request: Request) -> Any
 def get_now(request: Request) -> Callable[[], datetime]
 SessionId = Annotated[str, Header(alias="X-Session-Id", pattern=SESSION_ID_PATTERN)]   # missing/malformed -> 422
 SettingsDep, StoreDep, RepoDep, ClientDep = Annotated[...]                            # Depends(...) aliases
+def enforce_rate_limit(request: Request, limiter_name: str) -> None
+    # per-IP limiter only -> 429 rate_limited (+Retry-After); POST /api/issues ("issue_limiter")
 def enforce_limits(request: Request, limiter_name: str, day_suffix: str, cap: int) -> None
     # per-IP limiter -> 429 rate_limited (+Retry-After); store.try_consume_daily(f"{day}{day_suffix}", cap) -> 429 daily_cap; store error -> 503 busy
 ```

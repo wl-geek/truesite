@@ -3,7 +3,7 @@
 Run locally (from server/):  GEMINI_MODE=fake uv run uvicorn --factory app.main:create_app --reload --port 8000
 Cloud Run:                   see the root Dockerfile (listens on $PORT, 0.0.0.0)
 
-create_app() fills app.state (settings, store, repo, client, now, check_limiter, ask_limiter);
+create_app() fills app.state (settings, store, repo, client, now, check_limiter, ask_limiter, issue_limiter);
 routers read it through app/deps.py and never import this module.
 """
 from __future__ import annotations
@@ -21,6 +21,7 @@ from .limits import SlidingWindowLimiter, client_ip
 from .projects import ProjectRepo
 from .routes import ask, check, issues, projects
 from .schemas import DEMO_SESSION, Issue, IssueIn
+from .security_headers import SecurityHeadersMiddleware
 from .spa import SPAStaticFiles
 from .store import InMemoryStore, Store
 from .uploads import BodySizeLimitMiddleware
@@ -76,7 +77,9 @@ def create_app(
     limiter_clock: Callable[[], float] | None = None,
 ) -> FastAPI:
     settings = settings or Settings.from_env()
-    app = FastAPI(title="TrueSite", docs_url="/api/docs", redoc_url=None, openapi_url="/api/openapi.json")
+    docs = settings.api_docs  # off in production: Swagger UI loads an unpinned jsDelivr script (A-71)
+    app = FastAPI(title="TrueSite", docs_url="/api/docs" if docs else None, redoc_url=None,
+                  openapi_url="/api/openapi.json" if docs else None)
     app.state.settings = settings
     app.state.store = store if store is not None else build_store(settings)
     app.state.repo = repo if repo is not None else ProjectRepo(settings.models_dir)
@@ -85,10 +88,13 @@ def create_app(
     limiter_kwargs: dict[str, Any] = {"clock": limiter_clock} if limiter_clock else {}
     app.state.check_limiter = SlidingWindowLimiter(settings.checks_per_ip_per_hour, 3600, **limiter_kwargs)
     app.state.ask_limiter = SlidingWindowLimiter(settings.asks_per_ip_per_hour, 3600, **limiter_kwargs)
+    app.state.issue_limiter = SlidingWindowLimiter(settings.issues_per_ip_per_hour, 3600, **limiter_kwargs)
 
-    # Last added = outermost. The body-size cap must see the raw body first.
+    # Last added = outermost. The body-size cap must see the raw body first; the security
+    # headers wrap everything, so its early 413 gets them too.
     app.add_middleware(GZipMiddleware, minimum_size=1024, compresslevel=6)
     app.add_middleware(BodySizeLimitMiddleware, max_bytes=settings.max_body_bytes)
+    app.add_middleware(SecurityHeadersMiddleware)
 
     @app.get("/api/health")
     def health() -> dict[str, Any]:
