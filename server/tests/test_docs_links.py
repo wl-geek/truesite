@@ -19,5 +19,5 @@ def relative_links(text: str) -> list[str]:
 
 @pytest.mark.parametrize("doc", DOCS, ids=lambda p: str(p.relative_to(ROOT)))
 def test_relative_links_resolve(doc: Path):
-    missing = [link for link in relative_links(doc.read_text()) if not (doc.parent / link).exists()]
+    missing = [link for link in relative_links(doc.read_text(encoding="utf-8")) if not (doc.parent / link).exists()]
     assert missing == []

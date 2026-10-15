@@ -36,3 +36,9 @@ def test_anchor_and_project(built):
     assert anchors[1]["anchor_id"] == "R2" and anchors[1]["qr_size_m"] == 0.16
     assert anchors[0]["position_m"] == [4.5, 4.5, 0.0] and anchors[0]["scale"] == 1.0
     assert json.loads((built / "project.json").read_text())["project_id"] == "rooftop"
+
+
+@pytest.mark.parametrize("name", ["elements.json", "anchors.json", "project.json"])
+def test_json_outputs_use_lf_line_endings(built, name):
+    # Text-mode writes turn "\n" into "\r\n" on Windows, which would dirty the committed files.
+    assert b"\r\n" not in (built / name).read_bytes()

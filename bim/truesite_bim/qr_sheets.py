@@ -268,7 +268,7 @@ def main(argv: list[str] | None = None) -> None:
     anchors = [anchor_entry(sh, a.project) for sh in sheets]
     if a.anchors_out:
         a.anchors_out.parent.mkdir(parents=True, exist_ok=True)
-        a.anchors_out.write_text(json.dumps(anchors, indent=2) + "\n")
+        a.anchors_out.write_text(json.dumps(anchors, indent=2) + "\n", encoding="utf-8", newline="\n")
     print(json.dumps({"sheets": report, "anchors": anchors}, indent=2))
 
 

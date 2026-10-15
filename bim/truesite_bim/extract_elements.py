@@ -144,7 +144,7 @@ def main(argv: list[str] | None = None) -> None:
     a = ap.parse_args(argv)
     els = extract(a.ifc)
     a.out.parent.mkdir(parents=True, exist_ok=True)
-    a.out.write_text(json.dumps(els, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    a.out.write_text(json.dumps(els, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
     print(f"wrote {a.out} ({len(els)} elements)")
 
 

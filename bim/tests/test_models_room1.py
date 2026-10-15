@@ -11,7 +11,7 @@ from pathlib import Path
 import pytest
 
 from truesite_bim import convert, qr_sheets
-from truesite_bim.glb_reader import read_glb
+from truesite_bim.glb_reader import positions, read_glb
 
 ROOM1 = Path(__file__).resolve().parents[1] / "models" / "room1"
 GUID_RE = re.compile(r"^[0-9A-Za-z_$]{22}$")
@@ -28,9 +28,34 @@ def test_all_project_files_exist():
     assert {"model.ifc", "model.glb", "elements.json", "anchors.json", "project.json", "demo_issues.json"} <= names
 
 
+def _primitive_surfaces(j, b):
+    """(vertex positions, surface area) per primitive. Equal for the same mesh even when the
+    tessellator picks different diagonals, as IfcOpenShell does on Windows vs macOS."""
+    out = []
+    for mesh in j["meshes"]:
+        for prim in mesh["primitives"]:
+            pos = positions(j, b, prim["attributes"]["POSITION"])
+            idx = [i for (i,) in positions(j, b, prim["indices"])]
+            area = 0.0
+            for k in range(0, len(idx), 3):
+                p, q, r = (pos[i] for i in idx[k : k + 3])
+                u = [q[a] - p[a] for a in range(3)]
+                v = [r[a] - p[a] for a in range(3)]
+                area += math.hypot(u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]) / 2
+            out.append((pos, area))
+    return out
+
+
 def test_committed_glb_is_a_fresh_conversion_of_the_committed_ifc(tmp_path):
     fresh = convert.convert(ROOM1 / "model.ifc", tmp_path / "model.glb")
-    assert fresh.read_bytes() == (ROOM1 / "model.glb").read_bytes(), "re-run the pipeline (see the plan)"
+    if fresh.read_bytes() == (ROOM1 / "model.glb").read_bytes():
+        return  # byte-identical on the platform that built it
+    jf, bf = read_glb(fresh)
+    jc, bc = read_glb(ROOM1 / "model.glb")
+    assert jf == jc, "re-run the pipeline (see the plan)"
+    for (pf, af), (pc, ac) in zip(_primitive_surfaces(jf, bf), _primitive_surfaces(jc, bc), strict=True):
+        assert pf == pc, "re-run the pipeline (see the plan)"
+        assert math.isclose(af, ac, rel_tol=1e-9), "re-run the pipeline (see the plan)"
 
 
 def test_glb_guids_equal_elements_guids():

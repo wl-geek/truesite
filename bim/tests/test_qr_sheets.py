@@ -123,6 +123,7 @@ def test_anchors_only_mode_needs_no_url(tmp_path):
     a1 = {a["anchor_id"]: a for a in json.loads((tmp_path / "anchors.json").read_text())}["A1"]
     assert a1["position_m"] == [1.0, 2.0, 1.4] and a1["normal"] == [0.0, -1.0, 0.0]
     assert not list(tmp_path.glob("*.pdf"))
+    assert b"\r\n" not in (tmp_path / "anchors.json").read_bytes()  # LF on every OS
 
 
 def test_cli_needs_an_output():

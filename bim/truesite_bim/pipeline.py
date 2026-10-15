@@ -43,7 +43,8 @@ def run(ifc: Path, out_dir: Path) -> dict:
             shutil.copyfile(ifc, out_dir / "model.ifc")
         shutil.copyfile(glb_tmp, out_dir / "model.glb.part")
         os.replace(out_dir / "model.glb.part", out_dir / "model.glb")
-    (out_dir / "elements.json").write_text(json.dumps(els, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    (out_dir / "elements.json").write_text(json.dumps(els, indent=2, ensure_ascii=False) + "\n", encoding="utf-8",
+                                         newline="\n")
     return {"elements": len(els), "glb_nodes": len(in_glb), "out": str(out_dir)}
 
 

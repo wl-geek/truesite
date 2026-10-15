@@ -192,8 +192,9 @@ def main(argv: list[str] | None = None) -> None:
     ifc = a.out / "model.ifc"
     Frame().build().write(ifc)
     report = run_pipeline(ifc, a.out)
-    (a.out / "anchors.json").write_text(json.dumps([ANCHOR, ANCHOR_A4], indent=2) + "\n")
-    (a.out / "project.json").write_text(json.dumps({"project_id": PROJECT_ID, "name": "Rooftop frame (2 storeys, 1:1)"}) + "\n")
+    lf = {"encoding": "utf-8", "newline": "\n"}  # LF on every OS, so Windows runs don't dirty the committed files
+    (a.out / "anchors.json").write_text(json.dumps([ANCHOR, ANCHOR_A4], indent=2) + "\n", **lf)
+    (a.out / "project.json").write_text(json.dumps({"project_id": PROJECT_ID, "name": "Rooftop frame (2 storeys, 1:1)"}) + "\n", **lf)
     if a.base_url:
         base = a.base_url.rstrip("/")
         info = [render_sheet(sh, f"{base}/a/{PROJECT_ID}/{sh.anchor_id}", a.sheets_dir / f"{PROJECT_ID}-{sh.anchor_id}.pdf")

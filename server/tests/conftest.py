@@ -66,7 +66,7 @@ def dist(tmp_path: Path) -> Path:
     d = tmp_path / "dist"
     (d / "assets").mkdir(parents=True)
     (d / "index.html").write_text(INDEX_HTML)
-    (d / "assets" / "index-abc123.js").write_text(APP_JS)
+    (d / "assets" / "index-abc123.js").write_bytes(APP_JS.encode())  # bytes: no CRLF on Windows
     (d / "favicon.svg").write_text("<svg/>")
     (d / "samples").mkdir()
     (d / "samples" / "room1-01.jpg").write_bytes(JPEG)
