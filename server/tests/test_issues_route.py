@@ -60,3 +60,18 @@ def test_save_rejects_unknown_things(client):
 
 def test_demo_session_cannot_be_claimed(client):
     assert client.get("/api/issues", headers=hdr("demo")).status_code == 422
+
+
+def test_an_unsaved_run_takes_no_issues(client, store, monkeypatch):
+    """saved=false means the run wasn't stored: its run_id 404s, so the web sends run_id null instead (A-12)."""
+    def boom(*_a):
+        raise RuntimeError("gcs down")
+    monkeypatch.setattr(store, "put_blob", boom)
+    session = new_session()
+    body = post_check(client, session).json()
+    assert body["saved"] is False
+    base = {"project_id": "testproj", "guid": GUID_DOOR, "title": "Door D-01 about 30 cm right"}
+    r = client.post("/api/issues", json={**base, "run_id": body["run_id"]}, headers=hdr(session))
+    assert r.status_code == 404 and r.json()["detail"]["code"] == "unknown_run"
+    r = client.post("/api/issues", json={**base, "run_id": None}, headers=hdr(session))
+    assert r.status_code == 201 and r.json()["photo_url"] is None

@@ -115,7 +115,7 @@ Errors are FastAPI `HTTPException` with `detail = {"code": <code>, ...}`. Paths 
 | GET `/api/saved-results/{sample_id}` | — | `CheckResult` with `saved_at` set | 404 |
 | POST `/api/ask` | `AskRequest`; header `X-Session-Id` | `AskAnswer` | 404 `unknown_element` · 429 · 503/502/422/500 as for check |
 | POST `/api/issues/draft` | `IssueDraftRequest`; header `X-Session-Id` | `IssueDraft` | 404 `unknown_run` / `unknown_mark` · 429 · model errors as above |
-| POST `/api/issues` | `IssueIn`; header `X-Session-Id` | `Issue` (201) | 422 |
+| POST `/api/issues` | `IssueIn`; header `X-Session-Id` | `Issue` (201) | 404 `unknown_project` / `unknown_element` · 404 `unknown_run` (not this session's stored run: send `run_id` null when the check returned `saved: false`) · 422 |
 | GET `/api/issues?project_id=room1` | header `X-Session-Id` | `{"issues": Issue[], "demo": Issue[]}` (newest first) | 422 |
 
 Client routes (the SPA fallback serves index.html): `/` (viewer, project `room1`), `/a/{project_id}/{anchor_id}` (live AR), `/samples`, `/issues`.

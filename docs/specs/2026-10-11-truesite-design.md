@@ -246,8 +246,9 @@ Boxes use Gemini's convention: `[ymin, xmin, ymax, xmax]`, normalised to 0–100
 | `image_quality` is not good | Findings shown greyed with the reason, plus a retake prompt |
 | Gemini timeout (25 s per attempt) or server error | One retry, then "Check failed — try again"; the snapshot stays on the device |
 | Response fails parsing or schema | One retry; invalid individual findings are dropped and logged |
-| Rate limit or daily cap reached; Gemini unavailable | Plain message. Sample photos show their last real result, labelled "Saved result from <date>" |
-| Saving to Firestore or Cloud Storage fails | Findings still shown; the issue shows "Couldn't save — retry" |
+| Rate limit or daily cap reached; Gemini unavailable or failing (any 5xx); no connection | Plain message. Sample photos show their last real result, labelled "Saved result from <date>", with a line saying why the live check didn't run |
+| Browser timeout, or an error on the device | "The check took too long" or "Check failed — try again"; "No connection" only when the request never reached the server |
+| Saving to Firestore or Cloud Storage fails | Findings still shown (`saved: false`); issues from that check are saved without its run and photo. If saving an issue fails: "Couldn't save — try again" |
 | WebGL context lost | Rebuild the scene automatically |
 
 ## 9. Accuracy, honesty, safety and cost

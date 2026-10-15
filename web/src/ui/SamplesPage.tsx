@@ -3,8 +3,8 @@ import { Scene, WebGLRenderer } from 'three'
 import { ApiError, getProject } from '../api/client'
 import type { CheckResult, Finding, ProjectManifest } from '../api/types'
 import { saveLastCheck } from '../check/lastCheck'
-import { checkErrorMessage } from '../check/messages'
-import { runCheck } from '../check/runCheck'
+import { checkErrorMessage, savedFallbackMessage } from '../check/messages'
+import { runCheck, storedRunId } from '../check/runCheck'
 import { parseSampleIndex, parseSampleMeta, type SampleIndexEntry } from '../check/sampleMeta'
 import { findAnchor } from '../scene/arMath'
 import { disposeModel, loadModel, type LoadedModel } from '../scene/loadModel'
@@ -15,7 +15,8 @@ import { IssueDialog } from './IssueDialog'
 import { Link } from './Link'
 
 type Loaded = { project: ProjectManifest; model: LoadedModel; renderer: WebGLRenderer; scene: Scene }
-type Outcome = { result: CheckResult; photoUrl: string; saved: boolean; runId: string | null; projectId: string }
+/** `fallback`: why the live check didn't run when this is the sample's saved result, else null. */
+type Outcome = { result: CheckResult; photoUrl: string; fallback: string | null; runId: string | null; projectId: string }
 
 async function getJsonFile(url: string): Promise<unknown> {
   const res = await fetch(url)
@@ -89,8 +90,10 @@ export function SamplesPage() {
       const result = res.response?.result ?? res.saved
       if (!result) throw res.error ?? new ApiError('check failed', 0)
       if (outcome) URL.revokeObjectURL(outcome.photoUrl)
-      setOutcome({ result, photoUrl: URL.createObjectURL(photo), saved: !res.response, runId: res.response?.run_id ?? null, projectId: meta.project_id })
-      saveLastCheck(meta.project_id, { result, runId: res.response?.run_id ?? null, at: new Date().toISOString() })
+      const fallback = res.response ? null : savedFallbackMessage(res.error ?? new ApiError('check failed', 0))
+      const runId = storedRunId(res.response)
+      setOutcome({ result, photoUrl: URL.createObjectURL(photo), fallback, runId, projectId: meta.project_id })
+      saveLastCheck(meta.project_id, { result, runId, at: new Date().toISOString() })
     } catch (e) {
       setError(e instanceof ApiError ? checkErrorMessage(e) : e instanceof Error ? e.message : 'Check failed — try again.')
     } finally {
@@ -157,6 +160,7 @@ export function SamplesPage() {
       {error && <p className="status status-error" role="alert">{error}</p>}
       {outcome && (
         <div className="sample-results">
+          {outcome.fallback && <p className="note" role="status">{outcome.fallback}</p>}
           <EvidenceView imageUrl={outcome.photoUrl} result={outcome.result} selectedMark={selectedMark} onSelect={setSelectedMark} />
           <FindingsPanel result={outcome.result} selectedMark={selectedMark} onSelect={selectFinding} onDraftIssue={setDraftFor} />
           {notice && <p className="note" role="status">{notice}</p>}

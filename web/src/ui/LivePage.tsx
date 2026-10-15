@@ -4,8 +4,8 @@ import type { Anchor, CheckResult, Finding, ProjectManifest } from '../api/types
 import { CameraError, startRearCamera, stopCamera, watchCamera, type CameraStart } from '../camera/camera'
 import { isCalibrated, loadQrSizeCorrection } from '../camera/intrinsics'
 import { saveLastCheck } from '../check/lastCheck'
-import { checkErrorMessage } from '../check/messages'
-import { runCheck } from '../check/runCheck'
+import { checkErrorMessage, toCheckError } from '../check/messages'
+import { runCheck, storedRunId } from '../check/runCheck'
 import { buildSampleMeta } from '../check/sampleMeta'
 import { anchorCorners, captureSnapshot, fallbackPose, snapshotQuality, type Snapshot } from '../check/snapshot'
 import { estimatePose, type Intrinsics, type Pose, type Point2, type Quality } from '../pose'
@@ -201,15 +201,16 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
       if (!res.response) throw res.error ?? new ApiError('check failed', 0)
       const result = res.response.result
       if (outcome) URL.revokeObjectURL(outcome.photoUrl)
-      setOutcome({ result, runId: res.response.run_id, photoUrl: URL.createObjectURL(snap.photo) })
+      const runId = storedRunId(res.response) // an unsaved run can't take issues (POST /api/issues would 404)
+      setOutcome({ result, runId, photoUrl: URL.createObjectURL(snap.photo) })
       setShowResults(true)
       setSelectedMark(null)
       if (pinsRef.current) disposePins(pinsRef.current)
       pinsRef.current = makePins(result.findings, elements)
       loaded.model.ifcRoot.add(pinsRef.current)
-      saveLastCheck(loaded.project.project_id, { result, runId: res.response.run_id, at: new Date().toISOString() })
+      saveLastCheck(loaded.project.project_id, { result, runId, at: new Date().toISOString() })
     } catch (e) {
-      setCheckError(checkErrorMessage(e instanceof ApiError ? e : new ApiError(String(e), 0)))
+      setCheckError(checkErrorMessage(toCheckError(e)))
     } finally {
       overlay.start()
       setChecking(false)
@@ -232,7 +233,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
       download(`${id}-photo.jpg`, snap.photo)
       download(`${id}-meta.json`, new Blob([JSON.stringify(meta, null, 2)], { type: 'application/json' }))
     } catch (e) {
-      setCheckError(checkErrorMessage(e instanceof ApiError ? e : new ApiError(String(e), 0)))
+      setCheckError(checkErrorMessage(toCheckError(e)))
     } finally {
       overlay.start()
     }

@@ -16,8 +16,6 @@ import { drawMarks, markCentres, selectMarks } from './marks'
 import { canvasToPng } from './snapshot'
 
 export const ID_BUFFER_WIDTH = 640
-/** Network failure (0), rate limit or cap (429), model failure (502/503): sample photos show their saved result. */
-export const FALLBACK_STATUSES = [0, 429, 502, 503]
 
 export type CheckInput = {
   photo: Blob
@@ -44,8 +42,17 @@ export type CheckOutcome = {
   render: Blob | null
 }
 
+/**
+ * Sample photos show their saved result when the live check couldn't run: no connection or timeout (0),
+ * rate limit or cap (429), or a server or model failure (5xx, including a revoked key or retired model).
+ */
 export function shouldUseSaved(err: ApiError, sampleId?: string): boolean {
-  return !!sampleId && FALLBACK_STATUSES.includes(err.status)
+  return !!sampleId && (err.status === 0 || err.status === 429 || err.status >= 500)
+}
+
+/** The run id to attach issues to: only a run the server stored (saved: false means POST /api/issues would 404 unknown_run). */
+export function storedRunId(response: Pick<CheckResponse, 'run_id' | 'saved'> | null): string | null {
+  return response?.saved ? response.run_id : null
 }
 
 export function idBufferSize(videoW: number, videoH: number, width = ID_BUFFER_WIDTH): { w: number; h: number } {
