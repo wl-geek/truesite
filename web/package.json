@@ -12,7 +12,9 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "typecheck": "tsc -b"
+    "typecheck": "tsc -b",
+    "prebuild": "node scripts/make-usdz.mjs",
+    "usdz": "node scripts/make-usdz.mjs"
   },
   "dependencies": {
     "react": "19.3.0",

@@ -120,7 +120,7 @@ def test_the_committed_rooftop_project_loads() -> None:
     m = repo.manifest("rooftop")
     classes = {e.ifc_class for e in m.elements}
     assert len(m.elements) == 160 and classes == {"IfcColumn", "IfcBeam", "IfcReinforcingBar"}
-    assert [a.anchor_id for a in m.anchors] == ["R1", "R2"] and m.anchors[0].scale == 1.0
+    assert [a.anchor_id for a in m.anchors] == ["R1", "R2", "V1", "V2", "V3"] and m.anchors[0].scale == 1.0
     assert repo.demo_issues("rooftop") == []
 
 

@@ -6,7 +6,7 @@
  * -> ifcRoot.matrix = modelMatrixIfc(anchor, pose). The AR camera sits at the origin with an
  * identity world matrix; only its projection changes (projectionMatrixGL, object-fit: cover).
  */
-import { PerspectiveCamera, Scene, WebGLRenderer } from 'three'
+import { PerspectiveCamera, Scene, Vector3, WebGLRenderer } from 'three'
 import type { Anchor as ApiAnchor } from '../api/types'
 import { grabFrame } from '../camera/camera'
 import { loadIntrinsics } from '../camera/intrinsics'
@@ -23,6 +23,7 @@ import { deviceRotation, lookAroundPose, LOOK_AROUND_MAX_S, type MotionLock } fr
 /** Edges live on their own layer so the ID-buffer render (layer 0 only) never sees them. */
 export const EDGE_LAYER = 1
 const DETECT_WIDTH = 640
+const ORIGIN = new Vector3()
 const LOST_AFTER_S = 0.5
 const NEAR_M = 0.02
 const FAR_M = 100
@@ -180,7 +181,7 @@ export function createOverlay(o: OverlayOptions): Overlay {
       renderer.setSize(cw, ch, false)
       applyProjection(camera, projectionMatrixGL({ K, videoW: vw, videoH: vh, viewW: cw, viewH: ch, near: NEAR_M, far: FAR_M, fit: 'cover' }))
     }
-    look.update()
+    look.update(ORIGIN) // the AR camera sits at the world origin
     renderer.render(scene, camera)
   }
 

@@ -110,3 +110,10 @@ def test_api_only_when_no_static_dir(tmp_path: Path, models: Path) -> None:
     c = TestClient(app)
     assert c.get("/api/health").status_code == 200
     assert c.get("/").status_code == 404
+
+
+def test_usdz_is_served_with_the_ar_quick_look_type(client, dist) -> None:
+    (dist / "models").mkdir(exist_ok=True)
+    (dist / "models" / "rooftop.usdz").write_bytes(b"PK\x03\x04usdz")
+    r = client.get("/models/rooftop.usdz")
+    assert r.status_code == 200 and r.headers["content-type"].startswith("model/vnd.usdz+zip")

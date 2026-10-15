@@ -35,9 +35,10 @@ export function sceneViewerUrl(glbUrl: string, title: string, fallbackUrl: strin
     `action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(fallbackUrl)};end;`
 }
 
-function flatNormals(geometry: BufferGeometry): BufferGeometry {
-  const g = geometry.index ? geometry.toNonIndexed() : geometry.clone()
-  g.computeVertexNormals() // non-indexed -> one normal per face: crisp concrete edges
+function withNormals(geometry: BufferGeometry, smooth: boolean): BufferGeometry {
+  // Boxy concrete: non-indexed -> one normal per face, crisp edges. Round rebar: indexed + smooth, smaller.
+  const g = smooth || !geometry.index ? geometry.clone() : geometry.toNonIndexed()
+  g.computeVertexNormals()
   return g
 }
 
@@ -53,7 +54,7 @@ export function buildWalkScene(model: LoadedModel, classOf: (guid: string) => st
   for (const mesh of model.meshes) {
     const cls = classOf(model.meshGuid.get(mesh) ?? '')
     const mat = cls === 'IfcReinforcingBar' ? rebar : /^Ifc(Column|Beam|Slab|Footing|Member|Pile|Plate)$/.test(cls) ? concrete : other
-    const copy = new Mesh(flatNormals(mesh.geometry), mat)
+    const copy = new Mesh(withNormals(mesh.geometry, cls === 'IfcReinforcingBar'), mat)
     copy.applyMatrix4(new Matrix4().multiplyMatrices(toGltf, mesh.matrixWorld))
     root.add(copy)
   }
@@ -70,11 +71,16 @@ export async function exportUsdz(scene: Scene): Promise<Blob> {
   return new Blob([data], { type: 'model/vnd.usdz+zip' })
 }
 
-/** Open AR Quick Look on a USDZ blob, locked to 1:1 (must run from a tap). */
-export function openQuickLook(usdz: Blob): void {
+/** The build-time USDZ for a project (scripts/make-usdz.mjs), served with the right MIME type. */
+export function usdzUrl(projectId: string): string {
+  return `/models/${encodeURIComponent(projectId)}.usdz`
+}
+
+/** Open AR Quick Look on a USDZ file URL or blob, locked to 1:1 (must run from a tap). */
+export function openQuickLook(usdz: Blob | string): void {
   const a = document.createElement('a')
   a.rel = 'ar'
-  a.href = `${URL.createObjectURL(usdz)}#allowsContentScaling=0`
+  a.href = `${typeof usdz === 'string' ? usdz : URL.createObjectURL(usdz)}#allowsContentScaling=0`
   a.appendChild(document.createElement('img')) // Quick Look requires an <img> child
   document.body.appendChild(a)
   a.click()

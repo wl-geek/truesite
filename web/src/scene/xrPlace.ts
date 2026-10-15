@@ -19,6 +19,7 @@ import type { QrWorkerClient } from '../qr/qrClient'
 import { effectiveQrSize, poseAnchor, toVideoPixels } from './arMath'
 import type { LoadedModel } from './loadModel'
 import { applyConstructionLook, type ConstructionLook } from './look'
+import { levelledPlacement } from './placement'
 import { EDGE_LAYER } from './overlay'
 
 /** CV intrinsics (pixels, top-left origin) of a camera image W x H aligned with a view's GL projection. */
@@ -27,6 +28,7 @@ export function intrinsicsFromProjection(P: ArrayLike<number>, W: number, H: num
   return { f: (W * P[0]) / 2, cx: (W * (1 - P[8])) / 2, cy: (H * (1 + P[9])) / 2 }
 }
 
+/** One view's estimate: the code's world position and the world_from_IFC rotation (scale handled at lock). */
 export type WorldEstimate = { position: Vector3; quaternion: Quaternion; weight: number; cameraPos: Vector3 }
 
 export const NEEDED_VIEWS = 12
@@ -99,7 +101,9 @@ export async function startXrPlace(o: XrPlaceOptions): Promise<XrPlaceSession> {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2))
   renderer.localClippingEnabled = true
   renderer.xr.enabled = true
-  renderer.xr.setReferenceSpaceType('local')
+  // Floor-relative space when the AR system offers it: then the floor is world Y = 0.
+  const floorOk = ((session as XRSession & { enabledFeatures?: string[] }).enabledFeatures ?? []).includes('local-floor')
+  renderer.xr.setReferenceSpaceType(floorOk ? 'local-floor' : 'local')
   await renderer.xr.setSession(session)
 
   const scene = new Scene()
@@ -118,6 +122,7 @@ export async function startXrPlace(o: XrPlaceOptions): Promise<XrPlaceSession> {
   let rt: WebGLRenderTarget | null = null
 
   const pAnchor = poseAnchor(o.anchor)
+  const anchorIfc = new Vector3(...o.anchor.position_m)
   const s = effectiveQrSize(o.anchor, o.qrSizeCorrection)
   const estimates: WorldEstimate[] = []
   let prevPose: Pose | null = null
@@ -125,6 +130,7 @@ export async function startXrPlace(o: XrPlaceOptions): Promise<XrPlaceSession> {
   let frameNo = 0
   const world = new Matrix4()
   const viewM = new Matrix4()
+  const viewerPos = new Vector3()
 
   const emit = (codeSeen: boolean) => {
     const fused = fuseEstimates(estimates)
@@ -137,7 +143,9 @@ export async function startXrPlace(o: XrPlaceOptions): Promise<XrPlaceSession> {
   function lock(): void {
     const fused = fuseEstimates(estimates)
     if (!fused) return
-    world.compose(fused.position, fused.quaternion, new Vector3(1, 1, 1))
+    // Heading from the code, up from gravity, scale from the anchor; life-size models stand on the detected floor.
+    const lifeSize = o.anchor.scale >= 0.999
+    world.copy(levelledPlacement(fused.quaternion, fused.position, anchorIfc, o.anchor.scale, floorOk && lifeSize ? 0 : null))
     o.model.ifcRoot.matrixAutoUpdate = false
     o.model.ifcRoot.matrix.copy(world)
     o.model.ifcRoot.matrixWorldNeedsUpdate = true
@@ -192,9 +200,9 @@ export async function startXrPlace(o: XrPlaceOptions): Promise<XrPlaceSession> {
       }
       prevPose = { R: est.R, t: est.t }
       const m = viewM.clone().multiply(new Matrix4().fromArray(modelMatrixIfc(pAnchor, prevPose)))
-      const position = new Vector3()
       const quaternion = new Quaternion()
-      m.decompose(position, quaternion, new Vector3())
+      m.decompose(new Vector3(), quaternion, new Vector3())
+      const position = anchorIfc.clone().applyMatrix4(m) // the code itself, so the ring measures angles around it (audit A-02)
       // Closer, sharper views count more.
       estimates.push({ position, quaternion, weight: est.widthPx / Math.max(est.rmsPx, 0.5), cameraPos: camPos })
       if (estimates.length > 60) estimates.shift()
@@ -205,7 +213,7 @@ export async function startXrPlace(o: XrPlaceOptions): Promise<XrPlaceSession> {
 
   renderer.setAnimationLoop((_t, frame) => {
     if (frame && phase === 'scanning' && frameNo++ % 2 === 0) detect(frame)
-    look.update()
+    look.update(renderer.xr.getCamera().getWorldPosition(viewerPos))
     renderer.render(scene, baseCamera)
   })
 

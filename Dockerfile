@@ -8,6 +8,8 @@
 FROM node:22-slim AS web
 WORKDIR /web
 COPY web/package.json web/package-lock.json ./
+# bim/models feeds the prebuild step that writes the USDZ files for iPhone/iPad AR Quick Look.
+COPY bim/models /bim/models
 RUN npm ci --no-audit --no-fund
 COPY web/ ./
 RUN npm run build

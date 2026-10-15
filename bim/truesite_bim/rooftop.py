@@ -35,6 +35,17 @@ ANCHOR = {"anchor_id": "R1", "project_id": PROJECT_ID, "qr_size_m": 0.33, "posit
           "normal": [0, 0, 1], "up": [0, 1, 0], "scale": 1.0, "label": "Rooftop floor sheet A2 (1:1)"}
 # Same spot, A4 with a 16 cm code: for indoor tests, or when A2 printing is not possible (readable to ~3 m).
 ANCHOR_A4 = {**ANCHOR, "anchor_id": "R2", "qr_size_m": 0.16, "label": "Rooftop floor sheet A4 (1:1)"}
+# Three standing viewpoints for phones/tablets without world tracking (iPad): an A4 sheet upright on a
+# stand or taped to a pole with the code centre 1.3 m above the ground, facing the viewer, who stands
+# about 2 m in front of it and turns on the spot.
+VIEW_ANCHORS = [
+    {**ANCHOR_A4, "anchor_id": "V1", "position_m": [4.5, 2.5, 1.3], "normal": [0, 1, 0], "up": [0, 0, 1],
+     "label": "Viewpoint 1: inside, facing south (A4 upright, code at 1.3 m)"},
+    {**ANCHOR_A4, "anchor_id": "V2", "position_m": [2.5, 4.5, 1.3], "normal": [1, 0, 0], "up": [0, 0, 1],
+     "label": "Viewpoint 2: inside, facing west (A4 upright, code at 1.3 m)"},
+    {**ANCHOR_A4, "anchor_id": "V3", "position_m": [4.5, -1.5, 1.3], "normal": [0, -1, 0], "up": [0, 0, 1],
+     "label": "Viewpoint 3: outside the south edge, whole frame (A4 upright, code at 1.3 m)"},
+]
 
 
 class Frame:
@@ -182,6 +193,20 @@ def r2_sheet() -> Sheet:
     )
 
 
+def view_sheets() -> list[Sheet]:
+    return [Sheet(
+        v["anchor_id"], "wall", v["label"], f"TrueSite rooftop viewpoint {v['anchor_id']} - life size 1:1", portrait(A4), 160.0,
+        (105.0, 180.0), check_bar_mm=(55.0, 40.0), text_box_mm=(15.0, 80.0),
+        position_m=v["position_m"], normal=v["normal"], up=v["up"], scale=1.0,
+        instructions=[
+            "Fix the sheet UPRIGHT (stand, pole or car door), code centre 1.3 m above the ground.",
+            "Stand about 2 m in front of it. Scan, Start camera, keep the code in view to lock,",
+            "then turn on the spot (don't walk) to look around and up.",
+            "Measure the check bar: if it is not 10.0 cm, enter the length in the app.",
+        ],
+    ) for v in VIEW_ANCHORS]
+
+
 def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--out", type=Path, default=Path("models") / PROJECT_ID)
@@ -193,12 +218,12 @@ def main(argv: list[str] | None = None) -> None:
     Frame().build().write(ifc)
     report = run_pipeline(ifc, a.out)
     lf = {"encoding": "utf-8", "newline": "\n"}  # LF on every OS, so Windows runs don't dirty the committed files
-    (a.out / "anchors.json").write_text(json.dumps([ANCHOR, ANCHOR_A4], indent=2) + "\n", **lf)
+    (a.out / "anchors.json").write_text(json.dumps([ANCHOR, ANCHOR_A4, *VIEW_ANCHORS], indent=2) + "\n", **lf)
     (a.out / "project.json").write_text(json.dumps({"project_id": PROJECT_ID, "name": "Rooftop frame (2 storeys, 1:1)"}) + "\n", **lf)
     if a.base_url:
         base = a.base_url.rstrip("/")
         info = [render_sheet(sh, f"{base}/a/{PROJECT_ID}/{sh.anchor_id}", a.sheets_dir / f"{PROJECT_ID}-{sh.anchor_id}.pdf")
-                for sh in (r1_sheet(), r2_sheet())]
+                for sh in (r1_sheet(), r2_sheet(), *view_sheets())]
         report = {"pipeline": report, "sheets": info}
     print(json.dumps(report, indent=2, default=str)[:1500])
 
