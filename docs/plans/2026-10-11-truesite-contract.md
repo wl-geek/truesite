@@ -81,6 +81,7 @@ truesite/
     src/scene/watchdog.ts       # no video frames for 1 s -> hide the model
     src/scene/evalMarkers.ts    # ?eval=1 crosses at the surveyed points
     src/scene/placement.ts      # levelled placement for world-tracked AR (gravity up, detected floor)
+    src/scene/glContext.ts      # releaseRenderer (dispose + forceContextLoss), context-loss watchdog, fresh canvases
     src/scene/xrStart.ts  src/scene/xrPlace.ts  src/scene/xrWalk.ts   # Android WebXR: start/fallback, Start AR (place by code), Walk inside (hit-test)
     src/scene/walkthrough.ts    # Walk inside via the phone's own AR viewer: AR Quick Look (USDZ) on iPhone/iPad, Scene Viewer on Android
     src/scene/palette.js + palette.d.ts            # colour by element type: kindOf, isSolid, paintOf, materialParams (plain JS: shared with scripts/make-usdz.mjs)
@@ -90,6 +91,7 @@ truesite/
     src/check/lastCheck.ts  src/check/messages.ts  src/check/sampleMeta.ts  src/check/sampleRun.ts   # last check per session, error copy, sample photos (§8)
     src/test-support/{synthQr,qrPng,stubRenderer}.ts   # test-only: synthetic QR views, real QR PNGs, a node stand-in for WebGLRenderer
     src/ui/*.tsx  src/ui/*.ts                      # pages and panels; the .ts files hold their pure, tested text helpers
+    src/ui/ReloadPrompt.tsx     # "The 3D view stopped. Tap to reload." after a permanent WebGL context loss
   infra/gcloud.sh  infra/lifecycle.json
   eval/README.md  eval/overlay.csv  eval/labels.json  eval/summarise.py
   docs/specs/  docs/plans/  docs/research/   docs/BRIEF.md  docs/submission-checklist.md  docs/audit-2026-10-15.md
