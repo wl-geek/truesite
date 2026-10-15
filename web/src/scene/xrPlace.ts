@@ -36,7 +36,9 @@ export const NEEDED_SPREAD_DEG = 25
 const CLUSTER_DEG = 6
 
 /** Fuse estimates: largest cluster of rotations within CLUSTER_DEG of each other, weighted average. */
-export function fuseEstimates(est: readonly WorldEstimate[]): { position: Vector3; quaternion: Quaternion; used: number } | null {
+export function fuseEstimates(
+  est: readonly WorldEstimate[],
+): { position: Vector3; quaternion: Quaternion; used: number; inliers: WorldEstimate[] } | null {
   if (!est.length) return null
   let best: WorldEstimate[] = []
   for (const e of est) {
@@ -57,7 +59,7 @@ export function fuseEstimates(est: readonly WorldEstimate[]): { position: Vector
     wsum += e.weight
   }
   position.divideScalar(wsum)
-  return { position, quaternion: new Quaternion(q.x, q.y, q.z, q.w).normalize(), used: best.length }
+  return { position, quaternion: new Quaternion(q.x, q.y, q.z, q.w).normalize(), used: best.length, inliers: best }
 }
 
 /** Spread (degrees) of the directions from the code to the camera across views. */
@@ -80,12 +82,16 @@ export function toWorldEstimate(viewMatrix: Matrix4, anchor: PoseAnchor, pose: P
 export type Fused = NonNullable<ReturnType<typeof fuseEstimates>>
 export type PlacementProgress = { fused: Fused | null; views: number; spreadDeg: number; progress: number }
 
-/** How far the scan is: enough views from a wide enough spread of angles around the code. */
+/**
+ * How far the scan is: enough consistent views from a wide enough spread of angles around the code.
+ * Outliers (planar flips) count for neither, and the views label stops at NEEDED_VIEWS.
+ */
 export function placementProgress(estimates: readonly WorldEstimate[]): PlacementProgress {
   const fused = fuseEstimates(estimates)
-  const spreadDeg = fused ? viewSpreadDeg(fused.position, estimates.map((e) => e.cameraPos)) : 0
-  const progress = Math.min(1, Math.min(estimates.length / NEEDED_VIEWS, spreadDeg / NEEDED_SPREAD_DEG))
-  return { fused, views: estimates.length, spreadDeg, progress }
+  if (!fused) return { fused, views: 0, spreadDeg: 0, progress: 0 }
+  const spreadDeg = viewSpreadDeg(fused.position, fused.inliers.map((e) => e.cameraPos))
+  const progress = Math.min(1, fused.used / NEEDED_VIEWS, spreadDeg / NEEDED_SPREAD_DEG)
+  return { fused, views: Math.min(fused.used, NEEDED_VIEWS), spreadDeg, progress }
 }
 
 export type XrPlaceState = { phase: 'scanning' | 'locked'; views: number; spreadDeg: number; progress: number; codeSeen: boolean }
