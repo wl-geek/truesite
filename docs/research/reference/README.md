@@ -1,6 +1,6 @@
-# Reference code (verified 11 Oct 2026, not yet wired into the app)
+# Reference code (verified 11 Oct 2026, now ported)
 
-This code ran and passed tests in the research workspace. Copy it into the paths named in the [contract](../../plans/2026-10-11-truesite-contract.md), adapt names, and keep the tests. Build tools ignore this folder.
+This code ran and passed tests in the research workspace. It has since been ported into the paths in the "Goes to" column (see the [contract](../../plans/2026-10-11-truesite-contract.md)); the copies here are the originals, kept for the record. Edit the app's files, not these. Build tools ignore this folder.
 
 | File | Goes to | Notes |
 |---|---|---|

@@ -111,13 +111,16 @@ Offline BIM pipeline (Python CLI): IFC → model.glb (IfcConvert, element GUIDs 
 ```
 truesite/
   Dockerfile · .dockerignore · .gcloudignore   (at the root: `gcloud run deploy --source .` only uses a root Dockerfile)
-  web/     Vite + TypeScript + React; three.js; src/{api,pose,camera,qr,scene,check,ui}
-  server/  FastAPI: app/{main,config,schemas,projects,gemini_client,fake_gemini,validate,severity,services,store,store_gcp,limits,uploads,spa}.py ; tests/
-  bim/     truesite_bim/{make_demo_model,convert,extract_elements,glb_reader,pipeline,qr_sheets}.py ·
-           models/<project>/{model.ifc, model.glb, elements.json, anchors.json}  (qr_sheets → printable PDFs: QR, 10 cm check bar, footprint outline)
+  web/     Vite + TypeScript + React; three.js; src/{api,pose,camera,calib,qr,scene,check,ui}
+  server/  FastAPI: app/{main,config,deps,schemas,projects,gemini_client,fake_gemini,validate,severity,services,store,store_gcp,limits,uploads,security_headers,spa}.py
+           · app/routes/{projects,check,ask,issues}.py ; tests/
+  bim/     truesite_bim/{make_demo_model,convert,extract_elements,glb_reader,pipeline,qr_sheets,rooftop,site}.py ·
+           models/<project>/{model.ifc, model.glb, elements.json, anchors.json, project.json}  for room1, rooftop and site
+           (qr_sheets → printable PDFs: QR, 10 cm check bar, footprint outline)
   infra/   gcloud.sh · lifecycle.json
+  eval/    overlay-accuracy and check-accuracy evaluation (README.md, summarise.py)
   brand/   logo set
-  docs/    specs/ (this file) · plans/ (implementation plan + interface contract)
+  docs/    specs/ (this file) · plans/ (implementation plan + interface contract) · research/
 ```
 
 ## 6. Data contracts
@@ -128,11 +131,11 @@ truesite/
 
 **anchors.json** (one entry per anchor)
 ```json
-{ "anchor_id": "A1", "project_id": "room1", "qr_size_m": 0.25,
-  "position_m": [2.40, 0.00, 1.20], "normal": [0, -1, 0], "up": [0, 0, 1], "scale": 1.0 }
+{ "anchor_id": "A1", "project_id": "room1", "qr_size_m": 0.23,
+  "position_m": [0.10, 1.50, 1.35], "normal": [1, 0, 0], "up": [0, 0, 1], "scale": 1.0, "label": "Wall sheet A3 (1:1)" }
 ```
 - `position_m` is the centre of the QR, `normal` points out of the code toward the viewer, and `up` is the code's top edge direction.
-- Room anchor: a 25 cm code on an A3 sheet on the wall.
+- Room anchors: a 23 cm code on an A3 sheet on the wall (A1), and a 16 cm code on an A4 floor sheet (L1).
 - Desk anchors: codes lie flat (`normal` = +Z) with `scale: 0.05` (1:20). The A4 judge sheet carries a 12 cm code and the A3 physical-model sheet a 15 cm code. Each sheet has its own `anchor_id`.
 
 **elements.json** (one entry per IFC element)
