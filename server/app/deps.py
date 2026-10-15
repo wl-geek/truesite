@@ -1,7 +1,7 @@
 """FastAPI dependencies shared by every router (contract section 10).
 
 Routers never import main.py: everything they need hangs off request.app.state, which
-create_app() fills in (settings, store, repo, client, now, check_limiter, ask_limiter).
+create_app() fills in (settings, store, repo, client, now, check_limiter, ask_limiter, issue_limiter).
 """
 from __future__ import annotations
 
@@ -50,6 +50,20 @@ ClientDep = Annotated[Any, Depends(get_client)]
 NowDep = Annotated[Callable[[], datetime], Depends(get_now)]
 
 
+def enforce_rate_limit(request: Request, limiter_name: str) -> None:
+    """Per-IP sliding window only: 429 rate_limited (+ Retry-After). For writes that make no
+    Gemini call (POST /api/issues), so they never touch the daily caps."""
+    state = request.app.state
+    ip = client_ip(request, state.settings.trusted_proxy_hops)
+    allowed, retry_after = getattr(state, limiter_name).hit(rate_key(ip))
+    if not allowed:
+        raise HTTPException(
+            status_code=429,
+            detail={"code": "rate_limited", "retry_after_s": retry_after},
+            headers={"Retry-After": str(retry_after)},
+        )
+
+
 def enforce_limits(request: Request, limiter_name: str, day_suffix: str, cap: int) -> None:
     """Per-IP sliding window, then the global daily cap. Call it after validating the request
     (so bad requests do not use up the caller's allowance) and before calling Gemini.
@@ -61,15 +75,8 @@ def enforce_limits(request: Request, limiter_name: str, day_suffix: str, cap: in
     Raises 429 rate_limited (+ Retry-After), 429 daily_cap, or 503 busy when the cap check
     itself fails (fail closed: no cap check, no Gemini call).
     """
+    enforce_rate_limit(request, limiter_name)
     state = request.app.state
-    ip = client_ip(request, state.settings.trusted_proxy_hops)
-    allowed, retry_after = getattr(state, limiter_name).hit(rate_key(ip))
-    if not allowed:
-        raise HTTPException(
-            status_code=429,
-            detail={"code": "rate_limited", "retry_after_s": retry_after},
-            headers={"Retry-After": str(retry_after)},
-        )
     day = state.now().astimezone(timezone.utc).strftime("%Y-%m-%d")
     try:
         ok, _count = state.store.try_consume_daily(f"{day}{day_suffix}", cap)

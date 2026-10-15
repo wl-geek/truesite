@@ -57,6 +57,20 @@ def test_runs_and_issues_carry_expire_at(store, fake_db) -> None:
     assert fake_db.docs["issues"][issue.id]["expire_at"] == T0 + timedelta(days=30)
 
 
+def test_listing_issues_reads_at_most_200_documents(store, fake_db) -> None:
+    for minutes in range(3):
+        store.save_issue(Issue(id=uuid.uuid4().hex, session_id="s1", project_id="room1", guid=GUID_WALL,
+                               title=f"t{minutes}", created_at=T0 + timedelta(minutes=minutes)))
+    assert [i.title for i in store.list_issues("s1", "room1")] == ["t2", "t1", "t0"]
+    assert [i.title for i in store.list_issues("s1", limit=2)] == ["t2", "t1"]
+    assert fake_db.query_limits and max(fake_db.query_limits) <= 200  # was 500 per GET (A-24)
+
+
+def test_a_run_id_with_a_slash_is_a_422_not_a_firestore_500(client) -> None:
+    body = {"project_id": "testproj", "guid": GUID_WALL, "title": "t", "run_id": "a/b" * 6}
+    assert client.post("/api/issues", json=body, headers={"X-Session-Id": new_session()}).status_code == 422
+
+
 def test_saved_result_gets_a_server_timestamp(store, fake_db) -> None:
     store.put_saved_result("room1-01", {"summary": "s"})
     doc = fake_db.docs["saved_results"]["room1-01"]

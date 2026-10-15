@@ -27,7 +27,8 @@ def test_whoami_uses_the_right_most_forwarded_entry(client: TestClient, xff: str
 
 
 def test_app_state_is_filled(dist: Path, models: Path, store: InMemoryStore, clock: Clock) -> None:
-    settings = Settings(static_dir=dist, models_dir=models, checks_per_ip_per_hour=7, asks_per_ip_per_hour=9)
+    settings = Settings(static_dir=dist, models_dir=models, checks_per_ip_per_hour=7, asks_per_ip_per_hour=9,
+                        issues_per_ip_per_hour=11)
     client = object()
     app = create_app(settings, store=store, client=client, now=clock.now)
     s = app.state
@@ -35,7 +36,21 @@ def test_app_state_is_filled(dist: Path, models: Path, store: InMemoryStore, clo
     assert isinstance(s.repo, ProjectRepo) and s.repo.models_dir == models
     assert isinstance(s.check_limiter, SlidingWindowLimiter) and s.check_limiter.limit == 7
     assert isinstance(s.ask_limiter, SlidingWindowLimiter) and s.ask_limiter.limit == 9
-    assert s.check_limiter.window_s == s.ask_limiter.window_s == 3600
+    assert isinstance(s.issue_limiter, SlidingWindowLimiter) and s.issue_limiter.limit == 11
+    assert s.check_limiter.window_s == s.ask_limiter.window_s == s.issue_limiter.window_s == 3600
+
+
+@pytest.mark.parametrize("path", ["/api/docs", "/api/openapi.json"])
+def test_api_docs_are_off_by_default(client: TestClient, path: str) -> None:
+    # Swagger UI loads an unpinned script from jsDelivr on our origin (A-71).
+    r = client.get(path)
+    assert r.status_code == 404 and r.json() == {"detail": "Not Found"}
+
+
+def test_api_docs_flag_turns_them_on(make_client) -> None:
+    c = make_client(api_docs=True)
+    assert c.get("/api/docs").status_code == 200 and "swagger" in c.get("/api/docs").text.lower()
+    assert c.get("/api/openapi.json").json()["info"]["title"] == "TrueSite"
 
 
 def test_defaults_without_arguments(dist: Path, models: Path) -> None:

@@ -10,7 +10,7 @@ test-web:
 
 # Local dev: API on :8000 with fake Gemini + in-memory store; Vite proxies /api to it.
 dev-server:
-	cd server && GEMINI_MODE=fake uv run uvicorn --factory app.main:create_app --reload --port 8000
+	cd server && GEMINI_MODE=fake API_DOCS=1 uv run uvicorn --factory app.main:create_app --reload --port 8000
 dev-web:
 	cd web && npm run dev
 build:

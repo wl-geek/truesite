@@ -60,3 +60,40 @@ def test_save_rejects_unknown_things(client):
 
 def test_demo_session_cannot_be_claimed(client):
     assert client.get("/api/issues", headers=hdr("demo")).status_code == 422
+
+
+# ---- write limits (A-24) and run_id shape (A-69) ------------------------------------------------
+BASE = {"project_id": "testproj", "guid": GUID_WALL, "title": "Partition P-01 looks thicker than designed"}
+
+
+def test_issue_writes_are_rate_limited_per_ip_without_the_gemini_counter(make_client, store, clock):
+    c = make_client(issues_per_ip_per_hour=3)
+    s = new_session()
+    assert c.post("/api/issues", json={**BASE, "guid": "0" * 22}, headers=hdr(s)).status_code == 404  # bad: free
+    for _ in range(3):
+        assert c.post("/api/issues", json=BASE, headers=hdr(s)).status_code == 201
+    r = c.post("/api/issues", json=BASE, headers=hdr(new_session()))  # a new session does not reset it
+    assert r.status_code == 429 and r.json()["detail"]["code"] == "rate_limited"
+    assert r.headers["Retry-After"] == "3600" and r.json()["detail"]["retry_after_s"] == 3600
+    assert c.post("/api/issues", json=BASE, headers={**hdr(s), "X-Forwarded-For": "203.0.113.8"}).status_code == 201
+    assert store.daily == {}  # no Gemini call, so no daily-cap counter
+    clock.mono += 3600
+    assert c.post("/api/issues", json=BASE, headers=hdr(s)).status_code == 201
+
+
+def test_a_session_can_keep_a_limited_number_of_issues(make_client):
+    c = make_client(issues_per_session=2)
+    s = new_session()
+    assert c.post("/api/issues", json=BASE, headers=hdr(s)).status_code == 201
+    assert c.post("/api/issues", json={**BASE, "project_id": "testproj"}, headers=hdr(s)).status_code == 201
+    r = c.post("/api/issues", json=BASE, headers=hdr(s))
+    assert r.status_code == 429 and r.json() == {"detail": {"code": "issue_cap"}}
+    assert len(c.get("/api/issues", headers=hdr(s)).json()["issues"]) == 2
+    assert c.post("/api/issues", json=BASE, headers=hdr(new_session())).status_code == 201
+
+
+def test_run_id_must_look_like_a_run_id(client):
+    s = new_session()
+    for bad in ("x/y" * 6, "a" * 33, "short"):
+        assert client.post("/api/issues", json={**BASE, "run_id": bad}, headers=hdr(s)).status_code == 422, bad
+        assert client.post("/api/issues/draft", json={"run_id": bad, "mark": 1}, headers=hdr(s)).status_code == 422, bad
