@@ -17,7 +17,7 @@ from pydantic import ValidationError
 from ..deps import NowDep, RepoDep, SessionId, SettingsDep, StoreDep, enforce_limits
 from ..gemini_client import GeminiError
 from ..projects import UnknownProject
-from ..schemas import SAMPLE_ID_PATTERN, CheckContext, CheckResponse, CheckRun
+from ..schemas import RUN_ID_PATTERN, SAMPLE_ID_PATTERN, CheckContext, CheckResponse, CheckRun
 from ..services import client_for, http_error_for, make_checker
 from ..store import blob_key, content_type_for
 from ..uploads import read_image
@@ -25,7 +25,6 @@ from ..uploads import read_image
 log = logging.getLogger("truesite.check")
 router = APIRouter()
 
-RUN_ID_PATTERN = r"^[A-Za-z0-9_-]{16,32}$"
 MAX_CONTEXT_CHARS = 64 * 1024
 
 
