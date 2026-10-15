@@ -30,4 +30,6 @@ export interface QrResponse {
   ms: number
   detection: QrDetection | null
   buffer: ArrayBuffer
+  /** Set when the reader failed (e.g. the .wasm didn't load); `detection` is then null. */
+  error?: string
 }

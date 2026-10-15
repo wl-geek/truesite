@@ -2,18 +2,29 @@
 // The .wasm is bundled by Vite (?url) and served from our own origin; without locateFile,
 // zxing-wasm would fetch it from the jsDelivr CDN at runtime.
 import wasmUrl from 'zxing-wasm/reader/zxing_reader.wasm?url'
-import { prepareZXingModule, readBarcodes } from 'zxing-wasm/reader'
-import type { QrRequest, QrResponse } from './protocol'
-import { ZXING_OPTIONS, toDetection } from './zxingOptions'
+import { prepareZXingModule, purgeZXingModule, readBarcodes } from 'zxing-wasm/reader'
+import type { QrRequest } from './protocol'
+import { createQrHandler } from './qrHandler'
+import { ZXING_OPTIONS } from './zxingOptions'
 
-prepareZXingModule({
-  overrides: { locateFile: (path: string, prefix: string) => (path.endsWith('.wasm') ? wasmUrl : prefix + path) },
+function prepare(): void {
+  prepareZXingModule({
+    overrides: { locateFile: (path: string, prefix: string) => (path.endsWith('.wasm') ? wasmUrl : prefix + path) },
+  })
+}
+prepare()
+
+// A failed load (flaky network, stale asset after a redeploy) answers "no detection" with the error
+// and is retried on the next frame, instead of leaving the request unanswered.
+const handle = createQrHandler({
+  read: (img) => readBarcodes(img, ZXING_OPTIONS),
+  reset: () => {
+    purgeZXingModule()
+    prepare()
+  },
 })
 
 self.onmessage = async (e: MessageEvent<QrRequest>) => {
-  const { id, width, height, buffer } = e.data
-  const t0 = performance.now()
-  const results = await readBarcodes({ data: new Uint8ClampedArray(buffer), width, height, colorSpace: 'srgb' } as ImageData, ZXING_OPTIONS)
-  const res: QrResponse = { id, ms: performance.now() - t0, detection: toDetection(results), buffer }
-  self.postMessage(res, { transfer: [buffer] })
+  const res = await handle(e.data)
+  self.postMessage(res, { transfer: [res.buffer] })
 }
