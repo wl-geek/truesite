@@ -25,6 +25,7 @@ import { EvidenceView } from './EvidenceView'
 import { FindingsPanel } from './FindingsPanel'
 import { IssueDialog } from './IssueDialog'
 import { Link } from './Link'
+import { UNKNOWN_ANCHOR_MESSAGE, isUnknownProject, liveLoadErrorMessage } from './liveFormat'
 import { QualityBadge } from './QualityBadge'
 
 export type LivePageProps = { projectId: string; anchorId: string }
@@ -49,6 +50,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   const qrRef = useRef<QrWorkerClient | null>(null)
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [projectMissing, setProjectMissing] = useState(false)
   const [camError, setCamError] = useState<CameraError['kind'] | null>(null)
   const [starting, setStarting] = useState(false)
   const [running, setRunning] = useState(false)
@@ -83,7 +85,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
     ;(async () => {
       const project = await getProject(projectId)
       const anchor = findAnchor(project, anchorId)
-      if (!anchor) throw new Error("This QR code isn't set up for this project.")
+      if (!anchor) throw new Error(UNKNOWN_ANCHOR_MESSAGE)
       model = await loadModel(project.model_url, new Set(project.elements.map((e) => e.guid)))
       if (new URLSearchParams(window.location.search).has('eval')) {
         // ?eval=1: green crosses at the surveyed points in web/public/eval/points.json (spec 10)
@@ -93,7 +95,9 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
       if (cancelled) disposeModel(model)
       else setLoaded({ project, anchor, model })
     })().catch((e: unknown) => {
-      if (!cancelled) setError(e instanceof Error && e.message.startsWith('This QR') ? e.message : "Couldn't load the project. Check your connection and try again.")
+      if (cancelled) return
+      setError(liveLoadErrorMessage(e))
+      setProjectMissing(isUnknownProject(e))
     })
     return () => {
       cancelled = true
@@ -418,7 +422,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
             {camError && <p className="status status-error" role="alert">{CAMERA_ERRORS[camError]}</p>}
             {(camError || error) && (
               <p className="live-links">
-                <Link to={viewerPathFor(projectId)} className="btn">Open the model viewer</Link> <Link to="/samples" className="btn">Try sample photos</Link>
+                <Link to={projectMissing ? '/model' : viewerPathFor(projectId)} className="btn">Open the model viewer</Link> <Link to="/samples" className="btn">Try sample photos</Link>
               </p>
             )}
           </div>
