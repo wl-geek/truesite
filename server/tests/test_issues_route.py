@@ -1,5 +1,5 @@
 """Issues: Gemini drafts from a stored finding, save, list, session scoping and demo issues."""
-from .conftest import GUID_DOOR, GUID_WALL, new_session
+from .conftest import DEMO_ISSUES, GUID_DOOR, GUID_WALL, new_session, write_project
 from .test_check_route import post as post_check
 
 
@@ -44,6 +44,21 @@ def test_save_and_list_with_photo_and_scoping(client):
     assert len(mine["demo"]) == 2 and all(i["session_id"] == "demo" for i in mine["demo"])
     other = client.get("/api/issues?project_id=testproj", headers=hdr(new_session())).json()
     assert other["issues"] == [] and len(other["demo"]) == 2
+
+
+def test_list_without_a_project_returns_every_project(make_client, models):
+    # The Issues page lists one session's issues across all projects (A-04).
+    write_project(models, "second", demo_issues=[{**i, "project_id": "second"} for i in DEMO_ISSUES[:1]])
+    client = make_client()
+    s = new_session()
+    for project_id in ("testproj", "second"):
+        r = client.post("/api/issues", json={"project_id": project_id, "guid": GUID_WALL, "title": f"In {project_id}"}, headers=hdr(s))
+        assert r.status_code == 201, r.text
+    everything = client.get("/api/issues", headers=hdr(s)).json()
+    assert sorted(i["project_id"] for i in everything["issues"]) == ["second", "testproj"]
+    assert sorted(i["project_id"] for i in everything["demo"]) == ["second", "testproj", "testproj"]
+    one = client.get("/api/issues?project_id=second", headers=hdr(s)).json()
+    assert [i["project_id"] for i in one["issues"] + one["demo"]] == ["second", "second"]
 
 
 def test_save_rejects_unknown_things(client):

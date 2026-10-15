@@ -120,6 +120,13 @@ describe('api client', () => {
     expect(JSON.parse(calls[1].init.body as string)).toEqual({ run_id: 'r1', mark: 3 })
   })
 
+  it('lists issues from every project when no project is given', async () => {
+    mockFetch(() => jsonResponse(200, { issues: [], demo: [] }))
+    await listIssues()
+    await listIssues('rooftop')
+    expect(calls.map((c) => c.url)).toEqual(['/api/issues', '/api/issues?project_id=rooftop'])
+  })
+
   it('fetches run images with the session header and returns an object URL', async () => {
     mockFetch(() => new Response(new Blob(['jpeg']), { status: 200, headers: { 'Content-Type': 'image/jpeg' } }))
     const url = await fetchRunImage('r1', 'photo.jpg')

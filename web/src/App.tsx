@@ -23,7 +23,7 @@ export default function App() {
         </nav>
       </header>
       {route.name === 'home' && <HomePage />}
-      {route.name === 'viewer' && <ViewerPage />}
+      {route.name === 'viewer' && <ViewerPage key={route.projectId ?? ''} projectId={route.projectId} />}
       {route.name === 'live' && <LivePage key={`${route.projectId}/${route.anchorId}`} projectId={route.projectId} anchorId={route.anchorId} />}
       {route.name === 'samples' && <SamplesPage />}
       {route.name === 'issues' && <IssuesPage />}

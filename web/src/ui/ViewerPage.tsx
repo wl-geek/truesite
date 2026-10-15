@@ -14,7 +14,7 @@ export const DEFAULT_PROJECT_ID = 'room1'
 type Loaded = { project: ProjectManifest; model: LoadedModel }
 
 /** Model viewer (works everywhere): orbit the model, tap an element to see its properties. */
-export function ViewerPage() {
+export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const viewerRef = useRef<Viewer | null>(null)
   const [loaded, setLoaded] = useState<Loaded | null>(null)
@@ -32,7 +32,7 @@ export function ViewerPage() {
     let model: LoadedModel | null = null
     setError(null)
     ;(async () => {
-      const project = await getProject(new URLSearchParams(window.location.search).get('project') || DEFAULT_PROJECT_ID)
+      const project = await getProject(projectId)
       model = await loadModel(project.model_url, new Set(project.elements.map((e) => e.guid)))
       if (cancelled) disposeModel(model)
       else setLoaded({ project, model })
@@ -43,7 +43,7 @@ export function ViewerPage() {
       cancelled = true
       if (model) disposeModel(model)
     }
-  }, [attempt])
+  }, [attempt, projectId])
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -100,7 +100,7 @@ export function ViewerPage() {
       )}
       {notice && <p className="note viewer-notice" role="status">{notice}</p>}
       {draftFor && (
-        <IssueDialog open projectId={loaded?.project.project_id ?? DEFAULT_PROJECT_ID} runId={lastCheck?.runId ?? null} mark={draftFor.mark} finding={draftFor}
+        <IssueDialog open projectId={loaded?.project.project_id ?? projectId} runId={lastCheck?.runId ?? null} mark={draftFor.mark} finding={draftFor}
           element={elements.get(draftFor.guid) ?? null} onClose={() => setDraftFor(null)}
           onSaved={() => { setDraftFor(null); setNotice('Issue saved. See it under Issues.') }} />
       )}
