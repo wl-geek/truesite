@@ -176,8 +176,11 @@ Boxes use Gemini's convention: `[ymin, xmin, ymax, xmax]`, normalised to 0–100
 - If a finding is missing for a mark, the server adds `cannot_judge` ("not assessed").
 - Findings for unknown marks, and duplicates, are dropped and logged.
 - Boxes are clamped to 0–1000 and text is truncated to its limit.
-- Confidence below 0.5 becomes `cannot_judge`.
+- Confidence below 0.5 becomes `cannot_judge`, with the explanation "Low confidence." and a warning (the guess for the old status is not shown).
 - `unexpected` is capped at 10.
+- NaN or infinite numbers in boxes and offsets drop that box or offset; marks sent as `3.0` or `"3"` count as 3.
+- Each mark's element must be in the project (else 422 `unknown_element`, before any limit is used). Names and classes come from the project, not from the client's context.
+- A sample's saved result is refreshed only by a check of the shipped sample photo itself (same sha256, same project and anchor as its `meta.json`).
 - **Severity is set by code, never by the model:**
 
 | Element | missing · misplaced · different_from_design |

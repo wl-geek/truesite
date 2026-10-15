@@ -110,7 +110,7 @@ Errors are FastAPI `HTTPException` with `detail = {"code": <code>, ...}`. Paths 
 | GET `/api/whoami` | — | `{"ip", "x_forwarded_for", "peer"}` (day-1 X-Forwarded-For check) | — |
 | GET `/api/projects/{project_id}` | — | `ProjectManifest` | 404 `unknown_project` |
 | GET `/api/projects/{project_id}/model.glb` | — | glb (`model/gltf-binary`, ETag) | 404 |
-| POST `/api/check` | multipart: `photo` (JPEG ≤ 4 MiB), `render` (PNG ≤ 4 MiB), `context` (JSON string → `CheckContext`); header `X-Session-Id` | `CheckResponse` | 413 · 415 · 422 (loc `["body","context",…]`) · 429 `rate_limited` (+`retry_after_s`, `Retry-After`) · 429 `daily_cap` · 503 `busy` (cap check failed) · 503 `model_unavailable` (timeout / unavailable / rate_limited) · 502 `model_bad_output` · 422 `model_blocked` · 500 `model_bad_request` |
+| POST `/api/check` | multipart: `photo` (JPEG ≤ 4 MiB), `render` (PNG ≤ 4 MiB), `context` (JSON string → `CheckContext`); header `X-Session-Id` | `CheckResponse` | 413 · 415 · 422 (loc `["body","context",…]`) · 422 `unknown_element` (a mark's guid is not in the project; before any limit) · 429 `rate_limited` (+`retry_after_s`, `Retry-After`) · 429 `daily_cap` · 503 `busy` (cap check failed) · 503 `model_unavailable` (timeout / unavailable / rate_limited) · 502 `model_bad_output` · 422 `model_blocked` · 500 `model_bad_request` |
 | GET `/api/runs/{run_id}/{photo.jpg\|render.png}` | header `X-Session-Id` | image bytes (owner session only) | 404 |
 | GET `/api/saved-results/{sample_id}` | — | `CheckResult` with `saved_at` set | 404 |
 | POST `/api/ask` | `AskRequest`; header `X-Session-Id` | `AskAnswer` | 404 `unknown_element` · 429 · 503/502/422/500 as for check |
@@ -210,6 +210,7 @@ def severity_for(element: Element, status: Status) -> Severity | None   # None f
 # app/validate.py
 CONFIDENCE_FLOOR = 0.5
 def repair_check(raw: dict, ctx: CheckContext, elements: dict[str, Element]) -> CheckResult
+def with_project_identity(ctx: CheckContext, elements: dict[str, Element]) -> CheckContext   # mark names/classes from the project
 # app/services.py
 Checker = Callable[[bytes, bytes, CheckContext], dict]        # returns CheckResult.model_dump(mode="json")
 def make_checker(repo: ProjectRepo, client: Any) -> Checker   # gemini_client.check_asbuilt -> repair_check -> + usage/model_version
@@ -312,6 +313,8 @@ export function runCheck(input: CheckInput): Promise<{ response: CheckResponse |
 ```
 
 Samples are captured with the app itself (dev-only "Save as sample" button behind `?dev=1`). They are regenerated whenever the model's GUIDs change.
+
+**Saved results.** A successful POST `/api/check` with `sample_id` stores that sample's saved result (overwriting the previous one) only when the uploaded photo is the deployed `static_dir/samples/<sample_id>/photo.jpg` (same sha256) and the context's `project_id` and `anchor_id` match its `meta.json`. Any other upload is checked as usual and stores nothing under the sample. A failed saved-result write is logged and does not change `saved`, which reports the run only.
 
 ## 9. Commands
 
