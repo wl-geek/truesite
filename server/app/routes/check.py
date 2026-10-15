@@ -1,12 +1,16 @@
 """POST /api/check, GET /api/runs/{run_id}/{name}, GET /api/saved-results/{sample_id} (Part 3).
 
-Flow: validate uploads and context -> project exists -> per-IP limit + daily cap -> Gemini
-(in the threadpool) -> repair + severity -> best-effort persistence -> CheckResponse.
+Flow: validate uploads and context -> project and every mark's element exist -> per-IP limit +
+daily cap -> Gemini (in the threadpool) -> repair + severity -> best-effort persistence ->
+CheckResponse.
 """
 from __future__ import annotations
 
+import hashlib
+import json
 import logging
 import secrets
+from pathlib import Path as FsPath
 from typing import Annotated, Literal
 
 from fastapi import APIRouter, File, Form, HTTPException, Path, Request, Response, UploadFile
@@ -21,11 +25,29 @@ from ..schemas import RUN_ID_PATTERN, SAMPLE_ID_PATTERN, CheckContext, CheckResp
 from ..services import client_for, http_error_for, make_checker
 from ..store import blob_key, content_type_for
 from ..uploads import read_image
+from ..validate import with_project_identity
 
 log = logging.getLogger("truesite.check")
 router = APIRouter()
 
 MAX_CONTEXT_CHARS = 64 * 1024
+
+
+def is_shipped_sample(static_dir: FsPath, ctx: CheckContext, photo: bytes) -> bool:
+    """True when `photo` is the deployed static_dir/samples/<sample_id>/photo.jpg (same sha256) and
+    the context's project and anchor match that sample's meta.json. Only such a check may refresh
+    the saved result that every /samples visitor falls back to (A-06)."""
+    if not ctx.sample_id:
+        return False
+    folder = static_dir / "samples" / ctx.sample_id  # SAMPLE_ID_PATTERN allows no "/" and no "."
+    try:
+        shipped = (folder / "photo.jpg").read_bytes()
+        meta = json.loads((folder / "meta.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return False
+    return (isinstance(meta, dict) and meta.get("project_id") == ctx.project_id
+            and meta.get("anchor_id") == ctx.anchor_id
+            and hashlib.sha256(shipped).digest() == hashlib.sha256(photo).digest())
 
 
 def parse_context(raw: str) -> CheckContext:
@@ -52,9 +74,12 @@ async def check(
     render_bytes = await read_image(render, field="render", kind="png", limit=settings.max_upload_bytes)
     ctx = parse_context(context)
     try:
-        repo.elements_by_guid(ctx.project_id)
+        elements = repo.elements_by_guid(ctx.project_id)
     except UnknownProject:
         raise HTTPException(status_code=404, detail={"code": "unknown_project"}) from None
+    if any(v.guid not in elements for v in ctx.visible):
+        raise HTTPException(status_code=422, detail={"code": "unknown_element"})
+    ctx = with_project_identity(ctx, elements)  # names and classes from the project, not the client
 
     await run_in_threadpool(enforce_limits, request, "check_limiter", "", settings.daily_check_cap)
 
@@ -77,11 +102,16 @@ async def check(
                        created_at=now(), context=ctx.model_dump(mode="json"), result=result,
                        photo_key=photo_key, render_key=render_key)
         await run_in_threadpool(store.save_check_run, run)
-        if ctx.sample_id:
-            await run_in_threadpool(store.put_saved_result, ctx.sample_id, {**result, "saved_at": now().isoformat()})
     except Exception:  # noqa: BLE001 - log and carry on
         log.exception("saving check run %s failed", run_id)
         saved = False
+
+    # Separate from the run, so `saved` says only whether the run (photo, issues) was stored.
+    if await run_in_threadpool(is_shipped_sample, settings.static_dir, ctx, photo_bytes):
+        try:
+            await run_in_threadpool(store.put_saved_result, ctx.sample_id, {**result, "saved_at": now().isoformat()})
+        except Exception:  # noqa: BLE001 - the fallback copy is a nice-to-have
+            log.exception("saving the result for sample %s failed", ctx.sample_id)
 
     return CheckResponse(run_id=run_id, saved=saved, photo_url=f"/api/runs/{run_id}/photo.jpg" if saved else None,
                          result=result)
