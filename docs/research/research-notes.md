@@ -420,7 +420,7 @@ Worst case, capped by `max_output_tokens=8192`, is about 3.5 cents per check, or
 - The docs now default to client.interactions.create(...). On Agent Platform the Interactions API is Preview while GenerateContent is GA, so keep models.generate_content for the config-only backend switch.
 - The SDK client is sync. In FastAPI, use plain `def` endpoints (threadpool) or client.aio.models.generate_content in async endpoints, so the event loop isn't blocked for 5-10 s.
 - The Developer API free tier for 3.8 Flash uses content to improve Google products. Use a billing-enabled key for the public demo, as the spec says.
-- Every bad-output retry is billed: Agent Platform charges each 200 response. gemini_client sums usage across attempts.
+- Every bad-output retry is billed: Agent Platform charges each 200 response. gemini_client sums usage across attempts, and does not retry output cut off at MAX_TOKENS (the retry would be cut off and billed again).
 - The Gemini API available-regions list (updated Apr 2026) includes Singapore, Taiwan, Japan, Malaysia and Thailand; Myanmar is not listed. That matters only if someone calls the Developer API directly from there; Cloud Run in asia-southeast1 is fine.
 - gcloud is not installed on this machine. Day-1 Agent Platform setup needs gcloud installed, or Cloud Shell or the console.
 
@@ -450,8 +450,8 @@ Size the per-request schema to the mark count: findings maxItems = n, mark maxim
 - bad_output: 502
 - blocked: 422
 - bad_request: 500, and log it (it is our bug, e.g. a schema or parameter error)
-The SDK does one HTTP retry for 408/429/5xx and timeouts; gemini_client adds one retry for unparseable JSON. Together these match spec section 8.
-- **Cost tracking:** Store out['usage'] (prompt, output and thought tokens, plus cost_usd_est) with each check run in Firestore. On day 3, replace the 1.1–1.7 cent estimate with measured numbers and compare with billing. Keep the 300/day cap: the worst case with max_output_tokens=8192 is about $10.5/day. Update PRICE_* if the project uses a non-global endpoint (+10%).
+The SDK does one HTTP retry for 408/429/5xx and timeouts; gemini_client adds one retry for unparseable JSON, except output cut off at MAX_TOKENS. A candidate stopped with finish_reason SAFETY, PROHIBITED_CONTENT, BLOCKLIST or SPII is reported as blocked and not retried; RECITATION is retried. Together these match spec section 8.
+- **Cost tracking:** Store out['usage'] (prompt, output and thought tokens, plus cost_usd_est) with each check run in Firestore. On day 3, replace the 1.1–1.7 cent estimate with measured numbers and compare with billing. The worst case with max_output_tokens=8192 is about $10.5/day for 300 checks; spec section 9 has the full figure with Ask, Draft (max_output_tokens=2048) and the parse retry. Update PRICE_* if the project uses a non-global endpoint (+10%).
 - **Evaluation knobs (day 3):** If check quality is weak, first try thinking_level MEDIUM, which is the model default and adds output cost. Next try a per-part ULTRA_HIGH on the photo only: Part.from_bytes(..., media_resolution=types.PartMediaResolutionLevel.MEDIA_RESOLUTION_ULTRA_HIGH), +1120 tokens, about +$0.0008. Keep global HIGH as the baseline because per-part resolution is experimental.
 - **Ask and issue drafting:** ask_element restricts cited_properties to a string enum of the element's real field names: core fields plus props keys, including the TrueSite_Notes ones. That makes citations grounded by construction. draft_issue never asks for severity; severity stays in code.
 
