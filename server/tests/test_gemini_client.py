@@ -451,6 +451,24 @@ def test_make_client_agent_platform_from_env(monkeypatch, flag):
     assert client._api_client._http_options.base_url == "https://aiplatform.googleapis.com/"
 
 
+def test_enterprise_flag_beats_an_api_key(monkeypatch):
+    # Why infra/gcloud.sh GEMINI_BACKEND=apikey must also set GOOGLE_GENAI_USE_ENTERPRISE=false.
+    monkeypatch.setenv("GOOGLE_GENAI_USE_ENTERPRISE", "true")
+    monkeypatch.setenv("GOOGLE_CLOUD_PROJECT", "truesite-demo")
+    monkeypatch.setenv("GEMINI_API_KEY", "from-secret")
+    assert gc.describe_backend(gc.make_client())["backend"] == "agent_platform"
+
+
+def test_api_key_backend_as_deployed_by_gcloud_sh(monkeypatch):
+    # GEMINI_BACKEND=apikey: the flag is false, the key comes from Secret Manager, the project stays set.
+    monkeypatch.setenv("GOOGLE_GENAI_USE_ENTERPRISE", "false")
+    monkeypatch.setenv("GOOGLE_CLOUD_PROJECT", "truesite-demo")
+    monkeypatch.setenv("GEMINI_API_KEY", "from-secret")
+    client = gc.make_client()
+    assert gc.describe_backend(client) == {"backend": "gemini_api"}
+    assert client._api_client.api_key == "from-secret"
+
+
 def test_agent_platform_location_defaults_to_global(monkeypatch):
     monkeypatch.setenv("GOOGLE_GENAI_USE_ENTERPRISE", "true")
     monkeypatch.setenv("GOOGLE_CLOUD_PROJECT", "truesite-demo")
