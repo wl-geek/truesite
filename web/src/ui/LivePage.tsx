@@ -238,7 +238,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
       setShowResults(true)
       setSelectedMark(null)
       if (pinsRef.current) disposePins(pinsRef.current)
-      pinsRef.current = makePins(result.findings, elements)
+      pinsRef.current = makePins(result.findings, elements, { dim: result.image_quality !== 'good' })
       loaded.model.ifcRoot.add(pinsRef.current)
       saveLastCheck(loaded.project.project_id, { result, runId, at: new Date().toISOString() })
     } catch (e) {

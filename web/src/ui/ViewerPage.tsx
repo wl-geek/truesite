@@ -64,7 +64,7 @@ export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: str
     // Pins from this session's last as-built check (spec 4.1: findings pinned on the 3D model).
     const last = loadLastCheck(loaded.project.project_id)
     setLastCheck(last)
-    const pins = last ? makePins(last.result.findings, new Map(loaded.project.elements.map((e) => [e.guid, e]))) : null
+    const pins = last ? makePins(last.result.findings, rows, { dim: last.result.image_quality !== 'good' }) : null
     if (pins) loaded.model.ifcRoot.add(pins)
     return () => {
       if (pins) disposePins(pins)

@@ -11,14 +11,17 @@ export function findingAnchorPoint(el: Element): [number, number, number] {
   return [(x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2]
 }
 
-export function makePins(findings: readonly Finding[], elements: ReadonlyMap<string, Element>, radiusM = 0.08): Group {
+/** `dim`: the check's photo wasn't good enough (image_quality not "good"), so its pins must not look like firm deviations. */
+export function makePins(findings: readonly Finding[], elements: ReadonlyMap<string, Element>,
+  { radiusM = 0.08, dim = false }: { radiusM?: number; dim?: boolean } = {}): Group {
   const group = new Group()
   group.name = 'finding-pins'
   const geometry = new SphereGeometry(radiusM, 16, 12)
+  const opacity = dim ? 0.3 : 0.95
   for (const f of findings) {
     const el = elements.get(f.guid)
     if (!el || !f.severity) continue
-    const pin = new Mesh(geometry, new MeshBasicMaterial({ color: COLOURS[f.severity], depthTest: false, transparent: true, opacity: 0.95 }))
+    const pin = new Mesh(geometry, new MeshBasicMaterial({ color: COLOURS[f.severity], depthTest: false, transparent: true, opacity }))
     pin.position.set(...findingAnchorPoint(el))
     pin.renderOrder = 10
     pin.userData = { mark: f.mark, guid: f.guid }
