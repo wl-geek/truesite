@@ -28,6 +28,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -43,6 +44,9 @@ DESK_BASE_Z = -0.15  # model Z of the paper plane: the demo slab's underside sit
 WALL_POSITION = (0.1, 1.5, 1.35)  # placeholder until the survey: west partition inner face, code centre
 WALL_NORMAL = (1.0, 0.0, 0.0)
 WALL_UP = (0.0, 0.0, 1.0)
+# The start buttons differ: Android (WebXR) leads with "Start AR (place by code)", iPhone only has "Start camera".
+ANDROID_STEP = "Android: scan, tap Start AR, move left and right until the circle fills."
+IPHONE_LIFE_SIZE_STEP = "iPhone: scan, tap Start camera, start within 1 m, then step back."
 
 
 @dataclass
@@ -96,7 +100,8 @@ def make_sheets(
             model_origin_mm=d1_origin,
             instructions=[
                 "Lay the sheet flat on a table in good light.",
-                "Scan the code, tap Start camera, aim at the code.",
+                ANDROID_STEP,
+                "iPhone: scan, tap Start camera, aim at the code.",
                 "The 1:20 model appears on this half of the page.",
                 *common,
             ],
@@ -114,14 +119,15 @@ def make_sheets(
         ),
         Sheet(
             "L1", "floor", "Life-size floor sheet A4 (1:1)", "TrueSite floor anchor L1 - life size 1:1", a4, 160.0,
-            (105.0, 180.0), check_bar_mm=(55.0, 40.0), text_box_mm=(15.0, 80.0),
+            (105.0, 180.0), check_bar_mm=(55.0, 18.0), text_box_mm=(15.0, 80.0),
             position_m=[round(footprint_m[0] / 2, 4), round(footprint_m[1] / 2, 4), 0.0], normal=[0, 0, 1], up=[0, 1, 0],
             scale=1.0,
             instructions=[
                 "Lay the sheet flat on the floor in an open space.",
                 "The top edge points to the room's north wall.",
-                "Scan, Start camera, start within 1 m, then step back:",
-                "the demo room appears around you at real size.",
+                ANDROID_STEP,
+                IPHONE_LIFE_SIZE_STEP,
+                "The demo room appears around you at real size.",
                 *common,
             ],
         ),
@@ -196,7 +202,7 @@ def draw_footprint(c: canvas.Canvas, sheet: Sheet) -> None:
     c.line(ox * mm, oy * mm, ox * mm, (oy + 15) * mm)
     c.drawString((ox + 16) * mm, (oy - 1) * mm, "+X")
     c.drawString((ox - 1) * mm, (oy + 16) * mm, "+Y")
-    c.drawString((ox + 1.5) * mm, (oy - 4) * mm, "model origin (0, 0)")
+    c.drawString((ox + 1.5) * mm, (oy - 5) * mm, "model origin (0, 0)")  # below the "+X" label, not touching it
 
 
 def anchor_entry(sheet: Sheet, project_id: str) -> dict:
@@ -240,9 +246,24 @@ def render_sheet(sheet: Sheet, url: str, out_pdf: Path) -> dict:
             "module_mm": round(mod, 3), "quiet_zone_modules_on_paper": round(quiet_avail, 2)}
 
 
+def https_base_url(value: str) -> str:
+    """argparse type for --base-url: phones open the camera only on a secure origin, so http:// sheets can never work."""
+    if not value.startswith("https://"):
+        raise argparse.ArgumentTypeError(f"{value!r} must start with https://")
+    return value.rstrip("/")
+
+
+def warn_thin_quiet_zone(info: dict) -> None:
+    """Warn on stderr (stdout carries the JSON report) when the paper leaves less than the ISO quiet zone."""
+    if info["quiet_zone_modules_on_paper"] < QUIET_MODULES:
+        print(f"WARNING {info['anchor_id']}: only {info['quiet_zone_modules_on_paper']} modules of white paper "
+              f"around the code (ISO asks for {QUIET_MODULES}); mount it on a light surface.", file=sys.stderr)
+
+
 def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(description="TrueSite printable QR anchor sheets and anchors.json")
-    ap.add_argument("--base-url", help="https://<app-host> (no trailing path); omit to write anchors.json only")
+    ap.add_argument("--base-url", type=https_base_url,
+                    help="https://<app-host> (no trailing path); omit to write anchors.json only")
     ap.add_argument("--project", default="room1")
     ap.add_argument("--out-dir", type=Path, default=Path("sheets"))
     ap.add_argument("--anchors-out", type=Path, help="write anchors.json for all sheets")
@@ -258,13 +279,10 @@ def main(argv: list[str] | None = None) -> None:
     sheets = make_sheets(tuple(a.footprint), a.base_z, tuple(a.wall_position), tuple(a.wall_normal), tuple(a.wall_up))
     report = []
     if a.base_url is not None:
-        base = a.base_url.rstrip("/")
         for sh in sheets:
-            info = render_sheet(sh, f"{base}/a/{a.project}/{sh.anchor_id}", a.out_dir / f"{a.project}-{sh.anchor_id}.pdf")
+            info = render_sheet(sh, f"{a.base_url}/a/{a.project}/{sh.anchor_id}", a.out_dir / f"{a.project}-{sh.anchor_id}.pdf")
             report.append(info)
-            if info["quiet_zone_modules_on_paper"] < QUIET_MODULES:
-                print(f"WARNING {sh.anchor_id}: only {info['quiet_zone_modules_on_paper']} modules of white paper "
-                      f"around the code (ISO asks for {QUIET_MODULES}); mount it on a light surface.")
+            warn_thin_quiet_zone(info)
     anchors = [anchor_entry(sh, a.project) for sh in sheets]
     if a.anchors_out:
         a.anchors_out.parent.mkdir(parents=True, exist_ok=True)

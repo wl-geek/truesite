@@ -5,9 +5,8 @@ from pathlib import Path
 import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
-DOCS = [ROOT / "README.md", ROOT / "DEVELOPMENT.md", ROOT / "docs/submission-checklist.md",
-        *sorted((ROOT / "docs/specs").glob("*.md")), *sorted((ROOT / "docs/plans").glob("*.md")),
-        ROOT / "docs/research/reference/README.md"]
+# Every doc, so a new one (like docs/BRIEF.md) is checked without anyone remembering to list it.
+DOCS = [ROOT / "README.md", ROOT / "DEVELOPMENT.md", *sorted((ROOT / "docs").rglob("*.md"))]
 LINK = re.compile(r"\]\(([^)\s]+)\)|src=\"([^\"]+)\"")
 
 
@@ -17,7 +16,7 @@ def relative_links(text: str) -> list[str]:
     return [link.split("#")[0] for link in links if not re.match(r"^(https?:|mailto:|#)", link) and link.split("#")[0]]
 
 
-@pytest.mark.parametrize("doc", DOCS, ids=lambda p: str(p.relative_to(ROOT)))
+@pytest.mark.parametrize("doc", DOCS, ids=lambda p: p.relative_to(ROOT).as_posix())
 def test_relative_links_resolve(doc: Path):
     missing = [link for link in relative_links(doc.read_text(encoding="utf-8")) if not (doc.parent / link).exists()]
     assert missing == []
