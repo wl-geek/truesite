@@ -13,7 +13,9 @@ import type {
 } from './types'
 
 export const DEFAULT_TIMEOUT_MS = 30_000
-export const MODEL_TIMEOUT_MS = 60_000 // ask and draft: one Gemini call plus at most one retry
+// Ask and draft: a Gemini call times out at 25 s; with the SDK's HTTP retry and a parse retry the rare worst case
+// (about 100 s) outlasts this, and the user sees "took too long".
+export const MODEL_TIMEOUT_MS = 60_000
 export const CHECK_TIMEOUT_MS = 120_000 // matches Cloud Run's --timeout 120
 
 export class ApiError extends Error {

@@ -26,7 +26,11 @@ export function askErrorMessage(err: Pick<ApiError, 'status' | 'code' | 'retryAf
       return "Today's question limit has been reached. Try again tomorrow."
     case 'unknown_element':
       return 'This element is no longer in the model.'
+    case 'network':
+      return 'No connection. Check your network and try again.'
+    case 'timeout':
+      return 'That took too long. Try again.'
     default:
-      return err.status === 0 ? 'No connection. Check your network and try again.' : "Couldn't answer — try again."
+      return "Couldn't answer — try again."
   }
 }

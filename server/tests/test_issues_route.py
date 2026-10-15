@@ -170,3 +170,18 @@ def test_run_id_must_look_like_a_run_id(client):
     for bad in ("x/y" * 6, "a" * 33, "short"):
         assert client.post("/api/issues", json={**BASE, "run_id": bad}, headers=hdr(s)).status_code == 422, bad
         assert client.post("/api/issues/draft", json={"run_id": bad, "mark": 1}, headers=hdr(s)).status_code == 422, bad
+
+
+def test_an_unsaved_run_takes_no_issues(client, store, monkeypatch):
+    """saved=false means the run wasn't stored: its run_id 404s, so the web sends run_id null instead (A-12)."""
+    def boom(*_a):
+        raise RuntimeError("gcs down")
+    monkeypatch.setattr(store, "put_blob", boom)
+    session = new_session()
+    body = post_check(client, session).json()
+    assert body["saved"] is False
+    base = {"project_id": "testproj", "guid": GUID_DOOR, "title": "Door D-01 about 30 cm right"}
+    r = client.post("/api/issues", json={**base, "run_id": body["run_id"]}, headers=hdr(session))
+    assert r.status_code == 404 and r.json()["detail"]["code"] == "unknown_run"
+    r = client.post("/api/issues", json={**base, "run_id": None}, headers=hdr(session))
+    assert r.status_code == 201 and r.json()["photo_url"] is None
