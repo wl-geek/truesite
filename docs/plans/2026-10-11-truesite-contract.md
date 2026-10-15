@@ -33,8 +33,10 @@ truesite/
     truesite_bim/extract_elements.py  # extract(ifc_path) -> list[dict]  (elements.json rows) ; main()
     truesite_bim/pipeline.py          # run(ifc: Path, out_dir: Path) -> dict ; main()  (refuses if glb GUIDs != elements GUIDs)
     truesite_bim/qr_sheets.py         # make_sheets(...) ; render_sheet(sheet, url, out_pdf) ; anchor_entry(sheet, project_id) ; main()
-    tests/{conftest.py, test_pipeline.py, test_qr_sheets.py}
+    truesite_bim/site.py              # steel frame walk-in project: SteelFrame().build() ; s1_sheet() ; s2_sheet() ; main() (--out, --base-url, --sheets-dir, --sheets-only)
+    tests/{conftest.py, test_pipeline.py, test_qr_sheets.py, test_site.py}
     models/room1/{model.ifc, model.glb, elements.json, anchors.json, project.json, demo_issues.json}
+    models/site/{model.ifc, model.glb, elements.json, anchors.json, project.json}   # anchors S1 (A3), S2 (A4)
     sheets/                             # generated PDFs (git-ignored)
   server/
     pyproject.toml  uv.lock  requirements.txt (hash-pinned, for Docker)
@@ -64,6 +66,9 @@ truesite/
     src/camera/camera.ts  src/camera/intrinsics.ts
     src/qr/protocol.ts  src/qr/zxing.worker.ts  src/qr/qrClient.ts  src/qr/link.ts
     src/scene/elements.ts  src/scene/loadModel.ts  src/scene/arCamera.ts  src/scene/viewer.ts  src/scene/overlay.ts  src/scene/idBuffer.ts  src/scene/pins.ts
+    src/scene/palette.js + palette.d.ts            # colour by element type: kindOf, isSolid, paintOf, materialParams (plain JS: shared with scripts/make-usdz.mjs)
+    src/scene/usdzVariants.js + usdzVariants.d.ts  # Quick Look distance variants: usdzPlan, usdzFile, pickUsdzRadius (shared with scripts/make-usdz.mjs)
+    scripts/make-usdz.mjs                          # prebuild: public/models/<project>.usdz and <project>-r<R>.usdz (git-ignored)
     src/check/marks.ts  src/check/snapshot.ts  src/check/runCheck.ts
     src/ui/*.tsx
   infra/gcloud.sh  infra/lifecycle.json
