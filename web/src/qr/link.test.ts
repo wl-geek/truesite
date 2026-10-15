@@ -17,4 +17,11 @@ describe('parseAnchorLink', () => {
       expect(parseAnchorLink(bad, ORIGIN), bad).toBeNull()
     }
   })
+
+  it('returns null (does not throw) for malformed percent-encoding in a foreign code', () => {
+    for (const bad of ['https://x.test/a/room1/%E0%A4%A', 'https://x.test/a/%zz/A1', '/a/room1/%']) {
+      expect(() => parseAnchorLink(bad, ORIGIN), bad).not.toThrow()
+      expect(parseAnchorLink(bad, ORIGIN), bad).toBeNull()
+    }
+  })
 })

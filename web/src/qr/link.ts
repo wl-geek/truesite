@@ -18,7 +18,8 @@ export function parseAnchorLink(text: string, origin: string): { projectId: stri
   if (url.protocol !== 'https:' && url.protocol !== 'http:') return null
   const parts = url.pathname.split('/').filter(Boolean)
   if (parts.length !== 3 || parts[0] !== 'a') return null
-  const [, projectId, anchorId] = parts.map(decodeURIComponent)
+  // No percent-decoding: the id patterns never need it, and a malformed escape in a foreign code would throw.
+  const [, projectId, anchorId] = parts
   if (!PROJECT_RE.test(projectId) || !ANCHOR_RE.test(anchorId)) return null
   return { projectId, anchorId }
 }
