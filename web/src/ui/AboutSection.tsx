@@ -31,7 +31,7 @@ export function AboutSection() {
             <ol>
               <li><strong>Set up once:</strong> load the IFC model, print its QR codes and fix each at a known spot.</li>
               <li><strong>On site:</strong> scan, see the design where it will stand, and look around.</li>
-              <li><strong>Check:</strong> aim at the work and tap. Review the findings, approve the drafted issue.</li>
+              <li><strong>Check:</strong> aim at the work and tap. Approve the drafted issue, in the crew's language, and send the day's site report.</li>
             </ol>
           </article>
           <article className="about-card">
@@ -71,7 +71,7 @@ export function AboutSection() {
           <ol className="arch-flow" aria-label="How a check flows">
             <li><span className="arch-node">Phone or iPad</span><span className="arch-note">QR pose on device, 3D model at 1:1</span></li>
             <li><span className="arch-node">Cloud Run</span><span className="arch-note">the web app and its API</span></li>
-            <li><span className="arch-node arch-gemini">Gemini 3.8 Flash</span><span className="arch-note">compares photo and design, answers questions, drafts issues</span></li>
+            <li><span className="arch-node arch-gemini">Gemini 3.8 Flash</span><span className="arch-note">compares photo and design, drafts issues and the site report, answers questions</span></li>
             <li><span className="arch-node">Firestore + Cloud Storage</span><span className="arch-note">runs, issues, photos and renders</span></li>
           </ol>
           <p className="about-note">
