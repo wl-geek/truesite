@@ -5,6 +5,7 @@ Nothing here talks to Google Cloud: the stubs log their arguments and fake just 
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import socket
 import subprocess
@@ -25,6 +26,7 @@ pytestmark = pytest.mark.skipif(BASH is None, reason="needs bash")
 PROJECT = "truesite-test"
 SERVICE_URL = "https://truesite-123456789012.asia-southeast1.run.app"  # deterministic URL for the stub's number
 SHEETS = ["room1-D1", "room1-L1", "rooftop-R1", "rooftop-R2", "site-P1", "site-P2", "site-P3", "site-P4", "site-D1"]
+LAYOUT = "site-layout"  # the set-out plan: no QR, so no link to the service URL, but deploy and verify still need it
 
 # "create" marks a resource kind (e.g. iam-service-accounts) as existing and fails if it already is;
 # "describe"/"list" report it. Every call is logged with the project gcloud would use.
@@ -44,7 +46,8 @@ exit 0
 """
 
 # "uv run python -m truesite_bim.<module> ... --base-url URL --out-dir|--sheets-dir DIR" writes stand-in PDFs
-# that link to URL (or to STUB_SHEET_URL, to fake sheets rendered for the wrong host).
+# that link to URL (or to STUB_SHEET_URL, to fake sheets rendered for the wrong host). The names are what the real
+# modules write, including site.py's layout plan, which has no QR and so no URL (STUB_NO_LAYOUT leaves it out).
 STUB_UV = r"""#!/usr/bin/env bash
 echo "uv $*" >> "$STUB_LOG"
 [ -n "${STUB_NO_SHEETS:-}" ] && exit 0
@@ -55,11 +58,14 @@ while [ $# -gt 0 ]; do
 done
 case "$mod" in
   *qr_sheets) names="room1-D1 room1-D2 room1-L1 room1-A1" ;;
-  *rooftop) names="rooftop-R1 rooftop-R2" ;;
+  *rooftop) names="rooftop-R1 rooftop-R2 rooftop-V1 rooftop-V2 rooftop-V3" ;;
   *site) names="site-P1 site-P2 site-P3 site-P4 site-D1" ;;
 esac
 mkdir -p "$dir"
 for n in $names; do printf '%%PDF-1.4\n(%s/a/x/%s) Tj\n' "${STUB_SHEET_URL:-$url}" "$n" > "$dir/$n.pdf"; done
+case "$mod" in
+  *site) [ -n "${STUB_NO_LAYOUT:-}" ] || printf '%%PDF-1.4\n(Layout plan: set out P1-P4 from point O) Tj\n' > "$dir/site-layout.pdf" ;;
+esac
 """
 
 
@@ -110,6 +116,7 @@ def test_deploy_renders_sheets_for_the_service_url_then_deploys(stub) -> None:
     sheets = run.repo / "web" / "public" / "sheets"
     for name in SHEETS:
         assert f"{SERVICE_URL}/a/".encode() in (sheets / f"{name}.pdf").read_bytes()
+    assert (sheets / f"{LAYOUT}.pdf").is_file()  # the plan has no URL, and must not stop the deploy
     assert any("truesite_bim.rooftop --sheets-only" in c for c in calls(log, "uv "))
     assert any("truesite_bim.site --sheets-only" in c for c in calls(log, "uv "))
     [deploy] = calls(log, "gcloud run deploy")
@@ -134,6 +141,27 @@ def test_deploy_refuses_without_sheets_for_the_service_url(stub, env) -> None:
     r = run("deploy", **env)
     assert r.returncode != 0
     assert calls(log, "gcloud run deploy") == []
+
+
+def test_deploy_refuses_without_the_layout_plan(stub) -> None:
+    run, log = stub
+    r = run("deploy", STUB_NO_LAYOUT="1")
+    assert r.returncode != 0
+    assert f"{LAYOUT}.pdf" in r.stderr
+    assert calls(log, "gcloud run deploy") == []
+
+
+def test_every_sheet_the_start_page_links_is_rendered_and_smoke_checked() -> None:
+    script = SCRIPT.read_text(encoding="utf-8")
+    checked: set[str] = set()
+    for var in ("REQUIRED_SHEETS", "PLAN_SHEETS"):
+        found = re.findall(rf'^{var}="([^"]*)"', script, flags=re.M)
+        assert len(found) == 1, var
+        checked.update(found[0].split())
+    home = (ROOT / "web" / "src" / "ui" / "HomePage.tsx").read_text(encoding="utf-8")
+    linked = set(re.findall(r"/sheets/([A-Za-z0-9-]+)\.pdf", home))
+    assert {"site-layout", "site-D1"} <= linked
+    assert linked <= checked
 
 
 def test_deploy_uses_base_url_when_given(stub) -> None:
@@ -234,9 +262,16 @@ LOCAL = {"EXPECT_GEMINI_MODE": "fake", "EXPECT_STORE_BACKEND": "memory"}
 
 
 def write_sheets(static: Path, url: str) -> None:
+    """The deployed demo assets: the sheets for `url`, the layout plan, the site USDZ and one sample."""
     (static / "sheets").mkdir()
     for name in SHEETS:
         (static / "sheets" / f"{name}.pdf").write_bytes(f"%PDF-1.4\n({url}/a/x/{name}) Tj\n".encode())
+    (static / "sheets" / f"{LAYOUT}.pdf").write_bytes(b"%PDF-1.4\n(Layout plan) Tj\n")
+    (static / "models").mkdir()
+    (static / "models" / "site.usdz").write_bytes(b"PK\x03\x04usdz")
+    (static / "samples" / "site-p1-south").mkdir(parents=True)
+    (static / "samples" / "index.json").write_text('[{"sample_id": "site-p1-south"}]')
+    (static / "samples" / "site-p1-south" / "photo.jpg").write_bytes(b"\xff\xd8\xff\xe0jpeg")
 
 
 def test_smoke_passes_on_a_complete_deploy(stub, local_server) -> None:
@@ -253,6 +288,19 @@ def test_smoke_fails_when_the_sheets_are_missing(stub, local_server) -> None:
     r = run("smoke", url, **LOCAL)
     assert r.returncode != 0
     assert "sheets/room1-D1.pdf" in r.stderr
+
+
+@pytest.mark.parametrize("missing", [f"sheets/{LAYOUT}.pdf", "models/site.usdz", "samples/index.json",
+                                     "samples/site-p1-south/photo.jpg"])
+def test_smoke_fails_when_a_demo_asset_is_missing(stub, local_server, missing) -> None:
+    # Outside /sheets a missing file falls back to index.html (200 text/html), so the type check must catch it.
+    run, _ = stub
+    url, static = local_server
+    write_sheets(static, url)
+    (static / missing).unlink()
+    r = run("smoke", url, **LOCAL)
+    assert r.returncode != 0
+    assert missing in r.stderr
 
 
 def test_smoke_fails_when_sheets_link_elsewhere(stub, local_server) -> None:

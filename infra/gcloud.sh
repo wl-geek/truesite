@@ -39,6 +39,8 @@ GEMINI_BACKEND="${GEMINI_BACKEND:-enterprise}"
 export CLOUDSDK_CORE_PROJECT="$PROJECT_ID"
 # Sheets deploy must render and verify must find: the start page's downloads, the rooftop demo and the building site viewpoints.
 REQUIRED_SHEETS="room1-D1 room1-L1 rooftop-R1 rooftop-R2 site-P1 site-P2 site-P3 site-P4 site-D1"
+# Sheets with no QR, so no link to check, that deploy must still render and verify must still find: the site set-out plan.
+PLAN_SHEETS="site-layout"
 SHEETS_DIR="web/public/sheets"
 # What /api/health must report (smoke against a local fake server: EXPECT_GEMINI_MODE=fake EXPECT_STORE_BACKEND=memory).
 EXPECT_GEMINI_MODE="${EXPECT_GEMINI_MODE:-live}"
@@ -76,10 +78,11 @@ make_sheets() {
   (cd bim && uv run python -m truesite_bim.qr_sheets --base-url "$url" --out-dir "../$SHEETS_DIR" >/dev/null)
   (cd bim && uv run python -m truesite_bim.rooftop --sheets-only --base-url "$url" --sheets-dir "../$SHEETS_DIR" >/dev/null)
   (cd bim && uv run python -m truesite_bim.site --sheets-only --base-url "$url" --sheets-dir "../$SHEETS_DIR" >/dev/null)
-  for name in $REQUIRED_SHEETS; do
+  for name in $REQUIRED_SHEETS $PLAN_SHEETS; do
     [ -f "$SHEETS_DIR/$name.pdf" ] || die "$SHEETS_DIR/$name.pdf was not rendered"
   done
   for f in "$SHEETS_DIR"/*.pdf; do
+    case " $PLAN_SHEETS " in *" $(basename "$f" .pdf) "*) continue ;; esac
     grep -aqF "$url/a/" "$f" || die "$f does not link to $url/a/"
   done
 }
@@ -249,13 +252,14 @@ smoke() {
     check_get "$url/sheets/$name.pdf" application/pdf "$tmp/$name.pdf"
     grep -aqF "$url/a/" "$tmp/$name.pdf" || die "sheets/$name.pdf does not link to $url/a/"
   done
+  for name in $PLAN_SHEETS; do
+    check_get "$url/sheets/$name.pdf" application/pdf
+  done
 
-  # Sample photos are optional until they are committed; once served, index.json must be JSON.
-  code="$(curl -sS -o /dev/null -w '%{http_code} %{content_type}' "$url/samples/index.json")" || die "GET samples failed"
-  case "$code" in
-    "200 application/json"*) echo "ok   $url/samples/index.json" ;;
-    *) echo "note $url/samples/index.json is not deployed ($code): /samples will be empty" ;;
-  esac
+  # The other demo assets. Outside /sheets a missing file is index.html (200 text/html), so the type catches it.
+  check_get "$url/models/site.usdz" model/vnd.usdz+zip  # iPad Walk inside (Quick Look), built by the web prebuild
+  check_get "$url/samples/index.json" application/json  # the committed site samples behind /samples
+  check_get "$url/samples/site-p1-south/photo.jpg" image/jpeg
 
   # One real model round trip (counts once against the daily ask cap).
   guid="$(curl -fsS "$url/api/projects/room1" | sed -n 's/.*"guid":"\([^"]*\)".*/\1/p')" || die "GET /api/projects/room1 failed"
