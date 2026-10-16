@@ -44,8 +44,9 @@ DESK_BASE_Z = -0.15  # model Z of the paper plane: the demo slab's underside sit
 WALL_POSITION = (0.1, 1.5, 1.35)  # placeholder until the survey: west partition inner face, code centre
 WALL_NORMAL = (1.0, 0.0, 0.0)
 WALL_UP = (0.0, 0.0, 1.0)
-# The start buttons differ: Android (WebXR) leads with "Start AR (place by code)", iPhone only has "Start camera".
-ANDROID_STEP = "Android: scan, tap Start AR, move left and right until the circle fills."
+# Both platforms start with "Start camera" (the camera overlay): Start AR and Walk inside need ?xr=1 on the page
+# URL, and no printed code carries it.
+ANDROID_STEP = "Android: scan, tap Start camera, start within 1 m, then step back."
 IPHONE_LIFE_SIZE_STEP = "iPhone: scan, tap Start camera, start within 1 m, then step back."
 
 

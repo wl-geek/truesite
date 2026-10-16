@@ -177,9 +177,16 @@ def test_drawings_stay_inside_the_page_and_the_check_bar_is_10_cm(tmp_path, shee
                                    if project != "site" and sh.anchor_id in {"D1", "L1", "R1", "R2"}],
                          ids=lambda sh: sh.anchor_id)
 def test_scan_steps_name_the_button_on_each_platform(sheet):
-    # Android's hero flow is Start AR (place by code); iPhone only has Start camera.
-    assert any(line.startswith("Android:") and "Start AR" in line for line in sheet.instructions)
+    # Both platforms start with Start camera: Start AR and Walk inside only come back with ?xr=1 (B-04).
+    assert any(line.startswith("Android:") and "Start camera" in line for line in sheet.instructions)
     assert any(line.startswith("iPhone:") and "Start camera" in line for line in sheet.instructions)
+
+
+@pytest.mark.parametrize("sheet,project", ALL_SHEETS, ids=ALL_IDS)
+def test_no_sheet_sends_anyone_to_a_hidden_button(sheet, project):
+    # No QR carries ?xr=1, so a scanned sheet never shows Start AR or Walk inside (B-04).
+    text = " ".join([sheet.title, sheet.label, *sheet.instructions])
+    assert "Start AR" not in text and "Walk inside" not in text
 
 
 def test_quiet_zone_warning_goes_to_stderr_and_stdout_stays_json(tmp_path, capsys):
