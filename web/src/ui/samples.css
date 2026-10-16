@@ -1,0 +1,26 @@
+/* Samples page (SamplesPage.tsx): photo cards and the results. */
+.samples-page { max-width: 1080px; }
+.samples-page h1 { margin: 4px 0 8px; font-size: clamp(24px, 4vw, 32px); line-height: 1.15; }
+.samples-lede { max-width: 42em; margin: 0 0 6px; font-size: 16px; }
+.sample-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 240px), 1fr)); gap: 12px; margin: 16px 0; padding: 0; list-style: none; }
+.sample-card {
+  display: grid; width: 100%; height: 100%; padding: 0; border: 1px solid var(--line); border-radius: 14px; background: var(--white);
+  color: var(--ink); font: inherit; text-align: left; cursor: pointer; overflow: hidden;
+  transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s;
+}
+.sample-card:hover:not(:disabled) { border-color: var(--sky); box-shadow: 0 10px 28px rgba(11, 31, 51, 0.12); transform: translateY(-2px); }
+.sample-card:disabled { cursor: default; }
+.sample-card:disabled:not([aria-busy='true']) { opacity: 0.55; }
+.sample-thumb { position: relative; display: block; aspect-ratio: 16 / 9; background: #dfe6ee; }
+.sample-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.sample-badge { position: absolute; top: 8px; left: 8px; padding: 3px 8px; border-radius: 6px; background: rgba(11, 31, 51, 0.82); color: var(--white); font-size: 12px; font-weight: 600; }
+.sample-card-body { display: grid; gap: 8px; padding: 12px 14px 14px; }
+.sample-card-title { font-weight: 700; line-height: 1.3; }
+.sample-card-cta { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; border-radius: 10px; background: var(--steel); color: var(--white); font-weight: 600; }
+.sample-card[aria-busy='true'] .sample-card-cta { background: var(--orange); color: var(--ink); }
+.sample-results-title { grid-column: 1 / -1; margin: 8px 0 0; font-size: 20px; }
+.sample-truth { padding: 10px 14px; border: 1px dashed var(--line); border-radius: 12px; background: var(--white); font-size: 14px; }
+.sample-truth summary { min-height: 32px; font-weight: 600; cursor: pointer; }
+.sample-truth ul { margin: 6px 0 0; padding-left: 18px; }
+.sample-results { scroll-margin-top: calc(var(--topbar-h) + 8px); }
+@media (prefers-reduced-motion: reduce) { .sample-card { transition: none; } .sample-card:hover:not(:disabled) { transform: none; } }

@@ -1,0 +1,52 @@
+{
+  "sample_id": "site-p1-south",
+  "label": "P1 · South side from the car park",
+  "project_id": "site",
+  "anchor_id": "P1",
+  "video_w": 1280,
+  "video_h": 720,
+  "K": {
+    "f": 800,
+    "cx": 640,
+    "cy": 360
+  },
+  "pose": {
+    "R": [
+      1,
+      0,
+      0,
+      0,
+      -0.9781476007338057,
+      -0.20791169081775931,
+      0,
+      0.20791169081775931,
+      -0.9781476007338057
+    ],
+    "t": [
+      0,
+      2.072975822842094,
+      9.271611037889379
+    ]
+  },
+  "captured_at": "2026-10-16T05:37:32.605Z",
+  "simulated": true,
+  "staged": [
+    {
+      "element": "Brace wall south A-B (2)",
+      "deviation": "missing"
+    },
+    {
+      "element": "Edge protection south",
+      "deviation": "missing"
+    },
+    {
+      "element": "Steel column B1",
+      "deviation": "shifted",
+      "offset_m": [
+        0.45,
+        0,
+        0
+      ]
+    }
+  ]
+}

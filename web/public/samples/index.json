@@ -1,0 +1,48 @@
+[
+  {
+    "sample_id": "site-p1-south",
+    "label": "P1 · South side from the car park",
+    "project_id": "site",
+    "anchor_id": "P1",
+    "simulated": true,
+    "staged": [
+      "Brace wall south A-B (2): missing",
+      "Edge protection south: missing",
+      "Steel column B1: about 45 cm east of the design"
+    ]
+  },
+  {
+    "sample_id": "site-p2-slab",
+    "label": "P2 · Under the level 1 slab",
+    "project_id": "site",
+    "anchor_id": "P2",
+    "simulated": true,
+    "staged": [
+      "RC column C2: missing",
+      "Beam B1-C1: missing"
+    ]
+  },
+  {
+    "sample_id": "site-p3-openbay",
+    "label": "P3 · Looking up through the open bay",
+    "project_id": "site",
+    "anchor_id": "P3",
+    "simulated": true,
+    "staged": [
+      "Purlin P4 C-D: missing",
+      "Edge protection north: missing"
+    ]
+  },
+  {
+    "sample_id": "site-p4-gable",
+    "label": "P4 · East gable",
+    "project_id": "site",
+    "anchor_id": "P4",
+    "simulated": true,
+    "staged": [
+      "Truss T4 diagonal 3: missing",
+      "Brace roof north C-D (1): missing",
+      "Steel column D3: about 40 cm south of the design"
+    ]
+  }
+]

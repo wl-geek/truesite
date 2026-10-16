@@ -1,0 +1,43 @@
+{
+  "sample_id": "site-p2-slab",
+  "label": "P2 · Under the level 1 slab",
+  "project_id": "site",
+  "anchor_id": "P2",
+  "video_w": 1280,
+  "video_h": 720,
+  "K": {
+    "f": 800,
+    "cx": 640,
+    "cy": 360
+  },
+  "pose": {
+    "R": [
+      1,
+      0,
+      0,
+      0,
+      -0.9945218953682733,
+      -0.10452846326765346,
+      0,
+      0.10452846326765346,
+      -0.9945218953682733
+    ],
+    "t": [
+      0,
+      0.3085091160721343,
+      1.9785909444097811
+    ]
+  },
+  "captured_at": "2026-10-16T05:37:34.451Z",
+  "simulated": true,
+  "staged": [
+    {
+      "element": "RC column C2",
+      "deviation": "missing"
+    },
+    {
+      "element": "Beam B1-C1",
+      "deviation": "missing"
+    }
+  ]
+}

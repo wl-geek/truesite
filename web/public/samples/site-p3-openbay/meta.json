@@ -1,0 +1,43 @@
+{
+  "sample_id": "site-p3-openbay",
+  "label": "P3 · Looking up through the open bay",
+  "project_id": "site",
+  "anchor_id": "P3",
+  "video_w": 1280,
+  "video_h": 720,
+  "K": {
+    "f": 800,
+    "cx": 640,
+    "cy": 360
+  },
+  "pose": {
+    "R": [
+      0,
+      0,
+      1,
+      0.573576436351046,
+      -0.8191520442889918,
+      0,
+      0.8191520442889918,
+      0.573576436351046,
+      0
+    ],
+    "t": [
+      -1.5,
+      3.8101620407106984,
+      5.267130644243342
+    ]
+  },
+  "captured_at": "2026-10-16T05:37:36.306Z",
+  "simulated": true,
+  "staged": [
+    {
+      "element": "Purlin P4 C-D",
+      "deviation": "missing"
+    },
+    {
+      "element": "Edge protection north",
+      "deviation": "missing"
+    }
+  ]
+}

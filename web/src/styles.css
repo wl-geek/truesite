@@ -432,7 +432,6 @@ body {
 .viewer-check-btn { position: absolute; right: 16px; bottom: 16px; }
 
 /* ---- samples ------------------------------------------------------------------------------ */
-.sample-list { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
 .sample-results { display: grid; gap: 12px; margin-top: 12px; }
 @media (min-width: 900px) { .sample-results { grid-template-columns: 1.2fr 1fr; align-items: start; } .sample-results > p { grid-column: 1 / -1; } }
 

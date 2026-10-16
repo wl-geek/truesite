@@ -13,6 +13,14 @@ describe('sample metadata', () => {
     expect(parseSampleIndex({})).toEqual([])
   })
 
+  it('keeps the simulated flag and the staged list, text only', () => {
+    const [row] = parseSampleIndex([{ sample_id: 'site-p1', project_id: 'site', anchor_id: 'P1', simulated: true,
+      staged: ['Brace missing', 3, '', '<b>x</b>'] }])
+    expect(row.simulated).toBe(true)
+    expect(row.staged).toEqual(['Brace missing', '<b>x</b>']) // rendered as text by React, never as HTML
+    expect(parseSampleIndex([{ sample_id: 'a', project_id: 'site', anchor_id: 'P1', simulated: 'yes' }])[0].simulated).toBeUndefined()
+  })
+
   it('parses and validates meta.json', () => {
     expect(parseSampleMeta(META).pose.t).toEqual([0, 0, 1.5])
     expect(() => parseSampleMeta({ ...META, K: { f: -1, cx: 0, cy: 0 } })).toThrow(/intrinsics/)

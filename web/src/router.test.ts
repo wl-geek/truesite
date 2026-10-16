@@ -9,7 +9,7 @@ describe('parseRoute', () => {
     expect(parseRoute('/a/room1/D2/')).toEqual({ name: 'live', projectId: 'room1', anchorId: 'D2' })
     expect(parseRoute('/samples')).toEqual({ name: 'samples' })
     expect(parseRoute('/samples/')).toEqual({ name: 'samples' })
-    expect(parseRoute('/issues')).toEqual({ name: 'issues' })
+    expect(parseRoute('/issues')).toEqual({ name: 'home' }) // issues live with their findings, no separate page
   })
 
   it('keeps the viewer project from the query string', () => {

@@ -6,7 +6,6 @@ export type Route =
   | { name: 'viewer'; projectId?: string }
   | { name: 'live'; projectId: string; anchorId: string }
   | { name: 'samples' }
-  | { name: 'issues' }
 
 const LIVE_RE = /^\/a\/([^/]+)\/([^/]+)\/?$/
 const NAV_EVENT = 'truesite:navigate'
@@ -25,7 +24,6 @@ export function parseRoute(pathname: string, search = ''): Route {
     }
   }
   if (pathname === '/samples' || pathname === '/samples/') return { name: 'samples' }
-  if (pathname === '/issues' || pathname === '/issues/') return { name: 'issues' }
   if (pathname === '/model' || pathname === '/model/') {
     const projectId = new URLSearchParams(search).get('project')
     return projectId ? { name: 'viewer', projectId } : { name: 'viewer' }

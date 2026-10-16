@@ -1,0 +1,50 @@
+[
+  {
+    "sample_id": "site-p1-south",
+    "label": "P1 · South side from the car park",
+    "project_id": "site",
+    "anchor_id": "P1",
+    "eye": [9, -12, 1.5],
+    "look": [0, 1],
+    "pitch_deg": 12,
+    "f": 800,
+    "hidden": ["Brace wall south A-B (2)", "Edge protection south"],
+    "shifted": [{ "name": "Steel column B1", "d": [0.45, 0, 0] }]
+  },
+  {
+    "sample_id": "site-p2-slab",
+    "label": "P2 · Under the level 1 slab",
+    "project_id": "site",
+    "anchor_id": "P2",
+    "eye": [2.5, 3, 1.5],
+    "look": [1, 0],
+    "pitch_deg": 6,
+    "f": 800,
+    "hidden": ["RC column C2", "Beam B1-C1"],
+    "shifted": []
+  },
+  {
+    "sample_id": "site-p3-openbay",
+    "label": "P3 · Looking up through the open bay",
+    "project_id": "site",
+    "anchor_id": "P3",
+    "eye": [15, 2.5, 1.5],
+    "look": [0, 1],
+    "pitch_deg": 35,
+    "f": 800,
+    "hidden": ["Purlin P4 C-D", "Edge protection north"],
+    "shifted": []
+  },
+  {
+    "sample_id": "site-p4-gable",
+    "label": "P4 · East gable",
+    "project_id": "site",
+    "anchor_id": "P4",
+    "eye": [29, 6, 1.5],
+    "look": [-1, 0],
+    "pitch_deg": 16,
+    "f": 800,
+    "hidden": ["Truss T4 diagonal 3", "Brace roof north C-D (1)"],
+    "shifted": [{ "name": "Steel column D3", "d": [0, -0.4, 0] }]
+  }
+]

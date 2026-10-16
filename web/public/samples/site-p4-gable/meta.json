@@ -1,0 +1,52 @@
+{
+  "sample_id": "site-p4-gable",
+  "label": "P4 · East gable",
+  "project_id": "site",
+  "anchor_id": "P4",
+  "video_w": 1280,
+  "video_h": 720,
+  "K": {
+    "f": 800,
+    "cx": 640,
+    "cy": 360
+  },
+  "pose": {
+    "R": [
+      1,
+      0,
+      0,
+      0,
+      -0.9612616959383189,
+      -0.27563735581699916,
+      0,
+      0.27563735581699916,
+      -0.9612616959383189
+    ],
+    "t": [
+      0,
+      2.439043694038325,
+      8.143160679894011
+    ]
+  },
+  "captured_at": "2026-10-16T05:37:37.933Z",
+  "simulated": true,
+  "staged": [
+    {
+      "element": "Truss T4 diagonal 3",
+      "deviation": "missing"
+    },
+    {
+      "element": "Brace roof north C-D (1)",
+      "deviation": "missing"
+    },
+    {
+      "element": "Steel column D3",
+      "deviation": "shifted",
+      "offset_m": [
+        0,
+        -0.4,
+        0
+      ]
+    }
+  ]
+}

@@ -497,7 +497,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
         {draftFor && (
         <IssueDialog open projectId={loaded?.project.project_id ?? projectId} runId={outcome?.runId ?? null} mark={draftFor.mark} finding={draftFor}
           element={elements.get(draftFor.guid) ?? null} onClose={() => setDraftFor(null)}
-          onSaved={() => { setDraftFor(null); setNotice('Issue saved. See it under Issues.') }} />
+          onSaved={() => { setDraftFor(null); setNotice('Issue saved.') }} />
       )}
 
         {showResults && outcome && (

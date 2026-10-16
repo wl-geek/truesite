@@ -15,10 +15,14 @@ import { EvidenceView } from './EvidenceView'
 import { FindingsPanel } from './FindingsPanel'
 import { IssueDialog } from './IssueDialog'
 import { Link } from './Link'
+import './samples.css'
 
 type Loaded = { project: ProjectManifest; model: LoadedModel; renderer: WebGLRenderer; scene: Scene }
 /** `fallback`: why the live check didn't run when this is the sample's saved result, else null. */
-type Outcome = { result: CheckResult; photoUrl: string; fallback: string | null; runId: string | null; projectId: string }
+type Outcome = {
+  result: CheckResult; photoUrl: string; fallback: string | null; runId: string | null; projectId: string
+  label: string; staged: string[] | null
+}
 
 /** Free an off-screen check renderer, its WebGL context and its model (audit A-56). */
 function releaseLoaded(l: Loaded | null): void {
@@ -49,6 +53,7 @@ export function SamplesPage() {
   const [evalStatus, setEvalStatus] = useState<string | null>(null)
   const evalResults = useRef<Record<string, CheckResult>>({})
   const loadedRef = useRef<Loaded | null>(null)
+  const resultsRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -98,7 +103,9 @@ export function SamplesPage() {
       if (outcome) URL.revokeObjectURL(outcome.photoUrl)
       const fallback = res.response ? null : savedFallbackMessage(res.error ?? new ApiError('check failed', 0))
       const runId = storedRunId(res.response)
-      setOutcome({ result, photoUrl: URL.createObjectURL(photo), fallback, runId, projectId: meta.project_id })
+      setOutcome({ result, photoUrl: URL.createObjectURL(photo), fallback, runId, projectId: meta.project_id, label: sample.label,
+        staged: sample.staged ?? null })
+      requestAnimationFrame(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
       saveLastCheck(meta.project_id, { result, runId, at: new Date().toISOString() })
     } catch (e) {
       setError(e instanceof ApiError ? checkErrorMessage(e) : e instanceof Error ? e.message : 'Check failed — try again.')
@@ -147,18 +154,33 @@ export function SamplesPage() {
 
   return (
     <main className="page samples-page">
-      <h1>Sample photos</h1>
-      <p>
-        No printer or site needed: these photos were taken with TrueSite in our demo room and on our 1:20 model, with the
-        deviations staged on purpose. Tap one to run the real as-built check.
+      <p className="eyebrow">No printer needed</p>
+      <h1>Try the as-built check</h1>
+      <p className="samples-lede">
+        Each photo shows our building site demo from one of its four viewpoints, with a few build errors staged on purpose.
+        Pick one: Gemini compares it with the design, pins what is off and drafts the issue.
       </p>
+      {ready.some((s) => s.simulated) && (
+        <p className="note">
+          These are simulated site photos: rendered from the BIM model with the errors built in, because the demo building
+          doesn't exist yet. The check that runs on them is the real one.
+        </p>
+      )}
       {samples === null && <p className="status">Loading samples…</p>}
       {samples !== null && ready.length === 0 && <p className="status">No sample photos yet.</p>}
-      <ul className="sample-list">
+      <ul className="sample-grid">
         {ready.map((s) => (
           <li key={s.sample_id}>
-            <button type="button" className="btn" disabled={running !== null} onClick={() => check(s)}>
-              {running === s.sample_id ? 'Checking…' : s.label}
+            <button type="button" className="sample-card" disabled={running !== null} aria-busy={running === s.sample_id}
+              onClick={() => check(s)}>
+              <span className="sample-thumb">
+                <img src={`/samples/${s.sample_id}/photo.jpg`} alt="" width="1280" height="720" loading="lazy" decoding="async" />
+                {s.simulated && <span className="sample-badge">Simulated photo</span>}
+              </span>
+              <span className="sample-card-body">
+                <span className="sample-card-title">{s.label}</span>
+                <span className="sample-card-cta">{running === s.sample_id ? 'Checking…' : 'Run the check'}</span>
+              </span>
             </button>
           </li>
         ))}
@@ -169,10 +191,17 @@ export function SamplesPage() {
       {evalStatus && <p className="note" role="status">{evalStatus}</p>}
       {error && <p className="status status-error" role="alert">{error}</p>}
       {outcome && (
-        <div className="sample-results">
+        <div className="sample-results" ref={resultsRef}>
+          <h2 className="sample-results-title">{outcome.label}</h2>
           {outcome.fallback && <p className="note" role="status">{outcome.fallback}</p>}
           <EvidenceView imageUrl={outcome.photoUrl} result={outcome.result} selectedMark={selectedMark} onSelect={setSelectedMark} />
           <FindingsPanel result={outcome.result} selectedMark={selectedMark} onSelect={selectFinding} onDraftIssue={setDraftFor} />
+          {outcome.staged && outcome.staged.length > 0 && (
+            <details className="sample-truth">
+              <summary>What was staged in this photo</summary>
+              <ul>{outcome.staged.map((t) => <li key={t}>{t}</li>)}</ul>
+            </details>
+          )}
           {notice && <p className="note" role="status">{notice}</p>}
           <p>
             <button type="button" className="btn btn-primary" onClick={() => navigate(viewerPathFor(outcome.projectId))}>See the pins on the 3D model</button>
@@ -182,7 +211,7 @@ export function SamplesPage() {
       {draftFor && (
         <IssueDialog open projectId={outcome?.projectId ?? 'site'} runId={outcome?.runId ?? null} mark={draftFor.mark} finding={draftFor}
           element={new Map((loaded?.project.elements ?? []).map((e) => [e.guid, e])).get(draftFor.guid) ?? null} onClose={() => setDraftFor(null)}
-          onSaved={() => { setDraftFor(null); setNotice('Issue saved. See it under Issues.') }} />
+          onSaved={() => { setDraftFor(null); setNotice('Issue saved.') }} />
       )}
       {loaded === null && outcome === null && <p className="note"><Link to="/model">Open the model viewer</Link></p>}
     </main>

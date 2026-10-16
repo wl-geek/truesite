@@ -115,7 +115,7 @@ export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: str
       {draftFor && (
         <IssueDialog open projectId={loaded?.project.project_id ?? projectId} runId={lastCheck?.runId ?? null} mark={draftFor.mark} finding={draftFor}
           element={elements.get(draftFor.guid) ?? null} onClose={() => setDraftFor(null)}
-          onSaved={() => { setDraftFor(null); setNotice('Issue saved. See it under Issues.') }} />
+          onSaved={() => { setDraftFor(null); setNotice('Issue saved.') }} />
       )}
       {loaded && element && (
         <ElementPanel projectId={loaded.project.project_id} element={element} onClose={() => setSelected(null)} />

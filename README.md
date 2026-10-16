@@ -10,7 +10,7 @@ Google Cloud AI Builder Cup 2026 (JAPAC) · Theme: **Future of Work & Enterprise
 
 ## Try it in 60 seconds (no printer, no site)
 
-1. Open the live demo. On the start page, tap **Open sample photos**, then tap a photo. TrueSite runs the real as-built check on a photo taken in our demo room, using the camera pose stored with it.
+1. Open the live demo. On the start page, tap **Try the as-built check**, then pick a photo. TrueSite runs the real as-built check on it, using the camera pose stored with it. The four photos are simulated site photos of the building site demo, rendered from the BIM model with a few errors staged on purpose (`web/scripts/make-samples.mjs`); each result lists what was staged, so you can compare.
 2. Read the findings. Each one has an evidence box on the photo, a rough offset ("about 30 cm right"), and a severity set by TrueSite from the element type.
 3. Tap **Draft issue** on a deviation. Gemini drafts it, you edit it, and you save it. It then appears under **Issues**.
 4. Tap **See the pins on the 3D model**, then tap any element and **Ask** a question ("What's the fire rating?"). Answers come only from that element's model data, and the fields used are shown.

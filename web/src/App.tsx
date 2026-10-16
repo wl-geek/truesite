@@ -1,6 +1,5 @@
 import { useRoute } from './router'
 import { HomePage } from './ui/HomePage'
-import { IssuesPage } from './ui/IssuesPage'
 import { Link } from './ui/Link'
 import { LivePage } from './ui/LivePage'
 import { SamplesPage } from './ui/SamplesPage'
@@ -19,14 +18,12 @@ export default function App() {
         <nav className="nav" aria-label="Main">
           <Link to="/model" current={route.name === 'viewer'}>Model</Link>
           <Link to="/samples" current={route.name === 'samples'}>Samples</Link>
-          <Link to="/issues" current={route.name === 'issues'}>Issues</Link>
         </nav>
       </header>
       {route.name === 'home' && <HomePage />}
       {route.name === 'viewer' && <ViewerPage key={route.projectId ?? ''} projectId={route.projectId} />}
       {route.name === 'live' && <LivePage key={`${route.projectId}/${route.anchorId}`} projectId={route.projectId} anchorId={route.anchorId} />}
       {route.name === 'samples' && <SamplesPage />}
-      {route.name === 'issues' && <IssuesPage />}
     </div>
   )
 }
