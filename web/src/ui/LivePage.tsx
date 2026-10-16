@@ -11,7 +11,7 @@ import { anchorCorners, captureSnapshot, fallbackPose, snapshotQuality, type Sna
 import { estimatePose, type Intrinsics, type Pose, type Point2, type Quality } from '../pose'
 import { QrWorkerClient } from '../qr/qrClient'
 import { viewerPathFor } from '../router'
-import { checkAvailability, coachHint, effectiveQrSize, findAnchor, isDeskAnchor, isFar, scaleLabel, walkInsideFirst } from '../scene/arMath'
+import { checkAvailability, coachHint, effectiveQrSize, findAnchor, isDeskAnchor, isFar, isLifeSizeFloor, scaleLabel, walkInsideFirst } from '../scene/arMath'
 import { makeEvalMarkers, parseEvalPoints } from '../scene/evalMarkers'
 import { paintOf } from '../scene/palette'
 import { disposePins, makePins } from '../scene/pins'
@@ -459,10 +459,10 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
               {loaded && <span className="mode-chip">{scaleLabel(loaded.anchor)}</span>}
               <QualityBadge state={state} />
             </div>
-            {!checking && <p className="coach">{coachHint(state, desk)}</p>}
+            {!checking && <p className="coach">{coachHint(state, desk, checkable.enabled)}</p>}
             {!checking && checkable.note && (
               <p className="coach">
-                {checkable.note}{!checkable.enabled && <> <Link to="/samples">Open sample photos</Link></>}
+                {checkable.note}{!checkable.enabled && <> <Link to="/samples">Open the virtual demo</Link></>}
               </p>
             )}
             {state?.qrFailed && <p className="live-warning" role="alert">The QR reader didn't load. Check your connection and reload.</p>}
@@ -552,6 +552,12 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
                     <li>Point at the code from about 1 m away, then step back slowly.</li>
                     <li>Walk around the sheet to look at the model.</li>
                   </ol>
+                ) : isLifeSizeFloor(loaded.anchor) ? (
+                  <ol className="steps">
+                    <li>Tap <strong>Start camera</strong> and allow the camera and motion access.</li>
+                    <li>Point at the code from about 1 m away, then step back slowly, keeping the code in view.</li>
+                    <li>Turn slowly on the spot and look up; point back at the code to re-align.{checkable.enabled && ' To check the build, aim at the work and tap Check as-built.'}</li>
+                  </ol>
                 ) : (
                   <ol className="steps">
                     <li>Tap <strong>Start camera</strong> and allow the camera and motion access.</li>
@@ -608,7 +614,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
             {camError && <p className="status status-error" role="alert">{CAMERA_ERRORS[camError]}</p>}
             {(camError || error) && (
               <p className="live-links">
-                <Link to={projectMissing ? '/model' : viewerPathFor(projectId)} className="btn">Open the model viewer</Link> <Link to="/samples" className="btn">Try sample photos</Link>
+                <Link to={projectMissing ? '/model' : viewerPathFor(projectId)} className="btn">Open the model viewer</Link> <Link to="/samples" className="btn">Try the virtual demo</Link>
               </p>
             )}
           </div>

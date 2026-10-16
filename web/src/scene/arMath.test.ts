@@ -51,6 +51,14 @@ describe('arMath', () => {
     expect(coachHint({ tracking: true, provisional: false, distanceM: 1.2 }, false)).toMatch(/Check as-built/)
   })
 
+  it("doesn't ask for Check as-built when the sheet can't be checked (B-05)", () => {
+    const locked = { tracking: true, provisional: false, distanceM: 1.5 }
+    expect(coachHint(locked, false, false)).not.toMatch(/Check as-built/)
+    expect(coachHint(locked, false, false)).toMatch(/look up/)
+    expect(coachHint(locked, false, true)).toMatch(/Check as-built/)
+    expect(coachHint(locked, true, false)).toMatch(/Walk around the sheet/)
+  })
+
   it('gives tips after 5 s without the code (spec section 8)', () => {
     const lost = { tracking: false, provisional: true, distanceM: null, mode: 'lost' as const }
     expect(coachHint({ ...lost, searchingS: 2 }, false)).toBe('Point the camera at the QR code.')
@@ -72,7 +80,7 @@ describe('arMath', () => {
 
   it('only offers the check where there is something to check against', () => {
     expect(checkAvailability(D1).enabled).toBe(false) // the desk sheet shows the room beside a sheet of paper
-    expect(checkAvailability(D1).note).toMatch(/sample photos/)
+    expect(checkAvailability(D1).note).toMatch(/virtual demo/)
     expect(checkAvailability(D2)).toEqual({ enabled: true, note: null }) // the physical 1:20 model
     expect(checkAvailability(L1).enabled).toBe(true)
     expect(checkAvailability(L1).note).toMatch(/read as missing/)
@@ -81,7 +89,7 @@ describe('arMath', () => {
     // The building site shows the design in an empty car park: nothing there to check.
     const P1: Anchor = { ...L1, anchor_id: 'P1', project_id: 'site', position_m: [9, -2.5, 1.4] }
     expect(checkAvailability(P1).enabled).toBe(false)
-    expect(checkAvailability({ ...P1, anchor_id: 'P4' }).note).toMatch(/sample photos/)
+    expect(checkAvailability({ ...P1, anchor_id: 'P4' }).note).toMatch(/virtual demo/)
     expect(checkAvailability({ ...P1, anchor_id: 'D1' }).enabled).toBe(false)
   })
 

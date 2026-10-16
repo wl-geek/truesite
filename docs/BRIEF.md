@@ -72,7 +72,7 @@ Wai found a 13-second screen recording of a commercial construction-AR app on a 
 1. **Hero shot (the video's opening): the rooftop of Wai's condo, 40th floor, clear sky, about 100 m² clear.**
    - Project `rooftop`: a 9 × 9 m, two-storey concrete frame (32 columns, 48 beams, 80 rebar cages with starter bars) at 1:1.
    - The A2 sheet **R1** (33 cm code) lies at the centre of the middle bay; **R2** is an A4 test version.
-   - Start AR → fill the ring → the frame stands around you, and you walk under it and look up.
+   - Scan R1 → Start camera (the camera overlay, on Android and iPhone) → start within 1 m, step back → the frame stands around the sheet, and you turn on the spot and look up. Start AR (world-locked, walk under it) stays hidden behind `?xr=1` and is untested on a device.
    - **iPad building site (Michael, open car park):** project `site`, a two-storey building under construction (18 × 12 m, 6 m bays, 3.9 m clear in the ground storey, ridge about 10.5 m), colour-coded by type like the video. Four upright A3 sheets P1–P4 set out with `site-layout.pdf`. At each one: lock 0.7 m from the code, step back to the X 1.5 m away, turn on the spot. Camera overlay only, levelled by the motion sensors. Walk inside and Start AR are hidden (`?xr=1` brings them back). Checklist: `docs/demo/ipad-ar-filming.md`.
 2. **The AI moment.** Boxes or cones stand where 3–4 columns go, **one about 40 cm off and one missing**. *Check as-built* finds "Column … misplaced, about 40 cm" and "Column … missing". This is a setting-out check, a real site task.
 3. **Judges without a site:**
@@ -85,7 +85,7 @@ Wai found a 13-second screen recording of a commercial construction-AR app on a 
 
 | Must work | Nice | Out |
 |---|---|---|
-| Deployed Cloud Run URL. Samples check with real Gemini. Live AR on Android (place by code, world-locked) and iPhone (camera overlay). As-built check from the live view. Ask. Issues. Rooftop hero demo. Desk sheet. README, deck and video. | As-built check inside the world-locked Android AR. iPhone Quick Look walk-in verified. Measured accuracy numbers. Voice question. BCF export. | Native apps, VR, user IFC upload, logins, offline mode, survey-grade accuracy claims |
+| Deployed Cloud Run URL. Samples check with real Gemini. Live AR on Android and iPhone (camera overlay). As-built check from the live view. Ask. Issues. Rooftop hero demo. Desk sheet. README, deck and video. | Android Start AR (place by code, world-locked, behind `?xr=1`) verified on a device, with a check inside it. iPhone Quick Look walk-in verified. Measured accuracy numbers. Voice question. BCF export. | Native apps, VR, user IFC upload, logins, offline mode, survey-grade accuracy claims |
 
 ## 6. Current state (16 Oct)
 
