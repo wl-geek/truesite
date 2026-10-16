@@ -29,6 +29,8 @@ export const EDGE_LAYER = 1
 const DETECT_WIDTH = 640
 const ORIGIN = new Vector3()
 const LOST_AFTER_S = 0.5
+/** Detections this old are stale: the sensors hold the model from here on, well before LOST_AFTER_S (audit B-03). */
+const HOLD_AFTER_S = 0.15
 const NEAR_M = 0.02
 const FAR_M = 100
 
@@ -87,6 +89,18 @@ export type OverlayOptions = {
   motion: boolean
   /** The WebGL context was lost and not restored (glContext.ts); detection has already stopped. */
   onContextDead?: () => void
+}
+
+/**
+ * Whether this frame poses the model by the motion sensors (audit B-03): in look-around mode, and as soon as the
+ * code's detections go stale, so the model doesn't ride along with the device until look-around starts at
+ * LOST_AFTER_S and then snap back. Needs the sensors on and a lock within LOOK_AROUND_MAX_S. The emitted state
+ * doesn't change: the 0.5 s rule still decides when the model is hidden (no lock) or the mode turns to motion.
+ */
+export function holdBySensors(mode: OverlayState['mode'], nowS: number, lastSeenS: number, lock: Pick<MotionLock, 'tSec'> | null, motion: boolean): boolean {
+  if (!lock || !motion) return false
+  if (mode === 'motion') return true
+  return mode === 'code' && nowS - lastSeenS > HOLD_AFTER_S && nowS - lock.tSec < LOOK_AROUND_MAX_S
 }
 
 export function createOverlay(o: OverlayOptions): Overlay {
@@ -230,7 +244,7 @@ export function createOverlay(o: OverlayOptions): Overlay {
         qr.detect(img).then((res) => onDetection(res, fw, fh, vw, vh)).catch(() => undefined)
       }
     }
-    if (state.mode === 'motion' && lock && deviceR) {
+    if (lock && deviceR && holdBySensors(state.mode, performance.now() / 1000, lastSeen, lock, o.motion)) {
       model.ifcRoot.matrix.fromArray(levelled(modelMatrixIfc(pAnchor, lookAroundPose(lock, deviceR))))
       model.ifcRoot.matrixWorldNeedsUpdate = true
     }
