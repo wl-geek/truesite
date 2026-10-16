@@ -54,7 +54,15 @@ export function makeAsBuilt(model: LoadedModel, elements: readonly Element[], de
     const node = e && model.byGuid.get(e.guid)
     if (!node) throw new Error(`as-built: no element named ${d.element}`)
     if (d.kind === 'missing') node.visible = false
-    else node.position.add(new Vector3(d.offsetM[0], d.offsetM[2], -d.offsetM[1])) // IFC (x, y, z) -> glTF (x, z, -y)
+    else {
+      const move = new Vector3(d.offsetM[0], d.offsetM[2], -d.offsetM[1]) // IFC (x, y, z) -> glTF (x, z, -y)
+      for (const name of [d.element, ...(d.alsoMoves ?? [])]) {
+        const e2 = byName.get(name)
+        const n2 = e2 && model.byGuid.get(e2.guid)
+        if (!n2) throw new Error(`as-built: no element named ${name}`)
+        n2.position.add(move)
+      }
+    }
   }
   model.ifcRoot.updateMatrixWorld(true)
 }

@@ -10,7 +10,8 @@ import { modelMatrixIfc, projectionMatrixGL, type Intrinsics, type Pose } from '
 import { applyProjection } from '../scene/arCamera'
 import { poseAnchor } from '../scene/arMath'
 import { visibleFromIdBuffer } from '../scene/elements'
-import { renderDesignImage, renderIdBuffer } from '../scene/idBuffer'
+import { designColourOfClass, renderDesignImage, renderIdBuffer } from '../scene/idBuffer'
+import { KIND_COLOURS, paintOf } from '../scene/palette'
 import type { LoadedModel } from '../scene/loadModel'
 import { viewNote, type ConstructionLook } from '../scene/look'
 import { drawMarks, markCentres, selectMarks } from './marks'
@@ -107,7 +108,7 @@ export async function runCheck(input: CheckInput): Promise<CheckOutcome> {
       return { response: null, saved: null, error: new ApiError('nothing_visible', 0, 'nothing_visible'), marks, render: null, viewNote: note }
     }
     const design = await renderDesignImage(renderer, scene, model, cameraFor(K, videoW, videoH, photoW, photoH), photoW, photoH,
-      (guid) => input.elements.get(guid)?.ifc_class ?? '', clip)
+      (guid) => designColour(input.elements.get(guid)), clip)
     const canvas = document.createElement('canvas')
     canvas.width = photoW
     canvas.height = photoH
@@ -141,4 +142,11 @@ export async function runCheck(input: CheckInput): Promise<CheckOutcome> {
     }
     return { response: null, saved: null, error: err, marks, render, viewNote: note }
   }
+}
+
+/** An element's colour in the design render: its palette type colour (the 3D viewer's key), else by IFC class. */
+function designColour(el: Element | undefined): number {
+  if (!el) return designColourOfClass('')
+  const { kind } = paintOf(el)
+  return kind === 'other' || kind === 'opening' ? designColourOfClass(el.ifc_class) : KIND_COLOURS[kind]
 }

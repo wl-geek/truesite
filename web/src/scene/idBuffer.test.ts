@@ -62,7 +62,7 @@ describe('renderIdBuffer and renderDesignImage judge what is shown', () => {
       constructor(width: number, height: number) { this.data = new Uint8ClampedArray(width * height * 4) }
     })
     const { m, scene, camera, renderer, drawn } = setup()
-    await renderDesignImage(renderer, scene, m, camera, 8, 4, () => 'IfcBeam', [cut()])
+    await renderDesignImage(renderer, scene, m, camera, 8, 4, () => 0x16b9d4, [cut()])
     expect(drawn.every((d) => d.clip.length === 1 && d.localClipping)).toBe(true)
   })
 

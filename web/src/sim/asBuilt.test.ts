@@ -7,7 +7,10 @@ const elements: { name: string }[] = JSON.parse(readFileSync(new URL('../../../b
 describe('SITE_AS_BUILT', () => {
   it('names real elements of the site model, each once', () => {
     const names = new Set(elements.map((e) => e.name))
-    for (const d of SITE_AS_BUILT) expect(names.has(d.element), d.element).toBe(true)
+    for (const d of SITE_AS_BUILT) {
+      expect(names.has(d.element), d.element).toBe(true)
+      if (d.kind === 'shifted') for (const n of d.alsoMoves ?? []) expect(names.has(n), n).toBe(true)
+    }
     expect(new Set(SITE_AS_BUILT.map((d) => d.element)).size).toBe(SITE_AS_BUILT.length)
   })
 

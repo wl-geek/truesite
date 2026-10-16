@@ -8,8 +8,8 @@
  * planes (look.clipPlanes(), updated at the snapshot pose) are applied to the override materials.
  */
 import {
-  Color, DoubleSide, Mesh, MeshBasicMaterial, NoToneMapping, RGBAFormat, UnsignedByteType, WebGLRenderTarget,
-  type Camera, type Material, type Plane, type Scene, type WebGLRenderer,
+  Color, DirectionalLight, DoubleSide, HemisphereLight, Mesh, MeshBasicMaterial, MeshLambertMaterial, NoToneMapping, RGBAFormat,
+  UnsignedByteType, WebGLRenderTarget, type Camera, type Material, type Plane, type Scene, type WebGLRenderer,
 } from 'three'
 import { idColor } from './elements'
 import type { LoadedModel } from './loadModel'
@@ -91,17 +91,29 @@ const LINEAR_TO_SRGB = Uint8ClampedArray.from({ length: 256 }, (_, i) => {
 })
 
 /** An opaque render of the design (top-down RGBA rows) at the photo size, for Gemini's IMAGE 2. */
+/**
+ * The design as Gemini sees it (IMAGE 2): each element type in its own colour (the 3D viewer's key), shaded by a light
+ * from the camera's upper left, so columns, beams and members read as separate solids instead of one flat silhouette.
+ * `colourOf` gives an element's colour; the lights are added for this render only.
+ */
 export async function renderDesignImage(renderer: WebGLRenderer, scene: Scene, model: LoadedModel, camera: Camera,
-  width: number, height: number, classOf: (guid: string) => string, clip: readonly Plane[] = []): Promise<ImageData> {
-  const cache = new Map<number, MeshBasicMaterial>()
+  width: number, height: number, colourOf: (guid: string) => number, clip: readonly Plane[] = []): Promise<ImageData> {
+  const cache = new Map<number, MeshLambertMaterial>()
   const material = (mesh: Mesh) => {
-    const cls = classOf(model.meshGuid.get(mesh)!)
-    const hex = DESIGN_COLOURS.find(([re]) => re.test(cls))?.[1] ?? 0xd9d9d9
+    const hex = colourOf(model.meshGuid.get(mesh)!)
     if (!cache.has(hex)) {
-      cache.set(hex, new MeshBasicMaterial({ color: hex, side: DoubleSide, polygonOffset: true, polygonOffsetFactor: 1, clippingPlanes: clipFor(clip) }))
+      cache.set(hex, new MeshLambertMaterial({
+        color: hex, side: DoubleSide, flatShading: true, polygonOffset: true, polygonOffsetFactor: 1, clippingPlanes: clipFor(clip),
+      }))
     }
     return cache.get(hex)!
   }
+  // The AR camera sits at the origin looking down -z: light from its upper left, plus sky light so shade isn't black.
+  const sky = new HemisphereLight(0xffffff, 0x8a96a3, 1.5)
+  const key = new DirectionalLight(0xffffff, 2.2)
+  key.position.set(-0.6, 1, 0.8)
+  key.target.position.set(0, 0, -1)
+  scene.add(sky, key, key.target)
   try {
     const buf = await renderWith(renderer, scene, model, camera, width, height, material, new Color(0xf4f6f8), clip)
     const out = new ImageData(width, height)
@@ -117,6 +129,12 @@ export async function renderDesignImage(renderer: WebGLRenderer, scene: Scene, m
     }
     return out
   } finally {
+    scene.remove(sky, key, key.target)
     cache.forEach((m) => m.dispose())
   }
+}
+
+/** Fallback design colours by IFC class, for elements the palette doesn't know. */
+export function designColourOfClass(cls: string): number {
+  return DESIGN_COLOURS.find(([re]) => re.test(cls))?.[1] ?? 0xd9d9d9
 }
