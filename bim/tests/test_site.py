@@ -115,7 +115,7 @@ def test_anchors_and_project(built):
     desk = anchors[4]
     assert desk["scale"] == 0.01 and desk["position_m"] == [23.5, 6.0, 0.0] and desk["qr_size_m"] == 0.07
     assert json.loads((built / "project.json").read_text(encoding="utf-8")) == {
-        "project_id": "site", "name": "Building under construction (1:1)"}
+        "project_id": "site", "name": "Building under construction (1:1)", "check_note": site.CHECK_NOTE}
 
 
 def test_tape_distances():

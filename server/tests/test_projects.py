@@ -126,6 +126,14 @@ def test_the_committed_rooftop_project_loads() -> None:
     assert repo.check_note("room1") == ""
 
 
+def test_the_committed_site_project_has_a_check_note() -> None:
+    # The site photos are taken from up to 10 m away: the code is small or out of frame, and the other
+    # boards, vehicles and background buildings must not come back as unexpected (B-07).
+    note = ProjectRepo(DEFAULT_MODELS_DIR).check_note("site")
+    assert "marker_far" in note and "unexpected" in note
+    assert all(word in note for word in ("QR boards", "vehicles", "buildings"))
+
+
 def test_check_note_comes_from_project_json(models) -> None:
     import json as _json
     assert ProjectRepo(models).check_note("testproj") == ""
