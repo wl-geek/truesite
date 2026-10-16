@@ -186,7 +186,7 @@ deploy() {
   [ -f Dockerfile ] && [ -d bim ] && [ -d web ] || die "run this from the repo root"
   local url env secrets=""
   env="STORE_BACKEND=gcp,GCS_BUCKET=$BUCKET,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,GEMINI_MODE=live"
-  env="$env,DAILY_CHECK_CAP=100,DAILY_ASK_CAP=300,CHECKS_PER_IP_PER_HOUR=10,TRUSTED_PROXY_HOPS=1"
+  env="$env,DAILY_CHECK_CAP=300,DAILY_ASK_CAP=300,CHECKS_PER_IP_PER_HOUR=30,TRUSTED_PROXY_HOPS=1"  # judges share office IPs; about US$0.004 a check
   case "$GEMINI_BACKEND" in
     enterprise) env="$env,GOOGLE_GENAI_USE_ENTERPRISE=true,GOOGLE_CLOUD_LOCATION=$GEMINI_LOCATION" ;;
     # The SDK ignores GEMINI_API_KEY while GOOGLE_GENAI_USE_ENTERPRISE=true, so the flag goes with the key.

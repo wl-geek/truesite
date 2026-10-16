@@ -105,7 +105,7 @@ Wai found a 13-second screen recording of a commercial construction-AR app on a 
   - The rooftop setting-out prompt (`check_note`) needs one live call before the shoot.
 - **Google Cloud:**
   - Project `truesite-hack-2026` exists, owned by Wai's Gmail. **Billing is not linked yet:** Michael's free-trial billing account will be linked. Nothing is deployed yet.
-  - `make setup` / `make deploy` / `make verify` are ready: daily caps of 100 checks and 300 asks; the deploy renders the QR sheets for the service URL; `make verify` ends with `SMOKE OK`.
+  - `make setup` / `make deploy` / `make verify` are ready: daily caps of 300 checks and 300 asks (30 checks per IP per hour); the deploy renders the QR sheets for the service URL; `make verify` ends with `SMOKE OK`.
 - **Open work:** see GitHub Issues. Human-only items:
   - deploy and billing (#1)
   - device runs (#33, #35)
