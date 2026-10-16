@@ -143,7 +143,8 @@ def test_check_schema_tracks_marks_and_caps_at_25():
     req = gc.build_check_request(PHOTO, RENDER, many)
     schema = req["config"].response_json_schema
     findings = schema["properties"]["findings"]
-    assert findings["minItems"] == findings["maxItems"] == 25  # exactly one finding per mark
+    # Gemini rejects an exact array length at real mark counts (#77): no bounds; repair_check covers it.
+    assert "minItems" not in findings and "maxItems" not in findings
     assert findings["items"]["properties"]["mark"] == {
         "description": "The numbered mark from IMAGE 2.", "maximum": 25, "minimum": 1, "type": "integer"}
     box = findings["items"]["properties"]["evidence_box"]
@@ -316,7 +317,7 @@ def _api_error(cls, code, status):
     (auth_errors.RefreshError("metadata server busy", retryable=True), "unavailable", None),
 ])
 def test_errors_are_translated(exc, kind, status):
-    client = FakeClient(exc)
+    client = FakeClient(exc, exc)  # a 429/503 also fails on the fallback model
     with pytest.raises(gc.GeminiError) as info:
         gc.check_asbuilt(PHOTO, RENDER, CONTEXT, client=client)
     assert (info.value.kind, info.value.status) == (kind, status)
@@ -395,7 +396,7 @@ def test_sdk_retries_once_on_503_then_succeeds():
     assert len(calls) == 2 and out["result"] == GOOD_CHECK
 
 
-def test_sdk_gives_up_after_two_429s():
+def test_sdk_gives_up_after_two_429s_on_each_model():
     calls = []
 
     def handler(request):
@@ -404,7 +405,8 @@ def test_sdk_gives_up_after_two_429s():
 
     with pytest.raises(gc.GeminiError) as info:
         gc.check_asbuilt(PHOTO, RENDER, CONTEXT, client=mock_client(handler, api_key="K"))
-    assert info.value.kind == "rate_limited" and len(calls) == 2
+    assert info.value.kind == "rate_limited" and len(calls) == 4  # two SDK tries on MODEL_ID, two on the fallback
+    assert [gc.FALLBACK_MODEL_ID in str(c.url) for c in calls] == [False, False, True, True]
 
 
 def test_sdk_does_not_retry_400():
@@ -493,3 +495,18 @@ def test_cost_estimate_matches_spec_example():
     # two high-res images (2 x 1120) + ~2k text in; ~1.5k JSON out + ~1k thinking (low)
     cost = gc.estimate_cost_usd(2 * 1120 + 2000, 1500, 1000)
     assert round(cost, 4) == 0.0126
+
+
+def test_busy_model_falls_back_to_the_second_model_once():
+    busy = _api_error(genai_errors.ServerError, 503, "UNAVAILABLE")
+    client = FakeClient(busy, fake_response(GOOD_CHECK))
+    out = gc.check_asbuilt(PHOTO, RENDER, CONTEXT, client=client)
+    assert out["result"]["findings"]
+    assert [c["model"] for c in client.models.calls] == [gc.MODEL_ID, gc.FALLBACK_MODEL_ID]
+
+
+def test_bad_request_does_not_fall_back():
+    client = FakeClient(_api_error(genai_errors.ClientError, 400, "INVALID_ARGUMENT"))
+    with pytest.raises(gc.GeminiError) as info:
+        gc.check_asbuilt(PHOTO, RENDER, CONTEXT, client=client)
+    assert info.value.kind == "bad_request" and len(client.models.calls) == 1

@@ -49,7 +49,7 @@ export function boxToCss(box: Box): { top: string; left: string; width: string; 
 const QUALITY: Record<Exclude<ImageQuality, 'good'>, string> = {
   too_dark: 'The photo is too dark to judge. Add light and take it again.',
   blurred: 'The photo is blurred. Hold still and take it again.',
-  marker_far: 'You are too far from the code. Move closer and take it again.',
+  marker_far: 'The work is too far away to judge. Move closer and take it again.',
   occluded: 'Something is in the way. Clear the view and take it again.',
 }
 

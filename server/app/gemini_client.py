@@ -18,6 +18,7 @@ import copy
 import functools
 import json
 import logging
+import os
 import time
 from typing import Annotated, Any, Optional
 
@@ -33,6 +34,9 @@ from .schemas import Direction, ImageQuality, Status  # the contract's wire lite
 log = logging.getLogger("truesite.gemini")
 
 MODEL_ID = "gemini-3.8-flash"
+# Tried once when MODEL_ID is overloaded (503) or out of quota (429): the judging window must not hinge on one
+# model's capacity. GEMINI_FALLBACK_MODEL="" turns it off.
+FALLBACK_MODEL_ID = os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-3.5-flash")
 REQUEST_TIMEOUT_MS = 25_000  # HttpOptions.timeout is in MILLISECONDS
 MAX_OUTPUT_TOKENS = 8_192  # caps response + thinking tokens together (cost guard)
 ASK_MAX_OUTPUT_TOKENS = 2_048  # Ask (<= 600 chars) and Draft (<= 780 chars) plus LOW thinking
@@ -139,8 +143,9 @@ class Unexpected(BaseModel):
 
 class CheckWire(BaseModel):
     image_quality: ImageQuality = Field(description=(
-        "Photo quality: good; too_dark; blurred; marker_far = the printed QR code is too far away or too small "
-        "in the photo; occluded = something hides most of the elements to check."))
+        "Photo quality: good; too_dark; blurred; marker_far = the elements to check are too far away or too small "
+        "in the photo to judge; occluded = something hides most of the elements to check. The QR code is not "
+        "expected in the photo: the camera pose is already known."))
     findings: list[Finding] = Field(max_length=MAX_MARKS, description="Exactly one entry per numbered mark.")
     unexpected: list[Unexpected] = Field(max_length=10, description="Clearly visible objects that are not in the design. Empty if none.")
     summary: str = Field(max_length=300, description="At most 300 characters.")
@@ -191,7 +196,11 @@ def gemini_json_schema(model: type[BaseModel]) -> dict:
 def _check_schema(n_marks: int) -> dict:
     schema = gemini_json_schema(CheckWire)
     finding = schema["properties"]["findings"]
-    finding["minItems"] = finding["maxItems"] = n_marks  # CheckContext marks are exactly 1..n
+    # No minItems/maxItems on the findings array: Gemini answers 400 INVALID_ARGUMENT to an exact length at real
+    # mark counts (25; seen 16 Oct 2026, #77). The prompt asks for one finding per mark, and repair_check marks a
+    # missing mark "not assessed" and drops duplicates.
+    finding.pop("minItems", None)
+    finding.pop("maxItems", None)  # CheckWire's max_length also becomes maxItems, and that alone triggers the 400
     finding["items"]["properties"]["mark"]["maximum"] = n_marks
     return schema
 
@@ -389,6 +398,21 @@ def _translate(exc: Exception) -> GeminiError:
     raise exc
 
 
+def _generate(client: Any, request: dict) -> Any:
+    """One call; if MODEL_ID is overloaded or out of quota, one more on FALLBACK_MODEL_ID."""
+    try:
+        return client.models.generate_content(**request)
+    except Exception as exc:  # noqa: BLE001 - translated below
+        err = _translate(exc)
+        if not (FALLBACK_MODEL_ID and request["model"] != FALLBACK_MODEL_ID and err.status in (429, 503)):
+            raise err from exc
+        log.warning("gemini %s unavailable (%s): trying %s", request["model"], err, FALLBACK_MODEL_ID)
+    try:
+        return client.models.generate_content(**{**request, "model": FALLBACK_MODEL_ID})
+    except Exception as exc:  # noqa: BLE001 - translated below
+        raise _translate(exc) from exc
+
+
 def generate_json(request: dict, *, client: Any = None, parse_attempts: int = 2) -> dict:
     """Run one structured request. HTTP-level retry is done by the SDK
     (RETRY_OPTIONS); a response that does not parse is retried once here, unless it
@@ -401,10 +425,7 @@ def generate_json(request: dict, *, client: Any = None, parse_attempts: int = 2)
     started = time.monotonic()
     billed = {"prompt_tokens": 0, "output_tokens": 0, "thought_tokens": 0, "total_tokens": 0, "cost_usd_est": 0.0}
     for attempt in range(1, parse_attempts + 1):
-        try:
-            response = client.models.generate_content(**request)
-        except Exception as exc:  # noqa: BLE001 - translated below
-            raise _translate(exc) from exc
+        response = _generate(client, request)
         for key, val in usage_dict(response).items():  # every attempt is billed
             billed[key] = round(billed[key] + val, 6)
         try:
