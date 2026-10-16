@@ -93,7 +93,15 @@ ANCHOR_DESK = {"anchor_id": "D1", "project_id": PROJECT_ID, "qr_size_m": 0.07,
                               round((DESK_QR_MM[1] - DESK_ORIGIN_MM[1]) / 1000 / DESK_SCALE_SITE, 4), 0.0],
                "normal": [0, 0, 1], "up": [0, 1, 0], "scale": DESK_SCALE_SITE, "label": "Building desk sheet A4 (1:100)"}
 ANCHORS = [*VIEW_ANCHORS, ANCHOR_DESK]
-PROJECT = {"project_id": PROJECT_ID, "name": "Building under construction (1:1)"}
+# project.json "check_note": the server adds it to every check prompt for this project. The photos are taken
+# from the viewpoints, up to 10 m out, so the 0.23 m code is small or out of frame and the car park is in view.
+CHECK_NOTE = (
+    "Views of a building under construction from up to 10 m away. The QR code may be small or out of the "
+    "photo: rate image_quality only by how clearly the marked elements show, never marker_far because of the "
+    "code. The QR boards on stands, the car park, vehicles and the buildings in the background are not part "
+    "of the check: do not list them under unexpected."
+)
+PROJECT = {"project_id": PROJECT_ID, "name": "Building under construction (1:1)", "check_note": CHECK_NOTE}
 
 
 def top_chord_z(y: float) -> float:
