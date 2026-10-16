@@ -8,7 +8,8 @@ describe('checkErrorMessage', () => {
     expect(checkErrorMessage({ status: 0, code: 'no_pose' })).toBe('Keep the code in view when you take the photo.')
     expect(checkErrorMessage({ status: 429, code: 'rate_limited', retryAfterS: 600 })).toBe('Too many checks from this network. Try again in about 10 min.')
     expect(checkErrorMessage({ status: 429, code: 'daily_cap' })).toMatch(/sample photos/)
-    expect(checkErrorMessage({ status: 503, code: 'model_unavailable' })).toBe('Check failed — try again.')
+    expect(checkErrorMessage({ status: 503, code: 'model_unavailable' })).toBe('Gemini is busy right now. Try again in a minute.')
+    expect(checkErrorMessage({ status: 500, code: 'internal' })).toBe('Check failed. Try again.')
     expect(checkErrorMessage({ status: 0, code: 'network' })).toMatch(/No connection/)
   })
 

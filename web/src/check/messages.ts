@@ -30,8 +30,10 @@ export function checkErrorMessage(err: ErrorInfo): string {
       return 'No connection. Check your network and try again.'
     case 'timeout':
       return 'The check took too long. Try again.'
+    case 'model_unavailable':
+      return 'Gemini is busy right now. Try again in a minute.'
     default:
-      return 'Check failed — try again.'
+      return 'Check failed. Try again.'
   }
 }
 

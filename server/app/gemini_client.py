@@ -34,9 +34,10 @@ from .schemas import Direction, ImageQuality, Status  # the contract's wire lite
 log = logging.getLogger("truesite.gemini")
 
 MODEL_ID = "gemini-3.8-flash"
-# Tried once when MODEL_ID is overloaded (503) or out of quota (429): the judging window must not hinge on one
-# model's capacity. GEMINI_FALLBACK_MODEL="" turns it off.
-FALLBACK_MODEL_ID = os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-3.5-flash")
+# Tried in order when MODEL_ID is overloaded (503) or out of quota (429): the judging window must not hinge on one
+# model's capacity. GEMINI_FALLBACK_MODEL is a comma-separated list; "" turns it off.
+FALLBACK_MODEL_IDS = tuple(m.strip() for m in os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-3.5-flash,gemini-3.5-flash-lite")
+                           .split(",") if m.strip())
 REQUEST_TIMEOUT_MS = 25_000  # HttpOptions.timeout is in MILLISECONDS
 MAX_OUTPUT_TOKENS = 8_192  # caps response + thinking tokens together (cost guard)
 ASK_MAX_OUTPUT_TOKENS = 2_048  # Ask (<= 600 chars) and Draft (<= 780 chars) plus LOW thinking
@@ -445,18 +446,17 @@ def _translate(exc: Exception) -> GeminiError:
 
 
 def _generate(client: Any, request: dict) -> Any:
-    """One call; if MODEL_ID is overloaded or out of quota, one more on FALLBACK_MODEL_ID."""
-    try:
-        return client.models.generate_content(**request)
-    except Exception as exc:  # noqa: BLE001 - translated below
-        err = _translate(exc)
-        if not (FALLBACK_MODEL_ID and request["model"] != FALLBACK_MODEL_ID and err.status in (429, 503)):
-            raise err from exc
-        log.warning("gemini %s unavailable (%s): trying %s", request["model"], err, FALLBACK_MODEL_ID)
-    try:
-        return client.models.generate_content(**{**request, "model": FALLBACK_MODEL_ID})
-    except Exception as exc:  # noqa: BLE001 - translated below
-        raise _translate(exc) from exc
+    """One call; while a model is overloaded or out of quota, the next of FALLBACK_MODEL_IDS."""
+    models = [request["model"], *(m for m in FALLBACK_MODEL_IDS if m != request["model"])]
+    for i, model in enumerate(models):
+        try:
+            return client.models.generate_content(**{**request, "model": model})
+        except Exception as exc:  # noqa: BLE001 - translated below
+            err = _translate(exc)
+            if err.status not in (429, 503) or i == len(models) - 1:
+                raise err from exc
+            log.warning("gemini %s unavailable (%s): trying %s", model, err, models[i + 1])
+    raise AssertionError("unreachable")
 
 
 def generate_json(request: dict, *, client: Any = None, parse_attempts: int = 2) -> dict:

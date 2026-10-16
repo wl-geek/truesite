@@ -400,7 +400,7 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
             <h2>As-built check · {vp.id}</h2>
             <button type="button" className="vs-btn vs-btn-light" onClick={() => setResultsOpen(false)}>Back to the view</button>
           </div>
-          <ScoreCard score={outcome.score} />
+          <ScoreCard score={outcome.score} offline={outcome.result.model_version === 'fake'} />
           <div className="vs-compare">
             <figure>
               <figcaption>Your view: the site photo</figcaption>
@@ -444,7 +444,16 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
 }
 
 /** The planted truth for this view, after the check: what Gemini caught and what it missed. */
-function ScoreCard({ score }: { score: Score }) {
+function ScoreCard({ score, offline }: { score: Score; offline: boolean }) {
+  if (offline) {
+    return (
+      <section className="vs-score" aria-label="Against the planted defects">
+        <p className="vs-score-line">Offline test mode: Gemini isn't connected on this server</p>
+        <p className="note">The stand-in reads every element as matching, so it flags none of the planted defects. The
+          deployed app runs the real check with Gemini.</p>
+      </section>
+    )
+  }
   return (
     <section className="vs-score" aria-label="Against the planted defects">
       <p className="vs-score-line">{scoreLine(score)}</p>
@@ -452,8 +461,8 @@ function ScoreCard({ score }: { score: Score }) {
         <ul className="vs-score-list">
           {score.inView.map(({ planted, found }) => (
             <li key={planted.element} className={found ? 'hit' : 'miss'}>
-              <span aria-hidden="true">{found ? '✓' : '✗'}</span>
-              {describeDeviation(planted)}
+              <span aria-hidden="true">{found ? '✓' : '✗'}</span>{' '}
+              <span>{describeDeviation(planted)}</span>{' '}
               <span className="vs-score-tag">{found ? 'found' : 'missed'}</span>
             </li>
           ))}
@@ -468,7 +477,8 @@ function ScoreCard({ score }: { score: Score }) {
 
 /** "Checked by gemini-3.8-flash in 6.2 s · 18 elements compared · about US$0.004". */
 function judgedLine(o: Outcome): string {
-  const parts = [`Checked by ${o.result.model_version ?? 'Gemini'} in ${(o.latencyMs / 1000).toFixed(1)} s`,
+  const by = o.result.model_version === 'fake' ? 'the offline stand-in (not Gemini)' : o.result.model_version ?? 'Gemini'
+  const parts = [`Checked by ${by} in ${(o.latencyMs / 1000).toFixed(1)} s`,
     `${o.result.findings.length} elements compared`]
   if (o.result.usage) parts.push(`about US$${o.result.usage.cost_usd_est.toFixed(3)}`)
   return parts.join(' · ')

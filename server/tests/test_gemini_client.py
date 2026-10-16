@@ -317,7 +317,7 @@ def _api_error(cls, code, status):
     (auth_errors.RefreshError("metadata server busy", retryable=True), "unavailable", None),
 ])
 def test_errors_are_translated(exc, kind, status):
-    client = FakeClient(exc, exc)  # a 429/503 also fails on the fallback model
+    client = FakeClient(exc, exc, exc)  # a 429/503 also fails on both fallback models
     with pytest.raises(gc.GeminiError) as info:
         gc.check_asbuilt(PHOTO, RENDER, CONTEXT, client=client)
     assert (info.value.kind, info.value.status) == (kind, status)
@@ -405,8 +405,9 @@ def test_sdk_gives_up_after_two_429s_on_each_model():
 
     with pytest.raises(gc.GeminiError) as info:
         gc.check_asbuilt(PHOTO, RENDER, CONTEXT, client=mock_client(handler, api_key="K"))
-    assert info.value.kind == "rate_limited" and len(calls) == 4  # two SDK tries on MODEL_ID, two on the fallback
-    assert [gc.FALLBACK_MODEL_ID in str(c.url) for c in calls] == [False, False, True, True]
+    models = [gc.MODEL_ID, *gc.FALLBACK_MODEL_IDS]
+    assert info.value.kind == "rate_limited" and len(calls) == 2 * len(models)  # two SDK tries on each model in turn
+    assert [str(c.url).split("/models/")[1].split(":")[0] for c in calls] == [m for m in models for _ in (0, 1)]
 
 
 def test_sdk_does_not_retry_400():
@@ -502,7 +503,7 @@ def test_busy_model_falls_back_to_the_second_model_once():
     client = FakeClient(busy, fake_response(GOOD_CHECK))
     out = gc.check_asbuilt(PHOTO, RENDER, CONTEXT, client=client)
     assert out["result"]["findings"]
-    assert [c["model"] for c in client.models.calls] == [gc.MODEL_ID, gc.FALLBACK_MODEL_ID]
+    assert [c["model"] for c in client.models.calls] == [gc.MODEL_ID, gc.FALLBACK_MODEL_IDS[0]]
 
 
 def test_bad_request_does_not_fall_back():
