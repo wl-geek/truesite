@@ -6,9 +6,16 @@
     "anchor_id": "P1",
     "simulated": true,
     "staged": [
+      "Steel column B1: about 45 cm east of the design",
+      "Steel column D3: about 40 cm south of the design",
       "Brace wall south A-B (2): missing",
-      "Edge protection south: missing",
-      "Steel column B1: about 45 cm east of the design"
+      "Brace roof north C-D (1): missing",
+      "Edge protection south: missing (a fall hazard at level 1)",
+      "Edge protection north: missing (a fall hazard at level 1)",
+      "RC column C2: not cast yet: only its rebar cage stands",
+      "Beam B1-C1: missing",
+      "Purlin P4 C-D: missing",
+      "Truss T4 diagonal 3: missing"
     ]
   },
   {
@@ -18,8 +25,16 @@
     "anchor_id": "P2",
     "simulated": true,
     "staged": [
-      "RC column C2: missing",
-      "Beam B1-C1: missing"
+      "Steel column B1: about 45 cm east of the design",
+      "Steel column D3: about 40 cm south of the design",
+      "Brace wall south A-B (2): missing",
+      "Brace roof north C-D (1): missing",
+      "Edge protection south: missing (a fall hazard at level 1)",
+      "Edge protection north: missing (a fall hazard at level 1)",
+      "RC column C2: not cast yet: only its rebar cage stands",
+      "Beam B1-C1: missing",
+      "Purlin P4 C-D: missing",
+      "Truss T4 diagonal 3: missing"
     ]
   },
   {
@@ -29,8 +44,16 @@
     "anchor_id": "P3",
     "simulated": true,
     "staged": [
+      "Steel column B1: about 45 cm east of the design",
+      "Steel column D3: about 40 cm south of the design",
+      "Brace wall south A-B (2): missing",
+      "Brace roof north C-D (1): missing",
+      "Edge protection south: missing (a fall hazard at level 1)",
+      "Edge protection north: missing (a fall hazard at level 1)",
+      "RC column C2: not cast yet: only its rebar cage stands",
+      "Beam B1-C1: missing",
       "Purlin P4 C-D: missing",
-      "Edge protection north: missing"
+      "Truss T4 diagonal 3: missing"
     ]
   },
   {
@@ -40,9 +63,16 @@
     "anchor_id": "P4",
     "simulated": true,
     "staged": [
-      "Truss T4 diagonal 3: missing",
+      "Steel column B1: about 45 cm east of the design",
+      "Steel column D3: about 40 cm south of the design",
+      "Brace wall south A-B (2): missing",
       "Brace roof north C-D (1): missing",
-      "Steel column D3: about 40 cm south of the design"
+      "Edge protection south: missing (a fall hazard at level 1)",
+      "Edge protection north: missing (a fall hazard at level 1)",
+      "RC column C2: not cast yet: only its rebar cage stands",
+      "Beam B1-C1: missing",
+      "Purlin P4 C-D: missing",
+      "Truss T4 diagonal 3: missing"
     ]
   }
 ]

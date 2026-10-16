@@ -17,7 +17,7 @@ export default function App() {
         </Link>
         <nav className="nav" aria-label="Main">
           <Link to="/model" current={route.name === 'viewer'}>Model</Link>
-          <Link to="/samples" current={route.name === 'samples'}>Samples</Link>
+          <Link to="/samples" current={route.name === 'samples'}>Virtual site</Link>
         </nav>
       </header>
       {route.name === 'home' && <HomePage />}

@@ -37,3 +37,15 @@ export function lookAroundPose(lock: MotionLock, D: Mat3): Pose {
   const t = mat3MulVec(R, cm).map((v) => -v) as Vec3
   return { R, t }
 }
+
+/** Motion sensors for look-around. iOS needs an explicit permission from a tap; others just work. */
+export async function requestMotionPermission(): Promise<boolean> {
+  const DOE = (window as unknown as { DeviceOrientationEvent?: { requestPermission?: () => Promise<string> } }).DeviceOrientationEvent
+  if (!DOE) return false
+  if (typeof DOE.requestPermission !== 'function') return true
+  try {
+    return (await DOE.requestPermission()) === 'granted'
+  } catch {
+    return false
+  }
+}

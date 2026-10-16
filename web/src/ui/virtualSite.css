@@ -1,0 +1,52 @@
+/* The virtual site (VirtualSite.tsx): a full-screen 3D view under the top bar, with controls over it. */
+.vs { position: fixed; inset: calc(var(--topbar-h) + env(safe-area-inset-top)) 0 0 0; z-index: 5; background: #cfdbe6; overflow: hidden; }
+.vs-canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; outline: none; }
+.vs-canvas:active { cursor: grabbing; }
+.vs-canvas:focus-visible { outline: 3px solid var(--orange); outline-offset: -3px; }
+
+.vs-top { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px; pointer-events: none; }
+.vs-top > * { pointer-events: auto; }
+.vs-chip { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px; border-radius: 10px; background: rgba(11, 31, 51, 0.82); color: var(--white); font-size: 14px; font-weight: 600; }
+.vs-chip-tag { padding: 2px 7px; border-radius: 6px; background: var(--orange); color: var(--ink); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
+.vs-top-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.vs-btn {
+  min-height: 44px; padding: 0 14px; border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 10px; background: rgba(11, 31, 51, 0.72);
+  color: var(--white); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: background-color 0.18s;
+}
+.vs-btn:hover:not(:disabled) { background: rgba(11, 31, 51, 0.9); }
+.vs-btn:disabled { opacity: 0.5; cursor: default; }
+.vs-btn-on { border-color: var(--orange); background: var(--orange); color: var(--ink); }
+.vs-btn-on:hover:not(:disabled) { background: #ff7f33; }
+.vs-btn-light { border-color: var(--line); background: var(--white); color: var(--steel); }
+.vs-btn-light:hover:not(:disabled) { background: #eef3f8; }
+
+.vs-status { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); margin: 0; padding: 12px 16px; border-radius: 12px; background: rgba(255, 255, 255, 0.94); color: var(--ink); font-weight: 600; }
+.vs-status-error { color: var(--sev-high); }
+.vs-coach { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(380px, calc(100% - 32px)); padding: 16px 18px; border-radius: 14px; background: rgba(255, 255, 255, 0.95); color: var(--ink); box-shadow: 0 12px 40px rgba(11, 31, 51, 0.3); }
+.vs-coach p { margin: 0 0 8px; }
+.vs-coach .vs-btn { margin-top: 4px; border-color: var(--steel); background: var(--steel); }
+
+.vs-bottom { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 16px calc(16px + env(safe-area-inset-bottom)); pointer-events: none; }
+.vs-bottom > * { pointer-events: auto; }
+.vs-notice { margin: 0; max-width: 520px; padding: 8px 12px; border-radius: 10px; background: rgba(255, 255, 255, 0.95); color: var(--ink); font-size: 14px; }
+.vs-check {
+  width: min(420px, 100%); min-height: 56px; padding: 0 20px; border: 0; border-radius: 14px; background: var(--orange); color: var(--ink);
+  font: inherit; font-size: 17px; font-weight: 800; cursor: pointer; box-shadow: 0 8px 24px rgba(11, 31, 51, 0.35); transition: background-color 0.18s;
+}
+.vs-check:hover:not(:disabled) { background: #ff7f33; }
+.vs-check:disabled { cursor: default; opacity: 0.85; }
+
+.vs-results {
+  position: absolute; left: 0; right: 0; bottom: 0; max-height: 78%; overflow-y: auto; display: grid; gap: 12px; padding: 14px 16px calc(18px + env(safe-area-inset-bottom));
+  border-radius: 18px 18px 0 0; background: var(--paper); box-shadow: 0 -12px 40px rgba(11, 31, 51, 0.35);
+}
+.vs-results-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.vs-results-head h2 { margin: 0; font-size: 18px; }
+.vs-truth { padding: 10px 14px; border: 1px dashed var(--line); border-radius: 12px; background: var(--white); font-size: 14px; }
+.vs-truth summary { min-height: 32px; font-weight: 600; cursor: pointer; }
+.vs-truth ul { margin: 6px 0 0; padding-left: 18px; }
+@media (min-width: 900px) {
+  .vs-results { left: auto; top: 0; width: 440px; max-height: none; border-radius: 0; box-shadow: -12px 0 40px rgba(11, 31, 51, 0.3); }
+  .vs-has-results .vs-top, .vs-has-results .vs-bottom { right: 440px; } /* keep the controls beside the panel */
+}
+@media (prefers-reduced-motion: reduce) { .vs-btn, .vs-check { transition: none; } }

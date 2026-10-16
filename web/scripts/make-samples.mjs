@@ -12,12 +12,6 @@ const chrome = process.env.CHROME ?? '/Applications/Google Chrome.app/Contents/M
 const root = new URL('..', import.meta.url).pathname
 const specs = JSON.parse(readFileSync(join(root, 'scripts/sample-specs.json'), 'utf8'))
 const outDir = join(root, 'public/samples')
-/** Compass word for a plan offset (IFC x east, y north), e.g. [0.45, 0, 0] -> "east". */
-function direction([dx, dy, dz]) {
-  if (Math.abs(dz) > Math.hypot(dx, dy)) return dz > 0 ? 'above' : 'below'
-  return Math.abs(dx) >= Math.abs(dy) ? (dx > 0 ? 'east' : 'west') : (dy > 0 ? 'north' : 'south')
-}
-
 const browser = await puppeteer.launch({
   executablePath: chrome, headless: true, acceptInsecureCerts: true,
   args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-certificate-errors'],
@@ -36,10 +30,7 @@ for (const spec of specs) {
   mkdirSync(dir, { recursive: true })
   writeFileSync(join(dir, 'photo.jpg'), Buffer.from(photo.replace(/^data:image\/jpeg;base64,/, ''), 'base64'))
   writeFileSync(join(dir, 'meta.json'), JSON.stringify(meta, null, 2) + '\n')
-  const staged = [
-    ...spec.hidden.map((n) => `${n}: missing`),
-    ...spec.shifted.map((s) => `${s.name}: about ${Math.round(Math.hypot(...s.d) * 100)} cm ${direction(s.d)} of the design`),
-  ]
+  const staged = meta.staged // the whole simulated as-built (sim/asBuilt.ts); some of it may be out of frame
   index.push({ sample_id: meta.sample_id, label: meta.label, project_id: meta.project_id, anchor_id: meta.anchor_id, simulated: true, staged })
   console.log(`${spec.sample_id}: ${Math.round(photo.length * 0.75 / 1024)} KB`)
 }

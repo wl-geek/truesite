@@ -10,7 +10,7 @@ Google Cloud AI Builder Cup 2026 (JAPAC) · Theme: **Future of Work & Enterprise
 
 ## Try it in 60 seconds (no printer, no site)
 
-1. Open the live demo. On the start page, tap **Try the as-built check**, then pick a photo. TrueSite runs the real as-built check on it, using the camera pose stored with it. The four photos are simulated site photos of the building site demo, rendered from the BIM model with a few errors staged on purpose (`web/scripts/make-samples.mjs`); each result lists what was staged, so you can compare.
+1. Open the live demo. On the start page, tap **Try the as-built check**. You stand on a QR spot inside a **simulated as-built site**: a realistic 3D model of the building as it was put up, with ten defects planted on purpose (`web/src/sim/asBuilt.ts`). Look around (drag, or turn the iPad), then tap **Check as-built**: TrueSite takes your view as the site photo, renders the BIM design from the same spot, and Gemini compares the two. The result lists what was planted, so you can compare. Four still photos of the same site are there too (`web/scripts/make-samples.mjs`).
 2. Read the findings. Each one has an evidence box on the photo, a rough offset ("about 30 cm right"), and a severity set by TrueSite from the element type.
 3. Tap **Draft issue** on a deviation. Gemini drafts it, you edit it, and you save it. It then appears under **Issues**.
 4. Tap **See the pins on the 3D model**, then tap any element and **Ask** a question ("What's the fire rating?"). Answers come only from that element's model data, and the fields used are shown.

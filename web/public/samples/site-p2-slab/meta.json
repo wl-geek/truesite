@@ -28,16 +28,18 @@
       1.9785909444097811
     ]
   },
-  "captured_at": "2026-10-16T05:37:34.451Z",
+  "captured_at": "2026-10-16T07:30:42.379Z",
   "simulated": true,
   "staged": [
-    {
-      "element": "RC column C2",
-      "deviation": "missing"
-    },
-    {
-      "element": "Beam B1-C1",
-      "deviation": "missing"
-    }
+    "Steel column B1: about 45 cm east of the design",
+    "Steel column D3: about 40 cm south of the design",
+    "Brace wall south A-B (2): missing",
+    "Brace roof north C-D (1): missing",
+    "Edge protection south: missing (a fall hazard at level 1)",
+    "Edge protection north: missing (a fall hazard at level 1)",
+    "RC column C2: not cast yet: only its rebar cage stands",
+    "Beam B1-C1: missing",
+    "Purlin P4 C-D: missing",
+    "Truss T4 diagonal 3: missing"
   ]
 }

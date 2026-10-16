@@ -15,6 +15,9 @@ import { EvidenceView } from './EvidenceView'
 import { FindingsPanel } from './FindingsPanel'
 import { IssueDialog } from './IssueDialog'
 import { Link } from './Link'
+import { SITE_VIEWPOINTS } from './siteViewpoints'
+import { ViewpointPlan } from './ViewpointPlan'
+import { VirtualSite } from './VirtualSite'
 import './samples.css'
 
 type Loaded = { project: ProjectManifest; model: LoadedModel; renderer: WebGLRenderer; scene: Scene }
@@ -42,6 +45,7 @@ async function getJsonFile(url: string): Promise<unknown> {
  * we captured with the app, each with its stored camera pose. Runs off-screen; no camera needed.
  */
 export function SamplesPage() {
+  const [site, setSite] = useState<string | null>(() => new URLSearchParams(window.location.search).get('at'))
   const [samples, setSamples] = useState<SampleIndexEntry[] | null>(null)
   const [loaded, setLoaded] = useState<Loaded | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -152,20 +156,51 @@ export function SamplesPage() {
   }
   const ready = useMemo(() => samples ?? [], [samples])
 
+  if (site) return <VirtualSite viewpointId={site} onExit={() => setSite(null)} />
+
   return (
     <main className="page samples-page">
-      <p className="eyebrow">No printer needed</p>
-      <h1>Try the as-built check</h1>
+      <p className="eyebrow">No site, no printer needed</p>
+      <h1>Check a simulated building site</h1>
       <p className="samples-lede">
-        Each photo shows our building site demo from one of its four viewpoints, with a few build errors staged on purpose.
-        Pick one: Gemini compares it with the design, pins what is off and drafts the issue.
+        Stand where a QR sheet would be, look around the building as it was built, and let Gemini check it against the
+        BIM design.
       </p>
-      {ready.some((s) => s.simulated) && (
-        <p className="note">
-          These are simulated site photos: rendered from the BIM model with the errors built in, because the demo building
-          doesn't exist yet. The check that runs on them is the real one.
+      <section className="sim-why" aria-labelledby="sim-why-title">
+        <h2 id="sim-why-title">Why a simulated site?</h2>
+        <p>
+          Our demo building doesn't exist yet, so there is nothing real to photograph. Instead you step into a{' '}
+          <strong>simulated as-built site</strong>: a realistic 3D model of the building as it was put up, with ten defects
+          planted on purpose, from a shifted column to missing edge protection.
         </p>
-      )}
+        <p>
+          When you tap <strong>Check as-built</strong>, TrueSite takes your view as the site photo, renders the BIM design
+          from exactly the same spot, and Gemini compares the two: model against model. On a real site the photo comes
+          from the iPad's camera; everything else is the same.
+        </p>
+      </section>
+      <ol className="sim-steps">
+        <li><strong>Pick a QR spot.</strong> You stand on its X, where the sheet's code places you in the model.</li>
+        <li><strong>Look around.</strong> Drag, or turn your iPad. You can't walk, just as on site.</li>
+        <li><strong>Check as-built.</strong> Gemini pins what's off on your view and drafts the issue.</li>
+      </ol>
+      <ul className="sim-spots">
+        {SITE_VIEWPOINTS.map((v) => (
+          <li key={v.id}>
+            <button type="button" className="sim-spot" onClick={() => setSite(v.id)}>
+              <ViewpointPlan active={v} />
+              <span className="sim-spot-body">
+                <span className="sim-spot-title"><span className="sim-spot-id">{v.id}</span>{v.name}</span>
+                <span className="sim-spot-shows">{v.shows}</span>
+                <span className="sim-spot-go">Enter the site</span>
+              </span>
+            </button>
+          </li>
+        ))}
+      </ul>
+
+      <details className="sim-photos">
+        <summary>Prefer a still photo? Four ready-made views of the same site</summary>
       {samples === null && <p className="status">Loading samples…</p>}
       {samples !== null && ready.length === 0 && <p className="status">No sample photos yet.</p>}
       <ul className="sample-grid">
@@ -185,6 +220,7 @@ export function SamplesPage() {
           </li>
         ))}
       </ul>
+      </details>
       {dev && ready.length > 0 && (
         <p><button type="button" className="btn" onClick={() => void runAll()} disabled={running !== null}>Run all samples → results.json</button></p>
       )}

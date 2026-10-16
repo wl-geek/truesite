@@ -32,6 +32,7 @@ import { FindingsPanel } from './FindingsPanel'
 import { IssueDialog } from './IssueDialog'
 import { Link } from './Link'
 import { UNKNOWN_ANCHOR_MESSAGE, isUnknownProject, liveLoadErrorMessage } from './liveFormat'
+import { requestMotionPermission } from '../scene/motion'
 import { QualityBadge } from './QualityBadge'
 import { ReloadPrompt } from './ReloadPrompt'
 
@@ -609,18 +610,6 @@ function download(name: string, blob: Blob): void {
   a.download = name
   a.click()
   setTimeout(() => URL.revokeObjectURL(url), 1000)
-}
-
-/** Motion sensors for look-around. iOS needs an explicit permission from a tap; others just work. */
-async function requestMotionPermission(): Promise<boolean> {
-  const DOE = (window as unknown as { DeviceOrientationEvent?: { requestPermission?: () => Promise<string> } }).DeviceOrientationEvent
-  if (!DOE) return false
-  if (typeof DOE.requestPermission !== 'function') return true
-  try {
-    return (await DOE.requestPermission()) === 'granted'
-  } catch {
-    return false
-  }
 }
 
 /** Where the walk-through model is placed: a floor code's spot, else the middle of the model's footprint. */
