@@ -1,12 +1,13 @@
 /* Top bar (TopBar.tsx). The base .topbar box lives in styles.css; this styles its contents. */
 .topbar { gap: 16px; padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right));
   box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.08); }
-.topbar::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 2px;
-  background: linear-gradient(90deg, var(--orange) 0 18%, rgba(78, 127, 179, 0.6) 18% 100%); opacity: 0.85; pointer-events: none; }
+/* Scroll progress: the orange fill grows with the page scroll (--tb-progress, 0..1, set by TopBar). */
+.topbar::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; pointer-events: none;
+  background: linear-gradient(90deg, var(--orange) calc(var(--tb-progress, 0) * 100%), rgba(78, 127, 179, 0.45) 0); }
 .brand { flex: none; gap: 10px; min-height: 44px; }
 .brand img { border-radius: 8px; }
 .brand-text { display: grid; line-height: 1.1; }
-.brand-name { font-size: 18px; font-weight: 800; letter-spacing: -0.01em; }
+.brand-name { font-size: 19px; font-weight: 800; letter-spacing: -0.01em; }
 .brand-tag { display: none; color: #9fb3c8; font-size: 11.5px; font-weight: 600; letter-spacing: 0.02em; }
 
 .tb-nav { display: none; flex: 1; justify-content: center; gap: 4px; }

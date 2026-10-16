@@ -130,7 +130,7 @@
 .home-card .btn { align-self: flex-start; }
 .home-card-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 
-.home-footer { padding: 18px 0 calc(22px + env(safe-area-inset-bottom)); background: #071624; color: #9fb3c8; font-size: 13px; }
+.home-footer { padding: 28px 0 calc(30px + env(safe-area-inset-bottom)); background: #071624; color: #9fb3c8; font-size: 14px; }
 .home-footer-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
 .home-footer-brand { display: inline-flex; align-items: center; gap: 8px; color: var(--white); font-weight: 700; }
 .home-footer a { color: #9cc7f2; }

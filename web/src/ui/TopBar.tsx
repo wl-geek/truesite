@@ -64,10 +64,34 @@ function useCurrentSection(enabled: boolean): SectionId | null {
   return current
 }
 
+/** How far down the page the reader is (0..1), written to the bar as --tb-progress without re-rendering. */
+function useScrollProgress(bar: React.RefObject<HTMLElement | null>): void {
+  useEffect(() => {
+    let raf = 0
+    const update = () => {
+      raf = 0
+      const max = document.documentElement.scrollHeight - window.innerHeight
+      const p = max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0
+      bar.current?.style.setProperty('--tb-progress', p.toFixed(4))
+    }
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(update) }
+    update()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+    }
+  }, [bar])
+}
+
 /** The app's top bar: brand, the start page's sections, and one call to action. On phones the sections fold into a menu. */
 export function TopBar({ route }: { route: Route }) {
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const barRef = useRef<HTMLElement>(null)
+  useScrollProgress(barRef)
   const current = useCurrentSection(route.name === 'home')
   useEffect(() => setOpen(false), [route])
   useEffect(() => {
@@ -97,7 +121,7 @@ export function TopBar({ route }: { route: Route }) {
   ))
 
   return (
-    <header className="topbar">
+    <header className="topbar" ref={barRef}>
       <a href="/" className="brand" onClick={go('top')}>
         <img src="/favicon.svg" alt="" width="30" height="30" />
         <span className="brand-text">
