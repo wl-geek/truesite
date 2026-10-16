@@ -78,10 +78,11 @@ describe('arMath', () => {
     expect(checkAvailability(L1).note).toMatch(/read as missing/)
     expect(checkAvailability(A1)).toEqual({ enabled: true, note: null })
     expect(checkAvailability({ ...D1, project_id: 'other' })).toEqual({ enabled: true, note: null })
-    // The steel frame is a walk-through of the design in an empty car park: nothing there to check.
-    const S1: Anchor = { ...L1, anchor_id: 'S1', project_id: 'site', position_m: [9, 6, 0] }
-    expect(checkAvailability(S1).enabled).toBe(false)
-    expect(checkAvailability({ ...S1, anchor_id: 'S2' }).note).toMatch(/sample photos/)
+    // The building site shows the design in an empty car park: nothing there to check.
+    const P1: Anchor = { ...L1, anchor_id: 'P1', project_id: 'site', position_m: [9, -2.5, 1.4] }
+    expect(checkAvailability(P1).enabled).toBe(false)
+    expect(checkAvailability({ ...P1, anchor_id: 'P4' }).note).toMatch(/sample photos/)
+    expect(checkAvailability({ ...P1, anchor_id: 'D1' }).enabled).toBe(false)
   })
 
   it('makes Walk inside the main action on iPhone/iPad for 1:1 floor codes only', () => {

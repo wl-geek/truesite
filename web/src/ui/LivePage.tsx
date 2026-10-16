@@ -41,6 +41,9 @@ type Loaded = { project: ProjectManifest; anchor: Anchor; model: LoadedModel }
 type Outcome = { result: CheckResult; runId: string | null; photoUrl: string; viewNote: string | null }
 
 /** The place-by-code overlay before the session reports its first state. */
+// The demo uses the camera overlay only. Walk inside (Quick Look / WebXR hit-test) and Android Start AR stay in the
+// code for later and come back with ?xr=1 on the page URL.
+const XR_EXTRAS = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('xr')
 const XR_PLACE_STARTING: XrPlaceState = { phase: 'scanning', views: 0, spreadDeg: 0, progress: 0, codeSeen: false }
 
 type StartError = CameraError['kind'] | 'webgl'
@@ -84,9 +87,9 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   const [usdz, setUsdz] = useState<Blob | string | null>(null)
   // Quick Look has no View distance slider: this picks the build-time distance variant instead (null = all).
   const [walkRadius, setWalkRadius] = useState<number | null>(null)
-  const quickLook = useMemo(() => isAppleMobile() && canQuickLook(), [])
+  const quickLook = useMemo(() => XR_EXTRAS && isAppleMobile() && canQuickLook(), [])
   const device = useMemo(() => appleDeviceName(), [])
-  const android = useMemo(() => isAndroid(), [])
+  const android = useMemo(() => XR_EXTRAS && isAndroid(), [])
   const [xrOk, setXrOk] = useState(false)
   const [xrPlaced, setXrPlaced] = useState(false)
   const xrOverlayRef = useRef<HTMLDivElement>(null)
@@ -100,7 +103,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   const [xrMode, setXrMode] = useState<'place' | 'walk' | null>(null)
   const [xrNotice, setXrNotice] = useState<string | null>(null)
   useEffect(() => {
-    void xrArSupported().then(setXrOk)
+    if (XR_EXTRAS) void xrArSupported().then(setXrOk)
   }, [])
   const pinsRef = useRef<ReturnType<typeof makePins> | null>(null)
   const elements = useMemo(() => new Map((loaded?.project.elements ?? []).map((e) => [e.guid, e])), [loaded])
@@ -535,13 +538,20 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
                       {checkable.enabled && <>To check the build, use <strong>Camera overlay</strong> instead.</>}
                     </li>
                   </ol>
-                ) : (
+                ) : desk ? (
                   <ol className="steps">
                     <li>Tap <strong>Start camera</strong> and allow the camera.</li>
                     <li>Point at the code from about 1 m away, then step back slowly.</li>
+                    <li>Walk around the sheet to look at the model.</li>
+                  </ol>
+                ) : (
+                  <ol className="steps">
+                    <li>Tap <strong>Start camera</strong> and allow the camera and motion access.</li>
+                    <li>Hold the {isAppleMobile() ? device : 'phone'} upright at chest height, about 0.7 m from the code and a little to one side, until it says <strong>Alignment: Good</strong>.</li>
+                    <li>Step back slowly to the marked spot (about 1.5 m), keeping the code in view.</li>
                     <li>
-                      {desk ? 'Walk around the sheet to look at the model.'
-                        : checkable.enabled ? 'Aim at the work and tap Check as-built.' : 'Look around the model while the code is in view.'}
+                      Turn slowly on the spot and look up: the model stays level on the ground. Don't walk; come back to the code to re-align.
+                      {checkable.enabled && ' To check the build, aim at the work and tap Check as-built.'}
                     </li>
                   </ol>
                 )}

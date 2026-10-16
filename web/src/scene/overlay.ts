@@ -20,6 +20,7 @@ import { releaseRenderer, watchContextLoss } from './glContext'
 import type { LoadedModel } from './loadModel'
 import { applyConstructionLook, type ConstructionLook } from './look'
 import { type Paint } from './palette'
+import { levelModelMatrix, upInGlCamera } from './level'
 import { deviceRotation, lookAroundPose, LOOK_AROUND_MAX_S, type MotionLock } from './motion'
 import { createFrameWatchdog } from './watchdog'
 
@@ -114,6 +115,9 @@ export function createOverlay(o: OverlayOptions): Overlay {
   if (o.motion) window.addEventListener('deviceorientation', onOrientation)
 
   const pAnchor = poseAnchor(anchor)
+  // Gravity levelling (scene/level.ts): with the motion sensors on, the model's up is the real up, rotated about the code.
+  const pivot = anchor.position_m
+  const levelled = (m: number[]): number[] => (o.motion && deviceR ? levelModelMatrix(m, pivot, upInGlCamera(deviceR)) ?? m : m)
   let s = effectiveQrSize(anchor, o.qrSizeCorrection)
   const cornerListeners = new Set<(corners: Point2[], videoW: number, videoH: number) => void>()
   let K: Intrinsics = loadIntrinsics(video.videoWidth || 1280, video.videoHeight || 720)
@@ -174,7 +178,7 @@ export function createOverlay(o: OverlayOptions): Overlay {
     if (tracked) {
       lastSeen = tSec
       last = { pose: { R: tracked.raw.R, t: tracked.raw.t }, K, quality: tracked.quality, corners: corners!, videoW: vw, videoH: vh, tSec }
-      model.ifcRoot.matrix.fromArray(modelMatrixIfc(pAnchor, tracked.smoothed))
+      model.ifcRoot.matrix.fromArray(levelled(modelMatrixIfc(pAnchor, tracked.smoothed)))
       model.ifcRoot.matrixWorldNeedsUpdate = true
       model.ifcRoot.visible = true
       if (deviceR && !tracked.provisional) lock = { R0: tracked.smoothed.R, t0: tracked.smoothed.t, D0: deviceR, tSec }
@@ -227,7 +231,7 @@ export function createOverlay(o: OverlayOptions): Overlay {
       }
     }
     if (state.mode === 'motion' && lock && deviceR) {
-      model.ifcRoot.matrix.fromArray(modelMatrixIfc(pAnchor, lookAroundPose(lock, deviceR)))
+      model.ifcRoot.matrix.fromArray(levelled(modelMatrixIfc(pAnchor, lookAroundPose(lock, deviceR))))
       model.ifcRoot.matrixWorldNeedsUpdate = true
     }
     render()

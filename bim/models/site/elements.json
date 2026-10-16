@@ -1,5 +1,465 @@
 [
   {
+    "guid": "2yDJKtbhvGCf3rD5NKl0fK",
+    "ifc_class": "IfcBeam",
+    "name": "Beam A1-A2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.2,
+        0.225,
+        3.9
+      ],
+      [
+        0.2,
+        5.775,
+        4.5
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_BeamCommon.LoadBearing": true,
+      "Pset_BeamCommon.IsExternal": false,
+      "Qto_BeamBaseQuantities.Length_mm": 5550,
+      "TrueSite_Notes.Grid": "A1-A2",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "BEAM"
+    }
+  },
+  {
+    "guid": "0bGHQUZyDIagqA0Q3PACDx",
+    "ifc_class": "IfcBeam",
+    "name": "Beam A1-B1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        0.225,
+        -0.2,
+        3.9
+      ],
+      [
+        5.775,
+        0.2,
+        4.5
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_BeamCommon.LoadBearing": true,
+      "Pset_BeamCommon.IsExternal": false,
+      "Qto_BeamBaseQuantities.Length_mm": 5550,
+      "TrueSite_Notes.Install": "400 x 600, C30/37, cast with the slab. Soffit 3.9 m above the ground.",
+      "TrueSite_Notes.Grid": "A1-B1",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "BEAM"
+    }
+  },
+  {
+    "guid": "1M2EkzM0fRCxN6qjuLtHbG",
+    "ifc_class": "IfcBeam",
+    "name": "Beam A2-A3",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.2,
+        6.225,
+        3.9
+      ],
+      [
+        0.2,
+        11.775,
+        4.5
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_BeamCommon.LoadBearing": true,
+      "Pset_BeamCommon.IsExternal": false,
+      "Qto_BeamBaseQuantities.Length_mm": 5550,
+      "TrueSite_Notes.Grid": "A2-A3",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "BEAM"
+    }
+  },
+  {
+    "guid": "2QsWz6KdTONufKgSAtFy2m",
+    "ifc_class": "IfcBeam",
+    "name": "Beam A2-B2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        0.225,
+        5.8,
+        3.9
+      ],
+      [
+        5.775,
+        6.2,
+        4.5
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_BeamCommon.LoadBearing": true,
+      "Pset_BeamCommon.IsExternal": false,
+      "Qto_BeamBaseQuantities.Length_mm": 5550,
+      "TrueSite_Notes.Grid": "A2-B2",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "BEAM"
+    }
+  },
+  {
+    "guid": "30UDdvZVHILgz_fraDrZuq",
+    "ifc_class": "IfcBeam",
+    "name": "Beam A3-B3",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        0.225,
+        11.8,
+        3.9
+      ],
+      [
+        5.775,
+        12.2,
+        4.5
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_BeamCommon.LoadBearing": true,
+      "Pset_BeamCommon.IsExternal": false,
+      "Qto_BeamBaseQuantities.Length_mm": 5550,
+      "TrueSite_Notes.Grid": "A3-B3",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "BEAM"
+    }
+  },
+  {
+    "guid": "2qmhMXJ89MWuf7vyPRWLMs",
+    "ifc_class": "IfcBeam",
+    "name": "Beam B1-B2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.8,
+        0.225,
+        3.9
+      ],
+      [
+        6.2,
+        5.775,
+        4.5
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_BeamCommon.LoadBearing": true,
+      "Pset_BeamCommon.IsExternal": false,
+      "Qto_BeamBaseQuantities.Length_mm": 5550,
+      "TrueSite_Notes.Grid": "B1-B2",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "BEAM"
+    }
+  },
+  {
+    "guid": "0Oyy5fZqHRYA1ELiqZi40W",
+    "ifc_class": "IfcBeam",
+    "name": "Beam B1-C1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        6.225,
+        -0.2,
+        3.9
+      ],
+      [
+        11.775,
+        0.2,
+        4.5
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_BeamCommon.LoadBearing": true,
+      "Pset_BeamCommon.IsExternal": false,
+      "Qto_BeamBaseQuantities.Length_mm": 5550,
+      "TrueSite_Notes.Grid": "B1-C1",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "BEAM"
+    }
+  },
+  {
+    "guid": "2pd2DD5XHUy9idcEV7p5Ax",
+    "ifc_class": "IfcBeam",
+    "name": "Beam B2-B3",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.8,
+        6.225,
+        3.9
+      ],
+      [
+        6.2,
+        11.775,
+        4.5
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_BeamCommon.LoadBearing": true,
+      "Pset_BeamCommon.IsExternal": false,
+      "Qto_BeamBaseQuantities.Length_mm": 5550,
+      "TrueSite_Notes.Grid": "B2-B3",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "BEAM"
+    }
+  },
+  {
+    "guid": "1bROKP3XvLDeWf2qlQEu5K",
+    "ifc_class": "IfcBeam",
+    "name": "Beam B2-C2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        6.225,
+        5.8,
+        3.9
+      ],
+      [
+        11.775,
+        6.2,
+        4.5
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_BeamCommon.LoadBearing": true,
+      "Pset_BeamCommon.IsExternal": false,
+      "Qto_BeamBaseQuantities.Length_mm": 5550,
+      "TrueSite_Notes.Grid": "B2-C2",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "BEAM"
+    }
+  },
+  {
+    "guid": "1NNZx8YcHOOgWkZC2qxErO",
+    "ifc_class": "IfcBeam",
+    "name": "Beam B3-C3",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        6.225,
+        11.8,
+        3.9
+      ],
+      [
+        11.775,
+        12.2,
+        4.5
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_BeamCommon.LoadBearing": true,
+      "Pset_BeamCommon.IsExternal": false,
+      "Qto_BeamBaseQuantities.Length_mm": 5550,
+      "TrueSite_Notes.Grid": "B3-C3",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "BEAM"
+    }
+  },
+  {
+    "guid": "0ly52x6ELJQwFXL5RTF434",
+    "ifc_class": "IfcBeam",
+    "name": "Beam C1-C2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.8,
+        0.225,
+        3.9
+      ],
+      [
+        12.2,
+        5.775,
+        4.5
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_BeamCommon.LoadBearing": true,
+      "Pset_BeamCommon.IsExternal": false,
+      "Qto_BeamBaseQuantities.Length_mm": 5550,
+      "TrueSite_Notes.Grid": "C1-C2",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "BEAM"
+    }
+  },
+  {
+    "guid": "1QwCicXzrVlR1uC1CC_taG",
+    "ifc_class": "IfcBeam",
+    "name": "Beam C1-D1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        12.225,
+        -0.2,
+        3.9
+      ],
+      [
+        17.775,
+        0.2,
+        4.5
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_BeamCommon.LoadBearing": true,
+      "Pset_BeamCommon.IsExternal": false,
+      "Qto_BeamBaseQuantities.Length_mm": 5550,
+      "TrueSite_Notes.Grid": "C1-D1",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "BEAM"
+    }
+  },
+  {
+    "guid": "2TPB7E5ZvQlhqVv0xHAmJD",
+    "ifc_class": "IfcBeam",
+    "name": "Beam C2-C3",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.8,
+        6.225,
+        3.9
+      ],
+      [
+        12.2,
+        11.775,
+        4.5
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_BeamCommon.LoadBearing": true,
+      "Pset_BeamCommon.IsExternal": false,
+      "Qto_BeamBaseQuantities.Length_mm": 5550,
+      "TrueSite_Notes.Grid": "C2-C3",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "BEAM"
+    }
+  },
+  {
+    "guid": "3$uHqu7RDRvwiLozKM_ZNq",
+    "ifc_class": "IfcBeam",
+    "name": "Beam C2-D2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        12.225,
+        5.8,
+        3.9
+      ],
+      [
+        17.775,
+        6.2,
+        4.5
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_BeamCommon.LoadBearing": true,
+      "Pset_BeamCommon.IsExternal": false,
+      "Qto_BeamBaseQuantities.Length_mm": 5550,
+      "TrueSite_Notes.Grid": "C2-D2",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "BEAM"
+    }
+  },
+  {
+    "guid": "1iUyWkwXrNNeWH7sY4F2Lg",
+    "ifc_class": "IfcBeam",
+    "name": "Beam C3-D3",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        12.225,
+        11.8,
+        3.9
+      ],
+      [
+        17.775,
+        12.2,
+        4.5
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_BeamCommon.LoadBearing": true,
+      "Pset_BeamCommon.IsExternal": false,
+      "Qto_BeamBaseQuantities.Length_mm": 5550,
+      "TrueSite_Notes.Grid": "C3-D3",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "BEAM"
+    }
+  },
+  {
+    "guid": "13$3Cp3SzNqRghNoJ1Umqg",
+    "ifc_class": "IfcBeam",
+    "name": "Beam D1-D2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.8,
+        0.225,
+        3.9
+      ],
+      [
+        18.2,
+        5.775,
+        4.5
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_BeamCommon.LoadBearing": true,
+      "Pset_BeamCommon.IsExternal": false,
+      "Qto_BeamBaseQuantities.Length_mm": 5550,
+      "TrueSite_Notes.Grid": "D1-D2",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "BEAM"
+    }
+  },
+  {
+    "guid": "3mxMoTh0TTLPIOMi9KygdG",
+    "ifc_class": "IfcBeam",
+    "name": "Beam D2-D3",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.8,
+        6.225,
+        3.9
+      ],
+      [
+        18.2,
+        11.775,
+        4.5
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_BeamCommon.LoadBearing": true,
+      "Pset_BeamCommon.IsExternal": false,
+      "Qto_BeamBaseQuantities.Length_mm": 5550,
+      "TrueSite_Notes.Grid": "D2-D3",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "BEAM"
+    }
+  },
+  {
     "guid": "0TCaX9h$HQxxSkuhp$WnwI",
     "ifc_class": "IfcBeam",
     "name": "Edge beam A1-B1",
@@ -8,12 +468,12 @@
       [
         0.1525,
         -0.0825,
-        5.695
+        8.195
       ],
       [
         5.8475,
         0.0825,
-        6.0
+        8.5
       ]
     ],
     "load_bearing": true,
@@ -28,20 +488,20 @@
     }
   },
   {
-    "guid": "0y9iOJOWbTe8MLypnJyGm0",
+    "guid": "266uX9t6jPbeoACvVrfP0a",
     "ifc_class": "IfcBeam",
-    "name": "Edge beam A2-B2",
+    "name": "Edge beam A3-B3",
     "storey": "Ground",
     "bbox_m": [
       [
         0.1525,
         11.9175,
-        5.695
+        8.195
       ],
       [
         5.8475,
         12.0825,
-        6.0
+        8.5
       ]
     ],
     "load_bearing": true,
@@ -50,7 +510,7 @@
       "Pset_BeamCommon.IsExternal": false,
       "Qto_BeamBaseQuantities.Length_mm": 5695,
       "TrueSite_Notes.Install": "UB 305 x 165 x 40, S355, bolted to the column caps.",
-      "TrueSite_Notes.Grid": "A2-B2",
+      "TrueSite_Notes.Grid": "A3-B3",
       "Material": "Steel S355",
       "PredefinedType": "BEAM"
     }
@@ -64,12 +524,12 @@
       [
         6.1525,
         -0.0825,
-        5.695
+        8.195
       ],
       [
         11.8475,
         0.0825,
-        6.0
+        8.5
       ]
     ],
     "load_bearing": true,
@@ -84,20 +544,20 @@
     }
   },
   {
-    "guid": "17C5diBsDTQPE9gX_UpajC",
+    "guid": "3o_lybaErLxRH2Bl2qJWB4",
     "ifc_class": "IfcBeam",
-    "name": "Edge beam B2-C2",
+    "name": "Edge beam B3-C3",
     "storey": "Ground",
     "bbox_m": [
       [
         6.1525,
         11.9175,
-        5.695
+        8.195
       ],
       [
         11.8475,
         12.0825,
-        6.0
+        8.5
       ]
     ],
     "load_bearing": true,
@@ -106,7 +566,7 @@
       "Pset_BeamCommon.IsExternal": false,
       "Qto_BeamBaseQuantities.Length_mm": 5695,
       "TrueSite_Notes.Install": "UB 305 x 165 x 40, S355, bolted to the column caps.",
-      "TrueSite_Notes.Grid": "B2-C2",
+      "TrueSite_Notes.Grid": "B3-C3",
       "Material": "Steel S355",
       "PredefinedType": "BEAM"
     }
@@ -120,12 +580,12 @@
       [
         12.1525,
         -0.0825,
-        5.695
+        8.195
       ],
       [
         17.8475,
         0.0825,
-        6.0
+        8.5
       ]
     ],
     "load_bearing": true,
@@ -140,20 +600,20 @@
     }
   },
   {
-    "guid": "0VoRNwVPjLl9H$xikhyLeq",
+    "guid": "08R6IiqhzQ1BkU$6UYgM5G",
     "ifc_class": "IfcBeam",
-    "name": "Edge beam C2-D2",
+    "name": "Edge beam C3-D3",
     "storey": "Ground",
     "bbox_m": [
       [
         12.1525,
         11.9175,
-        5.695
+        8.195
       ],
       [
         17.8475,
         12.0825,
-        6.0
+        8.5
       ]
     ],
     "load_bearing": true,
@@ -162,63 +622,399 @@
       "Pset_BeamCommon.IsExternal": false,
       "Qto_BeamBaseQuantities.Length_mm": 5695,
       "TrueSite_Notes.Install": "UB 305 x 165 x 40, S355, bolted to the column caps.",
-      "TrueSite_Notes.Grid": "C2-D2",
+      "TrueSite_Notes.Grid": "C3-D3",
       "Material": "Steel S355",
       "PredefinedType": "BEAM"
     }
   },
   {
-    "guid": "3V1UqV9ybRIeVZNmve6Bxb",
+    "guid": "3_h65wLs9UVwO_GCsn_Hii",
     "ifc_class": "IfcColumn",
-    "name": "Column A1",
+    "name": "RC column A1",
     "storey": "Ground",
     "bbox_m": [
       [
-        -0.1525,
-        -0.155,
-        0.02
+        -0.225,
+        -0.225,
+        0.0
       ],
       [
-        0.1525,
-        0.155,
-        6.0
+        0.225,
+        0.225,
+        4.5
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_ColumnCommon.LoadBearing": true,
       "Pset_ColumnCommon.IsExternal": false,
-      "Qto_ColumnBaseQuantities.Length_mm": 5980,
-      "TrueSite_Notes.Install": "UC 305 x 305 x 118, S355. Base plate on 4 M24 holding-down bolts, 30 mm grout. Plumb before tightening the bracing.",
+      "Qto_ColumnBaseQuantities.Length_mm": 4500,
+      "TrueSite_Notes.Install": "450 x 450, C30/37, cast to the level 1 slab top. 8 T20 + T10 links @ 300, 50 mm cover.",
+      "TrueSite_Notes.Grid": "A1",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "COLUMN"
+    }
+  },
+  {
+    "guid": "1nxN4UkjTHPwMIJDAjY1J8",
+    "ifc_class": "IfcColumn",
+    "name": "RC column A2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.225,
+        5.775,
+        0.0
+      ],
+      [
+        0.225,
+        6.225,
+        4.5
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_ColumnCommon.LoadBearing": true,
+      "Pset_ColumnCommon.IsExternal": false,
+      "Qto_ColumnBaseQuantities.Length_mm": 4500,
+      "TrueSite_Notes.Install": "450 x 450, C30/37, cast to the level 1 slab top. 8 T20 + T10 links @ 300, 50 mm cover.",
+      "TrueSite_Notes.Grid": "A2",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "COLUMN"
+    }
+  },
+  {
+    "guid": "3zX4h6gYLP5vbAij5u0LNX",
+    "ifc_class": "IfcColumn",
+    "name": "RC column A3",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.225,
+        11.775,
+        0.0
+      ],
+      [
+        0.225,
+        12.225,
+        4.5
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_ColumnCommon.LoadBearing": true,
+      "Pset_ColumnCommon.IsExternal": false,
+      "Qto_ColumnBaseQuantities.Length_mm": 4500,
+      "TrueSite_Notes.Install": "450 x 450, C30/37, cast to the level 1 slab top. 8 T20 + T10 links @ 300, 50 mm cover.",
+      "TrueSite_Notes.Grid": "A3",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "COLUMN"
+    }
+  },
+  {
+    "guid": "2zavIN6ELTXQuqvvgHyHMQ",
+    "ifc_class": "IfcColumn",
+    "name": "RC column B1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.775,
+        -0.225,
+        0.0
+      ],
+      [
+        6.225,
+        0.225,
+        4.5
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_ColumnCommon.LoadBearing": true,
+      "Pset_ColumnCommon.IsExternal": false,
+      "Qto_ColumnBaseQuantities.Length_mm": 4500,
+      "TrueSite_Notes.Install": "450 x 450, C30/37, cast to the level 1 slab top. 8 T20 + T10 links @ 300, 50 mm cover.",
+      "TrueSite_Notes.Grid": "B1",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "COLUMN"
+    }
+  },
+  {
+    "guid": "30gtl3RYXGce2veVpKw_dM",
+    "ifc_class": "IfcColumn",
+    "name": "RC column B2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.775,
+        5.775,
+        0.0
+      ],
+      [
+        6.225,
+        6.225,
+        4.5
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_ColumnCommon.LoadBearing": true,
+      "Pset_ColumnCommon.IsExternal": false,
+      "Qto_ColumnBaseQuantities.Length_mm": 4500,
+      "TrueSite_Notes.Install": "450 x 450, C30/37, cast to the level 1 slab top. 8 T20 + T10 links @ 300, 50 mm cover.",
+      "TrueSite_Notes.Grid": "B2",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "COLUMN"
+    }
+  },
+  {
+    "guid": "0U2FA5onbH4eRTcmRdDHjG",
+    "ifc_class": "IfcColumn",
+    "name": "RC column B3",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.775,
+        11.775,
+        0.0
+      ],
+      [
+        6.225,
+        12.225,
+        4.5
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_ColumnCommon.LoadBearing": true,
+      "Pset_ColumnCommon.IsExternal": false,
+      "Qto_ColumnBaseQuantities.Length_mm": 4500,
+      "TrueSite_Notes.Install": "450 x 450, C30/37, cast to the level 1 slab top. 8 T20 + T10 links @ 300, 50 mm cover.",
+      "TrueSite_Notes.Grid": "B3",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "COLUMN"
+    }
+  },
+  {
+    "guid": "2_ikNNLJjKnen1ApHUz2Oq",
+    "ifc_class": "IfcColumn",
+    "name": "RC column C1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.775,
+        -0.225,
+        0.0
+      ],
+      [
+        12.225,
+        0.225,
+        4.5
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_ColumnCommon.LoadBearing": true,
+      "Pset_ColumnCommon.IsExternal": false,
+      "Qto_ColumnBaseQuantities.Length_mm": 4500,
+      "TrueSite_Notes.Install": "450 x 450, C30/37, cast to the level 1 slab top. 8 T20 + T10 links @ 300, 50 mm cover.",
+      "TrueSite_Notes.Grid": "C1",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "COLUMN"
+    }
+  },
+  {
+    "guid": "0zz2L8cIbJywdGEkyzGnQT",
+    "ifc_class": "IfcColumn",
+    "name": "RC column C2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.775,
+        5.775,
+        0.0
+      ],
+      [
+        12.225,
+        6.225,
+        4.5
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_ColumnCommon.LoadBearing": true,
+      "Pset_ColumnCommon.IsExternal": false,
+      "Qto_ColumnBaseQuantities.Length_mm": 4500,
+      "TrueSite_Notes.Install": "450 x 450, C30/37, cast to the level 1 slab top. 8 T20 + T10 links @ 300, 50 mm cover.",
+      "TrueSite_Notes.Grid": "C2",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "COLUMN"
+    }
+  },
+  {
+    "guid": "3ieBhADNrHb8pp9nSWoiPR",
+    "ifc_class": "IfcColumn",
+    "name": "RC column C3",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.775,
+        11.775,
+        0.0
+      ],
+      [
+        12.225,
+        12.225,
+        4.5
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_ColumnCommon.LoadBearing": true,
+      "Pset_ColumnCommon.IsExternal": false,
+      "Qto_ColumnBaseQuantities.Length_mm": 4500,
+      "TrueSite_Notes.Install": "450 x 450, C30/37, cast to the level 1 slab top. 8 T20 + T10 links @ 300, 50 mm cover.",
+      "TrueSite_Notes.Grid": "C3",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "COLUMN"
+    }
+  },
+  {
+    "guid": "07XxXZh4jMBvNUeaaJ$GL5",
+    "ifc_class": "IfcColumn",
+    "name": "RC column D1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.775,
+        -0.225,
+        0.0
+      ],
+      [
+        18.225,
+        0.225,
+        4.5
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_ColumnCommon.LoadBearing": true,
+      "Pset_ColumnCommon.IsExternal": false,
+      "Qto_ColumnBaseQuantities.Length_mm": 4500,
+      "TrueSite_Notes.Install": "450 x 450, C30/37, cast to the level 1 slab top. 8 T20 + T10 links @ 300, 50 mm cover.",
+      "TrueSite_Notes.Grid": "D1",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "COLUMN"
+    }
+  },
+  {
+    "guid": "2hDLdZhvfSDeYoP1LfKFzT",
+    "ifc_class": "IfcColumn",
+    "name": "RC column D2",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.775,
+        5.775,
+        0.0
+      ],
+      [
+        18.225,
+        6.225,
+        4.5
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_ColumnCommon.LoadBearing": true,
+      "Pset_ColumnCommon.IsExternal": false,
+      "Qto_ColumnBaseQuantities.Length_mm": 4500,
+      "TrueSite_Notes.Install": "450 x 450, C30/37, cast to the level 1 slab top. 8 T20 + T10 links @ 300, 50 mm cover.",
+      "TrueSite_Notes.Grid": "D2",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "COLUMN"
+    }
+  },
+  {
+    "guid": "3Hz0LXJrzGnRTlugdSLFOA",
+    "ifc_class": "IfcColumn",
+    "name": "RC column D3",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.775,
+        11.775,
+        0.0
+      ],
+      [
+        18.225,
+        12.225,
+        4.5
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_ColumnCommon.LoadBearing": true,
+      "Pset_ColumnCommon.IsExternal": false,
+      "Qto_ColumnBaseQuantities.Length_mm": 4500,
+      "TrueSite_Notes.Install": "450 x 450, C30/37, cast to the level 1 slab top. 8 T20 + T10 links @ 300, 50 mm cover.",
+      "TrueSite_Notes.Grid": "D3",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "COLUMN"
+    }
+  },
+  {
+    "guid": "3V1UqV9ybRIeVZNmve6Bxb",
+    "ifc_class": "IfcColumn",
+    "name": "Steel column A1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.1525,
+        -0.155,
+        4.5
+      ],
+      [
+        0.1525,
+        0.155,
+        8.5
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_ColumnCommon.LoadBearing": true,
+      "Pset_ColumnCommon.IsExternal": false,
+      "Qto_ColumnBaseQuantities.Length_mm": 4000,
+      "TrueSite_Notes.Install": "UC 305 x 305 x 118, S355, on a base plate with 4 M24 cast-in bolts on the RC column head.",
       "TrueSite_Notes.Grid": "A1",
       "Material": "Steel S355",
       "PredefinedType": "COLUMN"
     }
   },
   {
-    "guid": "1Ke1D0jTHHfvT3Je_as3VI",
+    "guid": "2xwa56jbTVYgUO8eM8nJnA",
     "ifc_class": "IfcColumn",
-    "name": "Column A2",
+    "name": "Steel column A3",
     "storey": "Ground",
     "bbox_m": [
       [
         -0.1525,
         11.845,
-        0.02
+        4.5
       ],
       [
         0.1525,
         12.155,
-        6.0
+        8.5
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_ColumnCommon.LoadBearing": true,
       "Pset_ColumnCommon.IsExternal": false,
-      "Qto_ColumnBaseQuantities.Length_mm": 5980,
-      "TrueSite_Notes.Install": "UC 305 x 305 x 118, S355. Base plate on 4 M24 holding-down bolts, 30 mm grout. Plumb before tightening the bracing.",
-      "TrueSite_Notes.Grid": "A2",
+      "Qto_ColumnBaseQuantities.Length_mm": 4000,
+      "TrueSite_Notes.Install": "UC 305 x 305 x 118, S355, on a base plate with 4 M24 cast-in bolts on the RC column head.",
+      "TrueSite_Notes.Grid": "A3",
       "Material": "Steel S355",
       "PredefinedType": "COLUMN"
     }
@@ -226,55 +1022,55 @@
   {
     "guid": "1KiWH9IofHnQ6GlriCMpkI",
     "ifc_class": "IfcColumn",
-    "name": "Column B1",
+    "name": "Steel column B1",
     "storey": "Ground",
     "bbox_m": [
       [
         5.8475,
         -0.155,
-        0.02
+        4.5
       ],
       [
         6.1525,
         0.155,
-        6.0
+        8.5
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_ColumnCommon.LoadBearing": true,
       "Pset_ColumnCommon.IsExternal": false,
-      "Qto_ColumnBaseQuantities.Length_mm": 5980,
-      "TrueSite_Notes.Install": "UC 305 x 305 x 118, S355. Base plate on 4 M24 holding-down bolts, 30 mm grout. Plumb before tightening the bracing.",
+      "Qto_ColumnBaseQuantities.Length_mm": 4000,
+      "TrueSite_Notes.Install": "UC 305 x 305 x 118, S355, on a base plate with 4 M24 cast-in bolts on the RC column head.",
       "TrueSite_Notes.Grid": "B1",
       "Material": "Steel S355",
       "PredefinedType": "COLUMN"
     }
   },
   {
-    "guid": "01K2o3y6PKLvgajzX28n9s",
+    "guid": "0BF0YrHnPUgRLiBPJ4mnm$",
     "ifc_class": "IfcColumn",
-    "name": "Column B2",
+    "name": "Steel column B3",
     "storey": "Ground",
     "bbox_m": [
       [
         5.8475,
         11.845,
-        0.02
+        4.5
       ],
       [
         6.1525,
         12.155,
-        6.0
+        8.5
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_ColumnCommon.LoadBearing": true,
       "Pset_ColumnCommon.IsExternal": false,
-      "Qto_ColumnBaseQuantities.Length_mm": 5980,
-      "TrueSite_Notes.Install": "UC 305 x 305 x 118, S355. Base plate on 4 M24 holding-down bolts, 30 mm grout. Plumb before tightening the bracing.",
-      "TrueSite_Notes.Grid": "B2",
+      "Qto_ColumnBaseQuantities.Length_mm": 4000,
+      "TrueSite_Notes.Install": "UC 305 x 305 x 118, S355, on a base plate with 4 M24 cast-in bolts on the RC column head.",
+      "TrueSite_Notes.Grid": "B3",
       "Material": "Steel S355",
       "PredefinedType": "COLUMN"
     }
@@ -282,55 +1078,55 @@
   {
     "guid": "2iA003WaLUuxoes$vAwmeN",
     "ifc_class": "IfcColumn",
-    "name": "Column C1",
+    "name": "Steel column C1",
     "storey": "Ground",
     "bbox_m": [
       [
         11.8475,
         -0.155,
-        0.02
+        4.5
       ],
       [
         12.1525,
         0.155,
-        6.0
+        8.5
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_ColumnCommon.LoadBearing": true,
       "Pset_ColumnCommon.IsExternal": false,
-      "Qto_ColumnBaseQuantities.Length_mm": 5980,
-      "TrueSite_Notes.Install": "UC 305 x 305 x 118, S355. Base plate on 4 M24 holding-down bolts, 30 mm grout. Plumb before tightening the bracing.",
+      "Qto_ColumnBaseQuantities.Length_mm": 4000,
+      "TrueSite_Notes.Install": "UC 305 x 305 x 118, S355, on a base plate with 4 M24 cast-in bolts on the RC column head.",
       "TrueSite_Notes.Grid": "C1",
       "Material": "Steel S355",
       "PredefinedType": "COLUMN"
     }
   },
   {
-    "guid": "0bjV203UnReg58gQd0PcJ3",
+    "guid": "2ozG1k7Y9P7RI4mMlae3HS",
     "ifc_class": "IfcColumn",
-    "name": "Column C2",
+    "name": "Steel column C3",
     "storey": "Ground",
     "bbox_m": [
       [
         11.8475,
         11.845,
-        0.02
+        4.5
       ],
       [
         12.1525,
         12.155,
-        6.0
+        8.5
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_ColumnCommon.LoadBearing": true,
       "Pset_ColumnCommon.IsExternal": false,
-      "Qto_ColumnBaseQuantities.Length_mm": 5980,
-      "TrueSite_Notes.Install": "UC 305 x 305 x 118, S355. Base plate on 4 M24 holding-down bolts, 30 mm grout. Plumb before tightening the bracing.",
-      "TrueSite_Notes.Grid": "C2",
+      "Qto_ColumnBaseQuantities.Length_mm": 4000,
+      "TrueSite_Notes.Install": "UC 305 x 305 x 118, S355, on a base plate with 4 M24 cast-in bolts on the RC column head.",
+      "TrueSite_Notes.Grid": "C3",
       "Material": "Steel S355",
       "PredefinedType": "COLUMN"
     }
@@ -338,55 +1134,55 @@
   {
     "guid": "2jSfhgdxHITBpJKBF_FtTp",
     "ifc_class": "IfcColumn",
-    "name": "Column D1",
+    "name": "Steel column D1",
     "storey": "Ground",
     "bbox_m": [
       [
         17.8475,
         -0.155,
-        0.02
+        4.5
       ],
       [
         18.1525,
         0.155,
-        6.0
+        8.5
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_ColumnCommon.LoadBearing": true,
       "Pset_ColumnCommon.IsExternal": false,
-      "Qto_ColumnBaseQuantities.Length_mm": 5980,
-      "TrueSite_Notes.Install": "UC 305 x 305 x 118, S355. Base plate on 4 M24 holding-down bolts, 30 mm grout. Plumb before tightening the bracing.",
+      "Qto_ColumnBaseQuantities.Length_mm": 4000,
+      "TrueSite_Notes.Install": "UC 305 x 305 x 118, S355, on a base plate with 4 M24 cast-in bolts on the RC column head.",
       "TrueSite_Notes.Grid": "D1",
       "Material": "Steel S355",
       "PredefinedType": "COLUMN"
     }
   },
   {
-    "guid": "3El3xbHsDLy8g5jdCpjdk3",
+    "guid": "2yTDuDeG1TTOkFDPLcvWSq",
     "ifc_class": "IfcColumn",
-    "name": "Column D2",
+    "name": "Steel column D3",
     "storey": "Ground",
     "bbox_m": [
       [
         17.8475,
         11.845,
-        0.02
+        4.5
       ],
       [
         18.1525,
         12.155,
-        6.0
+        8.5
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_ColumnCommon.LoadBearing": true,
       "Pset_ColumnCommon.IsExternal": false,
-      "Qto_ColumnBaseQuantities.Length_mm": 5980,
-      "TrueSite_Notes.Install": "UC 305 x 305 x 118, S355. Base plate on 4 M24 holding-down bolts, 30 mm grout. Plumb before tightening the bracing.",
-      "TrueSite_Notes.Grid": "D2",
+      "Qto_ColumnBaseQuantities.Length_mm": 4000,
+      "TrueSite_Notes.Install": "UC 305 x 305 x 118, S355, on a base plate with 4 M24 cast-in bolts on the RC column head.",
+      "TrueSite_Notes.Grid": "D3",
       "Material": "Steel S355",
       "PredefinedType": "COLUMN"
     }
@@ -398,20 +1194,20 @@
     "storey": "Ground",
     "bbox_m": [
       [
-        -0.8,
-        -0.8,
+        -0.9,
+        -0.9,
         0.0
       ],
       [
-        0.8,
-        0.8,
+        0.9,
+        0.9,
         0.02
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_FootingCommon.LoadBearing": true,
-      "TrueSite_Notes.Install": "Pad 1.6 x 1.6 x 0.6 m, C30/37, top flush with the ground. Only the top is modelled: the body is below ground.",
+      "TrueSite_Notes.Install": "Pad 1.8 x 1.8 x 0.7 m, C30/37, top flush with the ground. Only the top is modelled.",
       "TrueSite_Notes.Grid": "A1",
       "Material": "Concrete C30/37",
       "PredefinedType": "PAD_FOOTING"
@@ -424,21 +1220,45 @@
     "storey": "Ground",
     "bbox_m": [
       [
-        -0.8,
-        11.2,
+        -0.9,
+        5.1,
         0.0
       ],
       [
-        0.8,
-        12.8,
+        0.9,
+        6.9,
         0.02
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_FootingCommon.LoadBearing": true,
-      "TrueSite_Notes.Install": "Pad 1.6 x 1.6 x 0.6 m, C30/37, top flush with the ground. Only the top is modelled: the body is below ground.",
       "TrueSite_Notes.Grid": "A2",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "PAD_FOOTING"
+    }
+  },
+  {
+    "guid": "3PzKlYr4LTYe$LYdSPuct0",
+    "ifc_class": "IfcFooting",
+    "name": "Pad footing A3",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.9,
+        11.1,
+        0.0
+      ],
+      [
+        0.9,
+        12.9,
+        0.02
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_FootingCommon.LoadBearing": true,
+      "TrueSite_Notes.Grid": "A3",
       "Material": "Concrete C30/37",
       "PredefinedType": "PAD_FOOTING"
     }
@@ -450,20 +1270,19 @@
     "storey": "Ground",
     "bbox_m": [
       [
-        5.2,
-        -0.8,
+        5.1,
+        -0.9,
         0.0
       ],
       [
-        6.8,
-        0.8,
+        6.9,
+        0.9,
         0.02
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_FootingCommon.LoadBearing": true,
-      "TrueSite_Notes.Install": "Pad 1.6 x 1.6 x 0.6 m, C30/37, top flush with the ground. Only the top is modelled: the body is below ground.",
       "TrueSite_Notes.Grid": "B1",
       "Material": "Concrete C30/37",
       "PredefinedType": "PAD_FOOTING"
@@ -476,21 +1295,45 @@
     "storey": "Ground",
     "bbox_m": [
       [
-        5.2,
-        11.2,
+        5.1,
+        5.1,
         0.0
       ],
       [
-        6.8,
-        12.8,
+        6.9,
+        6.9,
         0.02
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_FootingCommon.LoadBearing": true,
-      "TrueSite_Notes.Install": "Pad 1.6 x 1.6 x 0.6 m, C30/37, top flush with the ground. Only the top is modelled: the body is below ground.",
       "TrueSite_Notes.Grid": "B2",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "PAD_FOOTING"
+    }
+  },
+  {
+    "guid": "2owxoPP$TKKghklpaplZ4h",
+    "ifc_class": "IfcFooting",
+    "name": "Pad footing B3",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.1,
+        11.1,
+        0.0
+      ],
+      [
+        6.9,
+        12.9,
+        0.02
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_FootingCommon.LoadBearing": true,
+      "TrueSite_Notes.Grid": "B3",
       "Material": "Concrete C30/37",
       "PredefinedType": "PAD_FOOTING"
     }
@@ -502,20 +1345,19 @@
     "storey": "Ground",
     "bbox_m": [
       [
-        11.2,
-        -0.8,
+        11.1,
+        -0.9,
         0.0
       ],
       [
-        12.8,
-        0.8,
+        12.9,
+        0.9,
         0.02
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_FootingCommon.LoadBearing": true,
-      "TrueSite_Notes.Install": "Pad 1.6 x 1.6 x 0.6 m, C30/37, top flush with the ground. Only the top is modelled: the body is below ground.",
       "TrueSite_Notes.Grid": "C1",
       "Material": "Concrete C30/37",
       "PredefinedType": "PAD_FOOTING"
@@ -528,21 +1370,45 @@
     "storey": "Ground",
     "bbox_m": [
       [
-        11.2,
-        11.2,
+        11.1,
+        5.1,
         0.0
       ],
       [
-        12.8,
-        12.8,
+        12.9,
+        6.9,
         0.02
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_FootingCommon.LoadBearing": true,
-      "TrueSite_Notes.Install": "Pad 1.6 x 1.6 x 0.6 m, C30/37, top flush with the ground. Only the top is modelled: the body is below ground.",
       "TrueSite_Notes.Grid": "C2",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "PAD_FOOTING"
+    }
+  },
+  {
+    "guid": "1MdA0StJ5OjgXXFC8r7Vsv",
+    "ifc_class": "IfcFooting",
+    "name": "Pad footing C3",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.1,
+        11.1,
+        0.0
+      ],
+      [
+        12.9,
+        12.9,
+        0.02
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_FootingCommon.LoadBearing": true,
+      "TrueSite_Notes.Grid": "C3",
       "Material": "Concrete C30/37",
       "PredefinedType": "PAD_FOOTING"
     }
@@ -554,20 +1420,19 @@
     "storey": "Ground",
     "bbox_m": [
       [
-        17.2,
-        -0.8,
+        17.1,
+        -0.9,
         0.0
       ],
       [
-        18.8,
-        0.8,
+        18.9,
+        0.9,
         0.02
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_FootingCommon.LoadBearing": true,
-      "TrueSite_Notes.Install": "Pad 1.6 x 1.6 x 0.6 m, C30/37, top flush with the ground. Only the top is modelled: the body is below ground.",
       "TrueSite_Notes.Grid": "D1",
       "Material": "Concrete C30/37",
       "PredefinedType": "PAD_FOOTING"
@@ -580,21 +1445,45 @@
     "storey": "Ground",
     "bbox_m": [
       [
-        17.2,
-        11.2,
+        17.1,
+        5.1,
         0.0
       ],
       [
-        18.8,
-        12.8,
+        18.9,
+        6.9,
         0.02
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_FootingCommon.LoadBearing": true,
-      "TrueSite_Notes.Install": "Pad 1.6 x 1.6 x 0.6 m, C30/37, top flush with the ground. Only the top is modelled: the body is below ground.",
       "TrueSite_Notes.Grid": "D2",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "PAD_FOOTING"
+    }
+  },
+  {
+    "guid": "26IdJFwI1PPxPTBF_seLU7",
+    "ifc_class": "IfcFooting",
+    "name": "Pad footing D3",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.1,
+        11.1,
+        0.0
+      ],
+      [
+        18.9,
+        12.9,
+        0.02
+      ]
+    ],
+    "load_bearing": true,
+    "props": {
+      "Pset_FootingCommon.LoadBearing": true,
+      "TrueSite_Notes.Grid": "D3",
       "Material": "Concrete C30/37",
       "PredefinedType": "PAD_FOOTING"
     }
@@ -606,21 +1495,21 @@
     "storey": "Ground",
     "bbox_m": [
       [
-        -0.0215,
-        5.9785,
-        6.6457
+        -0.0213,
+        5.9787,
+        9.1455
       ],
       [
-        6.0215,
-        12.0215,
-        8.2043
+        6.0213,
+        12.0213,
+        10.4045
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 8616.844,
+      "Qto_MemberBaseQuantities.Length_mm": 8569.714,
       "Material": "Steel S355",
       "PredefinedType": "BRACE"
     }
@@ -632,21 +1521,21 @@
     "storey": "Ground",
     "bbox_m": [
       [
-        -0.0215,
-        5.9785,
-        6.6457
+        -0.0213,
+        5.9787,
+        9.1455
       ],
       [
-        6.0215,
-        12.0215,
-        8.2043
+        6.0213,
+        12.0213,
+        10.4045
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 8616.844,
+      "Qto_MemberBaseQuantities.Length_mm": 8569.714,
       "Material": "Steel S355",
       "PredefinedType": "BRACE"
     }
@@ -658,21 +1547,21 @@
     "storey": "Ground",
     "bbox_m": [
       [
-        11.9785,
-        5.9785,
-        6.6457
+        11.9787,
+        5.9787,
+        9.1455
       ],
       [
-        18.0215,
-        12.0215,
-        8.2043
+        18.0213,
+        12.0213,
+        10.4045
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 8616.844,
+      "Qto_MemberBaseQuantities.Length_mm": 8569.714,
       "Material": "Steel S355",
       "PredefinedType": "BRACE"
     }
@@ -684,21 +1573,21 @@
     "storey": "Ground",
     "bbox_m": [
       [
-        11.9785,
-        5.9785,
-        6.6457
+        11.9787,
+        5.9787,
+        9.1455
       ],
       [
-        18.0215,
-        12.0215,
-        8.2043
+        18.0213,
+        12.0213,
+        10.4045
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 8616.844,
+      "Qto_MemberBaseQuantities.Length_mm": 8569.714,
       "Material": "Steel S355",
       "PredefinedType": "BRACE"
     }
@@ -710,21 +1599,21 @@
     "storey": "Ground",
     "bbox_m": [
       [
-        -0.0215,
-        -0.0215,
-        6.6457
+        -0.0213,
+        -0.0213,
+        9.1455
       ],
       [
-        6.0215,
-        6.0215,
-        8.2043
+        6.0213,
+        6.0213,
+        10.4045
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 8616.844,
+      "Qto_MemberBaseQuantities.Length_mm": 8569.714,
       "Material": "Steel S355",
       "PredefinedType": "BRACE"
     }
@@ -736,21 +1625,21 @@
     "storey": "Ground",
     "bbox_m": [
       [
-        -0.0215,
-        -0.0215,
-        6.6457
+        -0.0213,
+        -0.0213,
+        9.1455
       ],
       [
-        6.0215,
-        6.0215,
-        8.2043
+        6.0213,
+        6.0213,
+        10.4045
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 8616.844,
+      "Qto_MemberBaseQuantities.Length_mm": 8569.714,
       "Material": "Steel S355",
       "PredefinedType": "BRACE"
     }
@@ -762,21 +1651,21 @@
     "storey": "Ground",
     "bbox_m": [
       [
-        11.9785,
-        -0.0215,
-        6.6457
+        11.9787,
+        -0.0213,
+        9.1455
       ],
       [
-        18.0215,
-        6.0215,
-        8.2043
+        18.0213,
+        6.0213,
+        10.4045
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 8616.844,
+      "Qto_MemberBaseQuantities.Length_mm": 8569.714,
       "Material": "Steel S355",
       "PredefinedType": "BRACE"
     }
@@ -788,21 +1677,21 @@
     "storey": "Ground",
     "bbox_m": [
       [
-        11.9785,
-        -0.0215,
-        6.6457
+        11.9787,
+        -0.0213,
+        9.1455
       ],
       [
-        18.0215,
-        6.0215,
-        8.2043
+        18.0213,
+        6.0213,
+        10.4045
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 8616.844,
+      "Qto_MemberBaseQuantities.Length_mm": 8569.714,
       "Material": "Steel S355",
       "PredefinedType": "BRACE"
     }
@@ -814,21 +1703,21 @@
     "storey": "Ground",
     "bbox_m": [
       [
-        -0.0195,
+        -0.014,
         11.97,
-        0.3775
+        4.8737
       ],
       [
-        6.0195,
+        6.014,
         12.03,
-        5.6225
+        8.1263
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 7939.773,
+      "Qto_MemberBaseQuantities.Length_mm": 6800,
       "TrueSite_Notes.Install": "CHS 60 tension bracing. Tighten after the frame is plumbed.",
       "Material": "Steel S355",
       "PredefinedType": "BRACE"
@@ -841,21 +1730,21 @@
     "storey": "Ground",
     "bbox_m": [
       [
-        -0.0195,
+        -0.014,
         11.97,
-        0.3775
+        4.8737
       ],
       [
-        6.0195,
+        6.014,
         12.03,
-        5.6225
+        8.1263
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 7939.773,
+      "Qto_MemberBaseQuantities.Length_mm": 6800,
       "Material": "Steel S355",
       "PredefinedType": "BRACE"
     }
@@ -867,21 +1756,21 @@
     "storey": "Ground",
     "bbox_m": [
       [
-        11.9805,
+        11.986,
         11.97,
-        0.3775
+        4.8737
       ],
       [
-        18.0195,
+        18.014,
         12.03,
-        5.6225
+        8.1263
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 7939.773,
+      "Qto_MemberBaseQuantities.Length_mm": 6800,
       "TrueSite_Notes.Install": "CHS 60 tension bracing. Tighten after the frame is plumbed.",
       "Material": "Steel S355",
       "PredefinedType": "BRACE"
@@ -894,21 +1783,21 @@
     "storey": "Ground",
     "bbox_m": [
       [
-        11.9805,
+        11.986,
         11.97,
-        0.3775
+        4.8737
       ],
       [
-        18.0195,
+        18.014,
         12.03,
-        5.6225
+        8.1263
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 7939.773,
+      "Qto_MemberBaseQuantities.Length_mm": 6800,
       "Material": "Steel S355",
       "PredefinedType": "BRACE"
     }
@@ -920,21 +1809,21 @@
     "storey": "Ground",
     "bbox_m": [
       [
-        -0.0195,
+        -0.014,
         -0.03,
-        0.3775
+        4.8737
       ],
       [
-        6.0195,
+        6.014,
         0.03,
-        5.6225
+        8.1263
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 7939.773,
+      "Qto_MemberBaseQuantities.Length_mm": 6800,
       "TrueSite_Notes.Install": "CHS 60 tension bracing. Tighten after the frame is plumbed.",
       "Material": "Steel S355",
       "PredefinedType": "BRACE"
@@ -947,21 +1836,21 @@
     "storey": "Ground",
     "bbox_m": [
       [
-        -0.0195,
+        -0.014,
         -0.03,
-        0.3775
+        4.8737
       ],
       [
-        6.0195,
+        6.014,
         0.03,
-        5.6225
+        8.1263
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 7939.773,
+      "Qto_MemberBaseQuantities.Length_mm": 6800,
       "Material": "Steel S355",
       "PredefinedType": "BRACE"
     }
@@ -973,21 +1862,21 @@
     "storey": "Ground",
     "bbox_m": [
       [
-        11.9805,
+        11.986,
         -0.03,
-        0.3775
+        4.8737
       ],
       [
-        18.0195,
+        18.014,
         0.03,
-        5.6225
+        8.1263
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 7939.773,
+      "Qto_MemberBaseQuantities.Length_mm": 6800,
       "TrueSite_Notes.Install": "CHS 60 tension bracing. Tighten after the frame is plumbed.",
       "Material": "Steel S355",
       "PredefinedType": "BRACE"
@@ -1000,21 +1889,21 @@
     "storey": "Ground",
     "bbox_m": [
       [
-        11.9805,
+        11.986,
         -0.03,
-        0.3775
+        4.8737
       ],
       [
-        18.0195,
+        18.014,
         0.03,
-        5.6225
+        8.1263
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 7939.773,
+      "Qto_MemberBaseQuantities.Length_mm": 6800,
       "Material": "Steel S355",
       "PredefinedType": "BRACE"
     }
@@ -1028,12 +1917,12 @@
       [
         0.0,
         1.4625,
-        7.125
+        9.55
       ],
       [
         6.0,
         1.5375,
-        7.325
+        9.75
       ]
     ],
     "load_bearing": true,
@@ -1054,12 +1943,12 @@
       [
         6.0,
         1.4625,
-        7.125
+        9.55
       ],
       [
         12.0,
         1.5375,
-        7.325
+        9.75
       ]
     ],
     "load_bearing": true,
@@ -1080,12 +1969,12 @@
       [
         12.0,
         1.4625,
-        7.125
+        9.55
       ],
       [
         18.0,
         1.5375,
-        7.325
+        9.75
       ]
     ],
     "load_bearing": true,
@@ -1106,12 +1995,12 @@
       [
         0.0,
         2.9625,
-        7.5
+        9.85
       ],
       [
         6.0,
         3.0375,
-        7.7
+        10.05
       ]
     ],
     "load_bearing": true,
@@ -1132,12 +2021,12 @@
       [
         6.0,
         2.9625,
-        7.5
+        9.85
       ],
       [
         12.0,
         3.0375,
-        7.7
+        10.05
       ]
     ],
     "load_bearing": true,
@@ -1158,12 +2047,12 @@
       [
         12.0,
         2.9625,
-        7.5
+        9.85
       ],
       [
         18.0,
         3.0375,
-        7.7
+        10.05
       ]
     ],
     "load_bearing": true,
@@ -1184,12 +2073,12 @@
       [
         0.0,
         4.4625,
-        7.875
+        10.15
       ],
       [
         6.0,
         4.5375,
-        8.075
+        10.35
       ]
     ],
     "load_bearing": true,
@@ -1210,12 +2099,12 @@
       [
         6.0,
         4.4625,
-        7.875
+        10.15
       ],
       [
         12.0,
         4.5375,
-        8.075
+        10.35
       ]
     ],
     "load_bearing": true,
@@ -1236,12 +2125,12 @@
       [
         12.0,
         4.4625,
-        7.875
+        10.15
       ],
       [
         18.0,
         4.5375,
-        8.075
+        10.35
       ]
     ],
     "load_bearing": true,
@@ -1262,12 +2151,12 @@
       [
         0.0,
         5.9625,
-        8.25
+        10.45
       ],
       [
         6.0,
         6.0375,
-        8.45
+        10.65
       ]
     ],
     "load_bearing": true,
@@ -1289,12 +2178,12 @@
       [
         6.0,
         5.9625,
-        8.25
+        10.45
       ],
       [
         12.0,
         6.0375,
-        8.45
+        10.65
       ]
     ],
     "load_bearing": true,
@@ -1316,12 +2205,12 @@
       [
         12.0,
         5.9625,
-        8.25
+        10.45
       ],
       [
         18.0,
         6.0375,
-        8.45
+        10.65
       ]
     ],
     "load_bearing": true,
@@ -1343,12 +2232,12 @@
       [
         0.0,
         7.4625,
-        7.875
+        10.15
       ],
       [
         6.0,
         7.5375,
-        8.075
+        10.35
       ]
     ],
     "load_bearing": true,
@@ -1369,12 +2258,12 @@
       [
         6.0,
         7.4625,
-        7.875
+        10.15
       ],
       [
         12.0,
         7.5375,
-        8.075
+        10.35
       ]
     ],
     "load_bearing": true,
@@ -1395,12 +2284,12 @@
       [
         12.0,
         7.4625,
-        7.875
+        10.15
       ],
       [
         18.0,
         7.5375,
-        8.075
+        10.35
       ]
     ],
     "load_bearing": true,
@@ -1421,12 +2310,12 @@
       [
         0.0,
         8.9625,
-        7.5
+        9.85
       ],
       [
         6.0,
         9.0375,
-        7.7
+        10.05
       ]
     ],
     "load_bearing": true,
@@ -1447,12 +2336,12 @@
       [
         6.0,
         8.9625,
-        7.5
+        9.85
       ],
       [
         12.0,
         9.0375,
-        7.7
+        10.05
       ]
     ],
     "load_bearing": true,
@@ -1473,12 +2362,12 @@
       [
         12.0,
         8.9625,
-        7.5
+        9.85
       ],
       [
         18.0,
         9.0375,
-        7.7
+        10.05
       ]
     ],
     "load_bearing": true,
@@ -1499,12 +2388,12 @@
       [
         0.0,
         10.4625,
-        7.125
+        9.55
       ],
       [
         6.0,
         10.5375,
-        7.325
+        9.75
       ]
     ],
     "load_bearing": true,
@@ -1525,12 +2414,12 @@
       [
         6.0,
         10.4625,
-        7.125
+        9.55
       ],
       [
         12.0,
         10.5375,
-        7.325
+        9.75
       ]
     ],
     "load_bearing": true,
@@ -1551,12 +2440,12 @@
       [
         12.0,
         10.4625,
-        7.125
+        9.55
       ],
       [
         18.0,
         10.5375,
-        7.325
+        9.75
       ]
     ],
     "load_bearing": true,
@@ -1577,12 +2466,12 @@
       [
         -0.075,
         0.0,
-        6.0
+        8.5
       ],
       [
         0.075,
         12.0,
-        6.15
+        8.65
       ]
     ],
     "load_bearing": true,
@@ -1605,12 +2494,12 @@
       [
         -0.045,
         -0.0167,
-        6.0332
+        8.5332
       ],
       [
         0.045,
         1.5167,
-        6.7168
+        9.2168
       ]
     ],
     "load_bearing": true,
@@ -1630,20 +2519,20 @@
     "bbox_m": [
       [
         -0.045,
-        1.4755,
-        6.0373
+        1.4768,
+        8.5364
       ],
       [
         0.045,
-        3.0245,
-        7.0877
+        3.0232,
+        9.5136
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 1789.029,
+      "Qto_MemberBaseQuantities.Length_mm": 1749.286,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -1656,20 +2545,20 @@
     "bbox_m": [
       [
         -0.045,
-        2.9699,
-        6.0416
+        2.9719,
+        8.5399
       ],
       [
         0.045,
-        4.5301,
-        7.4584
+        4.5281,
+        9.8101
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 2018.044,
+      "Qto_MemberBaseQuantities.Length_mm": 1920.937,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -1682,20 +2571,20 @@
     "bbox_m": [
       [
         -0.045,
-        4.466,
-        6.0455
+        4.4682,
+        8.5432
       ],
       [
         0.045,
-        6.034,
-        7.8295
+        6.0318,
+        10.1068
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 2285.963,
+      "Qto_MemberBaseQuantities.Length_mm": 2121.32,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -1708,20 +2597,20 @@
     "bbox_m": [
       [
         -0.045,
-        5.966,
-        6.0455
+        5.9682,
+        8.5432
       ],
       [
         0.045,
-        7.534,
-        7.8295
+        7.5318,
+        10.1068
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 2285.963,
+      "Qto_MemberBaseQuantities.Length_mm": 2121.32,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -1734,20 +2623,20 @@
     "bbox_m": [
       [
         -0.045,
-        7.4699,
-        6.0416
+        7.4719,
+        8.5399
       ],
       [
         0.045,
-        9.0301,
-        7.4584
+        9.0281,
+        9.8101
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 2018.044,
+      "Qto_MemberBaseQuantities.Length_mm": 1920.937,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -1760,20 +2649,20 @@
     "bbox_m": [
       [
         -0.045,
-        8.9755,
-        6.0373
+        8.9768,
+        8.5364
       ],
       [
         0.045,
-        10.5245,
-        7.0877
+        10.5232,
+        9.5136
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 1789.029,
+      "Qto_MemberBaseQuantities.Length_mm": 1749.286,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -1787,12 +2676,12 @@
       [
         -0.045,
         10.4833,
-        6.0332
+        8.5332
       ],
       [
         0.045,
         12.0167,
-        6.7168
+        9.2168
       ]
     ],
     "load_bearing": true,
@@ -1812,20 +2701,20 @@
     "bbox_m": [
       [
         -0.075,
-        5.9818,
-        6.6022
+        5.9853,
+        9.1015
       ],
       [
         0.075,
-        12.0182,
-        8.2478
+        12.0147,
+        10.4485
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 6184.658,
+      "Qto_MemberBaseQuantities.Length_mm": 6118.823,
       "Material": "Steel S355",
       "PredefinedType": "CHORD"
     }
@@ -1838,20 +2727,20 @@
     "bbox_m": [
       [
         -0.075,
-        -0.0182,
-        6.6022
+        -0.0147,
+        9.1015
       ],
       [
         0.075,
-        6.0182,
-        8.2478
+        6.0147,
+        10.4485
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 6184.658,
+      "Qto_MemberBaseQuantities.Length_mm": 6118.823,
       "Material": "Steel S355",
       "PredefinedType": "CHORD"
     }
@@ -1865,12 +2754,12 @@
       [
         -0.045,
         -0.045,
-        6.075
+        8.575
       ],
       [
         0.045,
         0.045,
-        6.675
+        9.175
       ]
     ],
     "load_bearing": true,
@@ -1891,19 +2780,19 @@
       [
         -0.045,
         1.455,
-        6.075
+        8.575
       ],
       [
         0.045,
         1.545,
-        7.05
+        9.475
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 975,
+      "Qto_MemberBaseQuantities.Length_mm": 900,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -1917,19 +2806,19 @@
       [
         -0.045,
         2.955,
-        6.075
+        8.575
       ],
       [
         0.045,
         3.045,
-        7.425
+        9.775
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 1350,
+      "Qto_MemberBaseQuantities.Length_mm": 1200,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -1943,19 +2832,19 @@
       [
         -0.045,
         4.455,
-        6.075
+        8.575
       ],
       [
         0.045,
         4.545,
-        7.8
+        10.075
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 1725,
+      "Qto_MemberBaseQuantities.Length_mm": 1500,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -1969,19 +2858,19 @@
       [
         -0.045,
         5.955,
-        6.075
+        8.575
       ],
       [
         0.045,
         6.045,
-        8.175
+        10.375
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 2100,
+      "Qto_MemberBaseQuantities.Length_mm": 1800,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -1995,19 +2884,19 @@
       [
         -0.045,
         7.455,
-        6.075
+        8.575
       ],
       [
         0.045,
         7.545,
-        7.8
+        10.075
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 1725,
+      "Qto_MemberBaseQuantities.Length_mm": 1500,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -2021,19 +2910,19 @@
       [
         -0.045,
         8.955,
-        6.075
+        8.575
       ],
       [
         0.045,
         9.045,
-        7.425
+        9.775
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 1350,
+      "Qto_MemberBaseQuantities.Length_mm": 1200,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -2047,19 +2936,19 @@
       [
         -0.045,
         10.455,
-        6.075
+        8.575
       ],
       [
         0.045,
         10.545,
-        7.05
+        9.475
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 975,
+      "Qto_MemberBaseQuantities.Length_mm": 900,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -2073,12 +2962,12 @@
       [
         -0.045,
         11.955,
-        6.075
+        8.575
       ],
       [
         0.045,
         12.045,
-        6.675
+        9.175
       ]
     ],
     "load_bearing": true,
@@ -2099,12 +2988,12 @@
       [
         5.925,
         0.0,
-        6.0
+        8.5
       ],
       [
         6.075,
         12.0,
-        6.15
+        8.65
       ]
     ],
     "load_bearing": true,
@@ -2127,12 +3016,12 @@
       [
         5.955,
         -0.0167,
-        6.0332
+        8.5332
       ],
       [
         6.045,
         1.5167,
-        6.7168
+        9.2168
       ]
     ],
     "load_bearing": true,
@@ -2152,20 +3041,20 @@
     "bbox_m": [
       [
         5.955,
-        1.4755,
-        6.0373
+        1.4768,
+        8.5364
       ],
       [
         6.045,
-        3.0245,
-        7.0877
+        3.0232,
+        9.5136
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 1789.029,
+      "Qto_MemberBaseQuantities.Length_mm": 1749.286,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -2178,20 +3067,20 @@
     "bbox_m": [
       [
         5.955,
-        2.9699,
-        6.0416
+        2.9719,
+        8.5399
       ],
       [
         6.045,
-        4.5301,
-        7.4584
+        4.5281,
+        9.8101
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 2018.044,
+      "Qto_MemberBaseQuantities.Length_mm": 1920.937,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -2204,20 +3093,20 @@
     "bbox_m": [
       [
         5.955,
-        4.466,
-        6.0455
+        4.4682,
+        8.5432
       ],
       [
         6.045,
-        6.034,
-        7.8295
+        6.0318,
+        10.1068
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 2285.963,
+      "Qto_MemberBaseQuantities.Length_mm": 2121.32,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -2230,20 +3119,20 @@
     "bbox_m": [
       [
         5.955,
-        5.966,
-        6.0455
+        5.9682,
+        8.5432
       ],
       [
         6.045,
-        7.534,
-        7.8295
+        7.5318,
+        10.1068
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 2285.963,
+      "Qto_MemberBaseQuantities.Length_mm": 2121.32,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -2256,20 +3145,20 @@
     "bbox_m": [
       [
         5.955,
-        7.4699,
-        6.0416
+        7.4719,
+        8.5399
       ],
       [
         6.045,
-        9.0301,
-        7.4584
+        9.0281,
+        9.8101
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 2018.044,
+      "Qto_MemberBaseQuantities.Length_mm": 1920.937,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -2282,20 +3171,20 @@
     "bbox_m": [
       [
         5.955,
-        8.9755,
-        6.0373
+        8.9768,
+        8.5364
       ],
       [
         6.045,
-        10.5245,
-        7.0877
+        10.5232,
+        9.5136
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 1789.029,
+      "Qto_MemberBaseQuantities.Length_mm": 1749.286,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -2309,12 +3198,12 @@
       [
         5.955,
         10.4833,
-        6.0332
+        8.5332
       ],
       [
         6.045,
         12.0167,
-        6.7168
+        9.2168
       ]
     ],
     "load_bearing": true,
@@ -2334,20 +3223,20 @@
     "bbox_m": [
       [
         5.925,
-        5.9818,
-        6.6022
+        5.9853,
+        9.1015
       ],
       [
         6.075,
-        12.0182,
-        8.2478
+        12.0147,
+        10.4485
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 6184.658,
+      "Qto_MemberBaseQuantities.Length_mm": 6118.823,
       "Material": "Steel S355",
       "PredefinedType": "CHORD"
     }
@@ -2360,20 +3249,20 @@
     "bbox_m": [
       [
         5.925,
-        -0.0182,
-        6.6022
+        -0.0147,
+        9.1015
       ],
       [
         6.075,
-        6.0182,
-        8.2478
+        6.0147,
+        10.4485
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 6184.658,
+      "Qto_MemberBaseQuantities.Length_mm": 6118.823,
       "Material": "Steel S355",
       "PredefinedType": "CHORD"
     }
@@ -2387,12 +3276,12 @@
       [
         5.955,
         -0.045,
-        6.075
+        8.575
       ],
       [
         6.045,
         0.045,
-        6.675
+        9.175
       ]
     ],
     "load_bearing": true,
@@ -2413,19 +3302,19 @@
       [
         5.955,
         1.455,
-        6.075
+        8.575
       ],
       [
         6.045,
         1.545,
-        7.05
+        9.475
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 975,
+      "Qto_MemberBaseQuantities.Length_mm": 900,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -2439,19 +3328,19 @@
       [
         5.955,
         2.955,
-        6.075
+        8.575
       ],
       [
         6.045,
         3.045,
-        7.425
+        9.775
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 1350,
+      "Qto_MemberBaseQuantities.Length_mm": 1200,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -2465,19 +3354,19 @@
       [
         5.955,
         4.455,
-        6.075
+        8.575
       ],
       [
         6.045,
         4.545,
-        7.8
+        10.075
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 1725,
+      "Qto_MemberBaseQuantities.Length_mm": 1500,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -2491,19 +3380,19 @@
       [
         5.955,
         5.955,
-        6.075
+        8.575
       ],
       [
         6.045,
         6.045,
-        8.175
+        10.375
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 2100,
+      "Qto_MemberBaseQuantities.Length_mm": 1800,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -2517,19 +3406,19 @@
       [
         5.955,
         7.455,
-        6.075
+        8.575
       ],
       [
         6.045,
         7.545,
-        7.8
+        10.075
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 1725,
+      "Qto_MemberBaseQuantities.Length_mm": 1500,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -2543,19 +3432,19 @@
       [
         5.955,
         8.955,
-        6.075
+        8.575
       ],
       [
         6.045,
         9.045,
-        7.425
+        9.775
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 1350,
+      "Qto_MemberBaseQuantities.Length_mm": 1200,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -2569,19 +3458,19 @@
       [
         5.955,
         10.455,
-        6.075
+        8.575
       ],
       [
         6.045,
         10.545,
-        7.05
+        9.475
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 975,
+      "Qto_MemberBaseQuantities.Length_mm": 900,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -2595,12 +3484,12 @@
       [
         5.955,
         11.955,
-        6.075
+        8.575
       ],
       [
         6.045,
         12.045,
-        6.675
+        9.175
       ]
     ],
     "load_bearing": true,
@@ -2621,12 +3510,12 @@
       [
         11.925,
         0.0,
-        6.0
+        8.5
       ],
       [
         12.075,
         12.0,
-        6.15
+        8.65
       ]
     ],
     "load_bearing": true,
@@ -2649,12 +3538,12 @@
       [
         11.955,
         -0.0167,
-        6.0332
+        8.5332
       ],
       [
         12.045,
         1.5167,
-        6.7168
+        9.2168
       ]
     ],
     "load_bearing": true,
@@ -2674,20 +3563,20 @@
     "bbox_m": [
       [
         11.955,
-        1.4755,
-        6.0373
+        1.4768,
+        8.5364
       ],
       [
         12.045,
-        3.0245,
-        7.0877
+        3.0232,
+        9.5136
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 1789.029,
+      "Qto_MemberBaseQuantities.Length_mm": 1749.286,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -2700,20 +3589,20 @@
     "bbox_m": [
       [
         11.955,
-        2.9699,
-        6.0416
+        2.9719,
+        8.5399
       ],
       [
         12.045,
-        4.5301,
-        7.4584
+        4.5281,
+        9.8101
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 2018.044,
+      "Qto_MemberBaseQuantities.Length_mm": 1920.937,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -2726,20 +3615,20 @@
     "bbox_m": [
       [
         11.955,
-        4.466,
-        6.0455
+        4.4682,
+        8.5432
       ],
       [
         12.045,
-        6.034,
-        7.8295
+        6.0318,
+        10.1068
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 2285.963,
+      "Qto_MemberBaseQuantities.Length_mm": 2121.32,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -2752,20 +3641,20 @@
     "bbox_m": [
       [
         11.955,
-        5.966,
-        6.0455
+        5.9682,
+        8.5432
       ],
       [
         12.045,
-        7.534,
-        7.8295
+        7.5318,
+        10.1068
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 2285.963,
+      "Qto_MemberBaseQuantities.Length_mm": 2121.32,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -2778,20 +3667,20 @@
     "bbox_m": [
       [
         11.955,
-        7.4699,
-        6.0416
+        7.4719,
+        8.5399
       ],
       [
         12.045,
-        9.0301,
-        7.4584
+        9.0281,
+        9.8101
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 2018.044,
+      "Qto_MemberBaseQuantities.Length_mm": 1920.937,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -2804,20 +3693,20 @@
     "bbox_m": [
       [
         11.955,
-        8.9755,
-        6.0373
+        8.9768,
+        8.5364
       ],
       [
         12.045,
-        10.5245,
-        7.0877
+        10.5232,
+        9.5136
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 1789.029,
+      "Qto_MemberBaseQuantities.Length_mm": 1749.286,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -2831,12 +3720,12 @@
       [
         11.955,
         10.4833,
-        6.0332
+        8.5332
       ],
       [
         12.045,
         12.0167,
-        6.7168
+        9.2168
       ]
     ],
     "load_bearing": true,
@@ -2856,20 +3745,20 @@
     "bbox_m": [
       [
         11.925,
-        5.9818,
-        6.6022
+        5.9853,
+        9.1015
       ],
       [
         12.075,
-        12.0182,
-        8.2478
+        12.0147,
+        10.4485
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 6184.658,
+      "Qto_MemberBaseQuantities.Length_mm": 6118.823,
       "Material": "Steel S355",
       "PredefinedType": "CHORD"
     }
@@ -2882,20 +3771,20 @@
     "bbox_m": [
       [
         11.925,
-        -0.0182,
-        6.6022
+        -0.0147,
+        9.1015
       ],
       [
         12.075,
-        6.0182,
-        8.2478
+        6.0147,
+        10.4485
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 6184.658,
+      "Qto_MemberBaseQuantities.Length_mm": 6118.823,
       "Material": "Steel S355",
       "PredefinedType": "CHORD"
     }
@@ -2909,12 +3798,12 @@
       [
         11.955,
         -0.045,
-        6.075
+        8.575
       ],
       [
         12.045,
         0.045,
-        6.675
+        9.175
       ]
     ],
     "load_bearing": true,
@@ -2935,19 +3824,19 @@
       [
         11.955,
         1.455,
-        6.075
+        8.575
       ],
       [
         12.045,
         1.545,
-        7.05
+        9.475
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 975,
+      "Qto_MemberBaseQuantities.Length_mm": 900,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -2961,19 +3850,19 @@
       [
         11.955,
         2.955,
-        6.075
+        8.575
       ],
       [
         12.045,
         3.045,
-        7.425
+        9.775
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 1350,
+      "Qto_MemberBaseQuantities.Length_mm": 1200,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -2987,19 +3876,19 @@
       [
         11.955,
         4.455,
-        6.075
+        8.575
       ],
       [
         12.045,
         4.545,
-        7.8
+        10.075
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 1725,
+      "Qto_MemberBaseQuantities.Length_mm": 1500,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -3013,19 +3902,19 @@
       [
         11.955,
         5.955,
-        6.075
+        8.575
       ],
       [
         12.045,
         6.045,
-        8.175
+        10.375
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 2100,
+      "Qto_MemberBaseQuantities.Length_mm": 1800,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -3039,19 +3928,19 @@
       [
         11.955,
         7.455,
-        6.075
+        8.575
       ],
       [
         12.045,
         7.545,
-        7.8
+        10.075
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 1725,
+      "Qto_MemberBaseQuantities.Length_mm": 1500,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -3065,19 +3954,19 @@
       [
         11.955,
         8.955,
-        6.075
+        8.575
       ],
       [
         12.045,
         9.045,
-        7.425
+        9.775
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 1350,
+      "Qto_MemberBaseQuantities.Length_mm": 1200,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -3091,19 +3980,19 @@
       [
         11.955,
         10.455,
-        6.075
+        8.575
       ],
       [
         12.045,
         10.545,
-        7.05
+        9.475
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 975,
+      "Qto_MemberBaseQuantities.Length_mm": 900,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -3117,12 +4006,12 @@
       [
         11.955,
         11.955,
-        6.075
+        8.575
       ],
       [
         12.045,
         12.045,
-        6.675
+        9.175
       ]
     ],
     "load_bearing": true,
@@ -3143,12 +4032,12 @@
       [
         17.925,
         0.0,
-        6.0
+        8.5
       ],
       [
         18.075,
         12.0,
-        6.15
+        8.65
       ]
     ],
     "load_bearing": true,
@@ -3171,12 +4060,12 @@
       [
         17.955,
         -0.0167,
-        6.0332
+        8.5332
       ],
       [
         18.045,
         1.5167,
-        6.7168
+        9.2168
       ]
     ],
     "load_bearing": true,
@@ -3196,20 +4085,20 @@
     "bbox_m": [
       [
         17.955,
-        1.4755,
-        6.0373
+        1.4768,
+        8.5364
       ],
       [
         18.045,
-        3.0245,
-        7.0877
+        3.0232,
+        9.5136
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 1789.029,
+      "Qto_MemberBaseQuantities.Length_mm": 1749.286,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -3222,20 +4111,20 @@
     "bbox_m": [
       [
         17.955,
-        2.9699,
-        6.0416
+        2.9719,
+        8.5399
       ],
       [
         18.045,
-        4.5301,
-        7.4584
+        4.5281,
+        9.8101
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 2018.044,
+      "Qto_MemberBaseQuantities.Length_mm": 1920.937,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -3248,20 +4137,20 @@
     "bbox_m": [
       [
         17.955,
-        4.466,
-        6.0455
+        4.4682,
+        8.5432
       ],
       [
         18.045,
-        6.034,
-        7.8295
+        6.0318,
+        10.1068
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 2285.963,
+      "Qto_MemberBaseQuantities.Length_mm": 2121.32,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -3274,20 +4163,20 @@
     "bbox_m": [
       [
         17.955,
-        5.966,
-        6.0455
+        5.9682,
+        8.5432
       ],
       [
         18.045,
-        7.534,
-        7.8295
+        7.5318,
+        10.1068
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 2285.963,
+      "Qto_MemberBaseQuantities.Length_mm": 2121.32,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -3300,20 +4189,20 @@
     "bbox_m": [
       [
         17.955,
-        7.4699,
-        6.0416
+        7.4719,
+        8.5399
       ],
       [
         18.045,
-        9.0301,
-        7.4584
+        9.0281,
+        9.8101
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 2018.044,
+      "Qto_MemberBaseQuantities.Length_mm": 1920.937,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -3326,20 +4215,20 @@
     "bbox_m": [
       [
         17.955,
-        8.9755,
-        6.0373
+        8.9768,
+        8.5364
       ],
       [
         18.045,
-        10.5245,
-        7.0877
+        10.5232,
+        9.5136
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 1789.029,
+      "Qto_MemberBaseQuantities.Length_mm": 1749.286,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -3353,12 +4242,12 @@
       [
         17.955,
         10.4833,
-        6.0332
+        8.5332
       ],
       [
         18.045,
         12.0167,
-        6.7168
+        9.2168
       ]
     ],
     "load_bearing": true,
@@ -3378,20 +4267,20 @@
     "bbox_m": [
       [
         17.925,
-        5.9818,
-        6.6022
+        5.9853,
+        9.1015
       ],
       [
         18.075,
-        12.0182,
-        8.2478
+        12.0147,
+        10.4485
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 6184.658,
+      "Qto_MemberBaseQuantities.Length_mm": 6118.823,
       "Material": "Steel S355",
       "PredefinedType": "CHORD"
     }
@@ -3404,20 +4293,20 @@
     "bbox_m": [
       [
         17.925,
-        -0.0182,
-        6.6022
+        -0.0147,
+        9.1015
       ],
       [
         18.075,
-        6.0182,
-        8.2478
+        6.0147,
+        10.4485
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 6184.658,
+      "Qto_MemberBaseQuantities.Length_mm": 6118.823,
       "Material": "Steel S355",
       "PredefinedType": "CHORD"
     }
@@ -3431,12 +4320,12 @@
       [
         17.955,
         -0.045,
-        6.075
+        8.575
       ],
       [
         18.045,
         0.045,
-        6.675
+        9.175
       ]
     ],
     "load_bearing": true,
@@ -3457,19 +4346,19 @@
       [
         17.955,
         1.455,
-        6.075
+        8.575
       ],
       [
         18.045,
         1.545,
-        7.05
+        9.475
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 975,
+      "Qto_MemberBaseQuantities.Length_mm": 900,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -3483,19 +4372,19 @@
       [
         17.955,
         2.955,
-        6.075
+        8.575
       ],
       [
         18.045,
         3.045,
-        7.425
+        9.775
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 1350,
+      "Qto_MemberBaseQuantities.Length_mm": 1200,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -3509,19 +4398,19 @@
       [
         17.955,
         4.455,
-        6.075
+        8.575
       ],
       [
         18.045,
         4.545,
-        7.8
+        10.075
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 1725,
+      "Qto_MemberBaseQuantities.Length_mm": 1500,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -3535,19 +4424,19 @@
       [
         17.955,
         5.955,
-        6.075
+        8.575
       ],
       [
         18.045,
         6.045,
-        8.175
+        10.375
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 2100,
+      "Qto_MemberBaseQuantities.Length_mm": 1800,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -3561,19 +4450,19 @@
       [
         17.955,
         7.455,
-        6.075
+        8.575
       ],
       [
         18.045,
         7.545,
-        7.8
+        10.075
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 1725,
+      "Qto_MemberBaseQuantities.Length_mm": 1500,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -3587,19 +4476,19 @@
       [
         17.955,
         8.955,
-        6.075
+        8.575
       ],
       [
         18.045,
         9.045,
-        7.425
+        9.775
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 1350,
+      "Qto_MemberBaseQuantities.Length_mm": 1200,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -3613,19 +4502,19 @@
       [
         17.955,
         10.455,
-        6.075
+        8.575
       ],
       [
         18.045,
         10.545,
-        7.05
+        9.475
       ]
     ],
     "load_bearing": true,
     "props": {
       "Pset_MemberCommon.LoadBearing": true,
       "Pset_MemberCommon.IsExternal": false,
-      "Qto_MemberBaseQuantities.Length_mm": 975,
+      "Qto_MemberBaseQuantities.Length_mm": 900,
       "Material": "Steel S355",
       "PredefinedType": "MEMBER"
     }
@@ -3639,12 +4528,12 @@
       [
         17.955,
         11.955,
-        6.075
+        8.575
       ],
       [
         18.045,
         12.045,
-        6.675
+        9.175
       ]
     ],
     "load_bearing": true,
@@ -3657,353 +4546,461 @@
     }
   },
   {
-    "guid": "3vjhYFXB1S6QTLHQOApFfb",
-    "ifc_class": "IfcReinforcingBar",
-    "name": "Starter bars A1",
+    "guid": "08LrOGw$PVjfUZwtWY9jWM",
+    "ifc_class": "IfcRailing",
+    "name": "Edge protection east",
     "storey": "Ground",
     "bbox_m": [
       [
-        -0.32,
-        -0.32,
-        0.0
+        17.625,
+        0.325,
+        4.5
       ],
       [
-        0.32,
-        0.32,
-        1.0
+        17.675,
+        11.675,
+        5.65
       ]
     ],
     "load_bearing": null,
     "props": {
-      "TrueSite_Notes.Install": "8 T20 starter bars, 1.0 m above the pad, T10 links. Cap the bar ends until the encasement is cast.",
+      "Material": "Scaffold tube",
+      "PredefinedType": "GUARDRAIL"
+    }
+  },
+  {
+    "guid": "2yZ6gPcWPHOuMnX1j5PqDD",
+    "ifc_class": "IfcRailing",
+    "name": "Edge protection north",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        0.325,
+        11.625,
+        4.5
+      ],
+      [
+        17.675,
+        11.675,
+        5.65
+      ]
+    ],
+    "load_bearing": null,
+    "props": {
+      "Material": "Scaffold tube",
+      "PredefinedType": "GUARDRAIL"
+    }
+  },
+  {
+    "guid": "1iq1AUnuHS1ATDW3p_TCjC",
+    "ifc_class": "IfcRailing",
+    "name": "Edge protection south",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        0.325,
+        0.325,
+        4.5
+      ],
+      [
+        17.675,
+        0.375,
+        5.65
+      ]
+    ],
+    "load_bearing": null,
+    "props": {
+      "TrueSite_Notes.Install": "Scaffold-tube guardrail, 1.1 m top rail and 0.5 m mid rail, posts at 2 m.",
+      "Material": "Scaffold tube",
+      "PredefinedType": "GUARDRAIL"
+    }
+  },
+  {
+    "guid": "0OB1lbIGfMNweyU2MLLR8R",
+    "ifc_class": "IfcRailing",
+    "name": "Edge protection west",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        0.325,
+        0.325,
+        4.5
+      ],
+      [
+        0.375,
+        11.675,
+        5.65
+      ]
+    ],
+    "load_bearing": null,
+    "props": {
+      "Material": "Scaffold tube",
+      "PredefinedType": "GUARDRAIL"
+    }
+  },
+  {
+    "guid": "3JgcCGF65PxOtX9Rpr5QN1",
+    "ifc_class": "IfcReinforcingBar",
+    "name": "Column cage A1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        -0.185,
+        -0.185,
+        0.05
+      ],
+      [
+        0.185,
+        0.185,
+        4.45
+      ]
+    ],
+    "load_bearing": null,
+    "props": {
       "TrueSite_Notes.Grid": "A1",
       "Material": "Rebar B500B",
-      "PredefinedType": "ANCHORING"
+      "PredefinedType": "MAIN"
     }
   },
   {
-    "guid": "2K_$dKBeXNMghmv$iWjic8",
+    "guid": "2MUDO$UfLIuwkVrMrTtqmm",
     "ifc_class": "IfcReinforcingBar",
-    "name": "Starter bars A2",
+    "name": "Column cage A2",
     "storey": "Ground",
     "bbox_m": [
       [
-        -0.32,
-        11.68,
-        0.0
+        -0.185,
+        5.815,
+        0.05
       ],
       [
-        0.32,
-        12.32,
-        1.0
+        0.185,
+        6.185,
+        4.45
       ]
     ],
     "load_bearing": null,
     "props": {
-      "TrueSite_Notes.Install": "8 T20 starter bars, 1.0 m above the pad, T10 links. Cap the bar ends until the encasement is cast.",
       "TrueSite_Notes.Grid": "A2",
       "Material": "Rebar B500B",
-      "PredefinedType": "ANCHORING"
+      "PredefinedType": "MAIN"
     }
   },
   {
-    "guid": "23f9W22PnOvvaxAVyJY2xx",
+    "guid": "0rY5NvX5vSxRhA5Pj5rnNe",
     "ifc_class": "IfcReinforcingBar",
-    "name": "Starter bars B1",
+    "name": "Column cage A3",
     "storey": "Ground",
     "bbox_m": [
       [
-        5.68,
-        -0.32,
-        0.0
+        -0.185,
+        11.815,
+        0.05
       ],
       [
-        6.32,
-        0.32,
-        1.0
+        0.185,
+        12.185,
+        4.45
       ]
     ],
     "load_bearing": null,
     "props": {
-      "TrueSite_Notes.Install": "8 T20 starter bars, 1.0 m above the pad, T10 links. Cap the bar ends until the encasement is cast.",
+      "TrueSite_Notes.Grid": "A3",
+      "Material": "Rebar B500B",
+      "PredefinedType": "MAIN"
+    }
+  },
+  {
+    "guid": "1l1_6CpZ1OWhmRib_uCYmt",
+    "ifc_class": "IfcReinforcingBar",
+    "name": "Column cage B1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        5.815,
+        -0.185,
+        0.05
+      ],
+      [
+        6.185,
+        0.185,
+        4.45
+      ]
+    ],
+    "load_bearing": null,
+    "props": {
       "TrueSite_Notes.Grid": "B1",
       "Material": "Rebar B500B",
-      "PredefinedType": "ANCHORING"
+      "PredefinedType": "MAIN"
     }
   },
   {
-    "guid": "3nkW5bPp1N1fmU4WALUbgB",
+    "guid": "0CGp9gu3XJj9eRbSYNA6az",
     "ifc_class": "IfcReinforcingBar",
-    "name": "Starter bars B2",
+    "name": "Column cage B2",
     "storey": "Ground",
     "bbox_m": [
       [
-        5.68,
-        11.68,
-        0.0
+        5.815,
+        5.815,
+        0.05
       ],
       [
-        6.32,
-        12.32,
-        1.0
+        6.185,
+        6.185,
+        4.45
       ]
     ],
     "load_bearing": null,
     "props": {
-      "TrueSite_Notes.Install": "8 T20 starter bars, 1.0 m above the pad, T10 links. Cap the bar ends until the encasement is cast.",
       "TrueSite_Notes.Grid": "B2",
       "Material": "Rebar B500B",
-      "PredefinedType": "ANCHORING"
+      "PredefinedType": "MAIN"
     }
   },
   {
-    "guid": "0M_S5JAF9RZv8G3tyVmlvs",
+    "guid": "1Or76rG71GA9Ty5gtrH4jN",
     "ifc_class": "IfcReinforcingBar",
-    "name": "Starter bars C1",
+    "name": "Column cage B3",
     "storey": "Ground",
     "bbox_m": [
       [
-        11.68,
-        -0.32,
-        0.0
+        5.815,
+        11.815,
+        0.05
       ],
       [
-        12.32,
-        0.32,
-        1.0
+        6.185,
+        12.185,
+        4.45
       ]
     ],
     "load_bearing": null,
     "props": {
-      "TrueSite_Notes.Install": "8 T20 starter bars, 1.0 m above the pad, T10 links. Cap the bar ends until the encasement is cast.",
+      "TrueSite_Notes.Grid": "B3",
+      "Material": "Rebar B500B",
+      "PredefinedType": "MAIN"
+    }
+  },
+  {
+    "guid": "1VZxCVZt9NBAn8lduSYYiP",
+    "ifc_class": "IfcReinforcingBar",
+    "name": "Column cage C1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        11.815,
+        -0.185,
+        0.05
+      ],
+      [
+        12.185,
+        0.185,
+        4.45
+      ]
+    ],
+    "load_bearing": null,
+    "props": {
       "TrueSite_Notes.Grid": "C1",
       "Material": "Rebar B500B",
-      "PredefinedType": "ANCHORING"
+      "PredefinedType": "MAIN"
     }
   },
   {
-    "guid": "09I8BEIrvQaucmJyZeSK16",
+    "guid": "0S0_4iAkPLgPkAm$TYmg72",
     "ifc_class": "IfcReinforcingBar",
-    "name": "Starter bars C2",
+    "name": "Column cage C2",
     "storey": "Ground",
     "bbox_m": [
       [
-        11.68,
-        11.68,
-        0.0
+        11.815,
+        5.815,
+        0.05
       ],
       [
-        12.32,
-        12.32,
-        1.0
+        12.185,
+        6.185,
+        4.45
       ]
     ],
     "load_bearing": null,
     "props": {
-      "TrueSite_Notes.Install": "8 T20 starter bars, 1.0 m above the pad, T10 links. Cap the bar ends until the encasement is cast.",
       "TrueSite_Notes.Grid": "C2",
       "Material": "Rebar B500B",
-      "PredefinedType": "ANCHORING"
+      "PredefinedType": "MAIN"
     }
   },
   {
-    "guid": "2GqNZfoerQ9QGXK6ayrfqi",
+    "guid": "1lnwbe1X9MtQ3xL_mDMiD$",
     "ifc_class": "IfcReinforcingBar",
-    "name": "Starter bars D1",
+    "name": "Column cage C3",
     "storey": "Ground",
     "bbox_m": [
       [
-        17.68,
-        -0.32,
-        0.0
+        11.815,
+        11.815,
+        0.05
       ],
       [
-        18.32,
-        0.32,
-        1.0
+        12.185,
+        12.185,
+        4.45
       ]
     ],
     "load_bearing": null,
     "props": {
-      "TrueSite_Notes.Install": "8 T20 starter bars, 1.0 m above the pad, T10 links. Cap the bar ends until the encasement is cast.",
+      "TrueSite_Notes.Grid": "C3",
+      "Material": "Rebar B500B",
+      "PredefinedType": "MAIN"
+    }
+  },
+  {
+    "guid": "2Oj$6cqX5HRPt1iu_XLJSb",
+    "ifc_class": "IfcReinforcingBar",
+    "name": "Column cage D1",
+    "storey": "Ground",
+    "bbox_m": [
+      [
+        17.815,
+        -0.185,
+        0.05
+      ],
+      [
+        18.185,
+        0.185,
+        4.45
+      ]
+    ],
+    "load_bearing": null,
+    "props": {
       "TrueSite_Notes.Grid": "D1",
       "Material": "Rebar B500B",
-      "PredefinedType": "ANCHORING"
+      "PredefinedType": "MAIN"
     }
   },
   {
-    "guid": "1Ldw$JBdPR0hCDFZiR3e6A",
+    "guid": "0RUNqXEK1TRfbFAQY3ehHE",
     "ifc_class": "IfcReinforcingBar",
-    "name": "Starter bars D2",
+    "name": "Column cage D2",
     "storey": "Ground",
     "bbox_m": [
       [
-        17.68,
-        11.68,
-        0.0
+        17.815,
+        5.815,
+        0.05
       ],
       [
-        18.32,
-        12.32,
-        1.0
+        18.185,
+        6.185,
+        4.45
       ]
     ],
     "load_bearing": null,
     "props": {
-      "TrueSite_Notes.Install": "8 T20 starter bars, 1.0 m above the pad, T10 links. Cap the bar ends until the encasement is cast.",
       "TrueSite_Notes.Grid": "D2",
       "Material": "Rebar B500B",
-      "PredefinedType": "ANCHORING"
+      "PredefinedType": "MAIN"
     }
   },
   {
-    "guid": "16Pf0AJo1TFgh5CGEIfEZ2",
+    "guid": "2iF$Fa6HjRMPuUo1rG0889",
     "ifc_class": "IfcReinforcingBar",
-    "name": "Tie beam cage A1-B1",
+    "name": "Column cage D3",
     "storey": "Ground",
     "bbox_m": [
       [
-        0.8,
-        -0.15,
-        0.0
+        17.815,
+        11.815,
+        0.05
       ],
       [
-        5.2,
-        0.15,
-        0.45
+        18.185,
+        12.185,
+        4.45
       ]
     ],
     "load_bearing": null,
     "props": {
-      "TrueSite_Notes.Install": "Tie beam 300 x 450, 4 T16 + T10 links @ 200. Not cast yet: check cover and laps before the pour.",
-      "TrueSite_Notes.Grid": "A1-B1",
+      "TrueSite_Notes.Grid": "D3",
       "Material": "Rebar B500B",
       "PredefinedType": "MAIN"
     }
   },
   {
-    "guid": "28NQPv7PnJ5e2fuYXouZHI",
+    "guid": "1mTZgvik1ODP1337OK$3oR",
     "ifc_class": "IfcReinforcingBar",
-    "name": "Tie beam cage A2-B2",
+    "name": "Slab mat L1 C-D",
     "storey": "Ground",
     "bbox_m": [
       [
-        0.8,
-        11.85,
-        0.0
+        12.0,
+        0.0,
+        4.332
       ],
       [
-        5.2,
-        12.15,
-        0.45
+        18.0,
+        12.0,
+        4.3639
       ]
     ],
     "load_bearing": null,
     "props": {
-      "TrueSite_Notes.Install": "Tie beam 300 x 450, 4 T16 + T10 links @ 200. Not cast yet: check cover and laps before the pour.",
-      "TrueSite_Notes.Grid": "A2-B2",
+      "TrueSite_Notes.Install": "Bottom mat T16 @ 400 both ways. Not cast yet: check cover and laps before the pour.",
+      "TrueSite_Notes.Bay": "C-D",
       "Material": "Rebar B500B",
       "PredefinedType": "MAIN"
     }
   },
   {
-    "guid": "1js85AYMjTiOwsXZ49AiOz",
-    "ifc_class": "IfcReinforcingBar",
-    "name": "Tie beam cage B1-C1",
+    "guid": "3Xv3PJbtPVUhwlzJwjYQOV",
+    "ifc_class": "IfcSlab",
+    "name": "Slab L1 A-B",
     "storey": "Ground",
     "bbox_m": [
       [
-        6.8,
-        -0.15,
-        0.0
+        0.0,
+        0.0,
+        4.3
       ],
       [
-        11.2,
-        0.15,
-        0.45
+        6.0,
+        12.0,
+        4.5
       ]
     ],
-    "load_bearing": null,
+    "load_bearing": true,
     "props": {
-      "TrueSite_Notes.Install": "Tie beam 300 x 450, 4 T16 + T10 links @ 200. Not cast yet: check cover and laps before the pour.",
-      "TrueSite_Notes.Grid": "B1-C1",
-      "Material": "Rebar B500B",
-      "PredefinedType": "MAIN"
+      "Pset_SlabCommon.LoadBearing": true,
+      "TrueSite_Notes.Install": "200 mm C30/37 flat slab, cast with the beams.",
+      "TrueSite_Notes.Bay": "A-B",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "FLOOR"
     }
   },
   {
-    "guid": "0uHH0otULHKfQ50yfH9cq$",
-    "ifc_class": "IfcReinforcingBar",
-    "name": "Tie beam cage B2-C2",
+    "guid": "3KbBm84brN4uVApnH6tlL0",
+    "ifc_class": "IfcSlab",
+    "name": "Slab L1 B-C",
     "storey": "Ground",
     "bbox_m": [
       [
-        6.8,
-        11.85,
-        0.0
+        6.0,
+        0.0,
+        4.3
       ],
       [
-        11.2,
-        12.15,
-        0.45
+        12.0,
+        12.0,
+        4.5
       ]
     ],
-    "load_bearing": null,
+    "load_bearing": true,
     "props": {
-      "TrueSite_Notes.Install": "Tie beam 300 x 450, 4 T16 + T10 links @ 200. Not cast yet: check cover and laps before the pour.",
-      "TrueSite_Notes.Grid": "B2-C2",
-      "Material": "Rebar B500B",
-      "PredefinedType": "MAIN"
-    }
-  },
-  {
-    "guid": "3KrD25LZPVwvnKlwr7MhnQ",
-    "ifc_class": "IfcReinforcingBar",
-    "name": "Tie beam cage C1-D1",
-    "storey": "Ground",
-    "bbox_m": [
-      [
-        12.8,
-        -0.15,
-        0.0
-      ],
-      [
-        17.2,
-        0.15,
-        0.45
-      ]
-    ],
-    "load_bearing": null,
-    "props": {
-      "TrueSite_Notes.Install": "Tie beam 300 x 450, 4 T16 + T10 links @ 200. Not cast yet: check cover and laps before the pour.",
-      "TrueSite_Notes.Grid": "C1-D1",
-      "Material": "Rebar B500B",
-      "PredefinedType": "MAIN"
-    }
-  },
-  {
-    "guid": "0Jr$1iVNDHDA$Od7Ej6Jew",
-    "ifc_class": "IfcReinforcingBar",
-    "name": "Tie beam cage C2-D2",
-    "storey": "Ground",
-    "bbox_m": [
-      [
-        12.8,
-        11.85,
-        0.0
-      ],
-      [
-        17.2,
-        12.15,
-        0.45
-      ]
-    ],
-    "load_bearing": null,
-    "props": {
-      "TrueSite_Notes.Install": "Tie beam 300 x 450, 4 T16 + T10 links @ 200. Not cast yet: check cover and laps before the pour.",
-      "TrueSite_Notes.Grid": "C2-D2",
-      "Material": "Rebar B500B",
-      "PredefinedType": "MAIN"
+      "Pset_SlabCommon.LoadBearing": true,
+      "TrueSite_Notes.Install": "200 mm C30/37 flat slab, cast with the beams.",
+      "TrueSite_Notes.Bay": "B-C",
+      "Material": "Concrete C30/37",
+      "PredefinedType": "FLOOR"
     }
   }
 ]

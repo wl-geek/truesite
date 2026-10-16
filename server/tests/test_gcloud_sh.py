@@ -24,7 +24,7 @@ pytestmark = pytest.mark.skipif(BASH is None, reason="needs bash")
 
 PROJECT = "truesite-test"
 SERVICE_URL = "https://truesite-123456789012.asia-southeast1.run.app"  # deterministic URL for the stub's number
-SHEETS = ["room1-D1", "room1-L1", "rooftop-R1", "rooftop-R2", "site-S1", "site-S2"]
+SHEETS = ["room1-D1", "room1-L1", "rooftop-R1", "rooftop-R2", "site-P1", "site-P2", "site-P3", "site-P4", "site-D1"]
 
 # "create" marks a resource kind (e.g. iam-service-accounts) as existing and fails if it already is;
 # "describe"/"list" report it. Every call is logged with the project gcloud would use.
@@ -56,7 +56,7 @@ done
 case "$mod" in
   *qr_sheets) names="room1-D1 room1-D2 room1-L1 room1-A1" ;;
   *rooftop) names="rooftop-R1 rooftop-R2" ;;
-  *site) names="site-S1 site-S2" ;;
+  *site) names="site-P1 site-P2 site-P3 site-P4 site-D1" ;;
 esac
 mkdir -p "$dir"
 for n in $names; do printf '%%PDF-1.4\n(%s/a/x/%s) Tj\n' "${STUB_SHEET_URL:-$url}" "$n" > "$dir/$n.pdf"; done

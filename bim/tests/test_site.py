@@ -1,4 +1,4 @@
-"""The site steel frame: element counts, GUID join, ground level, clearance around the code, and the S anchors."""
+"""The site building: element counts, GUID join, storey heights, ground level, clear standing spots, and the P anchors."""
 import json
 import math
 from collections import Counter
@@ -34,7 +34,7 @@ def footprint_distance(bbox, x: float, y: float) -> float:
 
 def test_counts_and_guid_join(built, els):
     assert Counter(e["ifc_class"] for e in els) == {
-        "IfcColumn": 8, "IfcFooting": 8, "IfcBeam": 6, "IfcMember": 117, "IfcReinforcingBar": 14}
+        "IfcColumn": 20, "IfcFooting": 12, "IfcBeam": 23, "IfcMember": 117, "IfcReinforcingBar": 13, "IfcRailing": 4, "IfcSlab": 2}
     members = Counter(e["props"]["PredefinedType"] for e in els if e["ifc_class"] == "IfcMember")
     assert members == {"CHORD": 12, "MEMBER": 68, "PURLIN": 21, "BRACE": 16}
     assert len(els) < 250
@@ -43,22 +43,35 @@ def test_counts_and_guid_join(built, els):
 
 def test_names_follow_the_grid(els):
     names = {e["name"] for e in els}
-    assert {"Column A1", "Column D2", "Pad footing A1", "Starter bars A1", "Edge beam A1-B1",
-            "Truss T2 bottom chord", "Truss T2 diagonal 3", "Purlin P4 B-C", "Tie beam cage A1-B1"} <= names
+    assert {"RC column A1", "RC column B2", "Column cage B2", "Steel column D3", "Pad footing A1", "Beam A1-B1", "Beam A1-A2",
+            "Slab L1 A-B", "Slab L1 B-C", "Slab mat L1 C-D", "Edge protection south", "Edge beam A1-B1",
+            "Truss T2 bottom chord", "Truss T2 diagonal 3", "Purlin P4 B-C"} <= names
     assert len(names) == len(els)  # every name is unique, so Ask and the findings can name an element
-    assert sum("TrueSite_Notes.Install" in e["props"] for e in els) >= 5
+    assert sum("TrueSite_Notes.Install" in e["props"] for e in els) >= 8
 
 
-def test_columns_only_on_the_long_sides(els):
-    centres = sorted((round((e["bbox_m"][0][0] + e["bbox_m"][1][0]) / 2, 2), round((e["bbox_m"][0][1] + e["bbox_m"][1][1]) / 2, 2))
-                     for e in els if e["ifc_class"] == "IfcColumn")
-    assert centres == sorted((x, y) for x in (0.0, 6.0, 12.0, 18.0) for y in (0.0, 12.0))
-    col = next(e for e in els if e["name"] == "Column B1")
-    assert col["bbox_m"][1][2] == pytest.approx(site.EAVES)  # column tops carry the trusses at the eaves height
+def test_spacious_for_a_six_foot_person(els):
+    by = {e["name"]: e for e in els}
+    six_ft = 1.83
+    soffit = min(e["bbox_m"][0][2] for e in els if e["ifc_class"] in ("IfcBeam", "IfcSlab") and e["bbox_m"][0][2] < site.EAVES - 1)
+    assert soffit == pytest.approx(3.9, abs=0.01) and soffit > 2 * six_ft  # ground storey: over twice head height
+    assert by["Slab L1 A-B"]["bbox_m"][1][2] == pytest.approx(site.L1)
+    assert by["Steel column A1"]["bbox_m"][0][2] == pytest.approx(site.L1) and by["Steel column A1"]["bbox_m"][1][2] == pytest.approx(site.EAVES)
+    assert 10.0 < max(e["bbox_m"][1][2] for e in els) < 11.0  # ridge purlins
+    rc = sorted((round((e["bbox_m"][0][0] + e["bbox_m"][1][0]) / 2, 2), round((e["bbox_m"][0][1] + e["bbox_m"][1][1]) / 2, 2))
+                for e in els if e["name"].startswith("RC column"))
+    assert rc == sorted((x, y) for x in site.GRID_X for y in site.GRID_Y)  # 6 m bays both ways
+
+
+def test_open_bay_is_not_cast(els):
+    slabs = [e for e in els if e["ifc_class"] == "IfcSlab"]
+    assert max(e["bbox_m"][1][0] for e in slabs) == pytest.approx(site.CAST_TO_X)
+    mat = next(e for e in els if e["name"] == "Slab mat L1 C-D")
+    assert mat["bbox_m"][0][0] == pytest.approx(site.CAST_TO_X, abs=0.02) and mat["bbox_m"][1][0] == pytest.approx(18.0, abs=0.02)
 
 
 def test_nothing_below_the_ground(built, els):
-    # Quick Look and the AR modes put model Z 0 on the real ground: nothing may sink into it.
+    # The AR modes put model Z 0 on the real ground: nothing may sink into it.
     assert min(e["bbox_m"][0][2] for e in els) == 0.0
     glb_min_up = min(lo[1] for lo, _ in named_node_bounds(built / "model.glb").values())  # glTF Y = IFC Z
     assert glb_min_up == pytest.approx(0.0, abs=1e-4)
@@ -67,46 +80,49 @@ def test_nothing_below_the_ground(built, els):
             assert e["bbox_m"][0][2] == 0.0 and e["bbox_m"][1][2] <= 0.03  # pad top flush with the ground
 
 
-def test_starter_bars_stick_up_about_a_metre(els):
-    starters = [e for e in els if e["name"].startswith("Starter bars")]
-    assert len(starters) == 8
-    assert all(e["bbox_m"][1][2] == pytest.approx(1.0, abs=0.02) for e in starters)
-    cages = [e for e in els if e["name"].startswith("Tie beam cage")]
-    assert len(cages) == 6 and all(e["bbox_m"][0][2] >= 0.0 for e in cages)
-
-
-def test_nothing_close_to_the_code_below_head_height(els):
-    # The viewer stands on the code at the floor centre: keep 2.5 m clear around it up to 4 m.
-    x, y = site.ANCHOR["position_m"][:2]
+@pytest.mark.parametrize("vid", ["P1", "P2", "P3", "P4"])
+def test_standing_spots_and_codes_are_clear(els, vid):
+    _, stand, _, _ = next(v for v in site.VIEWPOINTS if v[0] == vid)
+    code = next(a for a in site.ANCHORS if a["anchor_id"] == vid)["position_m"]
     for e in els:
-        if e["bbox_m"][0][2] < 4.0:
-            assert footprint_distance(e["bbox_m"], x, y) > 2.5, e["name"]
+        if e["bbox_m"][0][2] < 3.5:  # anything at head height or below
+            assert footprint_distance(e["bbox_m"], *stand) > 2.5, (vid, e["name"])
+            assert footprint_distance(e["bbox_m"], code[0], code[1]) > 1.5, (vid, e["name"])
 
 
 def test_bounding_box(els):
     lo = [min(e["bbox_m"][0][i] for e in els) for i in range(3)]
     hi = [max(e["bbox_m"][1][i] for e in els) for i in range(3)]
-    assert lo[0] == pytest.approx(-0.8, abs=0.01) and hi[0] == pytest.approx(18.8, abs=0.01)  # pad footings
-    assert lo[1] == pytest.approx(-0.8, abs=0.01) and hi[1] == pytest.approx(12.8, abs=0.01)
-    assert 7.5 < hi[2] < 9.0  # ridge purlins
+    assert lo[0] == pytest.approx(-0.9, abs=0.01) and hi[0] == pytest.approx(18.9, abs=0.01)  # pad footings
+    assert lo[1] == pytest.approx(-0.9, abs=0.01) and hi[1] == pytest.approx(12.9, abs=0.01)
 
 
 def test_anchors_and_project(built):
     anchors = json.loads((built / "anchors.json").read_text(encoding="utf-8"))
     assert anchors == site.ANCHORS
-    assert [a["anchor_id"] for a in anchors] == ["S1", "S2", "S3", "D1"]
+    assert [a["anchor_id"] for a in anchors] == ["P1", "P2", "P3", "P4", "D1"]
     for a in anchors:
         n, u = a["normal"], a["up"]
         assert math.isclose(math.hypot(*n), 1.0) and math.isclose(math.hypot(*u), 1.0)
         assert sum(p * q for p, q in zip(n, u)) == 0
-    floor, upright, desk = anchors[0], anchors[2], anchors[3]
-    assert floor["position_m"] == [9.0, 6.0, 0.0] and floor["normal"] == [0, 0, 1] and floor["scale"] == 1.0
-    assert anchors[0]["qr_size_m"] == 0.23 and anchors[1]["qr_size_m"] == 0.16
-    # S3: upright, code at 1.3 m, 2 m south of the centre, facing north to the viewer
-    assert upright["position_m"] == [9.0, 4.0, 1.3] and upright["normal"] == [0, 1, 0] and upright["up"] == [0, 0, 1]
-    # D1: 1:100 desk sheet; model (0, 0) sits 235 mm left and 60 mm below the code centre on the page
+    for (vid, stand, look, _), a in zip(site.VIEWPOINTS, anchors):
+        x, y, z = a["position_m"]
+        assert a["anchor_id"] == vid and a["qr_size_m"] == 0.23 and a["scale"] == 1.0
+        assert z == 1.4 and a["up"] == [0, 0, 1] and a["normal"][2] == 0  # upright, code centre at chest height
+        # the printed face looks at the standing spot, 1.5 m in front of it
+        assert [x + 1.5 * a["normal"][0], y + 1.5 * a["normal"][1]] == pytest.approx(list(stand))
+    assert anchors[0]["position_m"] == [9.0, -2.5, 1.4] and anchors[0]["normal"] == [0, -1, 0]
+    desk = anchors[4]
     assert desk["scale"] == 0.01 and desk["position_m"] == [23.5, 6.0, 0.0] and desk["qr_size_m"] == 0.07
-    assert json.loads((built / "project.json").read_text(encoding="utf-8")) == {"project_id": "site", "name": "Steel frame (1:1)"}
+    assert json.loads((built / "project.json").read_text(encoding="utf-8")) == {
+        "project_id": "site", "name": "Building under construction (1:1)"}
+
+
+def test_tape_distances():
+    d = {(p, q): v for p, q, v in site.tape_distances()}
+    assert len(d) == 6
+    assert d[("P1", "P2")] == pytest.approx(math.hypot(4.5, 5.5), abs=0.01)
+    assert d[("P3", "P4")] == pytest.approx(math.hypot(7.0, 3.0), abs=0.01)
 
 
 @pytest.mark.parametrize("name", ["elements.json", "anchors.json", "project.json"])
@@ -125,7 +141,7 @@ def test_committed_glb_has_the_fresh_build_guids(built):
 
 
 def test_sheets_match_the_anchors():
-    assert [anchor_entry(sh, site.PROJECT_ID) for sh in (site.s1_sheet(), site.s2_sheet())] == [site.ANCHOR, site.ANCHOR_A4]
+    assert [anchor_entry(sh, site.PROJECT_ID) for sh in site.sheets()] == site.ANCHORS
 
 
 def test_sheets_only_renders_the_sheets_and_leaves_the_model_alone(tmp_path, capsys):
@@ -133,7 +149,8 @@ def test_sheets_only_renders_the_sheets_and_leaves_the_model_alone(tmp_path, cap
     out.mkdir()
     site.main(["--out", str(out), "--base-url", BASE, "--sheets-dir", str(sheets), "--sheets-only"])
     assert list(out.iterdir()) == []
-    assert sorted(p.name for p in sheets.iterdir()) == ["site-D1.pdf", "site-S1.pdf", "site-S2.pdf", "site-S3.pdf"]
+    assert sorted(p.name for p in sheets.iterdir()) == [
+        "site-D1.pdf", "site-P1.pdf", "site-P2.pdf", "site-P3.pdf", "site-P4.pdf", "site-layout.pdf"]
     assert "WARNING" not in capsys.readouterr().err  # the A3 code keeps the full quiet zone for the Cloud Run URL
 
 

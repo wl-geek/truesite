@@ -84,8 +84,10 @@ export type CheckAvailability = { enabled: boolean; note: string | null }
 const DEMO_SHEETS: Record<string, CheckAvailability> = {
   'room1/D1': { enabled: false, note: 'Checks need the real site or our 1:20 model. Try the sample photos.' },
   'room1/L1': { enabled: true, note: 'Away from the demo room, elements will read as missing.' },
-  'site/S1': { enabled: false, note: 'This sheet is for walking through the design: nothing is built here to check. Try the sample photos.' },
-  'site/S2': { enabled: false, note: 'This sheet is for walking through the design: nothing is built here to check. Try the sample photos.' },
+}
+// The building site sheets show the design in an empty car park: nothing is built there to check.
+for (const id of ['P1', 'P2', 'P3', 'P4', 'D1']) {
+  DEMO_SHEETS[`site/${id}`] = { enabled: false, note: 'This sheet shows the design where nothing is built yet, so there is nothing to check. Try the sample photos.' }
 }
 
 export function checkAvailability(anchor: ApiAnchor): CheckAvailability {

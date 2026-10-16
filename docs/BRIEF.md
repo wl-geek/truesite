@@ -73,7 +73,7 @@ Wai found a 13-second screen recording of a commercial construction-AR app on a 
    - Project `rooftop`: a 9 × 9 m, two-storey concrete frame (32 columns, 48 beams, 80 rebar cages with starter bars) at 1:1.
    - The A2 sheet **R1** (33 cm code) lies at the centre of the middle bay; **R2** is an A4 test version.
    - Start AR → fill the ring → the frame stands around you, and you walk under it and look up.
-   - **iPad walk-in (Michael, open car park):** project `site`, an 18 × 12 m steel frame with about 6 m eaves, colour-coded by type like the video. Tape the A3 sheet **S1** flat (**S2** is the A4 version), scan it, stand on the code, point the iPad at the ground a step ahead and tap **Walk inside** (the main button on iPad/iPhone). AR Quick Look places the frame where the iPad points (not on the code itself) and holds it while he walks through. Pick **View distance 8 m** first if the clear area is small. Not yet tried on a device.
+   - **iPad building site (Michael, open car park):** project `site`, a two-storey building under construction (18 × 12 m, 6 m bays, 3.9 m clear in the ground storey, ridge about 10.5 m), colour-coded by type like the video. Four upright A3 sheets P1–P4 set out with `site-layout.pdf`. At each one: lock 0.7 m from the code, step back to the X 1.5 m away, turn on the spot. Camera overlay only, levelled by the motion sensors. Walk inside and Start AR are hidden (`?xr=1` brings them back). Checklist: `docs/demo/ipad-ar-filming.md`.
 2. **The AI moment.** Boxes or cones stand where 3–4 columns go, **one about 40 cm off and one missing**. *Check as-built* finds "Column … misplaced, about 40 cm" and "Column … missing". This is a setting-out check, a real site task.
 3. **Judges without a site:**
    - `/samples` runs the real check on stored photos
@@ -91,7 +91,7 @@ Wai found a 13-second screen recording of a commercial construction-AR app on a 
 
 - **Built and merged:**
   - everything in the spec's core, plus the extras above
-  - the steel-frame `site` project for the iPad walk-in
+  - the `site` building under construction with four iPad viewpoints (P1–P4)
   - colour by element type
   - the fixes from the 15 Oct audit: every high and medium finding is fixed (`docs/audit-2026-10-15.md`)
 - **Tests:** all green with `make test`: BIM about 105, server about 385, web about 270.

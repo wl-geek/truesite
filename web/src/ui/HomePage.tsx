@@ -22,21 +22,23 @@ export function HomePage() {
           <Link to="/samples" className="btn btn-primary">Open sample photos</Link>
         </li>
         <li className="way-card">
-          <h3>Stand inside a steel frame · life size 1:1</h3>
+          <h3>Stand inside a building site · life size 1:1</h3>
           <p>
-            In an open space of about 20 × 14 m (an empty car park works), lay sheet S1 (A3) or S2 (A4) flat at the
-            centre, or set the upright sheet S3 on a stand with the code 1.3 m high. Scan it: an 18 × 12 m steel frame,
-            colour-coded by element type, stands around you. Android: <strong>Start AR</strong> (walk around freely).
-            iPad/iPhone: <strong>Walk inside</strong>, or <strong>Camera overlay</strong> and turn on the spot.
+            A two-storey building under construction, 18 × 12 m and about 10.5 m to the ridge: concrete columns with
+            their rebar showing, a cast slab with an open bay, a steel upper storey and roof trusses, colour-coded by
+            element type. Set the four upright A3 sheets out on a car park with the layout plan, stand on each X and
+            turn on the spot to see it from four sides.
           </p>
-          <a className="btn btn-primary" href="/sheets/site-S2.pdf" download>A4 floor sheet (S2)</a>
-          <a className="btn" href="/sheets/site-S1.pdf" download>A3 floor sheet (S1)</a>
-          <a className="btn" href="/sheets/site-S3.pdf" download>A3 upright sheet (S3)</a>
+          <a className="btn btn-primary" href="/sheets/site-layout.pdf" download>Layout plan</a>
+          <a className="btn" href="/sheets/site-P1.pdf" download>P1</a>
+          <a className="btn" href="/sheets/site-P2.pdf" download>P2</a>
+          <a className="btn" href="/sheets/site-P3.pdf" download>P3</a>
+          <a className="btn" href="/sheets/site-P4.pdf" download>P4</a>
         </li>
         <li className="way-card">
           <h3>On your desk · scale model 1:100</h3>
           <p>
-            Print the A4 desk sheet at 100%, lay it on a table and scan the code. The same steel frame appears on the
+            Print the A4 desk sheet at 100%, lay it on a table and scan the code. The same building appears on the
             left half of the page as a 1:100 model, like an architect's model.
           </p>
           <a className="btn" href="/sheets/site-D1.pdf" download>A4 desk sheet (D1)</a>
@@ -54,7 +56,7 @@ export function HomePage() {
         model lines up with the real building at 1:1.
       </p>
       <ol className="steps">
-        <li>Scan the code and tap <strong>Start camera</strong> (<strong>Camera overlay</strong> on Android).</li>
+        <li>Scan the code and tap <strong>Start camera</strong>.</li>
         <li>Start within about 1 m of the code, then step back. The badge shows how well the model is aligned.</li>
         <li>Aim at the work and tap <strong>Check as-built</strong>.</li>
         <li>Review the findings, then draft and save an issue.</li>
