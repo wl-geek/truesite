@@ -459,7 +459,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
               {loaded && <span className="mode-chip">{scaleLabel(loaded.anchor)}</span>}
               <QualityBadge state={state} />
             </div>
-            {!checking && <p className="coach">{coachHint(state, desk)}</p>}
+            {!checking && <p className="coach">{coachHint(state, desk, checkable.enabled)}</p>}
             {!checking && checkable.note && (
               <p className="coach">
                 {checkable.note}{!checkable.enabled && <> <Link to="/samples">Open sample photos</Link></>}

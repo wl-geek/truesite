@@ -62,8 +62,8 @@ export function searchingSeconds(tSec: number, lastSeenSec: number, startedSec: 
 
 export type CoachState = { tracking: boolean; provisional: boolean; distanceM: number | null; mode?: 'code' | 'motion' | 'lost'; searchingS?: number }
 
-/** One short instruction for what to do next in the live view. */
-export function coachHint(s: CoachState | null, desk: boolean): string {
+/** One short instruction for what to do next in the live view. `checkEnabled` false: this sheet can't be checked. */
+export function coachHint(s: CoachState | null, desk: boolean, checkEnabled = true): string {
   if (s?.mode === 'motion') return 'Look around and up. Turn on the spot; point back at the code to re-align.'
   if (!s?.tracking) {
     if ((s?.searchingS ?? 0) >= SEARCH_TIPS_AFTER_S) return "Can't find the code. Add more light, move within about 1 m and hold the phone steady."
@@ -71,7 +71,9 @@ export function coachHint(s: CoachState | null, desk: boolean): string {
   }
   if (s.provisional) return 'Move within about 1 m of the code, then step back slowly.'
   if (isFar(s.distanceM)) return 'Move closer to the code for a more accurate overlay.'
-  return desk ? 'Walk around the sheet to look at the model. Keep the code in view.' : 'Aim at the area to check, then tap Check as-built.'
+  if (desk) return 'Walk around the sheet to look at the model. Keep the code in view.'
+  return checkEnabled ? 'Aim at the area to check, then tap Check as-built.'
+    : 'Turn slowly on the spot and look up; point back at the code to re-align.'
 }
 
 export type CheckAvailability = { enabled: boolean; note: string | null }

@@ -51,6 +51,14 @@ describe('arMath', () => {
     expect(coachHint({ tracking: true, provisional: false, distanceM: 1.2 }, false)).toMatch(/Check as-built/)
   })
 
+  it("doesn't ask for Check as-built when the sheet can't be checked (B-05)", () => {
+    const locked = { tracking: true, provisional: false, distanceM: 1.5 }
+    expect(coachHint(locked, false, false)).not.toMatch(/Check as-built/)
+    expect(coachHint(locked, false, false)).toMatch(/look up/)
+    expect(coachHint(locked, false, true)).toMatch(/Check as-built/)
+    expect(coachHint(locked, true, false)).toMatch(/Walk around the sheet/)
+  })
+
   it('gives tips after 5 s without the code (spec section 8)', () => {
     const lost = { tracking: false, provisional: true, distanceM: null, mode: 'lost' as const }
     expect(coachHint({ ...lost, searchingS: 2 }, false)).toBe('Point the camera at the QR code.')
