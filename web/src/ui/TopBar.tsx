@@ -6,7 +6,7 @@ import './topbar.css'
 export const SECTIONS = [
   { id: 'how', label: 'How it works', icon: 'M4 6h16M4 12h10M4 18h6' },
   { id: 'live', label: 'Live AR', icon: 'M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M9 9h6v6H9z' },
-  { id: 'virtual', label: 'Virtual site', icon: 'M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6' },
+  { id: 'virtual', label: 'Virtual demo', icon: 'M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6' },
   { id: 'about', label: 'About', icon: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 11v6M12 7.5v.01' },
 ] as const
 type SectionId = (typeof SECTIONS)[number]['id'] | 'top'
@@ -102,12 +102,12 @@ export function TopBar({ route }: { route: Route }) {
         <img src="/favicon.svg" alt="" width="30" height="30" />
         <span className="brand-text">
           <span className="brand-name">TrueSite</span>
-          <span className="brand-tag">BIM on site · Gemini as-built check</span>
+          <span className="brand-tag">Live BIM on site</span>
         </span>
       </a>
       <nav className="tb-nav" aria-label="Sections">{links}</nav>
       <div className="tb-right" ref={menuRef}>
-        <a href="/#live" className="tb-cta" onClick={go('live')}>Try it</a>
+        <a href="/#live" className="tb-cta" onClick={go('live')}>Start live AR</a>
         <button type="button" className="tb-menu-btn" aria-expanded={open} aria-controls="tb-menu" aria-label="Menu" onClick={() => setOpen((o) => !o)}>
           <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             {open ? <path d="M6 6l12 12M18 6 6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}

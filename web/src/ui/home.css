@@ -65,8 +65,9 @@
 /* how it works */
 .home-steps { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
 .home-step { position: relative; display: grid; grid-template-columns: 44px 1fr; gap: 4px 14px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--white); }
-.home-step-icon { grid-row: span 2; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: #e8f0f8; color: var(--steel); }
+.home-step-icon { grid-row: span 3; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: #e8f0f8; color: var(--steel); }
 .home-step-n { position: absolute; top: 14px; right: 16px; color: #b3c3d4; font-size: 22px; font-weight: 800; }
+.home-step-tag { justify-self: start; padding: 2px 8px; border-radius: 6px; background: var(--ink); color: #ffb27f; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; }
 .home-step p { margin: 0; color: var(--muted); font-size: 15px; }
 
 /* on site */
@@ -151,7 +152,7 @@
   .vp-card:hover { transform: none; }
 }
 
-/* Try it: the virtual site cards go orange, so they don't read as the live AR cards below. */
+/* Virtual demo cards go orange, so they don't read as the live AR cards. */
 .vp-card-sim .vp-go { color: var(--orange); }
 @media (min-width: 720px) {
   .vp-card-sim .vp-go { background: var(--orange); color: var(--ink); }
@@ -159,7 +160,7 @@
 }
 .home-cards-more { margin-top: 20px; }
 
-/* Virtual site section: why it's simulated, and the three steps. */
+/* Virtual demo section: why it's simulated, and the three steps. */
 .sim-why { margin: 18px 0; padding: 16px 18px; border-left: 4px solid var(--orange); border-radius: 0 12px 12px 0; background: var(--white); }
 .sim-why h3 { margin: 0 0 6px; font-size: 18px; }
 .sim-why p { margin: 0 0 8px; max-width: 46em; }

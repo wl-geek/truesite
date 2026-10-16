@@ -311,7 +311,7 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
       w.world.add(pinsRef.current)
       dirty.current = true
     } catch (e) {
-      setNotice(e instanceof ApiError ? checkErrorMessage(e) : e instanceof Error ? e.message : 'Check failed: try again.')
+      setNotice(e instanceof ApiError ? checkErrorMessage(e) : e instanceof Error ? e.message : 'Check failed. Try again.')
       setCheckFailed(true)
     } finally {
       setChecking(false)
@@ -319,11 +319,11 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
   }
 
   return (
-    <div className={`vs${outcome && resultsOpen ? ' vs-has-results' : ''}`} role="application" aria-label={`Simulated site at ${vp.id}, ${vp.name}`}>
+    <div className={`vs${outcome && resultsOpen ? ' vs-has-results' : ''}`} role="application" aria-label={`Virtual demo at ${vp.id}, ${vp.name}`}>
       <canvas ref={canvasRef} className="vs-canvas" tabIndex={0} aria-label="Drag or use the arrow keys to look around" />
 
       <div className="vs-top">
-        <span className="vs-chip"><span className="vs-chip-tag">Simulated site</span>{vp.id} · {vp.name}</span>
+        <span className="vs-chip"><span className="vs-chip-tag">Virtual demo</span>{vp.id} · {vp.name}</span>
         <div className="vs-top-actions">
           <button type="button" className={`vs-btn${showDesign ? ' vs-btn-on' : ''}`} aria-pressed={showDesign} onClick={toggleDesign}
             disabled={status !== 'ready'}>Design overlay</button>
@@ -335,13 +335,13 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
         </div>
       </div>
 
-      {status === 'loading' && <p className="vs-status" role="status">Building the simulated site…</p>}
+      {status === 'loading' && <p className="vs-status" role="status">Loading the virtual demo…</p>}
       {status === 'error' && <p className="vs-status vs-status-error" role="alert">{error}</p>}
 
       {status === 'ready' && coach && (
         <div className="vs-coach" role="note">
           <p>
-            <strong>You're standing on the X at {vp.id}</strong>, facing its QR sheet. You can't walk, only turn:
+            <strong>You're on the X at {vp.id}</strong>, facing its QR sheet. You stay on the spot and turn:
             {touch ? ' drag, or tap Turn with device and turn the iPad.' : ' drag, or use the arrow keys.'}
           </p>
           <p>Aim at the work and tap <strong>Check as-built</strong>.</p>
@@ -352,13 +352,13 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
       <div className="vs-bottom">
         {notice && <p className="vs-notice" role="status">{notice}</p>}
         {checkFailed && (
-          <Link to="/samples?photos" className="vs-btn vs-btn-light">Gemini busy? Try a ready-made view with a saved result</Link>
+          <Link to="/samples?photos" className="vs-btn vs-btn-light">Use a ready-made view instead</Link>
         )}
         {outcome && !resultsOpen && (
           <button type="button" className="vs-btn" onClick={() => setResultsOpen(true)}>Show results</button>
         )}
         <button type="button" className="vs-check" onClick={() => void check()} disabled={status !== 'ready' || checking}>
-          {checking ? 'Checking… Gemini is comparing the view with the design' : 'Check as-built'}
+          {checking ? 'Gemini is checking…' : 'Check as-built'}
         </button>
       </div>
 
@@ -366,13 +366,13 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
         <aside className="vs-results" aria-label="Check results">
           <div className="vs-results-head">
             <h2>As-built check · {vp.id}</h2>
-            <button type="button" className="vs-btn vs-btn-light" onClick={() => setResultsOpen(false)}>Back to the site</button>
+            <button type="button" className="vs-btn vs-btn-light" onClick={() => setResultsOpen(false)}>Back to the view</button>
           </div>
           <EvidenceView imageUrl={outcome.photoUrl} result={outcome.result} selectedMark={selectedMark} onSelect={setSelectedMark} />
           <FindingsPanel result={outcome.result} selectedMark={selectedMark} onSelect={(f) => setSelectedMark(f.mark)} onDraftIssue={setDraftFor} />
           <details className="vs-truth">
-            <summary>What we planted on this simulated site ({planted.length})</summary>
-            <p className="note">Some of these may be out of view from here.</p>
+            <summary>Defects we planted ({planted.length})</summary>
+            <p className="note">Some may be out of view from here.</p>
             <ul>{planted.map((t) => <li key={t}>{t}</li>)}</ul>
           </details>
           {notice && <p className="note" role="status">{notice}</p>}

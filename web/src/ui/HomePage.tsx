@@ -31,19 +31,20 @@ export function HomePage() {
       <section className="home-hero" aria-labelledby="home-title">
         <div className="home-wrap home-hero-grid">
           <div className="home-hero-copy">
-            <p className="home-eyebrow">For construction teams · Future of Work</p>
+            <p className="home-eyebrow">AR × BIM × AI for construction</p>
             <h1 id="home-title">See the design where you build. Check the build against it.</h1>
             <p className="home-lede">
-              Scan a TrueSite QR code and the BIM model stands on site at true scale. Tap <strong>Check as-built</strong>:
-              Gemini compares the photo with the design, pins what is off on the model and drafts the issue.
+              Scan a QR code and the BIM model appears on site at true scale, through your phone or iPad camera. Tap{' '}
+              <strong>Check as-built</strong> and Gemini compares what is built with the design, pins the differences and
+              drafts the issue.
             </p>
             <div className="home-ctas">
-              <a href="/#live" className="btn btn-accent btn-lg" onClick={jumpTo('live')}>See it live on site</a>
-              <a href="/#virtual" className="btn btn-ghost btn-lg" onClick={jumpTo('virtual')}>No printer? Try the virtual site</a>
+              <a href="/#live" className="btn btn-accent btn-lg" onClick={jumpTo('live')}>Start live AR</a>
+              <a href="/#virtual" className="btn btn-ghost btn-lg" onClick={jumpTo('virtual')}>Try the virtual demo</a>
             </div>
             <ul className="home-proof" aria-label="Highlights">
               <li><Icon name="check" />No app to install</li>
-              <li><Icon name="check" />Phone or iPad browser</li>
+              <li><Icon name="check" />Runs in the phone or iPad browser</li>
               <li><Icon name="check" />Gemini on Google Cloud</li>
             </ul>
           </div>
@@ -52,16 +53,20 @@ export function HomePage() {
       </section>
 
       <section id="how" className="home-section home-wrap" aria-labelledby="how-title">
+        <p className="home-kicker">Three steps on site</p>
         <h2 id="how-title">How it works</h2>
         <ol className="home-steps">
-          <Step n={1} icon="qr" title="Scan the code">
-            Each code is fixed at a known spot and stores exactly where it sits in the model.
+          <Step n={1} tag="AR" icon="qr" title="Scan the code">
+            Each code is fixed at a known spot and knows exactly where it sits in the model, so the camera view lines up
+            with the design.
           </Step>
-          <Step n={2} icon="cube" title="See it at true scale">
-            The model lines up with the real place, coloured by element type. Turn on the spot to look around and up.
+          <Step n={2} tag="BIM" icon="cube" title="See the design at true scale">
+            The BIM model stands where it will be built, every element coloured by type and carrying its own data. Turn on
+            the spot to look around and up.
           </Step>
-          <Step n={3} icon="scan" title="Check as-built">
-            Gemini compares your photo with the design, pins the deviations and drafts an issue for you to approve.
+          <Step n={3} tag="AI" icon="scan" title="Check as-built with Gemini">
+            Gemini compares your photo with the design, pins what is off and drafts the issue. A person reviews and
+            approves it.
           </Step>
         </ol>
         <p className="home-fineprint">Visual check, not a survey: offsets are rough, in tens of centimetres.</p>
@@ -71,31 +76,31 @@ export function HomePage() {
         <div className="home-wrap">
           <div className="home-section-head">
             <div>
-              <p className="home-kicker">Live AR · the product</p>
+              <p className="home-kicker">Live AR</p>
               <h2 id="live-title">See the BIM model live, through your camera</h2>
               <p className="home-sub">
                 Scan a TrueSite code and the model appears where it belongs: on a desk sheet as a scale model, or around you
-                at 1:1 on site. Start with the easiest way to try it.
+                at 1:1 on site. The desk sheet is the quickest way to try it.
               </p>
             </div>
           </div>
 
           <ul className="home-cards live-easy">
             <li className="home-card home-card-feature">
-              <span className="home-card-tag">Easiest · just a printer</span>
+              <span className="home-card-tag">Quickest · one A4 print</span>
               <Icon name="desk" />
               <h3>On your desk · 1:100</h3>
-              <p>Print the A4 desk sheet at 100%, lay it on a table and scan it. The building stands on the page as a scale model you can walk around and check.</p>
+              <p>Print the A4 desk sheet at 100%, lay it on a table and scan it. The building stands on the page as a 1:100 scale model you can walk around and inspect.</p>
               <div className="home-card-actions">
                 <Link to="/a/site/D1" className="btn btn-accent">Open live AR</Link>
-                <a className="btn" href="/sheets/site-D1.pdf" download><Icon name="download" />A4 desk sheet</a>
+                <a className="btn" href="/sheets/site-D1.pdf" download><Icon name="download" />Download the A4 sheet</a>
               </div>
             </li>
             <li className="home-card">
               <span className="home-card-tag home-card-tag-quiet">No print needed</span>
               <Icon name="cube" />
               <h3>The 3D model</h3>
-              <p>Orbit the model the codes place, tap any element to see its data, and ask questions about it in plain language.</p>
+              <p>Orbit the BIM model, tap any element to see its data, and ask Gemini about it in plain language.</p>
               <div className="home-card-actions">
                 <Link to="/model" className="btn btn-primary">Open the 3D model</Link>
               </div>
@@ -126,7 +131,7 @@ export function HomePage() {
                   <span className="vp-text">
                     <span className="vp-title"><span className="vp-id">{v.id}</span>{v.name}</span>
                     <span className="vp-shows">{v.shows}</span>
-                    <span className="vp-meta">Stand {fmt(v.stand)} · look {compass(v.look)}</span>
+                    <span className="vp-meta">Stand at ({fmt(v.stand)}) · facing {compass(v.look)}</span>
                   </span>
                   <span className="vp-go"><span className="vp-go-label">Open live AR</span><Icon name="arrow" /></span>
                 </Link>
@@ -135,7 +140,7 @@ export function HomePage() {
           </ul>
 
           <ol className="home-protocol" aria-label="At the sheet">
-            <li><strong>Start camera</strong> and allow camera and motion access.</li>
+            <li>Tap <strong>Start camera</strong> and allow camera and motion access.</li>
             <li><strong>Lock</strong> about 0.7 m from the code, a little to one side, until it says Alignment: Good.</li>
             <li><strong>Step back</strong> to the X, then turn slowly on the spot. Don't walk.</li>
           </ol>
@@ -165,17 +170,17 @@ export function HomePage() {
         <div className="home-wrap">
           <div className="home-section-head">
             <div>
-              <p className="home-kicker">Demo for judges · no printer or site needed</p>
-              <h2 id="virtual-title">Try the concept on a virtual site</h2>
+              <p className="home-kicker">For judges · no printing, no site visit</p>
+              <h2 id="virtual-title">Try the idea in a virtual demo</h2>
               <p className="home-sub">
-                The product is live AR on a real site, above. If you can't print the sheets or go out to scan them, this
-                virtual demo lets you try the same check on your own device: stand where a QR sheet would be, look around
-                the building, and let Gemini check it against the BIM design.
+                TrueSite is built for live AR on a real site. To try the idea without printing sheets or visiting a site,
+                step into this virtual demo on your own device: stand where a QR sheet would be, look around the building,
+                and let Gemini check it against the BIM design.
               </p>
             </div>
           </div>
           <div className="sim-why">
-            <h3>Why simulated?</h3>
+            <h3>Why a simulated building?</h3>
             <p>
               Our demo building doesn't exist yet, so there is nothing real to photograph. Instead you step into a{' '}
               <strong>simulated as-built site</strong>: a realistic 3D model of the building as it was put up, with ten
@@ -189,7 +194,7 @@ export function HomePage() {
           </div>
           <ol className="sim-steps">
             <li><strong>Pick a QR spot.</strong> You stand on its X, where the sheet's code places you in the model.</li>
-            <li><strong>Look around.</strong> Drag, or turn your iPad. You can't walk, just as on site.</li>
+            <li><strong>Look around.</strong> Drag, or turn your iPad. You stay on the spot, as you would on site.</li>
             <li><strong>Check as-built.</strong> Gemini pins what's off on your view and drafts the issue.</li>
           </ol>
           <ul className="vp-grid">
@@ -201,7 +206,7 @@ export function HomePage() {
                     <span className="vp-title"><span className="vp-id">{v.id}</span>{v.name}</span>
                     <span className="vp-shows">{v.shows}</span>
                   </span>
-                  <span className="vp-go"><span className="vp-go-label">Enter the virtual site</span><Icon name="arrow" /></span>
+                  <span className="vp-go"><span className="vp-go-label">Step in at {v.id}</span><Icon name="arrow" /></span>
                 </Link>
               </li>
             ))}
@@ -226,11 +231,12 @@ function fmt([x, y]: [number, number]): string {
   return `${x}, ${y < 0 ? '−' + -y : y}`
 }
 
-function Step({ n, icon, title, children }: { n: number; icon: IconName; title: string; children: ReactNode }) {
+function Step({ n, tag, icon, title, children }: { n: number; tag: string; icon: IconName; title: string; children: ReactNode }) {
   return (
     <li className="home-step">
       <span className="home-step-icon"><Icon name={icon} /></span>
       <span className="home-step-n" aria-hidden="true">{n}</span>
+      <span className="home-step-tag">{tag}</span>
       <h3>{title}</h3>
       <p>{children}</p>
     </li>
@@ -253,7 +259,7 @@ function HeroVisual() {
           <span className="pin-label"><strong>Steel column</strong>about 30 cm off the design</span>
         </span>
       </div>
-      <figcaption>The building site demo, colour-coded by element type. Illustrative finding.</figcaption>
+      <figcaption>The demo building, coloured by element type. The finding is illustrative.</figcaption>
     </figure>
   )
 }

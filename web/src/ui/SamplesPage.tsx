@@ -104,7 +104,7 @@ export function SamplesPage() {
       ])
       const l = await ensureLoaded(meta.project_id)
       const anchor = findAnchor(l.project, meta.anchor_id)
-      if (!anchor) throw new Error('This sample belongs to an anchor that no longer exists.')
+      if (!anchor) throw new Error("This photo's QR spot no longer exists in the model.")
       const bitmap = await createImageBitmap(photo)
       const res = await runCheck(sampleCheckInput(meta, photo, bitmap, anchor, l))
       bitmap.close()
@@ -118,7 +118,7 @@ export function SamplesPage() {
       requestAnimationFrame(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
       saveLastCheck(meta.project_id, { result, runId, at: new Date().toISOString() })
     } catch (e) {
-      setError(e instanceof ApiError ? checkErrorMessage(e) : e instanceof Error ? e.message : 'Check failed — try again.')
+      setError(e instanceof ApiError ? checkErrorMessage(e) : e instanceof Error ? e.message : 'Check failed. Try again.')
     } finally {
       setRunning(null)
     }
@@ -167,11 +167,11 @@ export function SamplesPage() {
 
   return (
     <main className="page samples-page">
-      <p className="eyebrow">Virtual site demo</p>
+      <p className="eyebrow">Virtual demo</p>
       <h1>Ready-made views</h1>
       <p className="samples-lede">
-        Still photos of the same simulated site, each with a saved result for when Gemini is busy. Pick one to run the
-        check. <a href="/#virtual" onClick={(e) => { e.preventDefault(); goToSection('virtual') }}>Back to the virtual site</a>
+        Still photos of the virtual demo building. Each keeps a saved result, so the check still shows findings when
+        Gemini is busy. Pick one to run it. <a href="/#virtual" onClick={(e) => { e.preventDefault(); goToSection('virtual') }}>Back to the virtual demo</a>
       </p>
       {samples === null && <p className="status">Loading samples…</p>}
       {samples !== null && ready.length === 0 && <p className="status">No sample photos yet.</p>}
@@ -205,8 +205,8 @@ export function SamplesPage() {
           <FindingsPanel result={outcome.result} selectedMark={selectedMark} onSelect={selectFinding} onDraftIssue={setDraftFor} />
           {outcome.staged && outcome.staged.length > 0 && (
             <details className="sample-truth">
-              <summary>What we planted on this simulated site</summary>
-              <p className="note">Some of these may be out of view in this photo.</p>
+              <summary>Defects we planted</summary>
+              <p className="note">Some may be out of view in this photo.</p>
               <ul>{outcome.staged.map((t) => <li key={t}>{t}</li>)}</ul>
             </details>
           )}

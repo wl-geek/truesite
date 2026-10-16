@@ -7,10 +7,10 @@ import { SamplesPage } from './ui/SamplesPage'
 import { ViewerPage } from './ui/ViewerPage'
 
 const TITLES: Record<Route['name'], string> = {
-  home: 'TrueSite · BIM on site with a Gemini as-built check',
+  home: 'TrueSite · AR × BIM × AI for construction',
   viewer: '3D model · TrueSite',
   live: 'Live AR · TrueSite',
-  samples: 'Virtual site · TrueSite',
+  samples: 'Virtual demo · TrueSite',
 }
 
 /** Top bar + one page per route, and the page title for each route. */

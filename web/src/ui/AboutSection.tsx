@@ -10,11 +10,11 @@ export function AboutSection() {
     <section id="about" className="about" aria-labelledby="about-title">
       <div className="home-wrap">
         <p className="about-kicker">About TrueSite</p>
-        <h2 id="about-title">The design and an AI check, where the work happens</h2>
+        <h2 id="about-title">AR × BIM × AI, where the work happens</h2>
         <p className="about-lede">
           Field crews build from drawings and memory while the BIM model sits in the site office. Mistakes surface weeks
-          later, as rework. TrueSite puts the model on site at true scale, then lets Gemini check the build against it.
-          All it needs is a printed QR code and the phone or iPad the crew already carries.
+          later, as rework. TrueSite brings the model on site in AR at true scale, then lets Gemini check the build
+          against it. All it needs is a printed QR code and the phone or iPad the crew already carries.
         </p>
 
         <div className="about-grid">
@@ -70,12 +70,12 @@ export function AboutSection() {
           <ol className="arch-flow" aria-label="How a check flows">
             <li><span className="arch-node">Phone or iPad</span><span className="arch-note">QR pose on device, 3D model at 1:1</span></li>
             <li><span className="arch-node">Cloud Run</span><span className="arch-note">the web app and its API</span></li>
-            <li><span className="arch-node arch-gemini">Gemini 3.8 Flash</span><span className="arch-note">photo vs design, Ask, issue drafts</span></li>
+            <li><span className="arch-node arch-gemini">Gemini 3.8 Flash</span><span className="arch-note">compares photo and design, answers questions, drafts issues</span></li>
             <li><span className="arch-node">Firestore + Cloud Storage</span><span className="arch-note">runs, issues, photos and renders</span></li>
           </ol>
           <p className="about-note">
-            The model comes from IFC, the open BIM standard, converted to glTF with every element keeping its IFC id.
-            So a finding, a pin and an issue all point at the same column.
+            The model comes from IFC, the open BIM standard. It is converted to glTF and every element keeps its IFC ID,
+            so a finding, a pin and an issue all point at the same column.
           </p>
         </div>
 

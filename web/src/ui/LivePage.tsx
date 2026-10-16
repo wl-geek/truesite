@@ -522,7 +522,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
                 <h1>Live view · {scaleLabel(loaded.anchor)}</h1>
                 <p>
                   {desk
-                    ? 'The model appears as a 1:20 scale model beside the code, like an architect\'s model on the table.'
+                    ? `The model appears as a 1:${Math.round(1 / loaded.anchor.scale)} scale model beside the code, like an architect's model on the table.`
                     : 'The model appears at real size, lined up with the place where the code is fixed.'}
                 </p>
                 {walkFirst ? (
@@ -593,7 +593,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
             )}
             {loaded && SITE_VIEWPOINTS.some((v) => loaded.anchor.project_id === 'site' && v.id === loaded.anchor.anchor_id) && (
               <p className="live-virtual">
-                No sheet here? <Link to={`/samples?at=${loaded.anchor.anchor_id}`}>Stand at {loaded.anchor.anchor_id} on the virtual site</Link> instead.
+                No sheet with you? <Link to={`/samples?at=${loaded.anchor.anchor_id}`}>Try {loaded.anchor.anchor_id} in the virtual demo</Link>.
               </p>
             )}
             {camError && <p className="status status-error" role="alert">{CAMERA_ERRORS[camError]}</p>}
