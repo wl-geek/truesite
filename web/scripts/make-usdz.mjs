@@ -64,6 +64,7 @@ for (const project of readdirSync(modelsDir)) {
     const keep = radius === null ? null : new Set(withinRadius(elements, plan.centre, radius).map((e) => e.guid))
     const root = new Group()
     root.position.set(-cx, 0, cy) // glTF = (X, Z, -Y): IFC (cx, cy) -> origin
+    root.updateMatrix() // USDZExporter writes object.matrix as it is and never updates it (audit B-02)
     for (const [guid, mesh] of copies) if (!keep || keep.has(guid)) root.add(mesh.clone())
     const scene = new Scene()
     scene.add(root)
