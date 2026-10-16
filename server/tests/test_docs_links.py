@@ -43,3 +43,22 @@ def test_readme_code_paths_are_in_the_repo():
     paths = backticked_repo_paths((ROOT / "README.md").read_text(encoding="utf-8"), top_level)
     assert paths  # the README does name repo paths; an empty list would mean the pattern broke
     assert [p for p in paths if p not in known] == []
+
+
+def test_readme_quick_start_names_buttons_the_app_has():
+    # A judge follows "Try it in 60 seconds" step by step: every bold name in a step must be on screen somewhere.
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    section = readme.split("## Try it in 60 seconds", 1)[1].split("\n## ", 1)[0]
+    steps = "\n".join(line for line in section.splitlines() if re.match(r"^\d+\. ", line))
+    names = re.findall(r"\*\*([^*]+)\*\*", steps)
+    assert names
+    ui = "\n".join(p.read_text(encoding="utf-8") for p in (ROOT / "web" / "src" / "ui").glob("*.tsx"))
+    assert [n for n in names if n not in ui] == []
+
+
+def test_contract_route_type_matches_the_router():
+    contract = (ROOT / "docs" / "plans" / "2026-10-11-truesite-contract.md").read_text(encoding="utf-8")
+    router = (ROOT / "web" / "src" / "router.ts").read_text(encoding="utf-8")
+    [line] = [x for x in contract.splitlines() if x.startswith("export type Route =")]
+    code = router.split("export type Route =", 1)[1].split("\n\n", 1)[0]
+    assert set(re.findall(r"name: '(\w+)'", line)) == set(re.findall(r"name: '(\w+)'", code))

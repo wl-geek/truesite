@@ -15,7 +15,7 @@ Research proofs (verified 11 Oct with running code) back every choice marked ✔
 | Machine | Node 20.20.2 + npm 10.8.2 (local); Docker build stage `node:22-slim`; Python 3.13 via `uv` 0.13 |
 | `bim/` (uv project `truesite-bim`) | `ifcopenshell==0.9.0` ✔ (0.8.5 is incompatible) · `segno==1.6.6` · `reportlab==5.0.1` · dev: `pytest==9.1.1`, `pymupdf==1.28.2` (tests only), `zxing-cpp==3.1.1` (tests only) |
 | `server/` (uv project `truesite-server`, package `app`) | `fastapi==0.143.0` · `uvicorn[standard]==0.54.0` · `pydantic==2.14.0` · `python-multipart==0.0.32` · `google-genai==2.29.0` · `httpx==0.28.1` · `google-cloud-firestore==2.34.1` · `google-cloud-storage==3.17.0` · dev: `pytest==9.1.1`, `httpx2==2.13.1` (Starlette 1.7's TestClient imports it ✔) |
-| `web/` | `vite@8.3.4` · `@vitejs/plugin-react@6.1.2` · `react@19.3.0` `react-dom@19.3.0` · `@types/react@19.3.0` `@types/react-dom@19.3.0` · `typescript@6.0.3` · `vitest@4.1.11` (5.x needs Node 22 ✔) · `three@0.186.1` · `@types/three@0.186.0` · `zxing-wasm@3.1.5` · `@vitejs/plugin-basic-ssl@2.3.0` · `@types/node@20.19.43` · dev: `qrcode@1.5.4`, `@types/qrcode@1.5.6`, `pngjs@7.0.0`, `@types/pngjs@6.0.5` |
+| `web/` | `vite@8.3.4` · `@vitejs/plugin-react@6.1.2` · `react@19.3.0` `react-dom@19.3.0` · `@types/react@19.3.0` `@types/react-dom@19.3.0` · `typescript@6.0.3` · `vitest@4.1.11` (5.x needs Node 22 ✔) · `three@0.186.1` · `@types/three@0.186.0` · `zxing-wasm@3.1.5` · `@vitejs/plugin-basic-ssl@2.3.0` · `@types/node@20.19.43` · `uqr@0.1.3` (`DeviceTip.tsx`: on a computer, the live page's address as a QR for a tablet) · dev: `qrcode@1.5.4`, `@types/qrcode@1.5.6`, `pngjs@7.0.0`, `@types/pngjs@6.0.5`, `puppeteer-core@24.43.1` (`scripts/make-samples.mjs` only) |
 | Model | `gemini-3.8-flash` (GA), Agent Platform location **`global`** (not offered in `asia-southeast1` ✔) |
 | Cloud | Cloud Run `asia-southeast1`, Firestore Native `asia-southeast1`, one GCS bucket, gcloud CLI 588.0.0 |
 
@@ -33,12 +33,12 @@ truesite/
     truesite_bim/extract_elements.py  # extract(ifc_path) -> list[dict]  (elements.json rows) ; main()
     truesite_bim/pipeline.py          # run(ifc: Path, out_dir: Path) -> dict ; main()  (refuses if glb GUIDs != elements GUIDs)
     truesite_bim/qr_sheets.py         # make_sheets(...) ; render_sheet(sheet, url, out_pdf) ; anchor_entry(sheet, project_id) ; main()
-    truesite_bim/site.py              # steel frame walk-in project: SteelFrame().build() ; s1_sheet() ; s2_sheet() ; main() (--out, --base-url, --sheets-dir, --sheets-only)
+    truesite_bim/site.py              # building site project (18 x 12 m, RC ground storey, steel upper storey): SiteBuilding().build() ; view_sheet(anchor) ; d1_sheet() ; sheets() ; render_layout(out_pdf) ; main() (--out, --base-url, --sheets-dir, --sheets-only)
     truesite_bim/rooftop.py           # rooftop project (9 x 9 m two-storey frame, rebar cages): Frame ; r1_sheet() ; r2_sheet() ; view_sheets() ; main() (same flags as site.py)
     tests/{conftest.py, test_convert.py, test_models_room1.py, test_pipeline.py, test_qr_sheets.py, test_rooftop.py, test_site.py}
     models/room1/{model.ifc, model.glb, elements.json, anchors.json, project.json, demo_issues.json}
     models/rooftop/{model.ifc, model.glb, elements.json, anchors.json, project.json}   # anchors R1 (A2), R2 (A4), V1–V3 (A4 upright); project.json has a check_note
-    models/site/{model.ifc, model.glb, elements.json, anchors.json, project.json}   # anchors S1 (A3), S2 (A4)
+    models/site/{model.ifc, model.glb, elements.json, anchors.json, project.json}   # anchors P1–P4 (A3 upright, 1:1), D1 (A4 desk, 1:100); with --base-url, site.py also writes site-layout.pdf (set-out plan, no QR)
     sheets/                             # generated PDFs (git-ignored)
   server/
     pyproject.toml  uv.lock  requirements.txt (hash-pinned, for Docker)
@@ -64,7 +64,9 @@ truesite/
   web/
     package.json  package-lock.json  vite.config.ts  index.html
     tsconfig.json  tsconfig.app.json  tsconfig.node.json  tsconfig.test.json
-    public/samples/index.json   public/samples/<sample_id>/{photo.jpg, meta.json}   # none committed yet: /samples says "No sample photos yet."
+    sample-studio.html          # dev only, not in the build: the page scripts/make-samples.mjs renders each sample photo in
+    public/samples/index.json   public/samples/<sample_id>/{photo.jpg, meta.json}   # four simulated site samples (site-p1-south ... site-p4-gable), §8
+    public/hero-site.jpg  public/hero-site.webp    # start page hero: a render of the site model
     public/eval/points.json     # surveyed points for the ?eval=1 crosses (spec 10)
     public/sheets/  public/models/   # generated (git-ignored): QR sheet PDFs (make sheets) and Quick Look USDZ files (npm run usdz)
     src/main.tsx  src/App.tsx  src/router.ts  src/session.ts  src/styles.css
@@ -81,20 +83,28 @@ truesite/
     src/scene/watchdog.ts       # no video frames for 1 s -> hide the model
     src/scene/evalMarkers.ts    # ?eval=1 crosses at the surveyed points
     src/scene/placement.ts      # levelled placement for world-tracked AR (gravity up, detected floor)
+    src/scene/level.ts          # gravity levelling for the camera overlay: rotate about the code until IFC Z is up
     src/scene/glContext.ts      # releaseRenderer (dispose + forceContextLoss), context-loss watchdog, fresh canvases
     src/scene/xrStart.ts  src/scene/xrPlace.ts  src/scene/xrWalk.ts   # Android WebXR: start/fallback, Start AR (place by code), Walk inside (hit-test)
     src/scene/walkthrough.ts    # Walk inside via the phone's own AR viewer: AR Quick Look (USDZ) on iPhone/iPad, Scene Viewer on Android
     src/scene/palette.js + palette.d.ts            # colour by element type: kindOf, isSolid, paintOf, materialParams (plain JS: shared with scripts/make-usdz.mjs)
     src/scene/usdzVariants.js + usdzVariants.d.ts  # Quick Look distance variants: usdzPlan, usdzFile, pickUsdzRadius (shared with scripts/make-usdz.mjs)
     scripts/make-usdz.mjs                          # prebuild: public/models/<project>.usdz and <project>-r<R>.usdz (git-ignored)
+    scripts/make-samples.mjs  scripts/sample-specs.json   # renders the simulated sample photos into public/samples (§8) in headless Chrome
     src/check/marks.ts  src/check/snapshot.ts  src/check/runCheck.ts
     src/check/lastCheck.ts  src/check/messages.ts  src/check/sampleMeta.ts  src/check/sampleRun.ts   # last check per session, error copy, sample photos (§8)
+    src/check/risk.ts           # "Why it matters": a fixed rule per element kind and finding, never from the model
+    src/sim/asBuilt.ts          # SITE_AS_BUILT: the ten planted defects of the simulated site, and their plain-words description
+    src/sim/world.ts            # the simulated as-built site as a camera sees it (shared by the virtual site and the sample studio)
+    src/sim/lookAngles.ts  src/sim/samplePose.ts   # virtual-site look-around (yaw, pitch); a sample photo's camera as a QR marker pose
+    src/sim/score.ts  src/sim/findings3d.ts        # virtual demo only: findings scored against the planted defects; deviations shown in 3D
+    src/dev/sampleStudio.ts     # dev only (sample-studio.html): renders one simulated sample photo with its K and pose
     src/test-support/{synthQr,qrPng,stubRenderer}.ts   # test-only: synthetic QR views, real QR PNGs, a node stand-in for WebGLRenderer
     src/ui/*.tsx  src/ui/*.ts                      # pages and panels; the .ts files hold their pure, tested text helpers
     src/ui/ReloadPrompt.tsx     # "The 3D view stopped. Tap to reload." after a permanent WebGL context loss
   infra/gcloud.sh  infra/lifecycle.json
   eval/README.md  eval/overlay.csv  eval/labels.json  eval/summarise.py
-  docs/specs/  docs/plans/  docs/research/   docs/BRIEF.md  docs/submission-checklist.md  docs/audit-2026-10-15.md
+  docs/specs/  docs/plans/  docs/research/  docs/demo/   docs/BRIEF.md  docs/submission-checklist.md  docs/audit-2026-10-15.md  docs/audit-2026-10-16.md
 ```
 
 ## 3. Conventions (fixed)
@@ -149,7 +159,13 @@ Write limits on POST `/api/issues` (no Gemini call, so no daily cap): 404 `unkno
 
 Every response carries the headers from `app/security_headers.py`: `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY`, a `Permissions-Policy` that keeps camera, gyroscope, accelerometer, magnetometer and xr-spatial-tracking for `self`, and the CSP as `Content-Security-Policy-Report-Only` (not enforced yet). `/api` responses that set no `Cache-Control` get `no-store`. `/api/docs` and `/api/openapi.json` exist only with `API_DOCS=1`.
 
-Client routes (the SPA fallback serves index.html): `/` (start page), `/model` (viewer; `?project={project_id}`, default `room1`), `/a/{project_id}/{anchor_id}` (live AR), `/samples`, `/issues` (every project).
+Client routes (the SPA fallback serves index.html):
+- `/`: the start page.
+- `/model`: the viewer. `?project={project_id}` picks the project; the default is `site` (`DEFAULT_PROJECT_ID` in `ViewerPage.tsx`).
+- `/a/{project_id}/{anchor_id}`: live AR. The demo shows the camera overlay only. `?xr=1` brings back Walk inside (Quick Look / WebXR hit-test) and Android Start AR. `?eval=1` shows the eval crosses, and `?dev=1` adds Save as sample.
+- `/samples`: `?at={P1..P4}` opens the virtual site at that QR spot (`VirtualSite.tsx`), and `?photos` opens the still sample photos (§8). `?dev=1` shows the photos too, plus Run all samples. A bare `/samples` scrolls to the start page's virtual demo section.
+
+Any other path, including the old `/issues`, goes to the start page. Since #75, issues are drafted and saved from a finding, and no page lists them. `GET /api/issues` stays for the API.
 
 ## 5. Schemas — Python `server/app/schemas.py` (TS mirrors in `web/src/api/types.ts`)
 
@@ -264,8 +280,8 @@ def create_app(settings: Settings | None = None, *, store: Store | None = None, 
 export const SESSION_KEY = 'truesite.session'
 export function getSessionId(): string                   // crypto.randomUUID(), else a v4 built from crypto.getRandomValues
 // src/router.ts
-export type Route = { name: 'home' } | { name: 'viewer'; projectId?: string } | { name: 'live'; projectId: string; anchorId: string } | { name: 'samples' } | { name: 'issues' }
-export function parseRoute(pathname: string, search = ''): Route   // unknown paths -> home; viewer projectId from ?project=
+export type Route = { name: 'home' } | { name: 'viewer'; projectId?: string } | { name: 'live'; projectId: string; anchorId: string } | { name: 'samples' }
+export function parseRoute(pathname: string, search = ''): Route   // unknown paths (and /issues) -> home; viewer projectId from ?project=
 export function viewerPathFor(projectId: string): string // '/model?project=<id>'
 export function navigate(path: string): void             // history.pushState + notify
 export function useRoute(): Route                        // React hook (popstate + navigate); path and query
@@ -278,7 +294,7 @@ export function fetchRunImage(runId: string, name: 'photo.jpg' | 'render.png'): 
 export function ask(req: AskRequest): Promise<AskAnswer>
 export function draftIssue(req: IssueDraftRequest): Promise<IssueDraft>
 export function createIssue(req: IssueIn): Promise<Issue>
-export function listIssues(projectId?: string): Promise<{ issues: Issue[]; demo: Issue[] }>   // no projectId: every project
+export function listIssues(projectId?: string): Promise<{ issues: Issue[]; demo: Issue[] }>   // no projectId: every project; no page calls it since #75
 // src/pose/index.ts — verified public API, unchanged: Intrinsics {f,cx,cy}, Pose {R,t}, Anchor {position_m,normal,up,scale},
 //   centredIntrinsics, focalFromHfov, estimatePose, PoseTracker (update(corners|null, tSec) -> TrackedPose {raw, smoothed, quality, provisional}),
 //   projectionMatrixGL({K, videoW, videoH, viewW, viewH, near, far, fit}), modelMatrixIfc(anchor, pose), IFC_FROM_GLTF_MAT4,
@@ -337,7 +353,7 @@ export function runCheck(input: CheckInput): Promise<{ response: CheckResponse |
 
 ## 8. Samples
 
-`web/public/samples/index.json` = `[{ "sample_id", "label", "project_id", "anchor_id" }]`. Each `<sample_id>/meta.json`:
+`web/public/samples/index.json` = `[{ "sample_id", "label", "project_id", "anchor_id", "simulated"?, "staged"? }]`. Each `<sample_id>/meta.json` has the same fields plus the camera:
 
 ```json
 { "sample_id": "room1-door", "project_id": "room1", "anchor_id": "A1", "label": "Room — door wall",
@@ -345,7 +361,11 @@ export function runCheck(input: CheckInput): Promise<{ response: CheckResponse |
   "pose": { "R": [1,0,0,0,1,0,0,0,1], "t": [0, 0, 1.5] }, "captured_at": "2026-10-13T10:00:00Z" }
 ```
 
-Samples are captured with the app itself (dev-only "Save as sample" button behind `?dev=1`). They are regenerated whenever the model's GUIDs change.
+Two optional fields, in both files (`src/check/sampleMeta.ts`):
+- `"simulated": true`: a rendered stand-in for a site photo, not a real one. `/samples` labels it "Simulated photo".
+- `"staged": string[]`: what was built wrong on purpose, in plain words (at most 12 are shown), so a reader can compare the findings with the truth.
+
+The four committed samples are simulated renders of the `site` project's simulated as-built (`src/sim/asBuilt.ts`), made by `web/scripts/make-samples.mjs`. It renders each camera in `scripts/sample-specs.json` through `sample-studio.html` and writes both fields. A real photo can still be captured with the app (the dev-only "Save as sample" button behind `?dev=1` on a live page); it carries neither field. Samples are regenerated whenever the model's GUIDs change.
 
 **Saved results.** A successful POST `/api/check` with `sample_id` stores that sample's saved result (overwriting the previous one) only when the uploaded photo is the deployed `static_dir/samples/<sample_id>/photo.jpg` (same sha256) and the context's `project_id` and `anchor_id` match its `meta.json`. Any other upload is checked as usual and stores nothing under the sample. A failed saved-result write is logged and does not change `saved`, which reports the run only.
 
@@ -400,7 +420,8 @@ def enforce_limits(request: Request, limiter_name: str, day_suffix: str, cap: in
 | `src/ui/ViewerPage.tsx` | Part 1 | — |
 | `src/ui/LivePage.tsx` | Part 1 (stub) | Part 2 |
 | `src/ui/SamplesPage.tsx` | Part 1 (stub) | Part 3 |
-| `src/ui/IssuesPage.tsx` | Part 1 (stub) | Part 4 |
+
+Later additions: `src/ui/HomePage.tsx`, the start page at `/`. `src/ui/IssuesPage.tsx` was removed in #75, because issues are saved from their finding.
 
 `App.tsx` never changes after Part 1. Shared panels have one owner each:
 

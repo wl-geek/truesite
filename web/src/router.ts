@@ -12,7 +12,7 @@ const NAV_EVENT = 'truesite:navigate'
 
 /**
  * Unknown paths go to the start page. Live ids are only decoded here; LivePage checks they exist.
- * The viewer takes its project from `?project=` (default room1 when absent).
+ * The viewer takes its project from `?project=` (ViewerPage's DEFAULT_PROJECT_ID, `site`, when absent).
  */
 export function parseRoute(pathname: string, search = ''): Route {
   const live = LIVE_RE.exec(pathname)

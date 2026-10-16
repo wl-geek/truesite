@@ -10,13 +10,13 @@ Google Cloud AI Builder Cup 2026 (JAPAC) · Theme: **Future of Work & Enterprise
 
 ## Try it in 60 seconds (no printer, no site)
 
-1. Open the live demo. On the start page, tap **Try the as-built check**. You stand on a QR spot inside a **simulated as-built site**: a realistic 3D model of the building as it was put up, with ten defects planted on purpose (`web/src/sim/asBuilt.ts`). Look around (drag, or turn the iPad), then tap **Check as-built**: TrueSite takes your view as the site photo, renders the BIM design from the same spot, and Gemini compares the two. The result lists what was planted, so you can compare. Four still photos of the same site are there too (`web/scripts/make-samples.mjs`).
+1. Open the live demo. On the start page, tap **Try the virtual demo**, then pick a QR spot, P1 to P4 ("Step in at P1"). You stand on that spot inside a **simulated as-built site**: a realistic 3D model of the building as it was put up, with ten defects planted on purpose (`web/src/sim/asBuilt.ts`). Look around (drag, or turn the iPad), then tap **Check as-built**. TrueSite takes your view as the site photo, renders the BIM design from the same spot, and Gemini compares the two. The result scores Gemini against what was planted in that view, so you can see what it caught and what it missed.
 2. Read the findings. Each one has an evidence box on the photo, a rough offset ("about 30 cm right"), and a severity set by TrueSite from the element type.
-3. Tap **Draft issue** on a deviation. Gemini drafts it, you edit it, and you save it. It then appears under **Issues**.
-4. Tap **See the pins on the 3D model**, then tap any element and **Ask** a question ("What's the fire rating?"). Answers come only from that element's model data, and the fields used are shown.
-5. *With a printer:* on the start page, tap **Download A4 desk sheet**, print it at 100% and scan the code with your phone camera. The room appears on your desk at 1:20. **Download A4 floor sheet** does the same at 1:1: lay it on the floor and the room stands around you.
+3. Tap **Draft issue** on a deviation. Gemini drafts it, in the crew's language if you pick one. You edit it and tap **Save issue**: it is saved with its check and finding (there is no separate issues list). After a check, **Write today's site report** has Gemini summarise this visit's checks, safety first.
+4. Back on the start page, tap **Open the 3D model**. The last check's findings are pinned on it. Tap any element and **Ask** a question ("What concrete grade is this beam?"). Answers come only from that element's model data, and the fields used are shown.
+5. *With a printer:* in Live AR, under **On your desk · 1:100**, tap **Download the A4 sheet**, print it at 100% and scan the code with your phone or tablet camera. The building stands on the page as a 1:100 model. For life size on a car park, **Layout plan (A3)** sets out the four A3 sheets P1–P4 ([filming guide](docs/demo/ipad-ar-filming.md)).
 
-> The deviations in our demo room are staged on purpose (the design differs from the room in a few places), so there is something real to find. Findings are labelled **"Visual check, not a survey."**
+> The site's defects are planted on purpose (`web/src/sim/asBuilt.ts`), so there is something real to find. The building doesn't exist yet, so every view of it is a simulated render of our own model, not a photo of a real site. That covers the virtual site and the four still photos at `/samples?photos` (`web/scripts/make-samples.mjs`, each labelled "Simulated photo"). Findings are labelled **"Visual check, not a survey."**
 
 ## Why
 
@@ -97,7 +97,7 @@ Open the rooftop frame in the viewer at `/model?project=rooftop` and the buildin
 - **The photo is untrusted input.** Gemini has no tools and no write access. Its output is schema-checked, element references must match the request, and severity is computed by code. Text visible in the photo is treated as scenery.
 - **No accounts.** Each browser gets a random session id; checks, photos and issues are visible only to that session. Seeded examples are read-only.
 - **Limits:**
-  - 10 checks per IP per hour
+  - 30 checks per IP per hour on the deployed service (judges share office IPs)
   - a global daily cap
   - 4 MB uploads
   - at most 2 Cloud Run instances
@@ -110,7 +110,7 @@ Open the rooftop frame in the viewer at `/model?project=rooftop` and the buildin
 | Pose, **simulation** (1280×720, 0.5 px corner noise, 23–25 cm code at 0.5–3 m) | median 3.6 mm translation, 0.66° rotation |
 | Self-calibration, **simulation** (30 tilted views) | focal length within 1% |
 | Overlay error on a real phone at 1, 2, 3 m | _measured on device, reported here before submission_ |
-| As-built check on labelled photos (hits / misses / false alarms) | _measured, reported here before submission_ |
+| As-built check on the four **simulated** site photos, labelled from the planted defects (hits / misses / false alarms) | _measured, reported here before submission_ |
 
 Simulation numbers are not field accuracy. We publish what we measure ([how](eval/README.md)).
 
@@ -133,7 +133,7 @@ On Google Cloud, in this order (see `infra/gcloud.sh`):
 
 1. `make setup`, once: APIs, a least-privilege service account, Firestore, the upload bucket, and the budget alert. It is safe to run again.
 2. `make deploy`: renders every QR sheet for the service URL, refuses to deploy unless each sheet links to it, then builds the container on Cloud Build and deploys it to Cloud Run. `GEMINI_BACKEND=apikey make deploy` uses an AI Studio key from Secret Manager instead of Agent Platform.
-3. `make verify`: fails unless `/api/health` reports `"gemini_mode": "live"` and `"store_backend": "gcp"`, the sheets are served as PDFs that link to the URL, and one Ask round trip works.
+3. `make verify`: fails unless `/api/health` reports `"gemini_mode": "live"` and `"store_backend": "gcp"`, the sheets are served as PDFs that link to the URL, the site layout plan, `site.usdz` and the sample photos are served, and one Ask round trip works.
 
 ## Repository
 
@@ -148,4 +148,4 @@ On Google Cloud, in this order (see `infra/gcloud.sh`):
 
 ## Freshness
 
-Built from scratch during the hackathon. The repository was started on 11 Oct 2026, and every commit is dated. It contains no code, assets, prompts or data from earlier projects. The demo model, the photos and the brand were all made during the event.
+Built from scratch during the hackathon. The repository was started on 11 Oct 2026, and every commit is dated. It contains no code, assets, prompts or data from earlier projects. The demo model, the photos and the brand were all made during the event. The start page's hero image (`web/public/hero-site.jpg` and `.webp`, 1200 × 1000) is a render of our own `site` model, added on 16 Oct 2026 in #74. The sample photos are renders of the same model, reproducible with `web/scripts/make-samples.mjs`.
