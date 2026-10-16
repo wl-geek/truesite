@@ -472,3 +472,8 @@ body {
 .layer-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip-on { background: var(--ink); color: var(--white); border-color: var(--ink); }
 .live-controls { position: absolute; left: 0; right: 0; bottom: 132px; display: flex; justify-content: center; } /* above two rows of live actions */
+
+/* Issue dialog: the crew's language for Gemini's draft. */
+.issue-language { display: grid; gap: 4px; margin: 0 0 10px; font-size: 14px; font-weight: 600; }
+.issue-language select { min-height: 44px; padding: 0 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--white); color: var(--ink); font: inherit; font-size: 16px; }
+.issue-language .note { font-weight: 400; }

@@ -211,11 +211,16 @@ class AskAnswer(BaseModel):
 
 
 # ---- issues -------------------------------------------------------------------------------------
+# Languages Gemini drafts issues in: JAPAC site crews often don't share a language with their supervisor.
+IssueLanguage = Literal["en", "th", "my", "id", "ms", "vi", "zh", "ja"]
+
+
 class IssueDraftRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     run_id: RunId
     mark: int = Field(ge=1, le=25)
+    language: IssueLanguage = "en"
 
 
 class IssueDraft(BaseModel):

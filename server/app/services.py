@@ -108,17 +108,17 @@ def with_label(text: str, limit: int) -> str:
     return f"{body} {VISUAL_CHECK_LABEL}" if body else VISUAL_CHECK_LABEL
 
 
-def make_drafter(repo: ProjectRepo, client: Any) -> Callable[[CheckRun, int], IssueDraft]:
+def make_drafter(repo: ProjectRepo, client: Any) -> Callable[..., IssueDraft]:
     """Issue title/description/next step drafted from one stored finding; severity stays with code."""
 
-    def draft(run: CheckRun, mark: int) -> IssueDraft:
+    def draft(run: CheckRun, mark: int, language: str = "en") -> IssueDraft:
         findings = run.result.get("findings") if isinstance(run.result.get("findings"), list) else []
         finding = next((f for f in findings if isinstance(f, dict) and f.get("mark") == mark), None)
         if finding is None:
             raise UnknownMark(mark)
         element = repo.element(run.project_id, finding["guid"])
         facts = {k: finding.get(k) for k in ("name", "ifc_class", "status", "offset", "explanation", "confidence")}
-        out = gemini_client.draft_issue(facts, element.model_dump(mode="json"), client=client)
+        out = gemini_client.draft_issue(facts, element.model_dump(mode="json"), language=language, client=client)
         log_usage("draft", out)
         raw = out["result"]
         status = str(finding.get("status", "deviation")).replace("_", " ")

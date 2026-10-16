@@ -36,7 +36,7 @@ def draft_issue(request: Request, body: IssueDraftRequest, session_id: SessionId
     try:
         drafter = make_drafter(repo, client_for(request))  # before the cap: a setup error uses no quota
         enforce_limits(request, "ask_limiter", "-ask", settings.daily_ask_cap)  # drafting shares the question budget
-        return drafter(run, body.mark)
+        return drafter(run, body.mark, body.language)
     except UnknownMark:
         raise _not_found("unknown_mark") from None
     except (UnknownElement, UnknownProject):

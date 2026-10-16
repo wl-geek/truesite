@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { ApiError, createIssue, draftIssue } from '../api/client'
-import type { Element, Finding, Issue, IssueDraft } from '../api/types'
+import type { Element, Finding, Issue, IssueDraft, IssueLanguage } from '../api/types'
 import { askErrorMessage } from './askFormat'
 import { issueBody, templateDraft } from './issueFormat'
 
@@ -16,7 +16,14 @@ export type IssueDialogProps = {
 }
 
 /** Draft an issue from a finding (Gemini when the run is stored, else a template), edit, save (spec 4.2 step 5). */
+/** Languages Gemini drafts in, by their own names (JAPAC crews often don't share the supervisor's language). */
+const LANGUAGES: [IssueLanguage, string][] = [
+  ['en', 'English'], ['th', 'ไทย · Thai'], ['my', 'မြန်မာ · Burmese'], ['id', 'Bahasa Indonesia'], ['ms', 'Bahasa Melayu'],
+  ['vi', 'Tiếng Việt · Vietnamese'], ['zh', '中文 · Chinese'], ['ja', '日本語 · Japanese'],
+]
+
 export function IssueDialog({ open, projectId, runId, mark, finding, element, onClose, onSaved }: IssueDialogProps) {
+  const [language, setLanguage] = useState<IssueLanguage>('en')
   const [draft, setDraft] = useState<IssueDraft | null>(null)
   const [drafting, setDrafting] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -32,14 +39,14 @@ export function IssueDialog({ open, projectId, runId, mark, finding, element, on
       return
     }
     setDrafting(true)
-    draftIssue({ run_id: runId, mark })
+    draftIssue({ run_id: runId, mark, language })
       .then((d) => !cancelled && setDraft(d))
       .catch(() => !cancelled && setDraft(templateDraft(finding, element)))
       .finally(() => !cancelled && setDrafting(false))
     return () => {
       cancelled = true
     }
-  }, [open, runId, mark, finding, element])
+  }, [open, runId, mark, finding, element, language])
 
   if (!open || !finding) return null
 
@@ -68,7 +75,16 @@ export function IssueDialog({ open, projectId, runId, mark, finding, element, on
           </div>
           <button type="button" className="icon-btn" onClick={onClose} aria-label="Close">×</button>
         </header>
-        {drafting && <p className="status">Drafting…</p>}
+        {runId && mark !== null && (
+          <label className="issue-language">
+            Crew's language
+            <select value={language} onChange={(e) => setLanguage(e.target.value as IssueLanguage)} disabled={drafting}>
+              {LANGUAGES.map(([code, name]) => <option key={code} value={code}>{name}</option>)}
+            </select>
+            <span className="note">Gemini writes the draft in this language.</span>
+          </label>
+        )}
+        {drafting && <p className="status">Gemini is drafting…</p>}
         {draft && (
           <form className="issue-form" onSubmit={(e) => { e.preventDefault(); void save() }}>
             <label>Title<input value={draft.title} maxLength={120} onChange={set('title')} required /></label>

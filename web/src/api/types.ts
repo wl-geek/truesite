@@ -149,9 +149,13 @@ export interface AskAnswer {
 }
 
 // ---- issues -------------------------------------------------------------------------------------
+export type IssueLanguage = 'en' | 'th' | 'my' | 'id' | 'ms' | 'vi' | 'zh' | 'ja'
+
 export interface IssueDraftRequest {
   run_id: string
   mark: number
+  /** The crew's language for the draft (default English). */
+  language?: IssueLanguage
 }
 
 export interface IssueDraft {

@@ -308,10 +308,18 @@ def build_ask_request(element: dict, question: str) -> dict:
     return {"model": MODEL_ID, "contents": contents, "config": config}
 
 
-def build_issue_request(finding: dict, element: dict) -> dict:
+LANGUAGES = {"en": "English", "th": "Thai", "my": "Burmese (Myanmar)", "id": "Indonesian", "ms": "Malay",
+             "vi": "Vietnamese", "zh": "Simplified Chinese", "ja": "Japanese"}
+
+
+def build_issue_request(finding: dict, element: dict, language: str = "en") -> dict:
     data, _ = _element_fields(element)
     payload = {"finding": finding, "element": data}
-    contents = [types.Part.from_text(text="Finding and element (JSON):\n" + json.dumps(payload, ensure_ascii=False, default=str))]
+    contents = [
+        types.Part.from_text(text="Finding and element (JSON):\n" + json.dumps(payload, ensure_ascii=False, default=str)),
+        types.Part.from_text(text=f"Write the title, description and suggested action in {LANGUAGES.get(language, 'English')}. "
+                                  "Keep element names, grid references and units exactly as given."),
+    ]
     config = types.GenerateContentConfig(
         system_instruction=ISSUE_SYSTEM,
         response_mime_type="application/json",
@@ -462,6 +470,6 @@ def ask_element(element: dict, question: str, *, client: Any = None) -> dict:
     return generate_json(build_ask_request(element, question), client=client)
 
 
-def draft_issue(finding: dict, element: dict, *, client: Any = None) -> dict:
-    """Issue title/description/suggested action; severity is set by code elsewhere."""
-    return generate_json(build_issue_request(finding, element), client=client)
+def draft_issue(finding: dict, element: dict, *, language: str = "en", client: Any = None) -> dict:
+    """Issue title/description/suggested action in the crew's language; severity is set by code elsewhere."""
+    return generate_json(build_issue_request(finding, element, language), client=client)

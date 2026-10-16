@@ -185,3 +185,12 @@ def test_an_unsaved_run_takes_no_issues(client, store, monkeypatch):
     assert r.status_code == 404 and r.json()["detail"]["code"] == "unknown_run"
     r = client.post("/api/issues", json={**base, "run_id": None}, headers=hdr(session))
     assert r.status_code == 201 and r.json()["photo_url"] is None
+
+
+def test_draft_takes_a_crew_language_and_rejects_unknown_ones(client):
+    session = new_session()
+    run_id, mark = check_run(client, session)
+    ok = client.post("/api/issues/draft", json={"run_id": run_id, "mark": mark, "language": "th"}, headers=hdr(session))
+    assert ok.status_code == 200, ok.text
+    bad = client.post("/api/issues/draft", json={"run_id": run_id, "mark": mark, "language": "xx"}, headers=hdr(session))
+    assert bad.status_code == 422

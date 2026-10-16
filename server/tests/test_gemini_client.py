@@ -510,3 +510,11 @@ def test_bad_request_does_not_fall_back():
     with pytest.raises(gc.GeminiError) as info:
         gc.check_asbuilt(PHOTO, RENDER, CONTEXT, client=client)
     assert info.value.kind == "bad_request" and len(client.models.calls) == 1
+
+
+def test_issue_draft_is_written_in_the_crews_language():
+    req = gc.build_issue_request({"name": "Edge protection east", "status": "missing"}, {"guid": "g", "name": "Edge protection east",
+                                 "ifc_class": "IfcRailing", "props": {}}, "th")
+    texts = [p.text for p in req["contents"] if getattr(p, "text", None)]
+    assert any("in Thai" in t and "Keep element names" in t for t in texts)
+    assert any("in English" in t for t in (p.text for p in gc.build_issue_request({}, {"props": {}})["contents"] if p.text))
