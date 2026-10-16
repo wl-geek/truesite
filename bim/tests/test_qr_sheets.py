@@ -6,7 +6,7 @@ import pymupdf
 import pytest
 import zxingcpp
 
-from truesite_bim import qr_sheets, rooftop
+from truesite_bim import qr_sheets, rooftop, site
 
 PT_PER_MM = 72 / 25.4
 BASE = "https://truesite-7x2k3m4n5q-as.a.run.app"  # realistic legacy *.a.run.app length (QR version 4)
@@ -132,7 +132,9 @@ def test_cli_needs_an_output():
 
 
 ALL_SHEETS = [*((sh, "room1") for sh in qr_sheets.make_sheets()),
-              *((sh, "rooftop") for sh in (rooftop.r1_sheet(), rooftop.r2_sheet(), *rooftop.view_sheets()))]
+              *((sh, "rooftop") for sh in (rooftop.r1_sheet(), rooftop.r2_sheet(), *rooftop.view_sheets())),
+              *((sh, "site") for sh in site.sheets())]
+ALL_IDS = [f"{project}-{sh.anchor_id}" for sh, project in ALL_SHEETS]
 
 
 def text_lines(page) -> list[tuple[pymupdf.Rect, str]]:
@@ -140,7 +142,7 @@ def text_lines(page) -> list[tuple[pymupdf.Rect, str]]:
             for block in page.get_text("dict")["blocks"] for line in block.get("lines", [])]
 
 
-@pytest.mark.parametrize("sheet,project", ALL_SHEETS, ids=[sh.anchor_id for sh, _ in ALL_SHEETS])
+@pytest.mark.parametrize("sheet,project", ALL_SHEETS, ids=ALL_IDS)
 def test_text_clears_the_check_bar_and_other_text(tmp_path, sheet, project):
     pdf = tmp_path / f"{sheet.anchor_id}.pdf"
     qr_sheets.render_sheet(sheet, f"{BASE}/a/{project}/{sheet.anchor_id}", pdf)
@@ -157,7 +159,22 @@ def test_text_clears_the_check_bar_and_other_text(tmp_path, sheet, project):
                page.rect.y0 + margin <= r.y0 and r.y1 <= page.rect.y1 - margin for r, _ in lines)
 
 
-@pytest.mark.parametrize("sheet", [sh for sh, _ in ALL_SHEETS if sh.anchor_id in {"D1", "L1", "R1", "R2"}],
+@pytest.mark.parametrize("sheet,project", ALL_SHEETS, ids=ALL_IDS)
+def test_drawings_stay_inside_the_page_and_the_check_bar_is_10_cm(tmp_path, sheet, project):
+    pdf = tmp_path / f"{sheet.anchor_id}.pdf"
+    qr_sheets.render_sheet(sheet, f"{BASE}/a/{project}/{sheet.anchor_id}", pdf)
+    page = pymupdf.open(pdf)[0]
+    margin = 5 * PT_PER_MM  # printers can't reach the last few mm
+    inner = pymupdf.Rect(page.rect.x0 + margin, page.rect.y0 + margin, page.rect.x1 - margin, page.rect.y1 - margin)
+    off = [tuple(round(v / PT_PER_MM, 1) for v in d["rect"]) for d in page.get_drawings() if not inner.contains(d["rect"])]
+    assert off == []
+    bar = [d["rect"].width / PT_PER_MM for d in page.get_drawings()
+           if d["rect"].height / PT_PER_MM == pytest.approx(5.0, abs=0.01)]
+    assert max(bar) == pytest.approx(qr_sheets.CHECK_BAR_MM, abs=0.01)  # the outline: 100 mm
+
+
+@pytest.mark.parametrize("sheet", [sh for sh, project in ALL_SHEETS
+                                   if project != "site" and sh.anchor_id in {"D1", "L1", "R1", "R2"}],
                          ids=lambda sh: sh.anchor_id)
 def test_scan_steps_name_the_button_on_each_platform(sheet):
     # Android's hero flow is Start AR (place by code); iPhone only has Start camera.

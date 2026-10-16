@@ -366,7 +366,7 @@ def view_sheet(anchor: dict) -> Sheet:
 def d1_sheet() -> Sheet:
     return Sheet(
         "D1", "desk", ANCHOR_DESK["label"], "TrueSite building desk sheet D1 - scale model 1:100", landscape(A4),
-        70.0, DESK_QR_MM, check_bar_mm=(200.0, 18.0), text_box_mm=(15.0, 200.0),
+        70.0, DESK_QR_MM, check_bar_mm=(185.0, 18.0), text_box_mm=(15.0, 190.0),
         position_m=ANCHOR_DESK["position_m"], normal=ANCHOR_DESK["normal"], up=ANCHOR_DESK["up"], scale=DESK_SCALE_SITE,
         model_origin_mm=DESK_ORIGIN_MM,
         instructions=[
