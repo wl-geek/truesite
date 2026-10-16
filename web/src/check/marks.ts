@@ -4,15 +4,32 @@ import type { VisibleElement } from '../scene/elements'
 
 export const MAX_MARKS = 25
 
-const STRUCTURE = new Set(['IfcColumn', 'IfcBeam', 'IfcSlab', 'IfcFooting', 'IfcMember', 'IfcPile', 'IfcPlate', 'IfcWall', 'IfcWallStandardCase'])
+// Guardrails sit with structure: a missing one is a fall hazard.
+const STRUCTURE = new Set(['IfcColumn', 'IfcBeam', 'IfcMember', 'IfcPile', 'IfcPlate', 'IfcWall', 'IfcWallStandardCase', 'IfcRailing'])
+// Slabs and footings are big flat surfaces (a flush pad, a soffit) that rarely show a deviation in a photo: after structure.
 const OPENINGS_SERVICES = new Set(['IfcDoor', 'IfcWindow', 'IfcPipeSegment', 'IfcPipeFitting', 'IfcDuctSegment', 'IfcDuctFitting',
-  'IfcFlowSegment', 'IfcFlowFitting', 'IfcCableCarrierSegment', 'IfcOpeningElement'])
+  'IfcFlowSegment', 'IfcFlowFitting', 'IfcCableCarrierSegment', 'IfcOpeningElement', 'IfcSlab', 'IfcFooting'])
 
-/** 0 structure, 1 openings and services, 2 everything else. */
+/** 0 structure and guardrails, 1 openings, services, slabs and footings, 2 everything else. */
 export function classPriority(ifcClass: string): number {
   if (STRUCTURE.has(ifcClass)) return 0
   if (OPENINGS_SERVICES.has(ifcClass)) return 1
   return 2
+}
+
+/**
+ * How much an element counts for a mark: its size on screen, weighted towards the middle of the frame, where the
+ * person aimed. An element at the centre counts about 1.7 times its size, one in a corner about 0.1 times.
+ */
+export function markWeight(v: Pick<VisibleElement, 'pixels' | 'box'>): number {
+  const [y0, x0, y1, x1] = v.box
+  const off = Math.hypot((x0 + x1) / 2 - 500, (y0 + y1) / 2 - 500) / 707 // 0 at the centre, 1 in a corner
+  return v.pixels * (0.3 + Math.max(0, 1 - off)) ** 2
+}
+
+/** Element type for taking turns: class plus predefined type, so truss members, purlins and braces are separate. */
+function typeKey(el: Element): string {
+  return `${el.ifc_class}|${String(el.props?.PredefinedType ?? '')}`
 }
 
 function mm(v: unknown): number | null {
@@ -58,7 +75,11 @@ export function keyDims(el: Element): string {
   return parts.join(', ').slice(0, 80)
 }
 
-/** Visible elements -> numbered marks: known elements only, one per GUID, by class priority then size. */
+/**
+ * Visible elements -> numbered marks: known elements only, one per GUID. By class priority, and within a priority
+ * the element types take turns, each type's elements in order of markWeight (size, towards the centre of the frame),
+ * so thin members and guardrails where the person aimed get checked in a view full of big beams.
+ */
 export function selectMarks(visible: readonly VisibleElement[], indexToGuid: readonly string[], elements: ReadonlyMap<string, Element>,
   max = MAX_MARKS): MarkedElement[] {
   const best = new Map<string, VisibleElement>()
@@ -68,11 +89,24 @@ export function selectMarks(visible: readonly VisibleElement[], indexToGuid: rea
     const prev = best.get(guid)
     if (!prev || v.pixels > prev.pixels) best.set(guid, v)
   }
-  return [...best.entries()]
-    .map(([guid, v]) => ({ guid, v, el: elements.get(guid)! }))
-    .sort((a, b) => classPriority(a.el.ifc_class) - classPriority(b.el.ifc_class) || b.v.pixels - a.v.pixels)
-    .slice(0, max)
-    .map(({ guid, v, el }, i) => ({ mark: i + 1, guid, ifc_class: el.ifc_class, name: el.name, box: v.box, key_dims: keyDims(el) }))
+  const tiers = new Map<number, Map<string, { guid: string; v: VisibleElement; el: Element }[]>>()
+  for (const [guid, v] of best) {
+    const el = elements.get(guid)!
+    const tier = tiers.get(classPriority(el.ifc_class)) ?? new Map()
+    tiers.set(classPriority(el.ifc_class), tier)
+    const group = tier.get(typeKey(el)) ?? []
+    tier.set(typeKey(el), group)
+    group.push({ guid, v, el })
+  }
+  const picked: { guid: string; v: VisibleElement; el: Element }[] = []
+  for (const p of [...tiers.keys()].sort((a, b) => a - b)) {
+    const groups = [...tiers.get(p)!.values()].map((g) => g.sort((a, b) => markWeight(b.v) - markWeight(a.v)))
+    groups.sort((a, b) => markWeight(b[0].v) - markWeight(a[0].v)) // the type with the weightiest element starts each round
+    for (let round = 0; picked.length < max && groups.some((g) => g.length > round); round++) {
+      for (const g of groups) if (round < g.length && picked.length < max) picked.push(g[round])
+    }
+  }
+  return picked.map(({ guid, v, el }, i) => ({ mark: i + 1, guid, ifc_class: el.ifc_class, name: el.name, box: v.box, key_dims: keyDims(el) }))
 }
 
 /** Each mark's centre as a fraction of the frame (0..1), from the ID-buffer anchors (a pixel of the element itself). */

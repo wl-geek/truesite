@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Element } from '../api/types'
 import type { VisibleElement } from '../scene/elements'
-import { classPriority, keyDims, markCentres, MAX_MARKS, selectMarks } from './marks'
+import { classPriority, keyDims, markCentres, markWeight, MAX_MARKS, selectMarks } from './marks'
 
 function el(guid: string, ifc_class: string, props: Record<string, unknown> = {}, bbox: Element['bbox_m'] = [[0, 0, 0], [1, 0.1, 2]]): Element {
   return { guid, ifc_class, name: `${ifc_class} ${guid}`, storey: 'L1', bbox_m: bbox, load_bearing: null, props }
@@ -11,8 +11,10 @@ function vis(index: number, pixels: number, cx = 10, cy = 20, anchor = { x: cx, 
 }
 
 describe('marks', () => {
-  it('ranks structure, then openings and services, then the rest', () => {
+  it('ranks structure and guardrails, then openings, services, slabs and footings, then the rest', () => {
     expect(classPriority('IfcColumn')).toBe(0)
+    expect(classPriority('IfcRailing')).toBe(0)
+    expect(classPriority('IfcFooting')).toBe(1)
     expect(classPriority('IfcWall')).toBe(0)
     expect(classPriority('IfcPipeSegment')).toBe(1)
     expect(classPriority('IfcFurniture')).toBe(2)
@@ -31,6 +33,26 @@ describe('marks', () => {
     const marks = selectMarks([vis(0, 900), vis(1, 50), vis(2, 10), vis(3, 300), vis(4, 999), vis(5, 400)], indexToGuid, elements)
     expect(marks.map((m) => [m.mark, m.guid])).toEqual([[1, 'w'], [2, 's'], [3, 'd'], [4, 'f']])
     expect(marks[0].name).toBe('IfcWall w')
+  })
+
+  it('lets element types take turns, so thin members and guardrails get marks in a view full of big beams', () => {
+    const elements = new Map<string, Element>([
+      ...Array.from({ length: 10 }, (_, i) => [`b${i}`, el(`b${i}`, 'IfcBeam')] as const),
+      ['m1', el('m1', 'IfcMember', { PredefinedType: 'PURLIN' })], ['m2', el('m2', 'IfcMember', { PredefinedType: 'PURLIN' })],
+      ['r', el('r', 'IfcRailing')], ['f', el('f', 'IfcFooting')],
+    ])
+    const guids = [...elements.keys()]
+    const visible = guids.map((g, i) => vis(i, g.startsWith('b') ? 1000 - i : g === 'r' ? 30 : g === 'f' ? 5000 : 60 - i))
+    const marks = selectMarks(visible, guids, elements, 5)
+    expect(marks.map((m) => m.guid)).toEqual(['b0', 'm1', 'r', 'b1', 'm2']) // the big footing waits behind structure
+  })
+
+  it('prefers elements where the person aimed: the middle of the frame beats a bigger one in a corner', () => {
+    const centre = { ...vis(0, 100), box: [450, 450, 550, 550] as [number, number, number, number] }
+    const corner = { ...vis(1, 150), box: [0, 0, 60, 60] as [number, number, number, number] }
+    expect(markWeight(centre)).toBeGreaterThan(markWeight(corner))
+    const elements = new Map([['a', el('a', 'IfcMember')], ['b', el('b', 'IfcMember')]])
+    expect(selectMarks([centre, corner], ['a', 'b'], elements, 1).map((m) => m.guid)).toEqual(['a'])
   })
 
   it('caps at 25 marks', () => {

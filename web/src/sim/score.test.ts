@@ -26,3 +26,13 @@ describe('scoreCheck', () => {
     expect(scoreLine(scoreCheck([f('C', 'different_from_design')], planted))).toBe('Gemini found 1 of 1 planted defect in this view · no false alarms')
   })
 })
+
+
+describe('scoreCheck with elements that moved together', () => {
+  it('counts a flagged cage of a shifted column towards that defect, not as a false alarm', () => {
+    const moved: Deviation[] = [{ element: 'RC column B2', kind: 'shifted', offsetM: [-0.6, 0, 0], alsoMoves: ['Column cage B2'], featuredAt: 'P1' }]
+    const s = scoreCheck([f('RC column B2', 'present_ok'), f('Column cage B2', 'misplaced')], moved)
+    expect(s.inView[0].found).toBe(true)
+    expect(s.falseAlarms).toEqual([])
+  })
+})

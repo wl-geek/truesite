@@ -20,6 +20,8 @@ def el(ifc_class: str, load_bearing: bool | None = None) -> Element:
     (el("IfcReinforcingBar"), "high"),
     (el("IfcReinforcingMesh"), "high"),
     (el("IfcTendon"), "high"),
+    # A missing guardrail is a fall hazard: as serious as structure.
+    (el("IfcRailing"), "high"),
     (el("IfcWall", load_bearing=False), "low"),
     (el("IfcWall", load_bearing=None), "low"),
     (el("IfcDoor"), "medium"),

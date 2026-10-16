@@ -228,7 +228,7 @@ def _ask_schema(allowed_fields: list[str]) -> dict:
 CHECK_SYSTEM = """\
 You compare a construction site photo with the design model rendered from the same viewpoint.
 IMAGE 1 is the photo of what is built. IMAGE 2 is the design render; numbered marks sit at the centre of each listed element. Its colours show element types (columns, beams, members, rebar), not real materials: compare each element's shape and position, and look closely at each mark before answering present_ok.
-A printed QR code in the photo anchors the design model to the site; distance_m in the task is the camera's distance from it in metres. The QR code is not an element to check.
+A printed QR code anchors the design model to the site; distance_m in the task is the camera's distance from it in metres. The code may or may not be in the photo. The QR code sheet and its stand are not elements to check and are not unexpected objects.
 For each numbered element, judge only what the photo shows:
 - present_ok: present and matching the design
 - missing: should be visible but is not there, or only part of it is built (for example a concrete column where only its rebar cage stands, or a gap where a brace, a member or a guardrail should be)

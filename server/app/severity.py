@@ -11,6 +11,7 @@ STRUCTURAL_CLASSES = {
     "IfcReinforcingBar", "IfcReinforcingMesh", "IfcTendon",  # reinforcement: high severity, but not first for marks
 }
 WALL_CLASSES = {"IfcWall", "IfcWallStandardCase"}  # structural only when load_bearing is True
+SAFETY_CLASSES = {"IfcRailing"}  # a missing or wrong guardrail is a fall hazard: as serious as structure
 OPENINGS_SERVICES = {
     "IfcDoor", "IfcWindow", "IfcPipeSegment", "IfcPipeFitting", "IfcDuctSegment", "IfcDuctFitting",
     "IfcFlowSegment", "IfcFlowFitting", "IfcCableCarrierSegment", "IfcOpeningElement",
@@ -21,7 +22,7 @@ DEVIATIONS = {"missing", "misplaced", "different_from_design"}
 def severity_for(element: Element, status: Status) -> Severity | None:
     if status not in DEVIATIONS:
         return None
-    if element.ifc_class in STRUCTURAL_CLASSES or (element.ifc_class in WALL_CLASSES and element.load_bearing is True):
+    if element.ifc_class in STRUCTURAL_CLASSES | SAFETY_CLASSES or (element.ifc_class in WALL_CLASSES and element.load_bearing is True):
         return "high"
     if element.ifc_class in OPENINGS_SERVICES:
         return "medium"

@@ -16,12 +16,16 @@ export type Score = {
   outOfView: Deviation[]
 }
 
+/** The elements a planted defect changed: the element, plus what moved with it (a shifted column's cage). */
+const touched = (d: Deviation): string[] => [d.element, ...(d.kind === 'shifted' ? d.alsoMoves ?? [] : [])]
+
 export function scoreCheck(findings: readonly Finding[], planted: readonly Deviation[]): Score {
   const byName = new Map(findings.map((f) => [f.name, f]))
-  const plantedNames = new Set(planted.map((d) => d.element))
+  const plantedNames = new Set(planted.flatMap(touched))
   const inView = planted.filter((d) => byName.has(d.element)).map((d) => {
     const finding = byName.get(d.element)!
-    return { planted: d, finding, found: DEVIATIONS.has(finding.status) }
+    const flagged = touched(d).some((n) => DEVIATIONS.has(byName.get(n)?.status ?? 'present_ok'))
+    return { planted: d, finding, found: flagged }
   })
   return {
     inView,
