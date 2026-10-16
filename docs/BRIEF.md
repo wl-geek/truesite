@@ -94,7 +94,7 @@ Wai found a 13-second screen recording of a commercial construction-AR app on a 
   - the `site` building under construction with four iPad viewpoints (P1–P4)
   - colour by element type
   - the fixes from the 15 Oct audit: every high and medium finding is fixed (`docs/audit-2026-10-15.md`)
-- **Tests:** all green with `make test`: BIM about 105, server about 385, web about 270.
+- **Tests:** all green with `make test`: BIM 110, server about 410, web about 300.
 - **Phone-tested on Android over the LAN:**
   - desk sheet D1 overlay ✓
   - live *Check as-built* call ✓
