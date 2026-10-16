@@ -1,25 +1,27 @@
-import { useRoute } from './router'
+import { useEffect } from 'react'
+import { useRoute, type Route } from './router'
 import { HomePage } from './ui/HomePage'
-import { Link } from './ui/Link'
+import { TopBar } from './ui/TopBar'
 import { LivePage } from './ui/LivePage'
 import { SamplesPage } from './ui/SamplesPage'
 import { ViewerPage } from './ui/ViewerPage'
 
-/** Top bar + one page per route. This file does not change after Part 1; parts replace the page files. */
+const TITLES: Record<Route['name'], string> = {
+  home: 'TrueSite · BIM on site with a Gemini as-built check',
+  viewer: '3D model · TrueSite',
+  live: 'Live AR · TrueSite',
+  samples: 'Virtual site · TrueSite',
+}
+
+/** Top bar + one page per route, and the page title for each route. */
 export default function App() {
   const route = useRoute()
+  useEffect(() => {
+    document.title = TITLES[route.name]
+  }, [route.name])
   return (
     <div className="app">
-      <header className="topbar">
-        <Link to="/" className="brand">
-          <img src="/favicon.svg" alt="" width="28" height="28" />
-          <span>TrueSite</span>
-        </Link>
-        <nav className="nav" aria-label="Main">
-          <Link to="/model" current={route.name === 'viewer'}>Model</Link>
-          <Link to="/samples" current={route.name === 'samples'}>Virtual site</Link>
-        </nav>
-      </header>
+      <TopBar route={route} />
       {route.name === 'home' && <HomePage />}
       {route.name === 'viewer' && <ViewerPage key={route.projectId ?? ''} projectId={route.projectId} />}
       {route.name === 'live' && <LivePage key={`${route.projectId}/${route.anchorId}`} projectId={route.projectId} anchorId={route.anchorId} />}

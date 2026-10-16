@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { AboutSection } from './AboutSection'
 import { Link } from './Link'
 import { CODE_HEIGHT_M, compass, SITE_VIEWPOINTS, STAND_OFF_M } from './siteViewpoints'
 import { ViewpointPlan } from './ViewpointPlan'
@@ -14,7 +15,7 @@ export function HomePage() {
       <section className="home-hero" aria-labelledby="home-title">
         <div className="home-wrap home-hero-grid">
           <div className="home-hero-copy">
-            <p className="home-eyebrow">BIM on site · Gemini as-built check</p>
+            <p className="home-eyebrow">For construction teams · Future of Work</p>
             <h1 id="home-title">See the design where you build. Check the build against it.</h1>
             <p className="home-lede">
               Scan a TrueSite QR code and the BIM model stands on site at true scale. Tap <strong>Check as-built</strong>:
@@ -35,7 +36,7 @@ export function HomePage() {
         </div>
       </section>
 
-      <section className="home-section home-wrap" aria-labelledby="how-title">
+      <section id="how" className="home-section home-wrap" aria-labelledby="how-title">
         <h2 id="how-title">How it works</h2>
         <ol className="home-steps">
           <Step n={1} icon="qr" title="Scan the code">
@@ -138,9 +139,14 @@ export function HomePage() {
         </ul>
       </section>
 
-      <footer className="home-footer home-wrap">
-        <img src="/favicon.svg" alt="" width="20" height="20" />
-        <span>TrueSite · Google Cloud AI Builder Cup 2026</span>
+      <AboutSection />
+
+      <footer className="home-footer">
+        <div className="home-wrap home-footer-row">
+          <span className="home-footer-brand"><img src="/favicon.svg" alt="" width="20" height="20" />TrueSite</span>
+          <span>Built by Wai and Aung Nyein Chan for the Google Cloud AI Builder Cup 2026</span>
+          <a href="https://github.com/wl-geek/truesite" target="_blank" rel="noopener noreferrer">Source on GitHub</a>
+        </div>
       </footer>
     </main>
   )

@@ -1,0 +1,39 @@
+/* About section at the bottom of the start page (AboutSection.tsx). */
+.about { padding: 56px 0 24px; background: var(--ink); color: #d5e1ec; }
+.about h2 { margin: 0 0 12px; color: var(--white); font-size: clamp(24px, 3.6vw, 32px); line-height: 1.15; letter-spacing: -0.01em; }
+.about h3 { margin: 0 0 8px; color: var(--white); font-size: 17px; }
+.about-kicker { margin: 0 0 8px; color: #ffb27f; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.about-lede { max-width: 44em; margin: 0 0 28px; font-size: 17px; }
+.about strong { color: var(--white); }
+.about a { color: #9cc7f2; }
+
+.about-grid { display: grid; gap: 12px; }
+.about-card { padding: 18px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; background: rgba(255, 255, 255, 0.04); }
+.about-card p, .about-card ol, .about-card ul { margin: 0; font-size: 15px; }
+.about-card ol, .about-card ul { display: grid; gap: 6px; padding-left: 18px; }
+
+.about-why { display: grid; gap: 12px; margin: 28px 0; }
+.about-stat { display: grid; gap: 4px; padding: 18px; border-radius: 14px; background: rgba(255, 106, 19, 0.12); border: 1px solid rgba(255, 106, 19, 0.35); }
+.about-stat strong { color: #ffb27f; font-size: 34px; line-height: 1; letter-spacing: -0.02em; }
+.about-stat span { font-size: 15px; }
+.about-why-text { margin: 0; font-size: 15px; }
+.about-source { display: block; margin-top: 8px; color: #9fb3c8; font-size: 13px; }
+
+.about-arch { margin: 0 0 28px; }
+.arch-flow { display: grid; gap: 10px; margin: 12px 0; padding: 0; list-style: none; counter-reset: arch; }
+.arch-flow li { position: relative; display: grid; gap: 2px; padding: 12px 14px; border-radius: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); }
+.arch-node { color: var(--white); font-weight: 700; }
+.arch-gemini { color: #ffb27f; }
+.arch-note { color: #9fb3c8; font-size: 14px; }
+.about-note { max-width: 46em; margin: 0; font-size: 15px; }
+
+.about-rules ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.about-rules li { padding-left: 16px; border-left: 3px solid var(--orange); font-size: 15px; }
+
+@media (min-width: 760px) {
+  .about-grid { grid-template-columns: repeat(3, 1fr); }
+  .about-why { grid-template-columns: 1fr 1fr 2fr; align-items: stretch; }
+  .about-why-text { align-self: center; padding-left: 8px; }
+  .arch-flow { grid-template-columns: repeat(4, 1fr); }
+  .arch-flow li:not(:last-child)::after { content: '→'; position: absolute; right: -10px; top: 50%; transform: translateY(-50%); color: var(--orange); font-weight: 800; }
+}

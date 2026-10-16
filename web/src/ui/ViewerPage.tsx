@@ -5,12 +5,14 @@ import { loadLastCheck, type LastCheck } from '../check/lastCheck'
 import { freshCanvas, watchContextLoss } from '../scene/glContext'
 import { disposeModel, loadModel, type LoadedModel } from '../scene/loadModel'
 import { disposePins, makePins } from '../scene/pins'
-import { paintOf } from '../scene/palette'
+import { KIND_COLOURS, paintOf, type Kind } from '../scene/palette'
 import { createViewer, type Viewer } from '../scene/viewer'
 import { ElementPanel } from './ElementPanel'
 import { FindingsPanel } from './FindingsPanel'
 import { IssueDialog } from './IssueDialog'
+import { Link } from './Link'
 import { ReloadPrompt } from './ReloadPrompt'
+import './viewerChrome.css'
 
 export const DEFAULT_PROJECT_ID = 'site'
 
@@ -101,7 +103,11 @@ export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: str
             </button>
           </div>
         )}
-        {loaded && !element && <p className="hint">Tap an element to see its properties.</p>}
+        {loaded && <ModelCard project={loaded.project} />}
+        {loaded && !element && <p className="hint">Drag to orbit · pinch or scroll to zoom · tap an element for its data</p>}
+        {loaded && !lastCheck && loaded.project.project_id === 'site' && (
+          <Link to="/samples" className="btn btn-accent viewer-check-btn">Check it on the virtual site</Link>
+        )}
         {lastCheck && !showCheck && (
           <button type="button" className="btn btn-accent viewer-check-btn" onClick={() => setShowCheck(true)}>
             Last check results
@@ -121,5 +127,29 @@ export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: str
         <ElementPanel projectId={loaded.project.project_id} element={element} onClose={() => setSelected(null)} />
       )}
     </main>
+  )
+}
+
+const KIND_LABELS: Record<Kind, string> = {
+  column: 'Column', beam: 'Beam', truss: 'Truss', purlin: 'Purlin', brace: 'Brace', concrete: 'Concrete', rebar: 'Rebar',
+  opening: 'Opening', other: 'Other',
+}
+
+/** Project name, element count and the colour key for the element types in this model. */
+function ModelCard({ project }: { project: ProjectManifest }) {
+  const kinds = useMemo(() => {
+    const present = new Set(project.elements.map((e) => paintOf(e).kind))
+    return (Object.keys(KIND_LABELS) as Kind[]).filter((k) => present.has(k))
+  }, [project])
+  return (
+    <div className="model-card">
+      <p className="model-card-name">{project.name.replace(/\s*\(1:1\)$/, '')}</p>
+      <p className="model-card-meta">{project.elements.length} elements · coloured by type</p>
+      <ul className="model-legend" aria-label="Colour key">
+        {kinds.map((k) => (
+          <li key={k}><span className="swatch" style={{ background: `#${KIND_COLOURS[k].toString(16).padStart(6, '0')}` }} />{KIND_LABELS[k]}</li>
+        ))}
+      </ul>
+    </div>
   )
 }

@@ -81,28 +81,6 @@ body {
   border-radius: 7px;
 }
 
-.nav {
-  display: flex;
-  gap: 2px;
-}
-
-.nav a {
-  display: inline-flex;
-  align-items: center;
-  min-height: 44px;
-  padding: 0 10px;
-  border-radius: 8px;
-  color: #c3d3e4;
-  font-weight: 600;
-  font-size: 14px;
-  text-decoration: none;
-}
-
-.nav a[aria-current='page'] {
-  background: var(--steel);
-  color: var(--white);
-}
-
 .page {
   width: 100%;
   max-width: 720px;
@@ -182,7 +160,9 @@ body {
   background: rgba(11, 31, 51, 0.8);
   color: var(--white);
   font-size: 13px;
-  white-space: nowrap;
+  width: max-content;
+  max-width: calc(100% - 32px); /* wraps on phones instead of running off both edges */
+  text-align: center;
   pointer-events: none;
 }
 
@@ -384,6 +364,9 @@ body {
 .live-canvas { pointer-events: none; }
 .live-top { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
 .live-start { position: absolute; left: 16px; right: 16px; bottom: 24px; max-width: 520px; margin: 0 auto; }
+.live-idle { background: linear-gradient(180deg, rgba(11, 31, 51, 0.55), rgba(11, 31, 51, 0.92)), #0b1f33 url(/hero-site.webp) center / cover no-repeat; }
+@media (min-width: 720px) { .live-idle .live-start { top: 50%; bottom: auto; transform: translateY(-50%); } }
+.live-virtual { margin: 12px 0 0; padding-top: 10px; border-top: 1px solid var(--line); font-size: 14px; }
 .live-start h1 { margin: 4px 0 8px; }
 .live-warning { margin: 0; padding: 6px 10px; border-radius: var(--radius); background: rgba(255, 106, 19, 0.92); color: var(--white); font-size: 14px; }
 .live-warning a { color: var(--white); font-weight: 600; }

@@ -71,7 +71,10 @@ describe('styles.css on phones', () => {
   })
 
   it('makes nav links, icon buttons and chips at least 44 px tall (A-63)', () => {
-    expect(px(value('.nav a', 'min-height'))).toBeGreaterThanOrEqual(44)
+    const bar = parseRules(readFileSync(new URL('./ui/topbar.css', import.meta.url), 'utf8'))
+    const barValue = (sel: string, prop: string) => bar.filter((r) => r.selectors.includes(sel)).flatMap((r) => r.decls).filter(([p]) => p === prop).at(-1)?.[1] ?? null
+    expect(px(barValue('.tb-link', 'min-height'))).toBeGreaterThanOrEqual(44)
+    expect(px(barValue('.tb-menu-btn', 'height'))).toBeGreaterThanOrEqual(44)
     expect(px(value('.icon-btn', 'width'))).toBeGreaterThanOrEqual(44)
     expect(px(value('.icon-btn', 'height'))).toBeGreaterThanOrEqual(44)
     expect(px(value('.chip', 'min-height'))).toBeGreaterThanOrEqual(44)

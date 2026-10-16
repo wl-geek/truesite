@@ -34,6 +34,7 @@ import { Link } from './Link'
 import { UNKNOWN_ANCHOR_MESSAGE, isUnknownProject, liveLoadErrorMessage } from './liveFormat'
 import { requestMotionPermission } from '../scene/motion'
 import { QualityBadge } from './QualityBadge'
+import { SITE_VIEWPOINTS } from './siteViewpoints'
 import { ReloadPrompt } from './ReloadPrompt'
 
 export type LivePageProps = { projectId: string; anchorId: string }
@@ -404,7 +405,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   const selectFinding = (f: Finding) => setSelectedMark(f.mark)
 
   return (
-    <main className="live-page">
+    <main className={`live-page${running ? '' : ' live-idle'}`}>
       <div ref={xrOverlayRef} className="xr-overlay" style={{ display: 'none' }}>
         {xrMode === 'place' ? (
           <>
@@ -517,7 +518,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
             {camStopped && <p className="status" role="status">The camera stopped. Tap {cameraLabel} to continue.</p>}
             {loaded && (
               <>
-                <p className="eyebrow">{loaded.project.name} · {loaded.anchor.label || loaded.anchor.anchor_id}</p>
+                <p className="eyebrow">{startLabel(loaded.project.name, loaded.anchor)}</p>
                 <h1>Live view · {scaleLabel(loaded.anchor)}</h1>
                 <p>
                   {desk
@@ -590,6 +591,11 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
                 )}
               </>
             )}
+            {loaded && SITE_VIEWPOINTS.some((v) => loaded.anchor.project_id === 'site' && v.id === loaded.anchor.anchor_id) && (
+              <p className="live-virtual">
+                No sheet here? <Link to={`/samples?at=${loaded.anchor.anchor_id}`}>Stand at {loaded.anchor.anchor_id} on the virtual site</Link> instead.
+              </p>
+            )}
             {camError && <p className="status status-error" role="alert">{CAMERA_ERRORS[camError]}</p>}
             {(camError || error) && (
               <p className="live-links">
@@ -626,4 +632,11 @@ function modelSize(project: ProjectManifest): { height: number; span: number } {
   const min = (i: number) => Math.min(...b.map((x) => x[0][i]))
   const max = (i: number) => Math.max(...b.map((x) => x[1][i]))
   return { height: max(2), span: Math.hypot(max(0) - min(0), max(1) - min(1)) }
+}
+
+/** "Building under construction · P2 Under the slab": the project and the sheet, short enough for one line. */
+function startLabel(projectName: string, anchor: Anchor): string {
+  const name = projectName.replace(/\s*\(1:1\)$/, '')
+  const vp = anchor.project_id === 'site' ? SITE_VIEWPOINTS.find((v) => v.id === anchor.anchor_id) : undefined
+  return `${name} · ${vp ? `${vp.id} ${vp.name}` : anchor.anchor_id}`
 }
