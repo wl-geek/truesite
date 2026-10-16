@@ -40,7 +40,7 @@
 ## 4. Experience
 
 ### 4.1 Modes
-- **Model viewer** (default; works everywhere): orbit the model, tap elements, see properties, ask questions, see pinned findings and issues.
+- **Model viewer** (works everywhere, no print needed): orbit the model, tap elements, see properties, ask questions, and see the last check's findings pinned in 3D. Issues are drafted and saved from a finding; since #75 there is no separate issues page.
 - **Live AR:** the rear camera with the model drawn over it. The overlay is anchored by the QR code and updates on every frame where the code is found (aim: 20+ per second). An alignment badge shows good / fair / poor, plus the distance.
 - **As-built check:** take a snapshot (live) or pick a sample photo, then tap *Check as-built*. Results appear three ways:
   - a list of findings
@@ -49,7 +49,7 @@
 - **Desk mode:** the same flow with a 1:20 desk anchor. Two sheets:
   - **A4 for judges:** QR only; the model appears beside it.
   - **A3 for our physical model:** QR plus the model's footprint outline, so the model sits exactly on it.
-- **Sample-photo mode:** photos of our room and our physical model, captured with the app itself so each one carries its pose and calibration. The check runs with no camera and no printing.
+- **Sample-photo mode:** still photos that each carry their pose and calibration, so the check runs with no camera and no printing. The four shipped samples are simulated renders of the site project's planted as-built (`web/scripts/make-samples.mjs`), labelled "Simulated photo". A real photo can be captured with the app (dev-only *Save as sample*).
 
 ### 4.2 Main flow (live)
 1. Scan the QR with the phone camera. It is a deep link to the app and the anchor; the app can also be opened from the link.
