@@ -1,5 +1,13 @@
 import { Link } from './Link'
 
+/** The building site viewpoints (bim/truesite_bim/site.py VIEWPOINTS). */
+const VIEWPOINTS = [
+  ['P1', 'South approach'],
+  ['P2', 'Under the slab'],
+  ['P3', 'Under the open bay'],
+  ['P4', 'East gable'],
+] as const
+
 /** Start page: what TrueSite does and the ways to try it, with or without a printer. */
 export function HomePage() {
   return (
@@ -29,11 +37,17 @@ export function HomePage() {
             element type. Set the four upright A3 sheets out on a car park with the layout plan, stand on each X and
             turn on the spot to see it from four sides.
           </p>
-          <a className="btn btn-primary" href="/sheets/site-layout.pdf" download>Layout plan</a>
-          <a className="btn" href="/sheets/site-P1.pdf" download>P1</a>
-          <a className="btn" href="/sheets/site-P2.pdf" download>P2</a>
-          <a className="btn" href="/sheets/site-P3.pdf" download>P3</a>
-          <a className="btn" href="/sheets/site-P4.pdf" download>P4</a>
+          <p className="way-label">At the sheet: open its live view, then scan the code in the app</p>
+          <div className="way-actions">
+            {VIEWPOINTS.map(([id, name]) => (
+              <Link key={id} to={`/a/site/${id}`} className="btn btn-primary">{id} · {name}</Link>
+            ))}
+          </div>
+          <p className="way-label">Print and set out</p>
+          <div className="way-actions">
+            <a className="btn" href="/sheets/site-layout.pdf" download>Layout plan</a>
+            {VIEWPOINTS.map(([id]) => <a key={id} className="btn" href={`/sheets/site-${id}.pdf`} download>Sheet {id}</a>)}
+          </div>
         </li>
         <li className="way-card">
           <h3>On your desk · scale model 1:100</h3>
@@ -41,7 +55,10 @@ export function HomePage() {
             Print the A4 desk sheet at 100%, lay it on a table and scan the code. The same building appears on the
             left half of the page as a 1:100 model, like an architect's model.
           </p>
-          <a className="btn" href="/sheets/site-D1.pdf" download>A4 desk sheet (D1)</a>
+          <div className="way-actions">
+            <Link to="/a/site/D1" className="btn btn-primary">Live view (D1)</Link>
+            <a className="btn" href="/sheets/site-D1.pdf" download>A4 desk sheet (D1)</a>
+          </div>
         </li>
         <li className="way-card">
           <h3>Explore the model</h3>
