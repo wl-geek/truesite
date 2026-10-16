@@ -31,7 +31,12 @@
 .home-lede { margin: 0 0 22px; max-width: 34em; color: var(--home-ink-soft); font-size: 17px; }
 .home-lede strong { color: var(--white); white-space: nowrap; }
 .home-ctas { display: flex; flex-wrap: wrap; gap: 10px; }
-.home-ctas .btn { flex: 1 1 220px; }
+.home-ctas { align-items: flex-start; }
+.home-ctas > .btn, .home-cta-stack { flex: 1 1 220px; }
+.home-cta-stack { display: grid; gap: 6px; }
+.home-cta-stack .btn { width: 100%; }
+.home-cta-note { color: #9fb3c8; font-size: 13px; line-height: 1.35; text-align: center; }
+.home-cta-note .nowrap { white-space: nowrap; }
 .home-proof { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 18px 0 0; padding: 0; list-style: none; color: var(--home-ink-soft); font-size: 14px; }
 .home-proof li { display: inline-flex; align-items: center; gap: 6px; }
 .home-proof .icon { width: 16px; height: 16px; color: #7fd18a; }
@@ -64,10 +69,10 @@
 
 /* how it works */
 .home-steps { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; }
-.home-step { position: relative; display: grid; grid-template-columns: 44px 1fr; gap: 4px 14px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--white); }
+.home-step { position: relative; display: grid; grid-template-columns: 44px 1fr; align-content: start; gap: 4px 14px; padding: 18px; border: 1px solid var(--line); border-radius: 14px; background: var(--white); }
 .home-step-icon { grid-row: span 3; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 12px; background: #e8f0f8; color: var(--steel); }
 .home-step-n { position: absolute; top: 14px; right: 16px; color: #b3c3d4; font-size: 22px; font-weight: 800; }
-.home-step-tag { justify-self: start; padding: 2px 8px; border-radius: 6px; background: var(--ink); color: #ffb27f; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; }
+.home-step-tag { justify-self: start; align-self: start; padding: 2px 8px; border-radius: 6px; background: var(--ink); color: #ffb27f; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; }
 .home-step p { margin: 0; color: var(--muted); font-size: 15px; }
 
 /* on site */

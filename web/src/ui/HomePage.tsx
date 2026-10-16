@@ -40,7 +40,10 @@ export function HomePage() {
             </p>
             <div className="home-ctas">
               <a href="/#live" className="btn btn-accent btn-lg" onClick={jumpTo('live')}>Start live AR</a>
-              <a href="/#virtual" className="btn btn-ghost btn-lg" onClick={jumpTo('virtual')}>Try the virtual demo</a>
+              <div className="home-cta-stack">
+                <a href="/#virtual" className="btn btn-ghost btn-lg" onClick={jumpTo('virtual')}>Try the virtual demo</a>
+                <span className="home-cta-note">For judges to understand the concept&nbsp;· <span className="nowrap">no printing, no site visit</span></span>
+              </div>
             </div>
             <ul className="home-proof" aria-label="Highlights">
               <li><Icon name="check" />No app to install</li>
@@ -222,7 +225,7 @@ export function HomePage() {
       <footer className="home-footer">
         <div className="home-wrap home-footer-row">
           <span className="home-footer-brand"><img src="/favicon.svg" alt="" width="20" height="20" />TrueSite</span>
-          <span>Built by Wai and Aung Nyein Chan for the Google Cloud AI Builder Cup 2026</span>
+          <span>Built by Wai Lin and Aung Nyein Chan for the Google Cloud AI Builder Cup 2026</span>
           <a href="https://github.com/wl-geek/truesite" target="_blank" rel="noopener noreferrer">Source on GitHub</a>
         </div>
       </footer>

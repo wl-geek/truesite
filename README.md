@@ -2,7 +2,7 @@
 
 **Point a phone at a QR code on site and the BIM model appears over the real room at true scale. Tap *Check as-built*: Gemini compares the photo with the design, the deviations are pinned on the model, and the issue is drafted.**
 
-Google Cloud AI Builder Cup 2026 (JAPAC) · Theme: **Future of Work & Enterprise Productivity** · Team: Wai and Michael (Aung Nyein Chan)
+Google Cloud AI Builder Cup 2026 (JAPAC) · Theme: **Future of Work & Enterprise Productivity** · Team: Wai Lin and Aung Nyein Chan (Michael)
 
 **Live demo:** _link added at deployment_ · nothing to install: it runs in the phone's browser.
 
