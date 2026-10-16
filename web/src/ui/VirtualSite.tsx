@@ -5,9 +5,9 @@ import {
 import { ApiError, getProject } from '../api/client'
 import type { Anchor, CheckResult, Element, Finding } from '../api/types'
 import { saveLastCheck } from '../check/lastCheck'
-import { checkErrorMessage } from '../check/messages'
+import { checkErrorMessage, toCheckError } from '../check/messages'
 import { runCheck, storedRunId } from '../check/runCheck'
-import { releaseRenderer } from '../scene/glContext'
+import { releaseRenderer, watchContextLoss } from '../scene/glContext'
 import { disposeModel, parseModel, type LoadedModel } from '../scene/loadModel'
 import { deviceRotation, requestMotionPermission } from '../scene/motion'
 import { paintOf } from '../scene/palette'
@@ -24,6 +24,7 @@ import { FindingsPanel } from './FindingsPanel'
 import { IssueDialog } from './IssueDialog'
 import { ReportDialog } from './ReportDialog'
 import { Link } from './Link'
+import { ReloadPrompt } from './ReloadPrompt'
 import { SITE_VIEWPOINTS } from './siteViewpoints'
 import './virtualSite.css'
 
@@ -38,6 +39,17 @@ type World = {
   anchor: Anchor; eye: [number, number, number]; elements: Map<string, Element>; restoreColours: () => void
 }
 type Outcome = { result: CheckResult; photoUrl: string; renderUrl: string | null; runId: string | null; latencyMs: number; score: Score }
+
+/**
+ * Free one visit's models, GPU memory and both WebGL contexts now, not at garbage collection (audit A-56, B-06):
+ * iPad Safari caps live contexts, and each visit holds a 4096² shadow map and a 2048² ground texture.
+ */
+export function releaseWorld(w: Pick<World, 'renderer' | 'asBuilt' | 'design' | 'check' | 'restoreColours'>): void {
+  w.restoreColours()
+  ;[w.asBuilt, w.design, w.check.model].forEach(disposeModel)
+  releaseRenderer(w.renderer)
+  releaseRenderer(w.check.renderer)
+}
 
 /**
  * The virtual site: stand on a viewpoint's X inside the simulated as-built building and turn on the spot.
@@ -67,6 +79,8 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
   const [checkFailed, setCheckFailed] = useState(false)
   const [runIds, setRunIds] = useState<string[]>([]) // this visit's stored checks, for the site report
   const [reportOpen, setReportOpen] = useState(false)
+  const [glDead, setGlDead] = useState(false)
+  const outcomeRef = useRef<Outcome | null>(null)
   const touch = useMemo(() => typeof window !== 'undefined' && 'DeviceOrientationEvent' in window && navigator.maxTouchPoints > 0, [])
 
   // Build the world once: the as-built model in the simulated site, the design for the overlay, and a third copy
@@ -74,6 +88,7 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
   useEffect(() => {
     let cancelled = false
     let raf = 0
+    let stopWatch: (() => void) | null = null
     const canvas = canvasRef.current!
     const setup = async () => {
       const project = await getProject(PROJECT_ID)
@@ -105,6 +120,7 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
       renderer.shadowMap.enabled = true
       renderer.shadowMap.type = PCFShadowMap
       renderer.autoClear = false
+      stopWatch = watchContextLoss(canvas, () => setGlDead(true))
       const camera = new PerspectiveCamera(50, 1, 0.1, 600)
       camera.up.set(0, 0, 1)
       const eye: [number, number, number] = [vp.stand[0], vp.stand[1], EYE_HEIGHT_M]
@@ -127,25 +143,32 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
       }
       loop()
     }
-    setup().catch((e: unknown) => {
+    setup().catch(() => {
       if (cancelled) return
-      setError(e instanceof Error ? e.message : String(e))
+      setError("Couldn't load the virtual site. Exit and try again.") // no raw technical text (audit B-15)
       setStatus('error')
     })
     return () => {
       cancelled = true
       cancelAnimationFrame(raf)
+      stopWatch?.() // before the release: forceContextLoss fires webglcontextlost
       const w = worldRef.current
       worldRef.current = null
       if (!w) return
       if (pinsRef.current) disposePins(pinsRef.current)
       unmarkRef.current?.()
-      w.restoreColours()
-      ;[w.asBuilt, w.design, w.check.model].forEach(disposeModel)
-      w.renderer.dispose()
-      releaseRenderer(w.check.renderer)
+      releaseWorld(w)
     }
   }, [vp.id])
+
+  // A check's image URLs are revoked when the next check replaces them, and the last ones on exit (audit B-06).
+  useEffect(() => { outcomeRef.current = outcome }, [outcome])
+  useEffect(() => () => {
+    const o = outcomeRef.current
+    if (!o) return
+    URL.revokeObjectURL(o.photoUrl)
+    if (o.renderUrl) URL.revokeObjectURL(o.renderUrl)
+  }, [])
 
   /** Size the camera to the canvas: a fixed field of view across the short side, so phones and iPads see alike. */
   const fit = useCallback((w: World, cssW: number, cssH: number) => {
@@ -343,7 +366,7 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
       unmarkRef.current = markFindings(w.world, w.design, w.asBuilt, result.findings)
       dirty.current = true
     } catch (e) {
-      setNotice(e instanceof ApiError ? checkErrorMessage(e) : e instanceof Error ? e.message : 'Check failed. Try again.')
+      setNotice(checkErrorMessage(toCheckError(e)))
       setCheckFailed(true)
     } finally {
       setChecking(false)
@@ -369,6 +392,7 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
 
       {status === 'loading' && <p className="vs-status" role="status">Loading the virtual demo…</p>}
       {status === 'error' && <p className="vs-status vs-status-error" role="alert">{error}</p>}
+      {glDead && <ReloadPrompt />}
 
       {status === 'ready' && coach && (
         <div className="vs-coach" role="note">
