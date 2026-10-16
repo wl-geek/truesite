@@ -518,3 +518,11 @@ def test_issue_draft_is_written_in_the_crews_language():
     texts = [p.text for p in req["contents"] if getattr(p, "text", None)]
     assert any("in Thai" in t and "Keep element names" in t for t in texts)
     assert any("in English" in t for t in (p.text for p in gc.build_issue_request({}, {"props": {}})["contents"] if p.text))
+
+
+def test_report_request_carries_the_checks_and_the_language_without_array_bounds():
+    req = gc.build_report_request({"checks": [{"spot": "P1", "deviations": []}]}, "ja")
+    texts = [p.text for p in req["contents"] if getattr(p, "text", None)]
+    assert texts[0].startswith("Checks (JSON):") and any("in Japanese" in t for t in texts)
+    assert req["config"].system_instruction == gc.REPORT_SYSTEM
+    assert "maxItems" not in json.dumps(req["config"].response_json_schema)  # Gemini rejects array bounds (#77)

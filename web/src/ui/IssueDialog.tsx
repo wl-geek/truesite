@@ -3,6 +3,7 @@ import { ApiError, createIssue, draftIssue } from '../api/client'
 import type { Element, Finding, Issue, IssueDraft, IssueLanguage } from '../api/types'
 import { askErrorMessage } from './askFormat'
 import { issueBody, templateDraft } from './issueFormat'
+import { LANGUAGES } from './languages'
 
 export type IssueDialogProps = {
   open: boolean
@@ -16,12 +17,6 @@ export type IssueDialogProps = {
 }
 
 /** Draft an issue from a finding (Gemini when the run is stored, else a template), edit, save (spec 4.2 step 5). */
-/** Languages Gemini drafts in, by their own names (JAPAC crews often don't share the supervisor's language). */
-const LANGUAGES: [IssueLanguage, string][] = [
-  ['en', 'English'], ['th', 'ไทย · Thai'], ['my', 'မြန်မာ · Burmese'], ['id', 'Bahasa Indonesia'], ['ms', 'Bahasa Melayu'],
-  ['vi', 'Tiếng Việt · Vietnamese'], ['zh', '中文 · Chinese'], ['ja', '日本語 · Japanese'],
-]
-
 export function IssueDialog({ open, projectId, runId, mark, finding, element, onClose, onSaved }: IssueDialogProps) {
   const [language, setLanguage] = useState<IssueLanguage>('en')
   const [draft, setDraft] = useState<IssueDraft | null>(null)

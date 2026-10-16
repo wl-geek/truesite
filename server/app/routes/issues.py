@@ -14,8 +14,8 @@ from fastapi import APIRouter, HTTPException, Query, Request
 from ..deps import NowDep, RepoDep, SessionId, SettingsDep, StoreDep, enforce_limits, enforce_rate_limit
 from ..gemini_client import GeminiError
 from ..projects import UnknownElement, UnknownProject
-from ..schemas import DEMO_SESSION, PROJECT_ID_PATTERN, Issue, IssueDraft, IssueDraftRequest, IssueIn
-from ..services import UnknownMark, client_for, http_error_for, make_drafter
+from ..schemas import DEMO_SESSION, PROJECT_ID_PATTERN, Issue, IssueDraft, IssueDraftRequest, IssueIn, ReportRequest, SiteReport
+from ..services import UnknownMark, client_for, http_error_for, make_drafter, make_reporter
 
 log = logging.getLogger("truesite.issues")
 router = APIRouter()
@@ -43,6 +43,22 @@ def draft_issue(request: Request, body: IssueDraftRequest, session_id: SessionId
         raise _not_found("unknown_element") from None
     except GeminiError as err:
         log.warning("draft failed: %s", err)
+        raise http_error_for(err) from err
+
+
+@router.post("/api/report", response_model=SiteReport)
+def site_report(request: Request, body: ReportRequest, session_id: SessionId, settings: SettingsDep,
+                store: StoreDep) -> SiteReport:
+    """The day's site report from this session's stored checks (Gemini drafts, a person approves)."""
+    runs = [store.get_check_run(run_id, session_id) for run_id in dict.fromkeys(body.run_ids)]
+    if any(run is None for run in runs):
+        raise _not_found("unknown_run")
+    try:
+        reporter = make_reporter(client_for(request))  # before the cap: a setup error uses no quota
+        enforce_limits(request, "ask_limiter", "-ask", settings.daily_ask_cap)  # shares the question budget
+        return reporter(runs, body.language)
+    except GeminiError as err:
+        log.warning("report failed: %s", err)
         raise http_error_for(err) from err
 
 

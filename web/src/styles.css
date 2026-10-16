@@ -477,3 +477,13 @@ body {
 .issue-language { display: grid; gap: 4px; margin: 0 0 10px; font-size: 14px; font-weight: 600; }
 .issue-language select { min-height: 44px; padding: 0 10px; border: 1px solid var(--line); border-radius: 10px; background: var(--white); color: var(--ink); font: inherit; font-size: 16px; }
 .issue-language .note { font-weight: 400; }
+
+/* Site report dialog (ReportDialog.tsx). */
+.report-modal { width: min(560px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); overflow-y: auto; }
+.report { display: grid; gap: 12px; }
+.report p { margin: 0; }
+.report-section h3 { margin: 0 0 4px; font-size: 15px; }
+.report-section ul { display: grid; gap: 4px; margin: 0; padding-left: 18px; font-size: 14.5px; }
+.report-high h3 { color: var(--sev-high); }
+.report-medium h3 { color: #b4470a; }
+.report-low h3 { color: var(--steel); }

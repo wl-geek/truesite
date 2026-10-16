@@ -13,7 +13,7 @@ from .config import Settings
 from .fake_gemini import FakeGeminiClient
 from .gemini_client import GeminiError
 from .projects import ProjectRepo
-from .schemas import AskAnswer, AskRequest, CheckContext, CheckRun, Element, IssueDraft, Usage
+from .schemas import AskAnswer, AskRequest, CheckContext, CheckRun, Element, IssueDraft, SiteReport, Usage
 from .validate import clamp_confidence, repair_check, truncate_text
 
 log = logging.getLogger("truesite.gemini")
@@ -106,6 +106,37 @@ def with_label(text: str, limit: int) -> str:
         return text
     body = truncate_text(text, limit - len(VISUAL_CHECK_LABEL) - 1)
     return f"{body} {VISUAL_CHECK_LABEL}" if body else VISUAL_CHECK_LABEL
+
+
+_DEVIATIONS = {"missing", "misplaced", "different_from_design"}
+
+
+def make_reporter(client: Any) -> Callable[..., SiteReport]:
+    """The day's site report drafted from the session's stored checks: deviations only, severity from code."""
+
+    def report(runs: list[CheckRun], language: str = "en") -> SiteReport:
+        checks = []
+        for run in runs:
+            findings = [f for f in run.result.get("findings", []) if isinstance(f, dict)]
+            checks.append({
+                "spot": run.anchor_id, "time": run.created_at,
+                "deviations": [{k: f.get(k) for k in ("name", "ifc_class", "status", "severity", "offset", "explanation")}
+                               for f in findings if f.get("status") in _DEVIATIONS],
+                "matched": sum(f.get("status") == "present_ok" for f in findings),
+                "could_not_judge": sum(f.get("status") == "cannot_judge" for f in findings),
+            })
+        out = gemini_client.write_report({"checks": checks}, language=language, client=client)
+        log_usage("report", out)
+        raw = out["result"]
+        items = lambda key, n: [truncate_text(x, 200) for x in raw.get(key) or [] if isinstance(x, str) and x.strip()][:n]
+        return SiteReport(
+            title=truncate_text(raw.get("title"), 100) or f"Site report: {len(runs)} check{'s' if len(runs) != 1 else ''}",
+            summary=with_label(truncate_text(raw.get("summary"), 700), 700),
+            safety=items("safety", 10), structure=items("structure", 10), progress=items("progress", 10),
+            next_steps=items("next_steps", 8), checks=len(runs),
+        )
+
+    return report
 
 
 def make_drafter(repo: ProjectRepo, client: Any) -> Callable[..., IssueDraft]:

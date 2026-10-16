@@ -66,3 +66,7 @@
 .vs-compare figcaption { margin-bottom: 4px; color: var(--muted); font-size: 12.5px; font-weight: 600; }
 .vs-render { display: block; width: 100%; height: auto; border-radius: var(--radius); }
 .vs-judged { margin: 0; color: var(--muted); font-size: 12.5px; }
+
+.vs-report { display: grid; gap: 8px; padding: 12px 14px; border: 1px solid rgba(255, 106, 19, 0.45); border-radius: 12px; background: #fff7f0; }
+.vs-report p { margin: 0; font-size: 14px; }
+.vs-report .btn { justify-self: start; }

@@ -9,7 +9,7 @@
 import { getSessionId } from '../session'
 import type {
   AskAnswer, AskRequest, CheckContext, CheckResponse, CheckResult, Issue, IssueDraft, IssueDraftRequest, IssueIn,
-  IssueList, ProjectManifest,
+  IssueList, ProjectManifest, ReportRequest, SiteReport,
 } from './types'
 
 export const DEFAULT_TIMEOUT_MS = 30_000
@@ -110,6 +110,10 @@ export function ask(req: AskRequest): Promise<AskAnswer> {
 
 export function draftIssue(req: IssueDraftRequest): Promise<IssueDraft> {
   return postJson('/api/issues/draft', req, MODEL_TIMEOUT_MS)
+}
+
+export function writeReport(req: ReportRequest): Promise<SiteReport> {
+  return postJson('/api/report', req, MODEL_TIMEOUT_MS)
 }
 
 export function createIssue(req: IssueIn): Promise<Issue> {

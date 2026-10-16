@@ -22,6 +22,7 @@ import { buildWorld, makeAsBuilt, photoFinish, rng } from '../sim/world'
 import { EvidenceView } from './EvidenceView'
 import { FindingsPanel } from './FindingsPanel'
 import { IssueDialog } from './IssueDialog'
+import { ReportDialog } from './ReportDialog'
 import { Link } from './Link'
 import { SITE_VIEWPOINTS } from './siteViewpoints'
 import './virtualSite.css'
@@ -64,6 +65,8 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
   const [draftFor, setDraftFor] = useState<Finding | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [checkFailed, setCheckFailed] = useState(false)
+  const [runIds, setRunIds] = useState<string[]>([]) // this visit's stored checks, for the site report
+  const [reportOpen, setReportOpen] = useState(false)
   const touch = useMemo(() => typeof window !== 'undefined' && 'DeviceOrientationEvent' in window && navigator.maxTouchPoints > 0, [])
 
   // Build the world once: the as-built model in the simulated site, the design for the overlay, and a third copy
@@ -325,6 +328,7 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
         if (outcome.renderUrl) URL.revokeObjectURL(outcome.renderUrl)
       }
       const runId = storedRunId(res.response)
+      if (runId) setRunIds((ids) => [...ids.filter((x) => x !== runId), runId].slice(-8))
       setOutcome({
         result, photoUrl: URL.createObjectURL(shot.photo), renderUrl: res.render ? URL.createObjectURL(res.render) : null, runId,
         latencyMs: performance.now() - started, score: scoreCheck(result.findings, SITE_AS_BUILT),
@@ -410,6 +414,12 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
             )}
           </div>
           <p className="vs-judged">{judgedLine(outcome)}</p>
+          {runIds.length > 0 && (
+            <div className="vs-report">
+              <p><strong>Done for today?</strong> Gemini writes the site report from {runIds.length === 1 ? 'this check' : `your ${runIds.length} checks`}: safety first, then structure, then progress.</p>
+              <button type="button" className="btn btn-accent" onClick={() => setReportOpen(true)}>Write today's site report</button>
+            </div>
+          )}
           <FindingsPanel result={outcome.result} selectedMark={selectedMark} onSelect={(f) => setSelectedMark(f.mark)} onDraftIssue={setDraftFor} />
           {outcome.score.outOfView.length > 0 && (
             <details className="vs-truth">
@@ -421,6 +431,8 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
           {notice && <p className="note" role="status">{notice}</p>}
         </aside>
       )}
+
+      {reportOpen && <ReportDialog runIds={runIds} onClose={() => setReportOpen(false)} />}
 
       {draftFor && worldRef.current && (
         <IssueDialog open projectId={PROJECT_ID} runId={outcome?.runId ?? null} mark={draftFor.mark} finding={draftFor}

@@ -194,3 +194,23 @@ def test_draft_takes_a_crew_language_and_rejects_unknown_ones(client):
     assert ok.status_code == 200, ok.text
     bad = client.post("/api/issues/draft", json={"run_id": run_id, "mark": mark, "language": "xx"}, headers=hdr(session))
     assert bad.status_code == 422
+
+
+def test_site_report_from_the_sessions_checks(client):
+    session = new_session()
+    run_a, _ = check_run(client, session)
+    run_b, _ = check_run(client, session)
+    r = client.post("/api/report", json={"run_ids": [run_a, run_b, run_a], "language": "th"}, headers=hdr(session))
+    assert r.status_code == 200, r.text
+    rep = r.json()
+    assert rep["checks"] == 2 and rep["title"] and "Visual check, not a survey." in rep["summary"]
+    assert set(rep) == {"title", "summary", "safety", "structure", "progress", "next_steps", "checks"}
+    assert any("Door" in item for item in rep["structure"])  # the fake check flags the door as misplaced
+
+
+def test_site_report_is_session_scoped_and_validated(client):
+    session = new_session()
+    run_id, _ = check_run(client, session)
+    assert client.post("/api/report", json={"run_ids": [run_id]}, headers=hdr(new_session())).json()["detail"]["code"] == "unknown_run"
+    assert client.post("/api/report", json={"run_ids": []}, headers=hdr(session)).status_code == 422
+    assert client.post("/api/report", json={"run_ids": [run_id], "language": "xx"}, headers=hdr(session)).status_code == 422

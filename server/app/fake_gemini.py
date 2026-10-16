@@ -69,6 +69,20 @@ def _issue(contents: list[Any]) -> dict:
             "suggested_action": "Check on site and confirm with the design team before closing."}
 
 
+def _report(contents: list[Any]) -> dict:
+    checks = _json_after(_texts(contents)[0], "(JSON):\n").get("checks", [])
+    devs = [(c.get("spot"), d) for c in checks for d in c.get("deviations", [])]
+    line = lambda spot, d: f"{d.get('name')} at {spot}: {str(d.get('status', '')).replace('_', ' ')}."
+    return {
+        "title": f"Site report: {len(devs)} item{'s' if len(devs) != 1 else ''} from {len(checks)} check{'s' if len(checks) != 1 else ''}",
+        "summary": f"Offline report from {len(checks)} checks. Visual check, not a survey.",
+        "safety": [line(s, d) for s, d in devs if d.get("ifc_class") == "IfcRailing"],
+        "structure": [line(s, d) for s, d in devs if d.get("status") in ("misplaced", "different_from_design")],
+        "progress": [line(s, d) for s, d in devs if d.get("status") == "missing" and d.get("ifc_class") != "IfcRailing"],
+        "next_steps": ["Review each item on site and confirm with the design team."] if devs else [],
+    }
+
+
 class _Models:
     def generate_content(self, *, model: str, contents: list[Any], config: Any) -> SimpleNamespace:
         system = getattr(config, "system_instruction", "")
@@ -76,6 +90,8 @@ class _Models:
             payload = _check(contents)
         elif system == gemini_client.ASK_SYSTEM:
             payload = _ask(contents)
+        elif system == gemini_client.REPORT_SYSTEM:
+            payload = _report(contents)
         else:
             payload = _issue(contents)
         usage = SimpleNamespace(prompt_token_count=0, candidates_token_count=0, thoughts_token_count=0,

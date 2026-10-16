@@ -223,6 +223,25 @@ class IssueDraftRequest(BaseModel):
     language: IssueLanguage = "en"
 
 
+class ReportRequest(BaseModel):
+    """Body of POST /api/report: the session's stored checks to write the day's site report from."""
+    model_config = ConfigDict(extra="forbid")
+
+    run_ids: list[RunId] = Field(min_length=1, max_length=8)
+    language: IssueLanguage = "en"
+
+
+class SiteReport(BaseModel):
+    """Gemini's draft daily report: safety first, then structure, then progress. A person approves it."""
+    title: str = Field(max_length=100)
+    summary: str = Field(max_length=700)
+    safety: list[str] = Field(max_length=10)
+    structure: list[str] = Field(max_length=10)
+    progress: list[str] = Field(max_length=10)
+    next_steps: list[str] = Field(max_length=8)
+    checks: int
+
+
 class IssueDraft(BaseModel):
     title: str = Field(max_length=80)
     description: str = Field(max_length=500)

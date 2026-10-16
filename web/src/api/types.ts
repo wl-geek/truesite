@@ -151,6 +151,23 @@ export interface AskAnswer {
 // ---- issues -------------------------------------------------------------------------------------
 export type IssueLanguage = 'en' | 'th' | 'my' | 'id' | 'ms' | 'vi' | 'zh' | 'ja'
 
+/** POST /api/report: the day's site report from this session's stored checks. */
+export interface ReportRequest {
+  run_ids: string[]
+  language?: IssueLanguage
+}
+
+/** Gemini's draft daily report, safety first. A person approves it. */
+export interface SiteReport {
+  title: string
+  summary: string
+  safety: string[]
+  structure: string[]
+  progress: string[]
+  next_steps: string[]
+  checks: number
+}
+
 export interface IssueDraftRequest {
   run_id: string
   mark: number
