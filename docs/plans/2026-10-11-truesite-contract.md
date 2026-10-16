@@ -141,6 +141,7 @@ Errors are FastAPI `HTTPException` with `detail = {"code": <code>, ...}`. Paths 
 | GET `/api/saved-results/{sample_id}` | — | `CheckResult` with `saved_at` set | 404 `unknown_sample` · 422 (`sample_id` not `SAMPLE_ID_PATTERN`) |
 | POST `/api/ask` | `AskRequest`; header `X-Session-Id` | `AskAnswer` | 404 `unknown_project` / `unknown_element` · 429 · 503/502/422/500 as for check |
 | POST `/api/issues/draft` | `IssueDraftRequest` (`run_id`, `mark`, optional `language`: `en` (default), `th`, `my`, `id`, `ms`, `vi`, `zh`, `ja`); header `X-Session-Id` | `IssueDraft`, written in that language | 404 `unknown_run` / `unknown_mark` / `unknown_element` · 429 · model errors as above |
+| POST `/api/report` | `ReportRequest` (`run_ids`: 1–8 of this session's runs, optional `language` as above); header `X-Session-Id` | `SiteReport` (`title`, `summary`, `safety[]`, `structure[]`, `progress[]`, `next_steps[]`, `checks`): Gemini's draft, safety first | 404 `unknown_run` · 422 · 429 (shares the question budget) · model errors as above |
 | POST `/api/issues` | `IssueIn`; header `X-Session-Id` | `Issue` (201) | 404 `unknown_project` / `unknown_element` · 404 `unknown_run` (not this session's stored run: send `run_id` null when the check returned `saved: false`) · 422 |
 | GET `/api/issues` (optional `?project_id=room1`; omitted = every project) | header `X-Session-Id` | `{"issues": Issue[], "demo": Issue[]}` (newest first) | 422 |
 

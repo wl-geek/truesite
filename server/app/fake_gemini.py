@@ -75,7 +75,7 @@ def _report(contents: list[Any]) -> dict:
     line = lambda spot, d: f"{d.get('name')} at {spot}: {str(d.get('status', '')).replace('_', ' ')}."
     return {
         "title": f"Site report: {len(devs)} item{'s' if len(devs) != 1 else ''} from {len(checks)} check{'s' if len(checks) != 1 else ''}",
-        "summary": f"Offline report from {len(checks)} checks. Visual check, not a survey.",
+        "summary": f"Offline report from {len(checks)} check{'s' if len(checks) != 1 else ''}. Visual check, not a survey.",
         "safety": [line(s, d) for s, d in devs if d.get("ifc_class") == "IfcRailing"],
         "structure": [line(s, d) for s, d in devs if d.get("status") in ("misplaced", "different_from_design")],
         "progress": [line(s, d) for s, d in devs if d.get("status") == "missing" and d.get("ifc_class") != "IfcRailing"],
