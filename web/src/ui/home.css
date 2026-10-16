@@ -151,3 +151,12 @@
   .home .btn, .vp-card, .vp-go, .home-details summary::after { transition: none; }
   .vp-card:hover { transform: none; }
 }
+
+/* Try it: the virtual site cards go orange, so they don't read as the live AR cards below. */
+.vp-card-sim .vp-go { color: var(--orange); }
+@media (min-width: 720px) {
+  .vp-card-sim .vp-go { background: var(--orange); color: var(--ink); }
+  .vp-card-sim:hover .vp-go { background: #ff7f33; }
+}
+.home-cards-more { margin-top: 20px; }
+#try { scroll-margin-top: calc(var(--topbar-h) + env(safe-area-inset-top)); }
