@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
-  ACESFilmicToneMapping, HemisphereLight, MeshStandardMaterial, PCFShadowMap, PerspectiveCamera, Scene, Vector2, WebGLRenderer, type Group,
+  ACESFilmicToneMapping, HemisphereLight, MeshStandardMaterial, PCFShadowMap, PerspectiveCamera, Raycaster, Scene, Vector2, WebGLRenderer, type Group,
 } from 'three'
 import { ApiError, getProject } from '../api/client'
 import type { Anchor, CheckResult, Element, Finding } from '../api/types'
@@ -16,6 +16,8 @@ import { applyTypeColours } from '../scene/viewer'
 import { describeDeviation, SITE_AS_BUILT } from '../sim/asBuilt'
 import { deviceLook, dragLook, forwardOf, type LookAngles, yawOf } from '../sim/lookAngles'
 import { samplePose } from '../sim/samplePose'
+import { markFindings } from '../sim/findings3d'
+import { scoreCheck, scoreLine, type Score } from '../sim/score'
 import { buildWorld, makeAsBuilt, photoFinish, rng } from '../sim/world'
 import { EvidenceView } from './EvidenceView'
 import { FindingsPanel } from './FindingsPanel'
@@ -34,7 +36,7 @@ type World = {
   asBuilt: LoadedModel; design: LoadedModel; check: { model: LoadedModel; scene: Scene; renderer: WebGLRenderer }
   anchor: Anchor; eye: [number, number, number]; elements: Map<string, Element>; restoreColours: () => void
 }
-type Outcome = { result: CheckResult; photoUrl: string; runId: string | null }
+type Outcome = { result: CheckResult; photoUrl: string; renderUrl: string | null; runId: string | null; latencyMs: number; score: Score }
 
 /**
  * The virtual site: stand on a viewpoint's X inside the simulated as-built building and turn on the spot.
@@ -44,10 +46,11 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
   const vp = SITE_VIEWPOINTS.find((v) => v.id === viewpointId) ?? SITE_VIEWPOINTS[0]
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const worldRef = useRef<World | null>(null)
-  const anglesRef = useRef<LookAngles>({ yaw: yawOf(vp.look), pitch: 0 })
+  const anglesRef = useRef<LookAngles>({ yaw: yawOf(vp.look), pitch: (vp.startPitchDeg * Math.PI) / 180 })
   const dirty = useRef(true)
   const showDesignRef = useRef(false)
   const pinsRef = useRef<Group | null>(null)
+  const unmarkRef = useRef<(() => void) | null>(null)
   const motionRef = useRef<{ offset: number; last: LookAngles | null } | null>(null)
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading')
   const [error, setError] = useState<string | null>(null)
@@ -62,7 +65,6 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
   const [notice, setNotice] = useState<string | null>(null)
   const [checkFailed, setCheckFailed] = useState(false)
   const touch = useMemo(() => typeof window !== 'undefined' && 'DeviceOrientationEvent' in window && navigator.maxTouchPoints > 0, [])
-  const planted = useMemo(() => SITE_AS_BUILT.map(describeDeviation), [])
 
   // Build the world once: the as-built model in the simulated site, the design for the overlay, and a third copy
   // off screen for the check's design render (each three.js object can only sit in one scene).
@@ -134,6 +136,7 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
       worldRef.current = null
       if (!w) return
       if (pinsRef.current) disposePins(pinsRef.current)
+      unmarkRef.current?.()
       w.restoreColours()
       ;[w.asBuilt, w.design, w.check.model].forEach(disposeModel)
       w.renderer.dispose()
@@ -187,8 +190,10 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
     const canvas = canvasRef.current
     if (!canvas) return
     let last: { x: number; y: number } | null = null
+    let pressed: { x: number; y: number } | null = null
     const down = (e: PointerEvent) => {
       last = { x: e.clientX, y: e.clientY }
+      pressed = { x: e.clientX, y: e.clientY }
       canvas.setPointerCapture(e.pointerId)
       setCoach(false)
     }
@@ -201,7 +206,21 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
       last = { x: e.clientX, y: e.clientY }
       dirty.current = true
     }
-    const up = () => (last = null)
+    const up = (e: PointerEvent) => {
+      last = null
+      const w = worldRef.current
+      const pins = pinsRef.current
+      if (!pressed || !w || !pins || Math.hypot(e.clientX - pressed.x, e.clientY - pressed.y) > 6) return
+      const r = canvas.getBoundingClientRect()
+      const ray = new Raycaster()
+      ray.setFromCamera(new Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1), w.camera)
+      const hit = ray.intersectObjects(pins.children, false)[0]
+      const mark = hit?.object.userData.mark as number | undefined
+      if (mark !== undefined) {
+        setSelectedMark(mark)
+        setResultsOpen(true)
+      }
+    }
     const key = (e: KeyboardEvent) => {
       const step = (5 * Math.PI) / 180
       const d = { ArrowLeft: [step, 0], ArrowRight: [-step, 0], ArrowUp: [0, step], ArrowDown: [0, -step] }[e.key]
@@ -294,21 +313,30 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
     setCoach(false)
     try {
       const shot = await snapshot(w)
+      const started = performance.now()
       const res = await runCheck({
         photo: shot.photo, photoW: shot.sw, photoH: shot.sh, videoW: shot.sw, videoH: shot.sh, K: shot.K, pose: shot.pose,
         anchor: w.anchor, poseQuality: 'good', model: w.check.model, scene: w.check.scene, renderer: w.check.renderer, elements: w.elements,
       })
       const result = res.response?.result
       if (!result) throw res.error ?? new ApiError('check failed', 0)
-      if (outcome) URL.revokeObjectURL(outcome.photoUrl)
+      if (outcome) {
+        URL.revokeObjectURL(outcome.photoUrl)
+        if (outcome.renderUrl) URL.revokeObjectURL(outcome.renderUrl)
+      }
       const runId = storedRunId(res.response)
-      setOutcome({ result, photoUrl: URL.createObjectURL(shot.photo), runId })
+      setOutcome({
+        result, photoUrl: URL.createObjectURL(shot.photo), renderUrl: res.render ? URL.createObjectURL(res.render) : null, runId,
+        latencyMs: performance.now() - started, score: scoreCheck(result.findings, SITE_AS_BUILT),
+      })
       setSelectedMark(null)
       setResultsOpen(true)
       saveLastCheck(PROJECT_ID, { result, runId, at: new Date().toISOString() })
       if (pinsRef.current) disposePins(pinsRef.current)
       pinsRef.current = makePins(result.findings, w.elements, { radiusM: 0.18, dim: result.image_quality !== 'good' })
       w.world.add(pinsRef.current)
+      unmarkRef.current?.()
+      unmarkRef.current = markFindings(w.world, w.design, w.asBuilt, result.findings)
       dirty.current = true
     } catch (e) {
       setNotice(e instanceof ApiError ? checkErrorMessage(e) : e instanceof Error ? e.message : 'Check failed. Try again.')
@@ -341,8 +369,8 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
       {status === 'ready' && coach && (
         <div className="vs-coach" role="note">
           <p>
-            <strong>You're on the X at {vp.id}</strong>, facing its QR sheet. You stay on the spot and turn:
-            {touch ? ' drag, or tap Turn with device and turn the iPad.' : ' drag, or use the arrow keys.'}
+            <strong>You're on the X at {vp.id}.</strong> A few defects are planted in this view. You stay on the spot and
+            turn: {touch ? 'drag, or tap Turn with device and turn the iPad.' : 'drag, or use the arrow keys.'}
           </p>
           <p>Aim at the work and tap <strong>Check as-built</strong>.</p>
           <button type="button" className="vs-btn" onClick={() => { setCoach(false); canvasRef.current?.focus({ preventScroll: true }) }}>Got it</button>
@@ -368,13 +396,28 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
             <h2>As-built check · {vp.id}</h2>
             <button type="button" className="vs-btn vs-btn-light" onClick={() => setResultsOpen(false)}>Back to the view</button>
           </div>
-          <EvidenceView imageUrl={outcome.photoUrl} result={outcome.result} selectedMark={selectedMark} onSelect={setSelectedMark} />
+          <ScoreCard score={outcome.score} />
+          <div className="vs-compare">
+            <figure>
+              <figcaption>Your view: the site photo</figcaption>
+              <EvidenceView imageUrl={outcome.photoUrl} result={outcome.result} selectedMark={selectedMark} onSelect={setSelectedMark} />
+            </figure>
+            {outcome.renderUrl && (
+              <figure>
+                <figcaption>The BIM design from the same spot, as Gemini saw it</figcaption>
+                <img className="vs-render" src={outcome.renderUrl} alt="The BIM design render with numbered marks, from the same camera pose" />
+              </figure>
+            )}
+          </div>
+          <p className="vs-judged">{judgedLine(outcome)}</p>
           <FindingsPanel result={outcome.result} selectedMark={selectedMark} onSelect={(f) => setSelectedMark(f.mark)} onDraftIssue={setDraftFor} />
-          <details className="vs-truth">
-            <summary>Defects we planted ({planted.length})</summary>
-            <p className="note">Some may be out of view from here.</p>
-            <ul>{planted.map((t) => <li key={t}>{t}</li>)}</ul>
-          </details>
+          {outcome.score.outOfView.length > 0 && (
+            <details className="vs-truth">
+              <summary>Planted elsewhere on this site ({outcome.score.outOfView.length})</summary>
+              <p className="note">Out of this view, so not checked. Step in at another QR spot to find them.</p>
+              <ul>{outcome.score.outOfView.map((d) => <li key={d.element}>{describeDeviation(d)}</li>)}</ul>
+            </details>
+          )}
           {notice && <p className="note" role="status">{notice}</p>}
         </aside>
       )}
@@ -386,4 +429,35 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
       )}
     </div>
   )
+}
+
+/** The planted truth for this view, after the check: what Gemini caught and what it missed. */
+function ScoreCard({ score }: { score: Score }) {
+  return (
+    <section className="vs-score" aria-label="Against the planted defects">
+      <p className="vs-score-line">{scoreLine(score)}</p>
+      {score.inView.length > 0 && (
+        <ul className="vs-score-list">
+          {score.inView.map(({ planted, found }) => (
+            <li key={planted.element} className={found ? 'hit' : 'miss'}>
+              <span aria-hidden="true">{found ? '✓' : '✗'}</span>
+              {describeDeviation(planted)}
+              <span className="vs-score-tag">{found ? 'found' : 'missed'}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      {score.falseAlarms.length > 0 && (
+        <p className="note">Flagged but not planted: {score.falseAlarms.map((f) => f.name).join(', ')}.</p>
+      )}
+    </section>
+  )
+}
+
+/** "Checked by gemini-3.8-flash in 6.2 s · 18 elements compared · about US$0.004". */
+function judgedLine(o: Outcome): string {
+  const parts = [`Checked by ${o.result.model_version ?? 'Gemini'} in ${(o.latencyMs / 1000).toFixed(1)} s`,
+    `${o.result.findings.length} elements compared`]
+  if (o.result.usage) parts.push(`about US$${o.result.usage.cost_usd_est.toFixed(3)}`)
+  return parts.join(' · ')
 }

@@ -11,16 +11,18 @@ export type Viewpoint = {
   look: [number, number]
   /** What this view shows, in a few words. */
   shows: string
+  /** The virtual demo opens looking this far up (degrees), so the defects planted at this spot are in view. */
+  startPitchDeg: number
 }
 
 export const STAND_OFF_M = 1.5
 export const CODE_HEIGHT_M = 1.4
 
 export const SITE_VIEWPOINTS: readonly Viewpoint[] = [
-  { id: 'P1', name: 'South approach', stand: [9, -4], look: [0, 1], shows: 'The whole long side, both storeys' },
-  { id: 'P2', name: 'Under the slab', stand: [3, 3], look: [1, 0], shows: 'Concrete columns, cages and beams overhead' },
-  { id: 'P3', name: 'Under the open bay', stand: [15, 9], look: [-1, 0], shows: 'The rebar mat and the trusses above it' },
-  { id: 'P4', name: 'East gable', stand: [22, 6], look: [-1, 0], shows: 'The truss profile and end-bay bracing' },
+  { id: 'P1', name: 'South approach', stand: [9, -4], look: [0, 1], shows: 'The concrete storey and the north wall bracing', startPitchDeg: 14 },
+  { id: 'P2', name: 'Under the slab', stand: [3, 3], look: [1, 0], shows: 'Concrete columns and the east slab edge', startPitchDeg: 8 },
+  { id: 'P3', name: 'Under the open bay', stand: [15, 9], look: [-1, 0], shows: 'The trusses and purlins overhead', startPitchDeg: 50 },
+  { id: 'P4', name: 'East gable', stand: [22, 6], look: [-1, 0], shows: 'The trusses and the roof bracing', startPitchDeg: 28 },
 ]
 
 const COMPASS: Record<string, string> = { '0,1': 'north', '0,-1': 'south', '1,0': 'east', '-1,0': 'west' }

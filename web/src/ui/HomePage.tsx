@@ -55,6 +55,11 @@ export function HomePage() {
         </div>
       </section>
 
+      <div className="home-theme">
+        <p className="home-wrap"><span className="home-theme-tag">Future of Work</span>
+          The future of construction work: the design in every hand, an AI check on every pour.</p>
+      </div>
+
       <section id="how" className="home-section home-wrap" aria-labelledby="how-title">
         <p className="home-kicker">Three steps on site</p>
         <h2 id="how-title">How it works</h2>

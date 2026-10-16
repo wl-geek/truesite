@@ -6,16 +6,16 @@
     "anchor_id": "P1",
     "simulated": true,
     "staged": [
-      "Steel column B1: about 45 cm east of the design",
-      "Steel column D3: about 40 cm south of the design",
-      "Brace wall south A-B (2): missing",
-      "Brace roof north C-D (1): missing",
-      "Edge protection south: missing (a fall hazard at level 1)",
-      "Edge protection north: missing (a fall hazard at level 1)",
       "RC column C2: not cast yet: only its rebar cage stands",
-      "Beam B1-C1: missing",
-      "Purlin P4 C-D: missing",
-      "Truss T4 diagonal 3: missing"
+      "RC column B2: about 40 cm west of the design",
+      "Brace wall north C-D (2): missing",
+      "RC column C1: about 40 cm north of the design",
+      "Edge protection east: missing (a fall hazard at level 1)",
+      "Truss T3 vertical 7: missing",
+      "Purlin P6 B-C: missing",
+      "Edge beam B3-C3: not erected yet",
+      "Truss T3 diagonal 4: missing",
+      "Brace roof south A-B (1): missing"
     ]
   },
   {
@@ -25,16 +25,16 @@
     "anchor_id": "P2",
     "simulated": true,
     "staged": [
-      "Steel column B1: about 45 cm east of the design",
-      "Steel column D3: about 40 cm south of the design",
-      "Brace wall south A-B (2): missing",
-      "Brace roof north C-D (1): missing",
-      "Edge protection south: missing (a fall hazard at level 1)",
-      "Edge protection north: missing (a fall hazard at level 1)",
       "RC column C2: not cast yet: only its rebar cage stands",
-      "Beam B1-C1: missing",
-      "Purlin P4 C-D: missing",
-      "Truss T4 diagonal 3: missing"
+      "RC column B2: about 40 cm west of the design",
+      "Brace wall north C-D (2): missing",
+      "RC column C1: about 40 cm north of the design",
+      "Edge protection east: missing (a fall hazard at level 1)",
+      "Truss T3 vertical 7: missing",
+      "Purlin P6 B-C: missing",
+      "Edge beam B3-C3: not erected yet",
+      "Truss T3 diagonal 4: missing",
+      "Brace roof south A-B (1): missing"
     ]
   },
   {
@@ -44,16 +44,16 @@
     "anchor_id": "P3",
     "simulated": true,
     "staged": [
-      "Steel column B1: about 45 cm east of the design",
-      "Steel column D3: about 40 cm south of the design",
-      "Brace wall south A-B (2): missing",
-      "Brace roof north C-D (1): missing",
-      "Edge protection south: missing (a fall hazard at level 1)",
-      "Edge protection north: missing (a fall hazard at level 1)",
       "RC column C2: not cast yet: only its rebar cage stands",
-      "Beam B1-C1: missing",
-      "Purlin P4 C-D: missing",
-      "Truss T4 diagonal 3: missing"
+      "RC column B2: about 40 cm west of the design",
+      "Brace wall north C-D (2): missing",
+      "RC column C1: about 40 cm north of the design",
+      "Edge protection east: missing (a fall hazard at level 1)",
+      "Truss T3 vertical 7: missing",
+      "Purlin P6 B-C: missing",
+      "Edge beam B3-C3: not erected yet",
+      "Truss T3 diagonal 4: missing",
+      "Brace roof south A-B (1): missing"
     ]
   },
   {
@@ -63,16 +63,16 @@
     "anchor_id": "P4",
     "simulated": true,
     "staged": [
-      "Steel column B1: about 45 cm east of the design",
-      "Steel column D3: about 40 cm south of the design",
-      "Brace wall south A-B (2): missing",
-      "Brace roof north C-D (1): missing",
-      "Edge protection south: missing (a fall hazard at level 1)",
-      "Edge protection north: missing (a fall hazard at level 1)",
       "RC column C2: not cast yet: only its rebar cage stands",
-      "Beam B1-C1: missing",
-      "Purlin P4 C-D: missing",
-      "Truss T4 diagonal 3: missing"
+      "RC column B2: about 40 cm west of the design",
+      "Brace wall north C-D (2): missing",
+      "RC column C1: about 40 cm north of the design",
+      "Edge protection east: missing (a fall hazard at level 1)",
+      "Truss T3 vertical 7: missing",
+      "Purlin P6 B-C: missing",
+      "Edge beam B3-C3: not erected yet",
+      "Truss T3 diagonal 4: missing",
+      "Brace roof south A-B (1): missing"
     ]
   }
 ]

@@ -185,3 +185,8 @@
 /* Live AR: the device recommendation under the section heading. */
 .home-device { display: flex; align-items: flex-start; gap: 10px; margin: -4px 0 20px; padding: 12px 14px; border-radius: 12px; background: #eaf0f6; color: var(--ink); font-size: 15px; }
 .home-device .icon { width: 22px; height: 22px; margin-top: 1px; color: var(--steel); }
+
+/* The theme band between the hero and How it works. */
+.home-theme { background: #071624; border-top: 1px solid rgba(255, 255, 255, 0.06); }
+.home-theme p { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 0 auto; padding-top: 16px; padding-bottom: 16px; color: var(--white); font-size: 16px; font-weight: 600; }
+.home-theme-tag { padding: 3px 10px; border-radius: 999px; background: var(--orange); color: var(--ink); font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }

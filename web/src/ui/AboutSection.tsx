@@ -55,7 +55,8 @@ export function AboutSection() {
             <span>of rework a year in the US alone, from the same causes</span>
           </div>
           <p className="about-why-text">
-            <strong>Future of work on site:</strong> every field engineer gets a second pair of eyes that knows the model.
+            <strong>From rework found weeks later to issues caught on the spot.</strong> Every field engineer gets a second
+            pair of eyes that knows the model.
             A first visual check takes seconds instead of waiting for the next inspection, and the issue is written
             while the crew is still there.
             <span className="about-source">

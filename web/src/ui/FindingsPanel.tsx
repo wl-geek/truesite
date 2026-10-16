@@ -1,4 +1,5 @@
 import type { CheckResult, Finding } from '../api/types'
+import { whyItMatters } from '../check/risk'
 import { groupFindings, imageQualityMessage, NOT_A_SURVEY, savedLabel, statusText, summaryCounts } from './findingFormat'
 
 export type FindingsPanelProps = {
@@ -20,7 +21,8 @@ function Row({ f, selected, onSelect, onDraftIssue }: { f: Finding; selected: bo
         <span className="finding-text">
           <strong>{f.name || f.ifc_class}</strong>
           <span>{statusText(f)}</span>
-          {f.explanation && <span className="finding-why">{f.explanation}</span>}
+          {f.explanation && <span className="finding-why"><span className="finding-src">Gemini:</span> {f.explanation}</span>}
+          {whyItMatters(f) && <span className="finding-risk"><span className="finding-src">Why it matters:</span> {whyItMatters(f)}</span>}
         </span>
         {f.severity && <span className={`badge badge-${f.severity}`}>{f.severity}</span>}
       </button>

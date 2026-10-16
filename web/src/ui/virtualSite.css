@@ -51,3 +51,18 @@
   .vs-has-results .vs-top, .vs-has-results .vs-bottom { right: 440px; } /* keep the controls beside the panel */
 }
 @media (prefers-reduced-motion: reduce) { .vs-btn, .vs-check { transition: none; } }
+
+/* Results: the scorecard against the planted truth, and the photo next to the design render Gemini compared. */
+.vs-score { padding: 12px 14px; border-radius: 12px; background: var(--ink); color: var(--white); }
+.vs-score-line { margin: 0 0 6px; font-weight: 800; font-size: 15px; }
+.vs-score-list { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; font-size: 13.5px; }
+.vs-score-list li { display: grid; grid-template-columns: 18px 1fr auto; gap: 6px; align-items: baseline; }
+.vs-score-list .hit > span:first-child { color: #7fd18a; }
+.vs-score-list .miss > span:first-child { color: #ff8f6b; }
+.vs-score-tag { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #9fb3c8; }
+.vs-score .note { color: #c9d6e4; margin: 6px 0 0; }
+.vs-compare { display: grid; gap: 10px; }
+.vs-compare figure { margin: 0; }
+.vs-compare figcaption { margin-bottom: 4px; color: var(--muted); font-size: 12.5px; font-weight: 600; }
+.vs-render { display: block; width: 100%; height: auto; border-radius: var(--radius); }
+.vs-judged { margin: 0; color: var(--muted); font-size: 12.5px; }
