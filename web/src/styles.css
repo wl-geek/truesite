@@ -235,7 +235,7 @@ body {
 
 .eyebrow {
   margin: 0;
-  color: var(--sky);
+  color: #3d6894; /* --sky is 3.9:1 on paper at 12 px; this is 5.4:1 */
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.08em;
@@ -466,17 +466,7 @@ body {
 .bar-input { display: flex; align-items: center; gap: 8px; }
 .bar-input input { width: 90px; padding: 6px 8px; font: inherit; font-size: 16px; border: 1px solid var(--line); border-radius: var(--radius); }
 
-/* ---- home + live guidance ----------------------------------------------------------------- */
-.home-page { max-width: 880px; }
-.hero { padding: 12px 0 8px; }
-.hero h1 { font-size: clamp(24px, 4vw, 34px); line-height: 1.15; margin: 4px 0 12px; color: var(--ink); }
-.way-list { list-style: none; padding: 0; display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
-.way-card { background: var(--white); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
-.way-card h3 { margin: 0; font-size: 17px; color: var(--ink); }
-.way-card p { margin: 0; flex: 1; }
-.way-card .btn { align-self: flex-start; }
-.way-actions { display: flex; flex-wrap: wrap; gap: 8px; }
-.way-card .way-label { flex: none; margin-top: 4px; font-size: 13px; font-weight: 600; color: var(--ink); }
+/* ---- live guidance (the start page has its own ui/home.css) ----------------------------------------------------------------- */
 .steps { padding-left: 20px; display: grid; gap: 4px; }
 .live-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-start; }
 .mode-chip { padding: 6px 10px; border-radius: var(--radius); background: var(--orange); color: var(--white); font-size: 14px; font-weight: 700; }
