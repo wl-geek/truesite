@@ -10,7 +10,7 @@ import { ElementPanel } from './ElementPanel'
 import { FindingsPanel } from './FindingsPanel'
 import { IssueDialog } from './IssueDialog'
 
-export const DEFAULT_PROJECT_ID = 'room1'
+export const DEFAULT_PROJECT_ID = 'site'
 
 type Loaded = { project: ProjectManifest; model: LoadedModel }
 

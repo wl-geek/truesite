@@ -93,14 +93,19 @@ def test_bounding_box(els):
 
 def test_anchors_and_project(built):
     anchors = json.loads((built / "anchors.json").read_text(encoding="utf-8"))
-    assert anchors == [site.ANCHOR, site.ANCHOR_A4]
-    assert [a["anchor_id"] for a in anchors] == ["S1", "S2"]
+    assert anchors == site.ANCHORS
+    assert [a["anchor_id"] for a in anchors] == ["S1", "S2", "S3", "D1"]
     for a in anchors:
         n, u = a["normal"], a["up"]
         assert math.isclose(math.hypot(*n), 1.0) and math.isclose(math.hypot(*u), 1.0)
         assert sum(p * q for p, q in zip(n, u)) == 0
-        assert a["position_m"] == [9.0, 6.0, 0.0] and a["normal"] == [0, 0, 1] and a["scale"] == 1.0
+    floor, upright, desk = anchors[0], anchors[2], anchors[3]
+    assert floor["position_m"] == [9.0, 6.0, 0.0] and floor["normal"] == [0, 0, 1] and floor["scale"] == 1.0
     assert anchors[0]["qr_size_m"] == 0.23 and anchors[1]["qr_size_m"] == 0.16
+    # S3: upright, code at 1.3 m, 2 m south of the centre, facing north to the viewer
+    assert upright["position_m"] == [9.0, 4.0, 1.3] and upright["normal"] == [0, 1, 0] and upright["up"] == [0, 0, 1]
+    # D1: 1:100 desk sheet; model (0, 0) sits 235 mm left and 60 mm below the code centre on the page
+    assert desk["scale"] == 0.01 and desk["position_m"] == [23.5, 6.0, 0.0] and desk["qr_size_m"] == 0.07
     assert json.loads((built / "project.json").read_text(encoding="utf-8")) == {"project_id": "site", "name": "Steel frame (1:1)"}
 
 
@@ -128,7 +133,7 @@ def test_sheets_only_renders_the_sheets_and_leaves_the_model_alone(tmp_path, cap
     out.mkdir()
     site.main(["--out", str(out), "--base-url", BASE, "--sheets-dir", str(sheets), "--sheets-only"])
     assert list(out.iterdir()) == []
-    assert sorted(p.name for p in sheets.iterdir()) == ["site-S1.pdf", "site-S2.pdf"]
+    assert sorted(p.name for p in sheets.iterdir()) == ["site-D1.pdf", "site-S1.pdf", "site-S2.pdf", "site-S3.pdf"]
     assert "WARNING" not in capsys.readouterr().err  # the A3 code keeps the full quiet zone for the Cloud Run URL
 
 

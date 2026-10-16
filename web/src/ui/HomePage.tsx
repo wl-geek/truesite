@@ -18,35 +18,28 @@ export function HomePage() {
       <ol className="way-list">
         <li className="way-card">
           <h3>No printer: sample photos</h3>
-          <p>Run the real check on photos taken in our demo room. The deviations there are staged on purpose.</p>
+          <p>Run the real as-built check on photos taken at our demo site, where a few column positions are staged wrong on purpose.</p>
           <Link to="/samples" className="btn btn-primary">Open sample photos</Link>
         </li>
         <li className="way-card">
-          <h3>On your desk · scale model 1:20</h3>
+          <h3>Stand inside a steel frame · life size 1:1</h3>
           <p>
-            Print the A4 desk sheet at 100%, lay it on a table and scan the code with your phone camera. The 4 × 3 m demo
-            room appears beside the code as a small model, like an architect's model.
+            In an open space of about 20 × 14 m (an empty car park works), lay sheet S1 (A3) or S2 (A4) flat at the
+            centre, or set the upright sheet S3 on a stand with the code 1.3 m high. Scan it: an 18 × 12 m steel frame,
+            colour-coded by element type, stands around you. Android: <strong>Start AR</strong> (walk around freely).
+            iPad/iPhone: <strong>Walk inside</strong>, or <strong>Camera overlay</strong> and turn on the spot.
           </p>
-          <a className="btn" href="/sheets/room1-D1.pdf" download>Download A4 desk sheet</a>
+          <a className="btn btn-primary" href="/sheets/site-S2.pdf" download>A4 floor sheet (S2)</a>
+          <a className="btn" href="/sheets/site-S1.pdf" download>A3 floor sheet (S1)</a>
+          <a className="btn" href="/sheets/site-S3.pdf" download>A3 upright sheet (S3)</a>
         </li>
         <li className="way-card">
-          <h3>Life size · 1:1</h3>
+          <h3>On your desk · scale model 1:100</h3>
           <p>
-            Print the A4 floor sheet, lay it flat on the floor of an open space and scan it. The demo room's walls, door
-            and column appear around the sheet at real size. On Android, <strong>Start AR</strong> places the model by the
-            code and it stays put as you walk around; on other phones, keep the code in view.
+            Print the A4 desk sheet at 100%, lay it on a table and scan the code. The same steel frame appears on the
+            left half of the page as a 1:100 model, like an architect's model.
           </p>
-          <a className="btn" href="/sheets/room1-L1.pdf" download>Download A4 floor sheet</a>
-        </li>
-        <li className="way-card">
-          <h3>Walk through a steel frame · 1:1</h3>
-          <p>
-            Lay sheet S1 (A3) or S2 (A4) flat in an open space of about 20 × 14 m, such as an empty car park, and scan it.
-            An 18 × 12 m steel frame, colour-coded by element type, stands around you. iPad/iPhone: <strong>Walk inside</strong>;
-            Android: <strong>Start AR</strong>.
-          </p>
-          <a className="btn" href="/sheets/site-S1.pdf" download>Download A3 sheet (S1)</a>
-          <a className="btn" href="/sheets/site-S2.pdf" download>Download A4 sheet (S2)</a>
+          <a className="btn" href="/sheets/site-D1.pdf" download>A4 desk sheet (D1)</a>
         </li>
         <li className="way-card">
           <h3>Explore the model</h3>
