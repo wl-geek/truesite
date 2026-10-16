@@ -1,4 +1,5 @@
-import { BoxGeometry, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial } from 'three'
+import { BoxGeometry, Group, Mesh, MeshBasicMaterial, MeshStandardMaterial, Vector3 } from 'three'
+import { strFromU8, unzipSync } from 'three/examples/jsm/libs/fflate.module.js'
 import { describe, expect, it } from 'vitest'
 import { buildLoadedModel } from './loadModel'
 import { KIND_COLOURS } from './palette'
@@ -43,9 +44,11 @@ describe('walk inside', () => {
     gltf.add(col)
     const model = buildLoadedModel(gltf, new Set(['A'.repeat(22)]))
     const scene = buildWalkScene(model, () => 'IfcColumn', [4.5, 4.5])
-    const copy = scene.children[0].children[0] as Mesh
-    copy.updateMatrixWorld(true)
-    const p = copy.getWorldPosition(copy.position.clone())
+    const root = scene.children[0]
+    const copy = root.children[0] as Mesh
+    // USDZExporter writes each object's own .matrix and never updates it (audit B-02). So no updateMatrixWorld or
+    // getWorldPosition before the export: they bring root.matrix up to date and would hide a stale one.
+    const p = new Vector3().applyMatrix4(copy.matrix).applyMatrix4(root.matrix)
     expect([p.x, p.y, p.z].map((v) => Math.round(v * 100) / 100)).toEqual([0, 1.65, 0])
     expect((copy.material as MeshStandardMaterial).color.getHex()).toBe(KIND_COLOURS.column) // colour by type, as in AR
     const painted = buildWalkScene(model, () => 'IfcMember', [4.5, 4.5], () => ({ kind: 'purlin', solid: true }))
@@ -56,5 +59,9 @@ describe('walk inside', () => {
     const bytes = new Uint8Array(await blob.arrayBuffer())
     expect(String.fromCharCode(bytes[0], bytes[1])).toBe('PK')
     expect(blob.size).toBeGreaterThan(500)
+    // The file itself: the root Xform's transform moves IFC (4.5, 4.5) to the origin, where Quick Look places it.
+    const usda = strFromU8(unzipSync(bytes)['model.usda'])
+    const rootTransform = usda.slice(usda.indexOf('xformOp:transform')).split('\n')[0]
+    expect(rootTransform).toContain('(-4.5, 0, 4.5, 1)')
   })
 })

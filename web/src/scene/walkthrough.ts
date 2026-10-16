@@ -67,6 +67,7 @@ export function buildWalkScene(model: LoadedModel, classOf: (guid: string) => st
   }
   const root = new Group()
   root.position.set(...recentreOffset(...centreIfc))
+  root.updateMatrix() // USDZExporter writes object.matrix as it is and never updates it (audit B-02)
   model.gltfScene.updateMatrixWorld(true)
   const toGltf = new Matrix4().copy(model.gltfScene.matrixWorld).invert()
   for (const mesh of model.meshes) {
