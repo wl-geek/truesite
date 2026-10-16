@@ -180,7 +180,7 @@ export function SamplesPage() {
         </div>
       )}
       {draftFor && (
-        <IssueDialog open projectId={outcome?.projectId ?? 'room1'} runId={outcome?.runId ?? null} mark={draftFor.mark} finding={draftFor}
+        <IssueDialog open projectId={outcome?.projectId ?? 'site'} runId={outcome?.runId ?? null} mark={draftFor.mark} finding={draftFor}
           element={new Map((loaded?.project.elements ?? []).map((e) => [e.guid, e])).get(draftFor.guid) ?? null} onClose={() => setDraftFor(null)}
           onSaved={() => { setDraftFor(null); setNotice('Issue saved. See it under Issues.') }} />
       )}

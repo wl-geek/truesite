@@ -36,6 +36,7 @@ export default defineConfig(({ mode }) => ({
   ],
   server: {
     host: true, // listen on 0.0.0.0 so phones on the LAN can reach it
+    allowedHosts: ['.trycloudflare.com'], // temporary public test link (cloudflared quick tunnel)
     port: 5173,
     proxy: { '/api': 'http://127.0.0.1:8000' },
   },

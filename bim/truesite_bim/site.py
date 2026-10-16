@@ -26,7 +26,7 @@ import numpy as np
 
 import ifcopenshell.api.geometry
 import ifcopenshell.api.spatial
-from reportlab.lib.pagesizes import A3, A4, portrait
+from reportlab.lib.pagesizes import A3, A4, landscape, portrait
 
 from .make_demo_model import Builder
 from .pipeline import run as run_pipeline
@@ -58,6 +58,20 @@ REBAR = ("Rebar B500B", "steel", (0.75, 0.18, 0.10))
 ANCHOR = {"anchor_id": "S1", "project_id": PROJECT_ID, "qr_size_m": 0.23, "position_m": [CODE_XY[0], CODE_XY[1], 0.0],
           "normal": [0, 0, 1], "up": [0, 1, 0], "scale": 1.0, "label": "Steel frame floor sheet A3 (1:1)"}
 ANCHOR_A4 = {**ANCHOR, "anchor_id": "S2", "qr_size_m": 0.16, "label": "Steel frame floor sheet A4 (1:1)"}
+# S3: the same model from an UPRIGHT A3 sheet (on a stand, taped to a pole or car, or held still), code centre
+# 1.3 m above the ground at (9, 4), facing north towards the viewer standing at the middle of the floor.
+ANCHOR_UPRIGHT = {**ANCHOR, "anchor_id": "S3", "position_m": [CODE_XY[0], CODE_XY[1] - 2.0, 1.3], "normal": [0, 1, 0],
+                  "up": [0, 0, 1], "label": "Steel frame upright sheet A3 (1:1), code at 1.3 m"}
+# D1: judges' desk sheet, A4 landscape: the frame at 1:100 beside a 70 mm code. Page coordinates (mm, origin
+# bottom-left): model (0, 0) at (15, 45), so the 18 x 12 m footprint covers x 15..195, y 45..165; code centre (250, 105).
+DESK_SCALE_SITE = 0.01
+DESK_ORIGIN_MM = (15.0, 45.0)
+DESK_QR_MM = (250.0, 105.0)
+ANCHOR_DESK = {"anchor_id": "D1", "project_id": PROJECT_ID, "qr_size_m": 0.07,
+               "position_m": [round((DESK_QR_MM[0] - DESK_ORIGIN_MM[0]) / 1000 / DESK_SCALE_SITE, 4),
+                              round((DESK_QR_MM[1] - DESK_ORIGIN_MM[1]) / 1000 / DESK_SCALE_SITE, 4), 0.0],
+               "normal": [0, 0, 1], "up": [0, 1, 0], "scale": DESK_SCALE_SITE, "label": "Steel frame desk sheet A4 (1:100)"}
+ANCHORS = [ANCHOR, ANCHOR_A4, ANCHOR_UPRIGHT, ANCHOR_DESK]
 PROJECT = {"project_id": PROJECT_ID, "name": "Steel frame (1:1)"}
 
 WALK_STEP = "iPad/iPhone: scan, stand on the code, point at the ground a step ahead, tap Walk inside."
@@ -275,6 +289,34 @@ def s2_sheet() -> Sheet:
     )
 
 
+def s3_sheet() -> Sheet:
+    return Sheet(
+        "S3", "wall", ANCHOR_UPRIGHT["label"], "TrueSite steel frame anchor S3 - upright, life size 1:1", portrait(A3),
+        qr_mm(ANCHOR_UPRIGHT), (148.5, 265.0), check_bar_mm=(98.5, 40.0), text_box_mm=(20.0, 120.0),
+        position_m=ANCHOR_UPRIGHT["position_m"], normal=ANCHOR_UPRIGHT["normal"], up=ANCHOR_UPRIGHT["up"], scale=1.0,
+        instructions=[
+            "Keep the sheet UPRIGHT and still, code centre 1.3 m above the ground (a stand or pole is best).",
+            "Stand about 2 m in front of it. Android: Start AR, fill the ring, then walk around freely.",
+            "iPad: Camera overlay, keep the code in view to lock, then turn on the spot (don't walk).",
+            "The steel frame (18 x 12 m) stands around you; the sheet sits 2 m south of its centre.",
+            "Measure the check bar: if it is not 10.0 cm, enter the length in the app.",
+        ],
+    )
+
+
+def d1_sheet() -> Sheet:
+    return Sheet(
+        "D1", "desk", ANCHOR_DESK["label"], "TrueSite steel frame desk sheet D1 - scale model 1:100", landscape(A4),
+        70.0, DESK_QR_MM, check_bar_mm=(200.0, 18.0), text_box_mm=(15.0, 200.0),
+        position_m=ANCHOR_DESK["position_m"], normal=ANCHOR_DESK["normal"], up=ANCHOR_DESK["up"], scale=DESK_SCALE_SITE,
+        model_origin_mm=DESK_ORIGIN_MM,
+        instructions=[
+            "Print at 100% and lay it flat on a table in good light. Scan the code, tap Camera overlay.",
+            "The 18 x 12 m steel frame appears at 1:100 on the left half of the page.",
+        ],
+    )
+
+
 def main(argv: list[str] | None = None) -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--out", type=Path, default=Path("models") / PROJECT_ID)
@@ -292,11 +334,11 @@ def main(argv: list[str] | None = None) -> None:
         SteelFrame().build().write(ifc)
         report = run_pipeline(ifc, a.out)
         lf = {"encoding": "utf-8", "newline": "\n"}  # LF on every OS, so Windows runs don't dirty the committed files
-        (a.out / "anchors.json").write_text(json.dumps([ANCHOR, ANCHOR_A4], indent=2) + "\n", **lf)
+        (a.out / "anchors.json").write_text(json.dumps(ANCHORS, indent=2) + "\n", **lf)
         (a.out / "project.json").write_text(json.dumps(PROJECT) + "\n", **lf)
     if a.base_url:
         info = [render_sheet(sh, f"{a.base_url}/a/{PROJECT_ID}/{sh.anchor_id}", a.sheets_dir / f"{PROJECT_ID}-{sh.anchor_id}.pdf")
-                for sh in (s1_sheet(), s2_sheet())]
+                for sh in (s1_sheet(), s2_sheet(), s3_sheet(), d1_sheet())]
         for sheet_info in info:
             warn_thin_quiet_zone(sheet_info)
         report = {"pipeline": report, "sheets": info}
