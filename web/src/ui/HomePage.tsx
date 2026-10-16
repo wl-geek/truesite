@@ -44,7 +44,7 @@ export function HomePage() {
             </div>
             <ul className="home-proof" aria-label="Highlights">
               <li><Icon name="check" />No app to install</li>
-              <li><Icon name="check" />Runs in the phone or iPad browser</li>
+              <li><Icon name="check" />Made for tablets and smartphones</li>
               <li><Icon name="check" />Gemini on Google Cloud</li>
             </ul>
           </div>
@@ -84,6 +84,9 @@ export function HomePage() {
               </p>
             </div>
           </div>
+          <p className="home-device"><Icon name="tablet" />
+            <span><strong>Made for tablets and smartphones.</strong> A tablet gives the best view; a phone works well too.</span>
+          </p>
 
           <ul className="home-cards live-easy">
             <li className="home-card home-card-feature">
@@ -97,7 +100,7 @@ export function HomePage() {
               </div>
             </li>
             <li className="home-card">
-              <span className="home-card-tag home-card-tag-quiet">No print needed</span>
+              <span className="home-card-tag home-card-tag-quiet">No print needed · any device</span>
               <Icon name="cube" />
               <h3>The 3D model</h3>
               <p>Orbit the BIM model, tap any element to see its data, and ask Gemini about it in plain language.</p>
@@ -175,7 +178,7 @@ export function HomePage() {
               <p className="home-sub">
                 TrueSite is built for live AR on a real site. To try the idea without printing sheets or visiting a site,
                 step into this virtual demo on your own device: stand where a QR sheet would be, look around the building,
-                and let Gemini check it against the BIM design.
+                and let Gemini check it against the BIM design. It runs on any device, laptops included.
               </p>
             </div>
           </div>
@@ -264,7 +267,7 @@ function HeroVisual() {
   )
 }
 
-type IconName = 'check' | 'down' | 'arrow' | 'qr' | 'cube' | 'scan' | 'download' | 'photo' | 'desk'
+type IconName = 'check' | 'down' | 'arrow' | 'qr' | 'cube' | 'scan' | 'download' | 'photo' | 'desk' | 'tablet'
 
 const ICONS: Record<IconName, string> = {
   check: 'M20 6 9 17l-5-5',
@@ -276,6 +279,7 @@ const ICONS: Record<IconName, string> = {
   download: 'M12 3v12M7 10l5 5 5-5M5 21h14',
   photo: 'M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM3 16l5-5 4 4 3-3 6 6M15.5 9.5h.01',
   desk: 'M3 10h18M5 10v9M19 10v9M8 10l2-5h4l2 5',
+  tablet: 'M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM11 18h2',
 }
 
 function Icon({ name }: { name: IconName }) {

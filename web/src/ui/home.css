@@ -176,3 +176,7 @@
 .home-card-tag-quiet { background: #e8f0f8; color: var(--steel); }
 .live-onsite-head { margin-top: 8px; padding-top: 28px; border-top: 1px solid var(--line); }
 .live-onsite-title { margin: 0 0 8px; font-size: 20px; }
+
+/* Live AR: the device recommendation under the section heading. */
+.home-device { display: flex; align-items: flex-start; gap: 10px; margin: -4px 0 20px; padding: 12px 14px; border-radius: 12px; background: #eaf0f6; color: var(--ink); font-size: 15px; }
+.home-device .icon { width: 22px; height: 22px; margin-top: 1px; color: var(--steel); }

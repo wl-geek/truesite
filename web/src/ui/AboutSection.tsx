@@ -21,7 +21,7 @@ export function AboutSection() {
           <article className="about-card">
             <h3>What it is</h3>
             <p>
-              A web app: no install, no headset. Scan a code fixed at a surveyed spot and the model appears over the real
+              A web app for tablets and smartphones: no install, no headset. Scan a code fixed at a surveyed spot and the model appears over the real
               place at 1:1, colour-coded by element type. Tap <strong>Check as-built</strong>: Gemini compares the photo
               with the design, pins what is off and drafts the issue.
             </p>

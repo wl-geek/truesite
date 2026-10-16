@@ -366,6 +366,7 @@ body {
 .live-start { position: absolute; left: 16px; right: 16px; bottom: 24px; max-width: 520px; margin: 0 auto; }
 .live-idle { background: linear-gradient(180deg, rgba(11, 31, 51, 0.55), rgba(11, 31, 51, 0.92)), #0b1f33 url(/hero-site.webp) center / cover no-repeat; }
 @media (min-width: 720px) { .live-idle .live-start { top: 50%; bottom: auto; transform: translateY(-50%); } }
+.live-device-note { margin: 12px 0 0; padding: 8px 12px; border-radius: 10px; background: #fff3e8; color: #8a3a08; font-size: 14px; font-weight: 600; }
 .live-virtual { margin: 12px 0 0; padding-top: 10px; border-top: 1px solid var(--line); font-size: 14px; }
 .live-start h1 { margin: 4px 0 8px; }
 .live-warning { margin: 0; padding: 6px 10px; border-radius: var(--radius); background: rgba(255, 106, 19, 0.92); color: var(--white); font-size: 14px; }

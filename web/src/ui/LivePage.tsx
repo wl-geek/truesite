@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ApiError, getProject } from '../api/client'
 import type { Anchor, CheckResult, Finding, ProjectManifest } from '../api/types'
 import { CameraError, startRearCamera, stopCamera, watchCamera, type CameraStart } from '../camera/camera'
@@ -35,6 +35,8 @@ import { UNKNOWN_ANCHOR_MESSAGE, isUnknownProject, liveLoadErrorMessage } from '
 import { requestMotionPermission } from '../scene/motion'
 import { QualityBadge } from './QualityBadge'
 import { SITE_VIEWPOINTS } from './siteViewpoints'
+import { DeviceTip } from './DeviceTip'
+import { isHandheld } from './device'
 import { ReloadPrompt } from './ReloadPrompt'
 
 export type LivePageProps = { projectId: string; anchorId: string }
@@ -76,6 +78,10 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   const [camStopped, setCamStopped] = useState(false)
   const [starting, setStarting] = useState(false)
   const [running, setRunning] = useState(false)
+  // Live AR is made for tablets and phones: on a laptop or PC, recommend switching once per visit.
+  const handheld = useMemo(() => isHandheld(), [])
+  const [deviceTip, setDeviceTip] = useState(() => !handheld && !sessionFlag('truesite.deviceTip'))
+  const closeDeviceTip = useCallback(() => { setDeviceTip(false); sessionFlag('truesite.deviceTip', true) }, [])
   const [state, setState] = useState<OverlayState | null>(null)
   const [checking, setChecking] = useState(false)
   const [checkError, setCheckError] = useState<string | null>(null)
@@ -596,6 +602,9 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
                 No sheet with you? <Link to={`/samples?at=${loaded.anchor.anchor_id}`}>Try {loaded.anchor.anchor_id} in the virtual demo</Link>.
               </p>
             )}
+            {!handheld && loaded && (
+              <p className="live-device-note">Made for tablets and smartphones: open this page on one for the best experience.</p>
+            )}
             {camError && <p className="status status-error" role="alert">{CAMERA_ERRORS[camError]}</p>}
             {(camError || error) && (
               <p className="live-links">
@@ -605,6 +614,10 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
           </div>
         )}
       </div>
+      {deviceTip && (
+        <DeviceTip url={window.location.href} onClose={closeDeviceTip}
+          virtualHref={projectId === 'site' && SITE_VIEWPOINTS.some((v) => v.id === anchorId) ? `/samples?at=${anchorId}` : '/#virtual'} />
+      )}
     </main>
   )
 }
@@ -639,4 +652,14 @@ function startLabel(projectName: string, anchor: Anchor): string {
   const name = projectName.replace(/\s*\(1:1\)$/, '')
   const vp = anchor.project_id === 'site' ? SITE_VIEWPOINTS.find((v) => v.id === anchor.anchor_id) : undefined
   return `${name} · ${vp ? `${vp.id} ${vp.name}` : anchor.anchor_id}`
+}
+
+/** Read or set a once-per-visit flag (sessionStorage can throw in private modes: then the tip just shows again). */
+function sessionFlag(key: string, value?: boolean): boolean {
+  try {
+    if (value) sessionStorage.setItem(key, '1')
+    return sessionStorage.getItem(key) === '1'
+  } catch {
+    return false
+  }
 }
