@@ -24,25 +24,3 @@
 .sample-truth ul { margin: 6px 0 0; padding-left: 18px; }
 .sample-results { scroll-margin-top: calc(var(--topbar-h) + 8px); }
 @media (prefers-reduced-motion: reduce) { .sample-card { transition: none; } .sample-card:hover:not(:disabled) { transform: none; } }
-
-/* The virtual site's intro (before the 3D view) */
-.sim-why { margin: 18px 0; padding: 16px 18px; border-left: 4px solid var(--orange); border-radius: 0 12px 12px 0; background: var(--white); }
-.sim-why h2 { margin: 0 0 6px; font-size: 18px; }
-.sim-why p { margin: 0 0 8px; max-width: 46em; }
-.sim-why p:last-child { margin-bottom: 0; }
-.sim-steps { display: grid; gap: 8px; margin: 0 0 18px; padding: 0; list-style: none; counter-reset: sim; }
-.sim-steps li { position: relative; padding: 10px 12px 10px 46px; border-radius: 12px; background: #eaf0f6; counter-increment: sim; }
-.sim-steps li::before { content: counter(sim); position: absolute; left: 12px; top: 9px; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--steel); color: var(--white); font-size: 13px; font-weight: 800; }
-.sim-spots { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: 12px; margin: 0 0 24px; padding: 0; list-style: none; }
-.sim-spot { display: grid; width: 100%; height: 100%; padding: 0; border: 1px solid var(--line); border-radius: 14px; background: var(--white); color: var(--ink); font: inherit; text-align: left; cursor: pointer; overflow: hidden; transition: border-color 0.18s, box-shadow 0.18s, transform 0.18s; }
-.sim-spot:hover { border-color: var(--sky); box-shadow: 0 10px 28px rgba(11, 31, 51, 0.12); transform: translateY(-2px); }
-.sim-spot .vp-plan { display: block; width: 100%; height: auto; aspect-ratio: 25 / 20.5; background: #f1f5f9; border-bottom: 1px solid var(--line); }
-.sim-spot-body { display: grid; gap: 4px; padding: 12px 14px 14px; }
-.sim-spot-title { display: flex; align-items: center; gap: 8px; font-weight: 700; }
-.sim-spot-id { display: inline-grid; place-items: center; min-width: 30px; height: 24px; padding: 0 6px; border-radius: 7px; background: var(--ink); color: var(--white); font-size: 13px; }
-.sim-spot-shows { color: var(--muted); font-size: 14px; }
-.sim-spot-go { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; margin-top: 6px; border-radius: 10px; background: var(--orange); color: var(--ink); font-weight: 700; }
-.sim-photos { margin: 8px 0 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--white); padding: 0 14px; }
-.sim-photos > summary { min-height: 52px; display: flex; align-items: center; font-weight: 700; cursor: pointer; }
-.sim-photos[open] { padding-bottom: 14px; }
-@media (prefers-reduced-motion: reduce) { .sim-spot { transition: none; } .sim-spot:hover { transform: none; } }

@@ -10,7 +10,7 @@ import { createViewer, type Viewer } from '../scene/viewer'
 import { ElementPanel } from './ElementPanel'
 import { FindingsPanel } from './FindingsPanel'
 import { IssueDialog } from './IssueDialog'
-import { Link } from './Link'
+import { goToSection } from './TopBar'
 import { ReloadPrompt } from './ReloadPrompt'
 import './viewerChrome.css'
 
@@ -106,7 +106,7 @@ export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: str
         {loaded && <ModelCard project={loaded.project} />}
         {loaded && !element && <p className="hint">Drag to orbit · pinch or scroll to zoom · tap an element for its data</p>}
         {loaded && !lastCheck && loaded.project.project_id === 'site' && (
-          <Link to="/samples" className="btn btn-accent viewer-check-btn">Check it on the virtual site</Link>
+          <a href="/#live" className="btn btn-accent viewer-check-btn" onClick={(e) => { e.preventDefault(); goToSection('live') }}>See it live in AR</a>
         )}
         {lastCheck && !showCheck && (
           <button type="button" className="btn btn-accent viewer-check-btn" onClick={() => setShowCheck(true)}>

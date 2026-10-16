@@ -18,8 +18,8 @@ function jumpTo(id: SectionId) {
 }
 
 /**
- * Start page, one page: hero, How it works, Try it (the virtual site), Live AR on the real site, About.
- * The nav links scroll between these sections; the tools open from the buttons inside them.
+ * Start page, one page: hero, How it works, Live AR on the real site (the product), the virtual site (for anyone
+ * without a printer or a site), About. The nav links scroll between these; the tools open from buttons inside them.
  */
 export function HomePage() {
   useEffect(() => { // /#about and friends: land on that section
@@ -38,15 +38,14 @@ export function HomePage() {
               Gemini compares the photo with the design, pins what is off on the model and drafts the issue.
             </p>
             <div className="home-ctas">
-              <a href="/#try" className="btn btn-accent btn-lg" onClick={jumpTo('try')}>Try the as-built check</a>
-              <Link to="/model" className="btn btn-ghost btn-lg">Explore the 3D model</Link>
+              <a href="/#live" className="btn btn-accent btn-lg" onClick={jumpTo('live')}>See it live on site</a>
+              <a href="/#virtual" className="btn btn-ghost btn-lg" onClick={jumpTo('virtual')}>No printer? Try the virtual site</a>
             </div>
             <ul className="home-proof" aria-label="Highlights">
               <li><Icon name="check" />No app to install</li>
               <li><Icon name="check" />Phone or iPad browser</li>
               <li><Icon name="check" />Gemini on Google Cloud</li>
             </ul>
-            <a className="home-jump" href="/#on-site" onClick={jumpTo('on-site')}>On site with the sheets? Jump to live AR <Icon name="down" /></a>
           </div>
           <HeroVisual />
         </div>
@@ -68,66 +67,48 @@ export function HomePage() {
         <p className="home-fineprint">Visual check, not a survey: offsets are rough, in tens of centimetres.</p>
       </section>
 
-      <section id="try" className="home-section home-band" aria-labelledby="try-title">
+      <section id="live" className="home-section home-band" aria-labelledby="live-title">
         <div className="home-wrap">
           <div className="home-section-head">
             <div>
-              <p className="home-kicker">No site, no printer needed</p>
-              <h2 id="try-title">Try it on a simulated building site</h2>
+              <p className="home-kicker">Live AR · the product</p>
+              <h2 id="live-title">See the BIM model live, through your camera</h2>
               <p className="home-sub">
-                Stand on a QR spot inside a realistic 3D model of the building as it was built, with ten defects planted on
-                purpose. Look around, then tap <strong>Check as-built</strong>: your view becomes the site photo, and
-                Gemini compares it with the BIM design from the same spot.
+                Scan a TrueSite code and the model appears where it belongs: on a desk sheet as a scale model, or around you
+                at 1:1 on site. Start with the easiest way to try it.
               </p>
             </div>
           </div>
-          <ul className="vp-grid">
-            {SITE_VIEWPOINTS.map((v) => (
-              <li key={v.id}>
-                <Link to={`/samples?at=${v.id}`} className="vp-card vp-card-sim">
-                  <ViewpointPlan active={v} />
-                  <span className="vp-text">
-                    <span className="vp-title"><span className="vp-id">{v.id}</span>{v.name}</span>
-                    <span className="vp-shows">{v.shows}</span>
-                  </span>
-                  <span className="vp-go"><span className="vp-go-label">Enter the virtual site</span><Icon name="arrow" /></span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-          <p className="home-fineprint">
-            Why simulated? Our demo building doesn't exist yet, so there is nothing real to photograph. On a real site the
-            photo comes from the iPad's camera; everything else is the same. <Link to="/samples">More about the virtual site</Link>
-          </p>
-          <ul className="home-cards home-cards-more">
-            <li className="home-card">
-              <Icon name="cube" />
-              <h3>The 3D model</h3>
-              <p>Orbit the model, tap any element to see its data, and ask questions about it in plain language.</p>
-              <Link to="/model" className="btn btn-primary">Open the 3D model</Link>
-            </li>
-            <li className="home-card">
+
+          <ul className="home-cards live-easy">
+            <li className="home-card home-card-feature">
+              <span className="home-card-tag">Easiest · just a printer</span>
               <Icon name="desk" />
               <h3>On your desk · 1:100</h3>
-              <p>Print the A4 desk sheet at 100%, lay it on a table and scan it. The same building stands on the page as a scale model.</p>
+              <p>Print the A4 desk sheet at 100%, lay it on a table and scan it. The building stands on the page as a scale model you can walk around and check.</p>
               <div className="home-card-actions">
-                <Link to="/a/site/D1" className="btn btn-primary">Live view</Link>
-                <a className="btn" href="/sheets/site-D1.pdf" download>A4 sheet</a>
+                <Link to="/a/site/D1" className="btn btn-accent">Open live AR</Link>
+                <a className="btn" href="/sheets/site-D1.pdf" download><Icon name="download" />A4 desk sheet</a>
+              </div>
+            </li>
+            <li className="home-card">
+              <span className="home-card-tag home-card-tag-quiet">No print needed</span>
+              <Icon name="cube" />
+              <h3>The 3D model</h3>
+              <p>Orbit the model the codes place, tap any element to see its data, and ask questions about it in plain language.</p>
+              <div className="home-card-actions">
+                <Link to="/model" className="btn btn-primary">Open the 3D model</Link>
               </div>
             </li>
           </ul>
-        </div>
-      </section>
 
-      <section id="on-site" className="home-section" aria-labelledby="site-title">
-        <div className="home-wrap">
-          <div className="home-section-head">
+          <div className="home-section-head live-onsite-head">
             <div>
-              <p className="home-kicker">Live AR · life size 1:1 · with the printed sheets</p>
-              <h2 id="site-title">Stand inside the building on the real site</h2>
+              <h3 className="live-onsite-title">Life size 1:1 on site</h3>
               <p className="home-sub">
                 A two-storey building under construction: concrete columns with their rebar showing, a cast slab with an
-                open bay, a steel upper storey and roof trusses. At the car park with the sheets? Pick the one you are standing at.
+                open bay, a steel upper storey and roof trusses. Set the four A3 sheets out on a car park, stand at one and
+                open its live view.
               </p>
             </div>
             <ul className="home-specs" aria-label="Model size">
@@ -176,9 +157,57 @@ export function HomePage() {
               </ul>
             </div>
           </details>
+
         </div>
       </section>
 
+      <section id="virtual" className="home-section" aria-labelledby="virtual-title">
+        <div className="home-wrap">
+          <div className="home-section-head">
+            <div>
+              <p className="home-kicker">Demo for judges · no printer or site needed</p>
+              <h2 id="virtual-title">Try the concept on a virtual site</h2>
+              <p className="home-sub">
+                The product is live AR on a real site, above. If you can't print the sheets or go out to scan them, this
+                virtual demo lets you try the same check on your own device: stand where a QR sheet would be, look around
+                the building, and let Gemini check it against the BIM design.
+              </p>
+            </div>
+          </div>
+          <div className="sim-why">
+            <h3>Why simulated?</h3>
+            <p>
+              Our demo building doesn't exist yet, so there is nothing real to photograph. Instead you step into a{' '}
+              <strong>simulated as-built site</strong>: a realistic 3D model of the building as it was put up, with ten
+              defects planted on purpose, from a shifted column to missing edge protection.
+            </p>
+            <p>
+              When you tap <strong>Check as-built</strong>, TrueSite takes your view as the site photo, renders the BIM
+              design from exactly the same spot, and Gemini compares the two: model against model. In the product the
+              photo comes from the iPad's camera on the real site; everything else is the same.
+            </p>
+          </div>
+          <ol className="sim-steps">
+            <li><strong>Pick a QR spot.</strong> You stand on its X, where the sheet's code places you in the model.</li>
+            <li><strong>Look around.</strong> Drag, or turn your iPad. You can't walk, just as on site.</li>
+            <li><strong>Check as-built.</strong> Gemini pins what's off on your view and drafts the issue.</li>
+          </ol>
+          <ul className="vp-grid">
+            {SITE_VIEWPOINTS.map((v) => (
+              <li key={v.id}>
+                <Link to={`/samples?at=${v.id}`} className="vp-card vp-card-sim">
+                  <ViewpointPlan active={v} />
+                  <span className="vp-text">
+                    <span className="vp-title"><span className="vp-id">{v.id}</span>{v.name}</span>
+                    <span className="vp-shows">{v.shows}</span>
+                  </span>
+                  <span className="vp-go"><span className="vp-go-label">Enter the virtual site</span><Icon name="arrow" /></span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
 
       <AboutSection />
 

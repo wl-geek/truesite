@@ -20,6 +20,7 @@ import { buildWorld, makeAsBuilt, photoFinish, rng } from '../sim/world'
 import { EvidenceView } from './EvidenceView'
 import { FindingsPanel } from './FindingsPanel'
 import { IssueDialog } from './IssueDialog'
+import { Link } from './Link'
 import { SITE_VIEWPOINTS } from './siteViewpoints'
 import './virtualSite.css'
 
@@ -59,6 +60,7 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
   const [selectedMark, setSelectedMark] = useState<number | null>(null)
   const [draftFor, setDraftFor] = useState<Finding | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const [checkFailed, setCheckFailed] = useState(false)
   const touch = useMemo(() => typeof window !== 'undefined' && 'DeviceOrientationEvent' in window && navigator.maxTouchPoints > 0, [])
   const planted = useMemo(() => SITE_AS_BUILT.map(describeDeviation), [])
 
@@ -288,6 +290,7 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
     if (!w || checking) return
     setChecking(true)
     setNotice(null)
+    setCheckFailed(false)
     setCoach(false)
     try {
       const shot = await snapshot(w)
@@ -309,6 +312,7 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
       dirty.current = true
     } catch (e) {
       setNotice(e instanceof ApiError ? checkErrorMessage(e) : e instanceof Error ? e.message : 'Check failed: try again.')
+      setCheckFailed(true)
     } finally {
       setChecking(false)
     }
@@ -347,6 +351,9 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
 
       <div className="vs-bottom">
         {notice && <p className="vs-notice" role="status">{notice}</p>}
+        {checkFailed && (
+          <Link to="/samples?photos" className="vs-btn vs-btn-light">Gemini busy? Try a ready-made view with a saved result</Link>
+        )}
         {outcome && !resultsOpen && (
           <button type="button" className="vs-btn" onClick={() => setResultsOpen(true)}>Show results</button>
         )}

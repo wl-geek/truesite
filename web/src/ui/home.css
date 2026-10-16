@@ -57,7 +57,6 @@
 /* ---- sections ---- */
 .home-section { padding: 44px 16px; }
 .home-section.home-wrap { padding-left: 16px; padding-right: 16px; }
-#on-site { scroll-margin-top: calc(var(--topbar-h) + env(safe-area-inset-top)); }
 .home-band { background: var(--white); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); padding-left: 0; padding-right: 0; }
 .home-kicker { margin: 0 0 6px; color: #3d6894; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
 .home-sub { margin: 0; max-width: 40em; color: var(--muted); }
@@ -129,7 +128,7 @@
 .home-footer-row { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 18px; }
 .home-footer-brand { display: inline-flex; align-items: center; gap: 8px; color: var(--white); font-weight: 700; }
 .home-footer a { color: #9cc7f2; }
-#how, #about { scroll-margin-top: calc(var(--topbar-h) + env(safe-area-inset-top)); }
+#how, #live, #virtual, #about { scroll-margin-top: calc(var(--topbar-h) + env(safe-area-inset-top)); }
 
 /* ---- wider screens ---- */
 @media (min-width: 720px) {
@@ -159,4 +158,20 @@
   .vp-card-sim:hover .vp-go { background: #ff7f33; }
 }
 .home-cards-more { margin-top: 20px; }
-#try { scroll-margin-top: calc(var(--topbar-h) + env(safe-area-inset-top)); }
+
+/* Virtual site section: why it's simulated, and the three steps. */
+.sim-why { margin: 18px 0; padding: 16px 18px; border-left: 4px solid var(--orange); border-radius: 0 12px 12px 0; background: var(--white); }
+.sim-why h3 { margin: 0 0 6px; font-size: 18px; }
+.sim-why p { margin: 0 0 8px; max-width: 46em; }
+.sim-why p:last-child { margin-bottom: 0; }
+.sim-steps { display: grid; gap: 8px; margin: 0 0 18px; padding: 0; list-style: none; counter-reset: sim; }
+.sim-steps li { position: relative; padding: 10px 12px 10px 46px; border-radius: 12px; background: #eaf0f6; counter-increment: sim; }
+.sim-steps li::before { content: counter(sim); position: absolute; left: 12px; top: 9px; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--steel); color: var(--white); font-size: 13px; font-weight: 800; }
+
+/* Live AR section: the two easy ways in (desk sheet, 3D model) above the life-size site. */
+.live-easy { margin-bottom: 36px; }
+.home-card-feature { border-color: rgba(255, 106, 19, 0.55); box-shadow: 0 10px 30px rgba(255, 106, 19, 0.12); }
+.home-card-tag { align-self: flex-start; padding: 3px 9px; border-radius: 999px; background: rgba(255, 106, 19, 0.14); color: #b4470a; font-size: 12px; font-weight: 800; letter-spacing: 0.02em; }
+.home-card-tag-quiet { background: #e8f0f8; color: var(--steel); }
+.live-onsite-head { margin-top: 8px; padding-top: 28px; border-top: 1px solid var(--line); }
+.live-onsite-title { margin: 0 0 8px; font-size: 20px; }

@@ -5,8 +5,8 @@ import './topbar.css'
 /** The start page is one page: every nav link is a section of it. The tools (virtual site, 3D model, live AR) open from buttons in those sections. */
 export const SECTIONS = [
   { id: 'how', label: 'How it works', icon: 'M4 6h16M4 12h10M4 18h6' },
-  { id: 'try', label: 'Virtual site', icon: 'M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6' },
-  { id: 'on-site', label: 'Live AR', icon: 'M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M9 9h6v6H9z' },
+  { id: 'live', label: 'Live AR', icon: 'M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M9 9h6v6H9z' },
+  { id: 'virtual', label: 'Virtual site', icon: 'M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6' },
   { id: 'about', label: 'About', icon: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 11v6M12 7.5v.01' },
 ] as const
 type SectionId = (typeof SECTIONS)[number]['id'] | 'top'
@@ -31,20 +31,35 @@ export function goToSection(id: SectionId): void {
   go()
 }
 
-/** Which start-page section is under the middle of the screen (for the nav's current marker). */
+/**
+ * Which start-page section the reader is in (for the nav's current marker): the last one whose top has passed a
+ * line a quarter of the way down the screen, or the last section once the page is scrolled to the bottom.
+ */
 function useCurrentSection(enabled: boolean): SectionId | null {
   const [current, setCurrent] = useState<SectionId | null>(null)
   useEffect(() => {
     if (!enabled) return setCurrent(null)
-    const els = SECTIONS.map((s) => document.getElementById(s.id)).filter((e): e is HTMLElement => e !== null)
-    if (!els.length) return
-    const io = new IntersectionObserver((entries) => {
-      const hit = entries.filter((e) => e.isIntersecting).map((e) => e.target.id as SectionId)
-      if (hit.length) setCurrent(hit[hit.length - 1])
-      else if (window.scrollY < 200) setCurrent(null)
-    }, { rootMargin: '-45% 0px -50% 0px' })
-    els.forEach((e) => io.observe(e))
-    return () => io.disconnect()
+    let raf = 0
+    const measure = () => {
+      raf = 0
+      const line = (document.querySelector('.topbar')?.getBoundingClientRect().bottom ?? 0) + window.innerHeight * 0.25
+      let cur: SectionId | null = null
+      for (const sec of SECTIONS) {
+        const el = document.getElementById(sec.id)
+        if (el && el.getBoundingClientRect().top <= line) cur = sec.id
+      }
+      const atBottom = window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 4
+      setCurrent(atBottom && window.scrollY > 0 ? SECTIONS[SECTIONS.length - 1].id : cur)
+    }
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(measure) }
+    measure()
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onScroll)
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener('scroll', onScroll)
+      window.removeEventListener('resize', onScroll)
+    }
   }, [enabled])
   return current
 }
@@ -92,7 +107,7 @@ export function TopBar({ route }: { route: Route }) {
       </a>
       <nav className="tb-nav" aria-label="Sections">{links}</nav>
       <div className="tb-right" ref={menuRef}>
-        <a href="/#try" className="tb-cta" onClick={go('try')}>Try it</a>
+        <a href="/#live" className="tb-cta" onClick={go('live')}>Try it</a>
         <button type="button" className="tb-menu-btn" aria-expanded={open} aria-controls="tb-menu" aria-label="Menu" onClick={() => setOpen((o) => !o)}>
           <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             {open ? <path d="M6 6l12 12M18 6 6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
