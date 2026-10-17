@@ -8,6 +8,9 @@ The wall anchor A1 in `bim/models/room1/anchors.json` still has the placeholder 
 Otherwise every offset below includes the error in where the sheet is posted.
 
 ## 1. Overlay accuracy at 1, 2 and 3 m
+
+**Status (17 Oct):** not measured on a device yet; `overlay.csv` has only its header. The Playwright `live-ar` tests in `web/e2e` compare the overlay with synthetic camera videos, which checks the code, not a real phone.
+
 1. Put tape marks on the real features listed in `web/public/eval/points.json`. Each point is in IFC metres; edit the list when the real room model lands.
 2. On the phone, open `/a/room1/A1?eval=1` (HTTPS) and start the camera. Green crosses appear at the points.
 3. At 1, 2 and 3 m from the wall code, measure the on-screen offset between each cross and its tape mark, converted to millimetres on the wall (hold a ruler at the mark). Do 3 tries per distance.
@@ -16,7 +19,7 @@ Otherwise every offset below includes the error in where the sheet is posted.
 
 ## 2. Check quality on labelled photos
 
-**The shipped samples are simulated.** The four committed samples (`site-p1-south`, `site-p2-slab`, `site-p3-openbay`, `site-p4-gable`) are renders of the site model's simulated as-built, made with `web/scripts/make-samples.mjs` and marked `"simulated": true`. They are not photos. Label them from `SITE_AS_BUILT` in `web/src/sim/asBuilt.ts`: a `missing` deviation becomes `missing`, a `shifted` one becomes `misplaced`, and everything else in view is `present_ok`. Any table made from them must be headed "simulated photos", in this README and in the main README, and kept apart from numbers measured on real photos.
+**The shipped samples are simulated.** The four committed samples (`site-p1-south`, `site-p2-slab`, `site-p3-openbay`, `site-p4-gable`) are renders of the site model's simulated as-built, made with `web/scripts/make-samples.mjs` and marked `"simulated": true`. They are not photos. Label them from `SITE_AS_BUILT` in `web/src/sim/asBuilt.ts`: a `missing` deviation becomes `missing`, and a `shifted` one becomes `misplaced`, together with the elements in its `alsoMoves` (Column cage B2, Column cage C1), which moved with it. Otherwise a correct finding on a moved cage would count as a false alarm, while §3's scorecard counts it as found. Everything else in view is `present_ok`. Any table made from them must be headed "simulated photos", in this README and in the main README, and kept apart from numbers measured on real photos.
 
 To measure on real photos instead:
 
