@@ -104,3 +104,49 @@ describe('arMath', () => {
     expect(walkInsideFirst(L1, { quickLook: false, xrOk: false })).toBe(false)
   })
 })
+
+describe('arMath boundaries (mutation-tested)', () => {
+  it('scales x and y separately when the detection frame has another aspect', () => {
+    expect(toVideoPixels([{ x: 320, y: 240 }, { x: 0, y: 480 }], 640, 480, 1920, 1080)).toEqual([[960, 540], [0, 1080]])
+  })
+
+  it('flags the overlay only beyond 3 m, not at 3 m', () => {
+    expect(isFar(3)).toBe(false)
+    expect(isFar(3.01)).toBe(true)
+    expect(isFar(0)).toBe(false)
+  })
+
+  it('switches to tips at exactly 5 s and coaches each state with its own words', () => {
+    const lost = { tracking: false, provisional: true, distanceM: null, mode: 'lost' as const }
+    expect(coachHint({ ...lost, searchingS: 5 }, false)).toBe("Can't find the code. Add more light, move within about 1 m and hold the phone steady.")
+    expect(coachHint({ ...lost, searchingS: 4.9 }, true)).toBe('Point the camera at the QR code on the sheet.')
+    expect(coachHint({ ...lost }, false)).toBe('Point the camera at the QR code.') // no search time yet
+    expect(coachHint({ tracking: true, provisional: false, distanceM: 1, mode: 'motion' }, true))
+      .toBe('Look around and up. Turn on the spot; point back at the code to re-align.')
+    expect(coachHint({ tracking: true, provisional: true, distanceM: 1 }, true)).toBe('Move within about 1 m of the code, then step back slowly.')
+    expect(coachHint({ tracking: true, provisional: false, distanceM: 4 }, true)).toBe('Move closer to the code for a more accurate overlay.')
+    expect(coachHint({ tracking: true, provisional: false, distanceM: null }, false)).toBe('Aim at the area to check, then tap Check as-built.')
+    expect(coachHint({ tracking: true, provisional: false, distanceM: 1.4 }, false, false))
+      .toBe('Turn slowly on the spot and look up; point back at the code to re-align.')
+  })
+
+  it('treats a 0.999 scale as life size and labels small scales by their ratio', () => {
+    expect(scaleLabel({ ...A1, scale: 0.999 })).toBe('Life size · 1:1')
+    expect(scaleLabel({ ...A1, scale: 0.01 })).toBe('Scale model · 1:100')
+    expect(isDeskAnchor({ ...A1, scale: 0.01 })).toBe(true) // site D1 at 1:100
+    expect(isLifeSizeFloor({ ...L1, scale: 0.999 })).toBe(true)
+    expect(isLifeSizeFloor({ ...L1, normal: [0, 0.44, 0.9] })).toBe(false) // a sheet leaning 25 degrees is not a floor code
+  })
+})
+
+describe('site sheets (mutation-tested)', () => {
+  it('disables the check on every live site sheet, P1 to P4 and D1', () => {
+    for (const id of ['P1', 'P2', 'P3', 'P4', 'D1']) {
+      const a: Anchor = { ...L1, anchor_id: id, project_id: 'site' }
+      expect(checkAvailability(a), id).toEqual({
+        enabled: false, note: 'This sheet shows the design where nothing is built yet, so there is nothing to check. Try the virtual demo.',
+      })
+    }
+    expect(checkAvailability({ ...L1, anchor_id: 'P5', project_id: 'site' })).toEqual({ enabled: true, note: null })
+  })
+})
