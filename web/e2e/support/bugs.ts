@@ -1,6 +1,6 @@
 /**
  * Bugs this suite found. Each has a test with this title that asserts the fixed behaviour: test.fixme while the bug
- * is open, test once the fix lands, so it guards the fix. As of 17 Oct 2026 all of these are fixed and their tests on.
+ * is open, test once the fix lands, so it guards the fix. On 17 Oct 2026 all are fixed but limitFocus.
  * Scans that would trip over an open bug (axe, tap targets) leave that one finding out and note the bug on the test.
  */
 export const BUG = {
@@ -16,6 +16,7 @@ export const BUG = {
   coachBlocksDrag: 'BUG: in the virtual demo, a drag that starts on the coach card selects its text instead of turning the view',
   lookAroundLock: 'BUG: after a turn at the filming pace (30 degrees/s), look-around holds the model 1.3-2.8 degrees off: its lock pairs the smoothed QR pose with the newest motion sample',
   motionDenied: "BUG: with Motion & Orientation denied on an iPad, the live view never says that levelling and look-around are off",
+  limitFocus: 'BUG: Tab and Shift+Tab leave the usage-limit popup (#117) for the page behind it',
 } as const
 
 /** axe findings that belong to a known bug: rule id plus a pattern on the node's selector. */

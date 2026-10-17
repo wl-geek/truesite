@@ -39,7 +39,8 @@ test.describe('live AR on a laptop', () => {
     const download = sheet.getByRole('link', { name: 'Download sheet P1' })
     await expect(download).toBeFocused()
     await expect(download).toHaveAttribute('href', '/sheets/site-P1.pdf')
-    await expect(sheet.locator('.dt-sheet-name')).toHaveText('Sheet P1A3 · upright · PDF')
+    await expect(sheet.locator('.dt-sheet-name > strong')).toHaveText('Sheet P1')
+    await expect(sheet.locator('.dt-sheet-name > span')).toHaveText('A3 · upright · PDF')
     await expect(sheet.locator('.dt-list li')).toHaveText([
       'Print it on A3 at 100%, not "Fit to page". Its check bar must measure 10.0 cm.',
       'Fix it upright, with the centre of the code 1.4 m above the ground.',
