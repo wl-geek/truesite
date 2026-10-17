@@ -44,3 +44,16 @@ export function deviceLook(D: Mat3): LookAngles {
 export function wrap(a: number): number {
   return Math.atan2(Math.sin(a), Math.cos(a))
 }
+
+/** The angles that look from `eye` straight at `target` (IFC metres), pitch clamped to the look limits. */
+export function lookToward(eye: Vec3, target: Vec3): LookAngles {
+  const [dx, dy, dz] = [target[0] - eye[0], target[1] - eye[1], target[2] - eye[2]]
+  return { yaw: Math.atan2(dy, dx), pitch: clampPitch(Math.atan2(dz, Math.hypot(dx, dy))) }
+}
+
+/** Part way (`t` 0..1, eased in and out) from one view to another, turning the short way round. */
+export function turnBetween(from: LookAngles, to: LookAngles, t: number): LookAngles {
+  if (t <= 0) return from
+  const k = t >= 1 ? 1 : t * t * (3 - 2 * t)
+  return { yaw: from.yaw + wrap(to.yaw - from.yaw) * k, pitch: from.pitch + (to.pitch - from.pitch) * k }
+}

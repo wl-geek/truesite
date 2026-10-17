@@ -1,0 +1,38 @@
+/* ElementPanel.tsx: one element in plain words (3D viewer and virtual demo). */
+.ep-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.ep-type { display: inline-flex; align-items: center; gap: 8px; margin: 0; color: var(--steel); font-size: 13px; font-weight: 700; }
+.ep-title h2 { margin: 4px 0 2px; font-size: 20px; line-height: 1.2; }
+.ep-where { margin: 0; color: var(--muted); font-size: 14px; }
+.ep-zoom { min-height: 36px; margin-top: 10px; padding: 0 12px; font-size: 14px; }
+.ep-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 14px 0; }
+.ep-fact { padding: 10px 12px; border-radius: 12px; background: var(--paper); }
+.ep-fact:first-child { grid-column: 1 / -1; }
+.ep-fact dt { color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+.ep-fact dd { margin: 3px 0 0; color: var(--ink); font-size: 15px; font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
+.ep-notes { margin: 0 0 14px; padding: 10px 14px; border-left: 3px solid var(--orange); border-radius: 0 12px 12px 0; background: #fff6ef; }
+.ep-notes h3 { margin: 0 0 4px; color: #8a3a08; font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; }
+.ep-notes p { margin: 0; color: var(--ink); font-size: 14px; line-height: 1.45; }
+.ep-more { display: grid; gap: 4px; margin: 0 0 14px; font-size: 14px; }
+.ep-more div { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-top: 1px solid var(--line); }
+.ep-more dt { color: var(--muted); }
+.ep-more dd { margin: 0; text-align: right; }
+.ep-tech { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 13px; }
+.ep-tech summary { color: var(--muted); font-weight: 600; cursor: pointer; }
+.ep-tech dl { display: grid; gap: 4px; margin: 8px 0 0; }
+.ep-tech dl div { display: grid; grid-template-columns: 90px 1fr; gap: 8px; }
+.ep-tech dt { color: var(--muted); }
+.ep-tech dd { margin: 0; overflow-wrap: anywhere; }
+/* The element's as-built check result, coloured by severity, and the virtual demo's planted truth. */
+.ep-check { display: grid; gap: 6px; margin: 14px 0 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--white); }
+.ep-check-high { border-color: rgba(200, 54, 27, 0.55); background: #fff5f2; }
+.ep-check-medium { border-color: rgba(214, 140, 0, 0.6); background: #fffaf0; }
+.ep-check-low { border-color: rgba(78, 127, 179, 0.5); background: #f4f8fc; }
+.ep-check-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ep-check h3 { margin: 0; color: var(--muted); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; }
+.ep-check p { margin: 0; }
+.ep-check-status { color: var(--ink); font-size: 16px; font-weight: 700; }
+.ep-check-why { color: var(--muted); font-size: 14px; line-height: 1.4; }
+.ep-check .btn { justify-self: start; min-height: 40px; }
+.ep-check-note { color: var(--muted); font-size: 12px; }
+.ep-planted { margin: 10px 0 0; padding: 8px 12px; border-radius: 10px; background: var(--ink); color: #dfe8f1; font-size: 13.5px; }
+.ep-planted strong { color: var(--white); }

@@ -11,31 +11,20 @@ import { typeLabel } from './elementFacts'
 import { modelFacts, viewerTitle } from './viewerFacts'
 import { ElementPanel } from './ElementPanel'
 import { FindingsPanel } from './FindingsPanel'
+import { imageQualityMessage } from './findingFormat'
 import { IssueDialog } from './IssueDialog'
 import { Link } from './Link'
 import { isUnknownProject } from './liveFormat'
 import { goToSection } from './TopBar'
 import { ReloadPrompt } from './ReloadPrompt'
+import { useMedia, WIDE } from './useMedia'
 import './viewerChrome.css'
 
 export const DEFAULT_PROJECT_ID = 'site'
 const NOTICE_MS = 8000
-/** From this width the check results dock on the left of the model and the element details on the right. */
-const WIDE = '(min-width: 900px)'
 /** The free middle is narrower than this: the view tools show icons only. */
 const TIGHT_PX = 560
 
-function useMedia(query: string): boolean {
-  const [on, setOn] = useState(() => typeof window !== 'undefined' && window.matchMedia(query).matches)
-  useEffect(() => {
-    const m = window.matchMedia(query)
-    const change = () => setOn(m.matches)
-    change()
-    m.addEventListener('change', change)
-    return () => m.removeEventListener('change', change)
-  }, [query])
-  return on
-}
 
 type Loaded = { project: ProjectManifest; model: LoadedModel }
 type LoadError = { message: string; unknownProject: boolean }
@@ -235,7 +224,9 @@ export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: str
         {docked && findings}
         {loaded && element && (
           <ElementPanel projectId={loaded.project.project_id} element={element} multiStorey={modelFacts(loaded.project).storeys > 1}
-            onClose={() => setSelected(null)} onZoom={() => viewerRef.current?.focus(element.guid)} />
+            onClose={() => setSelected(null)} onZoom={() => viewerRef.current?.focus(element.guid)}
+            finding={lastCheck?.result.findings.find((f) => f.guid === element.guid) ?? null}
+            onDraftIssue={lastCheck && imageQualityMessage(lastCheck.result.image_quality) === null ? setDraftFor : undefined} />
         )}
         {notice && <p className="viewer-notice" role="status">{notice}</p>}
       </div>

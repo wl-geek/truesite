@@ -1,6 +1,6 @@
 import { isValidElement, type ReactElement, type ReactNode } from 'react'
 import { describe, expect, it } from 'vitest'
-import type { Element } from '../api/types'
+import type { Element, Finding } from '../api/types'
 import { AskBox } from './AskBox'
 import { ElementPanel } from './ElementPanel'
 
@@ -27,5 +27,66 @@ describe('ElementPanel', () => {
     const door = find(ElementPanel({ projectId: 'room1', element: el('D'.repeat(22), 'IfcDoor'), onClose: () => undefined }), AskBox)
     expect(wall?.key).toBe('W'.repeat(22))
     expect(door?.key).toBe('D'.repeat(22))
+  })
+})
+
+/** All the text in a rendered tree, joined (ElementPanel and its sections have no hooks). */
+function textOf(node: ReactNode): string {
+  if (node === null || node === undefined || typeof node === 'boolean') return ''
+  if (typeof node === 'string' || typeof node === 'number') return String(node)
+  if (Array.isArray(node)) return node.map(textOf).join('')
+  if (!isValidElement(node)) return ''
+  if (typeof node.type === 'function' && node.type !== AskBox) return textOf((node.type as (p: unknown) => ReactNode)(node.props))
+  return textOf((node.props as { children?: ReactNode }).children)
+}
+
+function buttons(node: ReactNode, label: string): ReactElement[] {
+  const out: ReactElement[] = []
+  const walk = (n: ReactNode) => {
+    if (Array.isArray(n)) return n.forEach(walk)
+    if (!isValidElement(n)) return
+    if (typeof n.type === 'function' && n.type !== AskBox) return walk((n.type as (p: unknown) => ReactNode)(n.props))
+    if (n.type === 'button' && textOf((n.props as { children?: ReactNode }).children).includes(label)) out.push(n)
+    walk((n.props as { children?: ReactNode }).children)
+  }
+  walk(node)
+  return out
+}
+
+describe('ElementPanel with a check result', () => {
+  const column = el('C'.repeat(22), 'IfcColumn')
+  const finding: Finding = {
+    mark: 8, guid: column.guid, name: column.name, ifc_class: 'IfcColumn', status: 'misplaced', confidence: 0.8, evidence_box: null,
+    offset: { direction: 'left', approx_cm: 60 }, explanation: 'It stands to the left of its outline.', severity: 'high',
+  }
+
+  it("shows the element's finding: status, severity, Gemini's reason, why it matters, and Draft issue", () => {
+    const drafted: Finding[] = []
+    const tree = ElementPanel({ projectId: 'site', element: column, onClose: () => undefined, finding, onDraftIssue: (f) => drafted.push(f) })
+    const text = textOf(tree)
+    expect(text).toContain('As-built check · mark 8')
+    expect(text).toContain('Misplaced, about 60 cm left')
+    expect(text).toContain('high')
+    expect(text).toContain('Gemini: It stands to the left of its outline.')
+    expect(text).toContain('Why it matters:')
+    const [draft] = buttons(tree, 'Draft issue')
+    ;(draft.props as { onClick: () => void }).onClick()
+    expect(drafted).toEqual([finding])
+  })
+
+  it('offers no Draft issue without a handler (a poor photo) or for an element that matches', () => {
+    expect(buttons(ElementPanel({ projectId: 'site', element: column, onClose: () => undefined, finding }), 'Draft issue')).toHaveLength(0)
+    const ok = { ...finding, status: 'present_ok' as const, offset: null, severity: null, explanation: '' }
+    const tree = ElementPanel({ projectId: 'site', element: column, onClose: () => undefined, finding: ok, onDraftIssue: () => undefined })
+    expect(textOf(tree)).toContain('Matches the design')
+    expect(buttons(tree, 'Draft issue')).toHaveLength(0)
+  })
+
+  it('says what was planted, in the virtual demo, and names its own camera action', () => {
+    const tree = ElementPanel({ projectId: 'site', element: column, onClose: () => undefined, onZoom: () => undefined,
+      zoomLabel: 'Turn to element', planted: 'about 60 cm west of the design' })
+    expect(textOf(tree)).toContain('Planted in this demo: about 60 cm west of the design')
+    expect(buttons(tree, 'Turn to element')).toHaveLength(1)
+    expect(buttons(tree, 'Zoom to element')).toHaveLength(0)
   })
 })

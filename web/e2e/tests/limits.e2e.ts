@@ -22,7 +22,7 @@ test.beforeEach(({ page }) => newAddress(page))
 test('per-address limit, virtual demo: the second check in an hour says when to try again and keeps the first results', async ({ page }) => {
   await enterVirtualSite(page, 'P1')
   await runVirtualCheck(page, 'P1')
-  await page.getByRole('button', { name: 'Back to the view' }).click()
+  await page.getByRole('button', { name: 'Hide results' }).click()
   const answer = page.waitForResponse('**/api/check')
   await page.getByRole('button', { name: 'Check as-built' }).click()
   const res = await answer
