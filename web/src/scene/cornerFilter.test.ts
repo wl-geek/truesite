@@ -39,3 +39,24 @@ describe('CornerStabilizer', () => {
     expect(f.update(square(801, 401), 0.03, 0.5)).toEqual(square(801, 401))
   })
 })
+
+describe('CornerStabilizer on a stand', () => {
+  it('averages longer the longer the code stays still, so the corners settle to a hundredth of a pixel', () => {
+    const f = new CornerStabilizer()
+    const truth = square(800, 400)
+    let out: Point2[] = []
+    for (let i = 0; i < 150; i++) out = f.update(flicker(truth, i), i / 30, 0.5) // 5 s on a stand
+    const err = Math.max(...out.map((p, k) => Math.hypot(p[0] - truth[k][0], p[1] - truth[k][1])))
+    expect(err).toBeLessThan(0.12)
+    expect(f.stillFor(5)).toBeGreaterThan(4.5)
+  })
+
+  it('says how long the code has been still, and starts over when it moves', () => {
+    const f = new CornerStabilizer()
+    expect(f.stillFor(0)).toBe(0)
+    for (let i = 0; i < 30; i++) f.update(flicker(square(800, 400), i), i / 30, 0.5)
+    expect(f.stillFor(1)).toBeGreaterThan(0.9)
+    f.update(square(840, 400), 1.05, 0.5)
+    expect(f.stillFor(1.05)).toBe(0)
+  })
+})

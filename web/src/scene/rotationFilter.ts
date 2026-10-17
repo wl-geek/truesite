@@ -50,6 +50,47 @@ export class RotationSmoother {
   }
 }
 
+/** Readings averaged at most (a spell longer than this keeps a running mean of the latest ones). */
+const STILL_MAX_READINGS = 240
+/** A reading this far from the spell's average is not noise (a sensor reset or recalibration): a new spell starts. */
+const STILL_JUMP_DEG = 1
+
+/**
+ * While the QR code shows that the camera hasn't turned (its corners stayed within their flicker band:
+ * CornerStabilizer.stillFor), the device rotation is averaged over the whole still spell instead of read frame by
+ * frame. The sensors' noise then averages out and the model holds still; the ground, metres from the code, shows any
+ * rotation most. The moment the corners move, the live reading is used again, so a slow pan never drags.
+ */
+export class StillRotation {
+  private q: Quat | null = null
+  private n = 0
+
+  /** The rotation to pose this frame with: the spell's average while `still`, else `D` itself. */
+  update(D: Mat3, still: boolean): Mat3 {
+    if (!still) {
+      this.q = null
+      this.n = 0
+      return D
+    }
+    const qi = quatFromRotation(D)
+    if (!this.q) {
+      this.q = qi
+      this.n = 1
+      return D
+    }
+    const a = align(qi, this.q)
+    const dot = Math.abs(a[0] * this.q[0] + a[1] * this.q[1] + a[2] * this.q[2] + a[3] * this.q[3])
+    if (2 * Math.acos(Math.min(1, dot)) > (STILL_JUMP_DEG * Math.PI) / 180) {
+      this.q = qi
+      this.n = 1
+      return D
+    }
+    this.n = Math.min(this.n + 1, STILL_MAX_READINGS)
+    this.q = nlerp(this.q, a, 1 / this.n)
+    return rotationFromQuat(this.q)
+  }
+}
+
 /** Exponential smoothing factor for a cutoff frequency and a time step (s). */
 function alpha(cutoffHz: number, dt: number): number {
   return 1 / (1 + 1 / (2 * Math.PI * cutoffHz * dt))
