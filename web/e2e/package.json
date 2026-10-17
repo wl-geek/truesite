@@ -1,0 +1,25 @@
+{
+  "name": "truesite-e2e",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Playwright end-to-end suite for TrueSite, kept apart from the app's package.json and Docker build",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:live-ar": "playwright test --project live-ar",
+    "report": "playwright show-report",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.14.0",
+    "@playwright/test": "1.64.1",
+    "@types/node": "20.19.43",
+    "@types/pngjs": "6.0.5",
+    "pngjs": "7.0.0",
+    "typescript": "6.0.3"
+  }
+}
