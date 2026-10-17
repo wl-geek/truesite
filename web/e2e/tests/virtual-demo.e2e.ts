@@ -65,9 +65,9 @@ test.describe('virtual demo', () => {
       const findings = results.getByRole('region', { name: 'As-built check results' })
       await expect(findings.locator('h2')).toHaveText(`0 possible deviations · ${compared} match · 0 can't judge`)
       await expect(findings).toContainText('Visual check, not a survey.')
-      // Some planted defects are in this opening view, the rest are listed as elsewhere.
+      // Some planted defects are in this opening view, the rest are listed as not checked (C-24: not "elsewhere").
       const elsewhere = results.locator('details.vs-truth summary')
-      await expect(elsewhere).toHaveText(/^Planted elsewhere on this site \(\d\)$/)
+      await expect(elsewhere).toHaveText(/^Not checked in this view \(\d\)$/)
       expect(Number(/\((\d+)\)/.exec((await elsewhere.textContent())!)![1])).toBeLessThanOrEqual(PLANTED_TOTAL - FEATURED[v.id].length)
 
       await results.getByRole('button', { name: 'Back to the view' }).click()
@@ -195,7 +195,7 @@ test.describe('virtual demo', () => {
     await expect(dialog.getByRole('textbox', { name: 'Title' })).toHaveValue('Keep me')
   })
 
-  test.fixme(BUG.issueErrorCopy, async ({ page }) => {
+  test(BUG.issueErrorCopy, async ({ page }) => {
     await stubGeminiFindsPlanted(page)
     await enterVirtualSite(page, 'P2')
     await runVirtualCheck(page, 'P2')
@@ -218,14 +218,34 @@ test.describe('virtual demo', () => {
     await page.locator('canvas.vs-canvas').focus()
     for (let i = 0; i < 4; i++) await page.keyboard.press('ArrowDown')
     await runVirtualCheck(page, 'P3')
-    await expect(page.locator('.vs-report')).toContainText('Gemini writes the site report from your 2 checks')
+    await expect(page.locator('.vs-report')).toContainText('The offline stand-in writes the site report from your 2 checks at P3:')
     const sent = page.waitForRequest((r) => r.url().endsWith('/api/report'))
     await page.getByRole('button', { name: "Write today's site report" }).click()
     expect(JSON.parse((await sent).postData()!).run_ids).toHaveLength(2)
     await expect(page.getByRole('dialog').locator('h2')).toHaveText('Site report: 0 items from 2 checks')
   })
 
-  test.fixme(BUG.offlineReport, async ({ page }) => {
+  test("checks at two QR spots: the day's site report covers both (C-03)", async ({ page }) => {
+    const runIds: string[] = []
+    page.on('response', async (r) => {
+      if (r.url().endsWith('/api/check') && r.ok()) runIds.push((await r.json()).run_id)
+    })
+    await enterVirtualSite(page, 'P1')
+    await runVirtualCheck(page, 'P1')
+    await page.getByRole('button', { name: 'Exit' }).click()
+    await expect(page).toHaveURL(/\/#virtual$/)
+    await page.locator('#virtual .vp-card', { hasText: VIEWPOINTS[1].name }).click()
+    await expect(page.getByRole('button', { name: 'Got it' })).toBeVisible({ timeout: 60_000 })
+    await runVirtualCheck(page, 'P2')
+    await expect(page.locator('.vs-report')).toContainText('writes the site report from your 2 checks at P1 and P2:')
+    const sent = page.waitForRequest((r) => r.url().endsWith('/api/report'))
+    await page.getByRole('button', { name: "Write today's site report" }).click()
+    await expect.poll(() => runIds.length).toBe(2)
+    expect(JSON.parse((await sent).postData()!).run_ids).toEqual(runIds)
+    await expect(page.getByRole('dialog').locator('h2')).toHaveText('Site report: 0 items from 2 checks')
+  })
+
+  test(BUG.offlineReport, async ({ page }) => {
     await enterVirtualSite(page, 'P1')
     await runVirtualCheck(page, 'P1')
     await expect(page.locator('.vs-score-line')).toHaveText("Offline test mode: Gemini isn't connected on this server")
@@ -244,7 +264,7 @@ test.describe('virtual demo', () => {
     await expect.poll(async () => (await canvasShot(page)).equals(before)).toBe(false)
   })
 
-  test.fixme(BUG.coachBlocksDrag, async ({ page }) => {
+  test(BUG.coachBlocksDrag, async ({ page }) => {
     await enterVirtualSite(page, 'P2')
     const card = (await page.getByRole('note').boundingBox())!
     await page.mouse.move(card.x + card.width * 0.7, card.y + card.height * 0.3) // the middle of the view, where a first drag starts
@@ -285,16 +305,39 @@ test.describe('virtual demo', () => {
     await expect(page).toHaveURL(/\/#virtual$/)
     await expect(page.getByRole('heading', { name: 'Try the idea in a virtual demo' })).toBeInViewport()
   })
+
+  test('the /samples redirect and Exit replace their history entry: Back never bounces or re-opens the spot (C-27)', async ({ page }) => {
+    await page.goto('/')
+    const start = await page.evaluate(() => history.length)
+    await page.goto('/samples')
+    await expect(page).toHaveURL(/\/#virtual$/)
+    expect(await page.evaluate(() => history.length)).toBe(start + 1) // /samples became /#virtual: no entry of its own
+    await page.locator('#virtual .vp-card', { hasText: VIEWPOINTS[0].name }).click()
+    await expect(page.getByRole('button', { name: 'Got it' })).toBeVisible({ timeout: 60_000 })
+    await page.getByRole('button', { name: 'Exit' }).click()
+    await expect(page).toHaveURL(/\/#virtual$/)
+    expect(await page.evaluate(() => history.length)).toBe(start + 2) // the spot became /#virtual too
+    await page.goBack()
+    await expect(page).toHaveURL(/\/#virtual$/)
+    await expect(page.getByRole('application')).toHaveCount(0)
+  })
 })
 
 test.describe('virtual demo: when the check cannot run', () => {
-  const cases: { name: string; status: number; body: object | null; headers: Record<string, string>; text: string }[] = [
+  /** A Gemini usage limit also opens the popup with a countdown over the page (#117); other failures don't. */
+  type Limit = { title: string; wait: string; left: RegExp }
+  const cases: { name: string; status: number; body: object | null; headers: Record<string, string>; text: string; limit?: Limit }[] = [
     { name: 'Gemini busy (503)', status: 503, body: { detail: { code: 'model_unavailable' } }, headers: { 'Retry-After': '5' },
       text: 'Gemini is busy right now. Try again in a minute.' },
     { name: 'per-IP limit (429)', status: 429, body: { detail: { code: 'rate_limited', retry_after_s: 1500 } }, headers: { 'Retry-After': '1500' },
-      text: 'Too many checks from this network. Try again in about 25 min.' },
+      text: 'Too many checks from this network. Try again in about 25 min.',
+      limit: { title: 'This network has used its Gemini checks for now', wait: 'Gemini is back for this network in', left: /^2[45]:\d\d$/ } },
     { name: 'daily cap (429)', status: 429, body: { detail: { code: 'daily_cap' } }, headers: {},
-      text: "Today's check limit has been reached. Try the sample photos, or come back tomorrow." },
+      text: "Today's free Gemini use is used up. Try the ready-made views (saved results), or come back tomorrow.",
+      limit: { title: "Today's free Gemini use is used up", wait: 'Gemini is back in', left: /^(\d{1,2}:)?\d{1,2}:\d\d$/ } }, // to 00:00 UTC
+    { name: "Google's quota (429)", status: 429, body: { detail: { code: 'model_quota', retry_after_s: 30 } }, headers: { 'Retry-After': '30' },
+      text: "Gemini's usage limit is reached. Try again in about 1 min.",
+      limit: { title: "Gemini's usage limit is reached", wait: 'Try again in', left: /^0:[0-3]\d$/ } },
     { name: 'photo blocked (422)', status: 422, body: { detail: { code: 'model_blocked' } }, headers: {},
       text: "This photo couldn't be checked. Try a different view." },
     { name: 'a proxy error page (502)', status: 502, body: null, headers: {}, text: 'Check failed. Try again.' },
@@ -307,10 +350,36 @@ test.describe('virtual demo: when the check cannot run', () => {
       await enterVirtualSite(page, 'P4')
       await page.getByRole('button', { name: 'Check as-built' }).click()
       await expect(page.locator('.vs-notice')).toHaveText(c.text)
+      if (c.limit) {
+        const popup = page.getByRole('dialog', { name: c.limit.title })
+        await expect(popup).toHaveAttribute('aria-modal', 'true')
+        await expect(popup.locator('.ld-kicker')).toHaveText('Usage limit · not an error')
+        await expect(popup.getByRole('timer')).toContainText(c.limit.wait)
+        await expect(popup.getByRole('timer').locator('strong')).toHaveText(c.limit.left)
+        await expect(popup.getByRole('button', { name: 'Open the ready-made views' })).toBeVisible()
+        await expect(popup.getByRole('button', { name: 'Close' })).toBeFocused()
+        await popup.getByRole('button', { name: 'Close' }).click()
+        await expect(popup).toBeHidden()
+      } else {
+        await expect(page.getByRole('dialog')).toHaveCount(0)
+      }
       await expect(page.getByRole('link', { name: 'Use a ready-made view instead' })).toHaveAttribute('href', '/samples?photos')
       await expect(page.getByRole('button', { name: 'Check as-built' })).toBeEnabled()
     })
   }
+
+  // Open: LimitDialog focuses Close and handles Escape itself instead of using useModal, so Tab goes to the page.
+  test.fixme(BUG.limitFocus, async ({ page }) => {
+    await page.route('**/api/check', (route) => route.fulfill({ status: 429, json: { detail: { code: 'rate_limited', retry_after_s: 1500 } } }))
+    await enterVirtualSite(page, 'P4')
+    await page.getByRole('button', { name: 'Check as-built' }).click()
+    const popup = page.getByRole('dialog', { name: 'This network has used its Gemini checks for now' })
+    await expect(popup.getByRole('button', { name: 'Close' })).toBeFocused()
+    for (const key of ['Tab', 'Shift+Tab', 'Shift+Tab']) {
+      await page.keyboard.press(key)
+      expect(await popup.evaluate((d) => d.contains(document.activeElement)), `focus inside the popup after ${key}`).toBe(true)
+    }
+  })
 
   test('no connection: says so', async ({ page }) => {
     await page.route('**/api/check', (route) => route.abort('internetdisconnected'))

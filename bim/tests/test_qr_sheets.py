@@ -11,7 +11,7 @@ from truesite_bim import qr_sheets, rooftop, site
 PT_PER_MM = 72 / 25.4
 BASE = "https://truesite-7x2k3m4n5q-as.a.run.app"  # realistic legacy *.a.run.app length (QR version 4)
 LONG_BASE = "https://truesite-123456789012.asia-southeast1.run.app"  # new-style Cloud Run URL (QR version 5)
-SHEETS = {"D1": (120.0, (210, 297)), "D2": (150.0, (420, 297)), "L1": (160.0, (210, 297)), "A1": (230.0, (297, 420))}
+SHEETS = {"D1": (120.0, (215.9, 279.4)), "D2": (70.0, (215.9, 279.4)), "L1": (160.0, (215.9, 279.4)), "A1": (160.0, (215.9, 279.4))}  # all US Letter portrait
 
 
 @pytest.fixture(scope="module")
@@ -93,7 +93,7 @@ def test_anchors_json_matches_the_sheets(sheets):
     assert anchors == [qr_sheets.anchor_entry(sh, "room1") for sh in qr_sheets.make_sheets()]
     by_id = {a["anchor_id"]: a for a in anchors}
     assert set(by_id) == {"D1", "D2", "L1", "A1"}
-    assert {k: by_id[k]["qr_size_m"] for k in by_id} == {"D1": 0.12, "D2": 0.15, "L1": 0.16, "A1": 0.23}
+    assert {k: by_id[k]["qr_size_m"] for k in by_id} == {"D1": 0.12, "D2": 0.07, "L1": 0.16, "A1": 0.16}
     for a in anchors:
         assert set(a) == {"anchor_id", "project_id", "qr_size_m", "position_m", "normal", "up", "scale", "label"}
         assert a["project_id"] == "room1" and a["label"]
@@ -114,7 +114,7 @@ def test_desk_anchor_positions_round_trip_to_the_page():
         py = qy + (0 - a["position_m"][1]) * a["scale"] * 1000
         assert (px, py) == pytest.approx(sh.model_origin_mm)
     by_id = {sh.anchor_id: qr_sheets.anchor_entry(sh, "room1") for sh in qr_sheets.make_sheets()}
-    assert by_id["D2"]["position_m"][:2] == [-2.0, 1.5] and by_id["D1"]["position_m"][:2] == [2.0, -1.6]
+    assert by_id["D2"]["position_m"][:2] == [3.16, -1.04] and by_id["D1"]["position_m"][:2] == [2.0, -1.6]
 
 
 def test_anchors_only_mode_needs_no_url(tmp_path):
@@ -190,7 +190,7 @@ def test_no_sheet_sends_anyone_to_a_hidden_button(sheet, project):
 
 
 def test_quiet_zone_warning_goes_to_stderr_and_stdout_stays_json(tmp_path, capsys):
-    # A very short host gives a version-2 code with big modules: A1's 23 cm code then has < 4 modules of paper.
+    # A very short host gives a version-2 code with big modules: A1's 16 cm code then has < 4 modules of paper.
     qr_sheets.main(["--base-url", "https://a.io", "--project", "room1", "--out-dir", str(tmp_path)])
     out, err = capsys.readouterr()
     assert "WARNING A1" in err and "WARNING" not in out

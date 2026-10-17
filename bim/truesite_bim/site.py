@@ -11,9 +11,9 @@ Sized for people about 1.8 m (6 ft) tall: 6 m bays and a ground storey with 3.9 
 - Upper storey, steel: UC columns on lines 1 and 3 from level 1 to the eaves (8.5 m), edge beams, four duo-pitch
   trusses T1-T4 spanning 12 m (ridge about 10.4 m), purlins, and X-bracing in the end bays.
 - Pad footings with only their top 20 mm modelled, so nothing is below Z 0 and the model sits on the ground in AR.
-- Anchors P1-P4: upright A3 sheets, code centre 1.4 m above the ground (an iPad held upright at chest height by a
+- Anchors P1-P4: upright US Letter sheets (16 cm code), code centre 1.4 m above the ground (an iPad held upright at chest height by a
   1.70 m adult), each facing a standing spot 1.5 m in front of it. Scan from the spot, then turn on the spot.
-  D1: the whole building at 1:100 on an A4 desk sheet. The layout plan (site-layout.pdf) gives the tape
+  D1: the whole building at 1:100 on a Letter desk sheet. The layout plan (site-layout.pdf) gives the tape
   measurements for setting the four sheets out on a car park.
 """
 from __future__ import annotations
@@ -27,13 +27,13 @@ import numpy as np
 
 import ifcopenshell.api.geometry
 import ifcopenshell.api.spatial
-from reportlab.lib.pagesizes import A3, A4, landscape, portrait
 from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas
 
 from .make_demo_model import Builder
 from .pipeline import run as run_pipeline
-from .qr_sheets import Sheet, https_base_url, render_sheet, warn_thin_quiet_zone
+from .qr_sheets import (LETTER_LANDSCAPE, LETTER, LIFE_CHECK_BAR_MM, LIFE_QR_CENTRE_MM, LIFE_QR_MM, LIFE_TEXT_BOX_MM, Sheet,
+                        https_base_url, render_sheet, warn_thin_quiet_zone)
 from .rooftop import qr_mm
 
 PROJECT_ID = "site"
@@ -65,7 +65,7 @@ RAIL = ("Scaffold tube", "steel", (0.85, 0.65, 0.1))
 # --- viewpoints --------------------------------------------------------------------------------------------
 CODE_Z = 1.4  # code centre above the ground: camera height of an iPad held upright at chest height (1.70 m adult)
 STAND_OFF = 1.5  # the standing spot is this far in front of the code
-QR_M = 0.23  # A3 portrait keeps the full 4-module quiet zone for the Cloud Run URL at 23 cm
+QR_M = LIFE_QR_MM / 1000  # the largest code a Letter page holds with its full quiet zone
 VIEWPOINTS = [  # id, standing spot (x, y), looking direction (unit, along a grid axis), name
     ("P1", (9.0, -4.0), (0, 1), "South approach"),
     ("P2", (3.0, 3.0), (1, 0), "Inside, under the cast slab"),
@@ -79,19 +79,20 @@ def viewpoint_anchor(vid: str, stand: tuple[float, float], look: tuple[int, int]
     code = [stand[0] + STAND_OFF * look[0], stand[1] + STAND_OFF * look[1], CODE_Z]
     return {"anchor_id": vid, "project_id": PROJECT_ID, "qr_size_m": QR_M, "position_m": code,
             "normal": [-look[0], -look[1], 0], "up": [0, 0, 1], "scale": 1.0,
-            "label": f"{vid} {name}: upright A3, code at {CODE_Z} m"}
+            "label": f"{vid} {name}: upright Letter, code at {CODE_Z} m"}
 
 
 VIEW_ANCHORS = [viewpoint_anchor(*v) for v in VIEWPOINTS]
-# D1: judges' desk sheet, A4 landscape: the building at 1:100 beside a 70 mm code. Page coordinates (mm, origin
-# bottom-left): model (0, 0) at (15, 45), so the 18 x 12 m footprint covers x 15..195, y 45..165; code centre (250, 105).
+# D1: judges' desk sheet, Letter landscape: the building at 1:100 beside a 62 mm code. Page coordinates (mm, origin
+# bottom-left): model (0, 0) at (12, 48), so the 18 x 12 m footprint covers x 12..192, y 48..168; code centre (236, 110).
 DESK_SCALE_SITE = 0.01
-DESK_ORIGIN_MM = (15.0, 45.0)
-DESK_QR_MM = (250.0, 105.0)
-ANCHOR_DESK = {"anchor_id": "D1", "project_id": PROJECT_ID, "qr_size_m": 0.07,
+DESK_ORIGIN_MM = (12.0, 48.0)
+DESK_QR_MM = (236.0, 110.0)
+DESK_QR_SIZE_MM = 62.0
+ANCHOR_DESK = {"anchor_id": "D1", "project_id": PROJECT_ID, "qr_size_m": DESK_QR_SIZE_MM / 1000,
                "position_m": [round((DESK_QR_MM[0] - DESK_ORIGIN_MM[0]) / 1000 / DESK_SCALE_SITE, 4),
                               round((DESK_QR_MM[1] - DESK_ORIGIN_MM[1]) / 1000 / DESK_SCALE_SITE, 4), 0.0],
-               "normal": [0, 0, 1], "up": [0, 1, 0], "scale": DESK_SCALE_SITE, "label": "Building desk sheet A4 (1:100)"}
+               "normal": [0, 0, 1], "up": [0, 1, 0], "scale": DESK_SCALE_SITE, "label": "Building desk sheet Letter (1:100)"}
 ANCHORS = [*VIEW_ANCHORS, ANCHOR_DESK]
 # project.json "check_note": the server adds it to every check prompt for this project. The photos are taken
 # from the viewpoints, up to 10 m out, so the 0.23 m code is small or out of frame and the car park is in view.
@@ -356,8 +357,8 @@ def view_sheet(anchor: dict) -> Sheet:
     _, stand, look, name = next(v for v in VIEWPOINTS if v[0] == vid)
     x, y, _ = anchor["position_m"]
     return Sheet(
-        vid, "wall", anchor["label"], f"TrueSite building site viewpoint {vid} ({name}) - life size 1:1", portrait(A3),
-        qr_mm(anchor), (148.5, 265.0), check_bar_mm=(98.5, 40.0), text_box_mm=(20.0, 120.0),
+        vid, "wall", anchor["label"], f"TrueSite building site viewpoint {vid} ({name}) - life size 1:1", LETTER,
+        qr_mm(anchor), LIFE_QR_CENTRE_MM, check_bar_mm=LIFE_CHECK_BAR_MM, text_box_mm=LIFE_TEXT_BOX_MM,
         position_m=anchor["position_m"], normal=anchor["normal"], up=anchor["up"], scale=1.0,
         instructions=[
             f"{vid} {name}. Code centre at x {x:g} m, y {y:g} m from point O (see site-layout.pdf), facing "
@@ -366,19 +367,19 @@ def view_sheet(anchor: dict) -> Sheet:
             f"Stand on the X {STAND_OFF:g} m in front ({stand[0]:g}, {stand[1]:g}). Hold the iPad upright at chest height.",
             "Scan, tap Start camera. Lock 0.7 m from the code, a little to one side, until 'Alignment: Good'.",
             "Step back to the X, then turn slowly on the spot and look up. Don't walk. Re-align on the code every minute.",
-            "Measure the check bar: if it is not 10.0 cm, enter the length in the app.",
+            "Print on US Letter at 100%. If the check bar is not 10.0 cm, enter its measured length in the app.",
         ],
     )
 
 
 def d1_sheet() -> Sheet:
     return Sheet(
-        "D1", "desk", ANCHOR_DESK["label"], "TrueSite building desk sheet D1 - scale model 1:100", landscape(A4),
-        70.0, DESK_QR_MM, check_bar_mm=(185.0, 18.0), text_box_mm=(15.0, 190.0),
+        "D1", "desk", ANCHOR_DESK["label"], "TrueSite building desk sheet D1 - scale model 1:100", LETTER_LANDSCAPE,
+        DESK_QR_SIZE_MM, DESK_QR_MM, check_bar_mm=(170.0, 14.0), text_box_mm=(15.0, 196.0),
         position_m=ANCHOR_DESK["position_m"], normal=ANCHOR_DESK["normal"], up=ANCHOR_DESK["up"], scale=DESK_SCALE_SITE,
         model_origin_mm=DESK_ORIGIN_MM,
         instructions=[
-            "Print at 100% and lay it flat on a table in good light. Scan the code, tap Start camera.",
+            "Print on US Letter at 100% and lay it flat on a table in good light. Scan the code, tap Start camera.",
             "The 18 x 12 m building appears at 1:100 on the left half of the page.",
         ],
     )
@@ -396,31 +397,32 @@ def tape_distances() -> list[tuple[str, str, float]]:
 
 
 def render_layout(out_pdf: Path) -> Path:
-    """A3 landscape plan at 1:125 for setting out the four viewpoint sheets on a car park."""
+    """US Letter landscape plan at 1:200 for setting out the four viewpoint sheets on a car park."""
     out_pdf.parent.mkdir(parents=True, exist_ok=True)
-    page = landscape(A3)
+    page = LETTER_LANDSCAPE  # 279.4 x 215.9 mm
     c = canvas.Canvas(str(out_pdf), pagesize=page, pageCompression=0)
     c.setTitle("TrueSite building site - viewpoint layout")
     c.setAuthor("TrueSite")
-    ox, oy, k = 45.0, 135.0, 8.0  # page mm of point O; mm per metre (1:125)
+    ox, oy, k = 35.0, 92.0, 5.0  # page mm of point O; mm per metre (1:200)
 
     def P(x: float, y: float) -> tuple[float, float]:
         return (ox + x * k) * mm, (oy + y * k) * mm
 
-    c.setFont("Helvetica-Bold", 16)
-    c.drawString(20 * mm, page[1] - 18 * mm, "TrueSite building site: where to put the four QR viewpoints (plan, 1:125 on A3)")
+    c.setFont("Helvetica-Bold", 14)
+    c.drawString(15 * mm, page[1] - 16 * mm, "TrueSite building site: where to put the four QR viewpoints (plan, 1:200 on US Letter)")
     c.setFont("Helvetica", 9)
-    c.drawString(20 * mm, page[1] - 25 * mm, "All distances in metres from point O = grid corner A1. x runs east along line 1, y runs north "
-                                              "along line A. Only the stands and the four standing spots need to be clear; the model can overlap cars.")
+    c.drawString(15 * mm, page[1] - 23 * mm, "All distances in metres from point O = grid corner A1. x runs east along line 1, y runs north along line A.")
+    c.drawString(15 * mm, page[1] - 27.5 * mm, "Only the stands and the four standing spots need to be clear; the model can overlap cars.")
     # building footprint, slab cast area, grid
     c.setFillColorRGB(0.9, 0.9, 0.9)
     c.rect(*P(0, 0), CAST_TO_X * k * mm, SPAN * k * mm, stroke=0, fill=1)
     c.setFillColorRGB(1.0, 0.93, 0.9)
     c.rect(*P(CAST_TO_X, 0), (GRID_X[-1] - CAST_TO_X) * k * mm, SPAN * k * mm, stroke=0, fill=1)
     c.setFillColorRGB(0, 0, 0)
-    c.setFont("Helvetica", 8)
+    c.setFont("Helvetica", 7)
     c.drawCentredString(*P(CAST_TO_X / 2, SPAN / 2 + 0.6), "Level 1 slab cast (ceiling 3.9-4.5 m)")
-    c.drawCentredString(*P((CAST_TO_X + GRID_X[-1]) / 2, SPAN / 2 + 0.6), "Open bay: rebar mat at 4.3 m")
+    c.drawCentredString(*P((CAST_TO_X + GRID_X[-1]) / 2, SPAN / 2 + 0.6), "Open bay: rebar mat")
+    c.drawCentredString(*P((CAST_TO_X + GRID_X[-1]) / 2, SPAN / 2 - 0.6), "at 4.3 m")
     c.setDash(4, 3)
     c.setStrokeColorRGB(0.4, 0.4, 0.4)
     for i, x in enumerate(GRID_X):
@@ -447,7 +449,7 @@ def render_layout(out_pdf: Path) -> Path:
         vid = a["anchor_id"]
         _, stand, look, name = next(v for v in VIEWPOINTS if v[0] == vid)
         (x, y, _), (nx, ny, _) = a["position_m"], a["normal"]
-        half = 0.15  # half the sheet width (A3 portrait, 297 mm)
+        half = 0.108  # half the sheet width (US Letter portrait, 215.9 mm)
         c.setStrokeColorRGB(0.1, 0.3, 0.8)
         c.setFillColorRGB(0.1, 0.3, 0.8)
         c.setLineWidth(4)
@@ -461,13 +463,13 @@ def render_layout(out_pdf: Path) -> Path:
         c.line(sx - 2.5 * mm, sy + 2.5 * mm, sx + 2.5 * mm, sy - 2.5 * mm)
         c.setFillColorRGB(0, 0, 0)
         c.setFont("Helvetica-Bold", 11)
-        lx, ly = P(x + 0.5 * (ny or 1), y + 0.5 * (nx or 0) + 0.4)
-        c.drawString(lx, ly, vid)
+        lx, ly = P(x - 1.3 * nx, y - 1.3 * ny)  # behind the sheet, away from its standing spot
+        c.drawCentredString(lx, ly - 1.5 * mm, vid)
         c.setFont("Helvetica", 7)
-        c.drawString(sx + 3 * mm, sy - 1 * mm, f"stand {STAND_OFF:g} m")
+        c.drawCentredString(sx, sy - 5 * mm, f"stand {STAND_OFF:g} m")  # under the X, clear of the sheet label
     # table
     c.setFont("Helvetica-Bold", 10)
-    tx, ty = 20 * mm, 72 * mm
+    tx, ty = 15 * mm, 58 * mm
     c.drawString(tx, ty, "Set-out table (metres)")
     rows = [("Sheet", "Name", "Code centre x, y", "Code height", "Sheet faces", "Stand on X at", "Look")]
     for a in VIEW_ANCHORS:
@@ -482,19 +484,20 @@ def render_layout(out_pdf: Path) -> Path:
         for col, cell in zip(cols, row):
             c.drawString(tx + col * mm, ty - (6 + 5 * r) * mm, cell)
     c.setFont("Helvetica-Bold", 10)
-    c.drawString(tx + 215 * mm, ty, "Tape check, code to code")
+    rx, ry = 165 * mm, 175 * mm  # the right column, beside the plan
+    c.drawString(rx, ry, "Tape check, code to code")
     c.setFont("Helvetica", 9)
     for i, (p, q, d) in enumerate(tape_distances()):
-        c.drawString(tx + 215 * mm, ty - (6 + 5 * i) * mm, f"{p} - {q}: {d:.2f} m")
+        c.drawString(rx, ry - (6 + 5 * i) * mm, f"{p} - {q}: {d:.2f} m")
     c.setFont("Helvetica-Bold", 10)
-    c.drawString(tx + 290 * mm, ty, "How to set out")
+    c.drawString(rx, ry - 43 * mm, "How to set out")
     c.setFont("Helvetica", 8)
     steps = ["1. Tape a cross at O. Run a long tape east along a straight line (a", "   parking bay line works): this is the x axis.",
              "2. For y, turn 90 degrees: 3 m along x, 4 m up, 5 m diagonal.", "3. Tape each code spot and its X; check the code-to-code tapes.",
              "4. Sheet face square to its axis (+/- 1 degree): align the board's", "   bottom edge with a 1 m tape line on the ground.",
              "5. Code centre 1.40 m high; board vertical (phone level app)."]
     for i, s in enumerate(steps):
-        c.drawString(tx + 290 * mm, ty - (6 + 4.5 * i) * mm, s)
+        c.drawString(rx, ry - (49 + 4.5 * i) * mm, s)
     c.showPage()
     c.save()
     return out_pdf

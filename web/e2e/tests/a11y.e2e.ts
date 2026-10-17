@@ -34,7 +34,7 @@ async function startLiveCamera(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Start camera' }).click()
   await page.getByRole('button', { name: 'Skip' }).click()
   await page.getByRole('button', { name: 'Skip' }).click()
-  await expect(page.locator('.mode-chip')).toBeVisible()
+  await expect(page.locator('.hud-scale')).toBeVisible()
 }
 
 test.describe('accessibility (axe-core, serious and critical)', () => {
@@ -48,20 +48,24 @@ test.describe('accessibility (axe-core, serious and critical)', () => {
     }
   })
 
-  test('live AR: the laptop popup, the start panel and the running camera view', async ({ page }) => {
-    test.slow() // four full scans
+  test('live AR: both steps of the laptop popup, the start panel and the running camera view', async ({ page }) => {
+    test.slow() // five full scans
     await page.goto('/a/site/P1')
-    await expect(page.getByRole('dialog')).toBeVisible()
+    await expect(page.getByRole('dialog', { name: 'Open live AR on your tablet or phone' })).toBeVisible()
     expect(await scan(page, 'live-popup')).toEqual([])
-    await page.getByRole('button', { name: 'Continue on this computer' }).click()
+    await page.getByRole('button', { name: 'Next: get the sheet' }).click()
+    await expect(page.getByRole('dialog', { name: 'Print the sheet and scan its code' })).toBeVisible()
+    expect(await scan(page, 'live-popup-sheet')).toEqual([])
+    await page.getByRole('button', { name: 'Done' }).click()
+    await expect(page.getByRole('dialog')).toHaveCount(0)
     expect(await scan(page, 'live-start')).toEqual([])
     await page.getByRole('button', { name: 'Start camera' }).click()
     await expect(page.getByRole('heading', { name: 'Calibrate this camera (10 s)' })).toBeVisible()
     expect(await scan(page, 'live-calibrate')).toEqual([])
     await page.getByRole('button', { name: 'Skip' }).click()
     await page.getByRole('button', { name: 'Skip' }).click()
-    await expect(page.locator('.mode-chip')).toBeVisible()
-    expect(await scan(page, 'live-running')).toEqual([])
+    await expect(page.locator('.hud-scale')).toBeVisible()
+    expect(await scan(page, 'live-running')).toEqual([]) // with the icon-only Exit control, which needs its name
   })
 
   test('3D model with an element and an answer @handheld', async ({ page }) => {
@@ -103,14 +107,14 @@ test.describe('accessibility (axe-core, serious and critical)', () => {
 })
 
 test.describe('accessibility bugs', () => {
-  test.fixme(BUG.orangeContrast, async ({ page }) => {
+  test(BUG.orangeContrast, async ({ page }) => {
     await openStubbedResults(page)
     expect((await scan(page, 'results-contrast', true)).filter((v) => v.includes('color-contrast'))).toEqual([])
     await startLiveCamera(page)
     expect((await scan(page, 'live-contrast', true)).filter((v) => v.includes('color-contrast'))).toEqual([])
   })
 
-  test.fixme(BUG.summaryTargets, async ({ page }) => {
+  test(BUG.summaryTargets, async ({ page }) => {
     await openStubbedResults(page)
     for (const s of await page.locator('.findings details summary').all()) {
       const box = (await s.boundingBox())!
@@ -119,7 +123,7 @@ test.describe('accessibility bugs', () => {
     expect((await scan(page, 'results-targets', true)).filter((v) => v.includes('target-size'))).toEqual([])
   })
 
-  test.fixme(BUG.dialogFocus, async ({ page }) => {
+  test(BUG.dialogFocus, async ({ page }) => {
     await openStubbedResults(page)
     await page.getByRole('button', { name: 'Draft issue' }).first().click()
     const issue = page.getByRole('dialog', { name: 'New issue' })
@@ -135,10 +139,10 @@ test.describe('accessibility bugs', () => {
     await expect(report).toBeHidden()
   })
 
-  test.fixme(BUG.tipFocus, async ({ page }) => {
+  test(BUG.tipFocus, async ({ page }) => {
     await page.goto('/a/site/P1')
     const tip = page.getByRole('dialog')
-    await expect(tip.getByRole('link', { name: 'Try the virtual demo' })).toBeFocused()
+    await expect(tip.getByRole('button', { name: 'Next: get the sheet' })).toBeFocused() // its first control since #107
     await page.keyboard.press('Shift+Tab')
     expect(await tip.evaluate((d) => d.contains(document.activeElement))).toBe(true)
     for (let i = 0; i < 3; i++) await page.keyboard.press('Tab')

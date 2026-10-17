@@ -10,13 +10,24 @@ import { createViewer, type Viewer } from '../scene/viewer'
 import { ElementPanel } from './ElementPanel'
 import { FindingsPanel } from './FindingsPanel'
 import { IssueDialog } from './IssueDialog'
+import { Link } from './Link'
+import { isUnknownProject } from './liveFormat'
 import { goToSection } from './TopBar'
 import { ReloadPrompt } from './ReloadPrompt'
 import './viewerChrome.css'
 
 export const DEFAULT_PROJECT_ID = 'site'
+const NOTICE_MS = 8000
 
 type Loaded = { project: ProjectManifest; model: LoadedModel }
+type LoadError = { message: string; unknownProject: boolean }
+
+/** Why the model didn't load: a project that doesn't exist is a bad link, not a bad connection (audit C-34). */
+export function viewerLoadError(err: unknown): LoadError {
+  return isUnknownProject(err)
+    ? { message: "This link points to a project TrueSite doesn't have.", unknownProject: true }
+    : { message: "Couldn't load the model. Check your connection and try again.", unknownProject: false }
+}
 
 /** Model viewer (works everywhere): orbit the model, tap an element to see its properties. */
 export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: string }) {
@@ -25,7 +36,7 @@ export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: str
   const viewerRef = useRef<Viewer | null>(null)
   const [glDead, setGlDead] = useState(false)
   const [loaded, setLoaded] = useState<Loaded | null>(null)
-  const [error, setError] = useState<string | null>(null)
+  const [error, setError] = useState<LoadError | null>(null)
   const [attempt, setAttempt] = useState(0)
   const [selected, setSelected] = useState<string | null>(null)
   const [lastCheck, setLastCheck] = useState<LastCheck | null>(null)
@@ -43,8 +54,8 @@ export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: str
       model = await loadModel(project.model_url, new Set(project.elements.map((e) => e.guid)))
       if (cancelled) disposeModel(model)
       else setLoaded({ project, model })
-    })().catch(() => {
-      if (!cancelled) setError("Couldn't load the model. Check your connection and try again.")
+    })().catch((e: unknown) => {
+      if (!cancelled) setError(viewerLoadError(e))
     })
     return () => {
       cancelled = true
@@ -82,6 +93,13 @@ export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: str
     viewerRef.current?.highlight(selected)
   }, [selected, loaded])
 
+  // "Issue saved." floats over the screen (it would sit under the findings list), so it goes after a few seconds.
+  useEffect(() => {
+    if (!notice) return
+    const t = setTimeout(() => setNotice(null), NOTICE_MS)
+    return () => clearTimeout(t)
+  }, [notice])
+
   const elements = useMemo(() => new Map((loaded?.project.elements ?? []).map((e) => [e.guid, e])), [loaded])
   const element = selected ? elements.get(selected) : undefined
   const selectFinding = (f: Finding) => {
@@ -97,10 +115,14 @@ export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: str
         {glDead && <ReloadPrompt />}
         {error && (
           <div className="status status-error" role="alert">
-            <p>{error}</p>
-            <button type="button" className="btn" onClick={() => setAttempt((n) => n + 1)}>
-              Try again
-            </button>
+            <p>{error.message}</p>
+            {error.unknownProject ? (
+              <Link to="/model" className="btn">Open the site model</Link>
+            ) : (
+              <button type="button" className="btn" onClick={() => setAttempt((n) => n + 1)}>
+                Try again
+              </button>
+            )}
           </div>
         )}
         {loaded && <ModelCard project={loaded.project} />}
@@ -113,18 +135,20 @@ export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: str
             Last check results
           </button>
         )}
+        {/* In the stage, not over the page: the findings list under the stage and its Draft issue buttons stay
+            free (audit C-06). */}
+        {loaded && element && (
+          <ElementPanel projectId={loaded.project.project_id} element={element} onClose={() => setSelected(null)} />
+        )}
+        {notice && <p className="viewer-notice" role="status">{notice}</p>}
       </div>
       {lastCheck && showCheck && (
         <FindingsPanel result={lastCheck.result} selectedMark={selectedMark} onSelect={selectFinding} onDraftIssue={setDraftFor} onClose={() => setShowCheck(false)} />
       )}
-      {notice && <p className="note viewer-notice" role="status">{notice}</p>}
       {draftFor && (
         <IssueDialog open projectId={loaded?.project.project_id ?? projectId} runId={lastCheck?.runId ?? null} mark={draftFor.mark} finding={draftFor}
           element={elements.get(draftFor.guid) ?? null} onClose={() => setDraftFor(null)}
           onSaved={() => { setDraftFor(null); setNotice('Issue saved.') }} />
-      )}
-      {loaded && element && (
-        <ElementPanel projectId={loaded.project.project_id} element={element} onClose={() => setSelected(null)} />
       )}
     </main>
   )

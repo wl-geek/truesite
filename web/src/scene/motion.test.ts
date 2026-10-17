@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { mat3Mul, mat3MulVec, transpose3, type Mat3, type Vec3 } from '../pose'
 import { makeMarkerPose } from '../pose/testing/synth'
-import { C_FROM_DEVICE, deviceRotation, lookAroundPose } from './motion'
+import { angleBetweenDeg, C_FROM_DEVICE, deviceRotation, deviceStill, lookAroundPose, nextLock, type MotionSample } from './motion'
 
 const close = (a: readonly number[], b: readonly number[], eps = 1e-9) => a.forEach((v, i) => expect(v).toBeCloseTo(b[i], 9 - Math.log10(1 / eps)))
 
@@ -36,5 +36,73 @@ describe('look-around (motion sensors)', () => {
     const yBefore = mat3MulVec(pose.R, pMarker)[1] + pose.t[1]
     const yAfter = mat3MulVec(up.R, pMarker)[1] + up.t[1]
     expect(yAfter).toBeGreaterThan(yBefore) // CV y points down: the code moves lower in the frame
+  })
+})
+
+describe('look-around lock while the device turns (audit C-02)', () => {
+  // An upright tablet near the code, then turning on the spot about the vertical at the filming pace (30 degrees/s).
+  const pose0 = makeMarkerPose({ distance: 0.7, tiltDeg: 25, tiltAzDeg: 90, dir: [0.05, 0.1, 1] })
+  const D = (deg: number) => deviceRotation(deg, 90, 0)
+  /** The exact marker -> camera pose after turning `deg` from the still pose. */
+  const truth = (deg: number) => lookAroundPose({ R0: pose0.R, t0: pose0.t, D0: D(0), tSec: 0 }, D(deg))
+  const centre = (p: { R: Mat3; t: Vec3 }) => mat3MulVec(transpose3(p.R), p.t).map((v) => -v)
+  const dist = (a: readonly number[], b: readonly number[]) => Math.hypot(...a.map((v, i) => v - b[i]))
+  /** While turning, a detection's smoothed QR pose lags the newest motion sample by about 2 degrees (e2e, p1-turn-slow). */
+  const LAG_DEG = 2
+
+  it('measures the angle between two rotations', () => {
+    expect(angleBetweenDeg(D(10), D(10))).toBeCloseTo(0, 6)
+    expect(angleBetweenDeg(D(10), D(40))).toBeCloseTo(30, 6)
+  })
+
+  it('shows the defect: pairing the smoothed pose with the newest sample holds the model about 2 degrees off', () => {
+    const paired = { R0: truth(15 - LAG_DEG).R, t0: truth(15 - LAG_DEG).t, D0: D(15), tSec: 0.5 }
+    expect(angleBetweenDeg(lookAroundPose(paired, D(60)).R, truth(60).R)).toBeCloseTo(LAG_DEG, 1)
+  })
+
+  it('keeps the rotation pair from the last still moment while the device turns: the held model is exact', () => {
+    let lock = nextLock(null, pose0, D(0), 0, true)
+    for (let deg = 3; deg <= 15; deg += 3) lock = nextLock(lock, truth(deg - LAG_DEG), D(deg), deg / 30, false)
+    const held = lookAroundPose(lock, D(60))
+    expect(angleBetweenDeg(held.R, truth(60).R)).toBeLessThan(0.01)
+    expect(dist(centre(held), centre(truth(60)))).toBeLessThan(1e-9)
+    expect(lock.tSec).toBe(0.5) // the code was last seen then: look-around's 90 s count from there
+  })
+
+  it('still moves the frozen camera centre while turning (the person may step), keeping the rotation pair', () => {
+    const still = nextLock(null, pose0, D(0), 0, true)
+    const stepped = { R: pose0.R, t: [pose0.t[0] + 0.1, pose0.t[1], pose0.t[2] + 0.3] as Vec3 }
+    const lock = nextLock(still, stepped, D(5), 0.2, false)
+    expect(lock.R0).toEqual(still.R0)
+    expect(lock.D0).toEqual(still.D0)
+    expect(dist(centre({ R: lock.R0, t: lock.t0 }), centre(stepped))).toBeLessThan(1e-9)
+  })
+
+  it('pairs the pose with the newest sample while the device is still, and when there is no lock yet', () => {
+    const still = nextLock(null, pose0, D(0), 0, true)
+    expect(nextLock(still, truth(20), D(20), 3, true)).toEqual({ R0: truth(20).R, t0: truth(20).t, D0: D(20), tSec: 3 })
+    expect(nextLock(null, truth(20), D(22), 3, false)).toEqual({ R0: truth(20).R, t0: truth(20).t, D0: D(22), tSec: 3 })
+  })
+
+  const turning = (degS: number, fromMs = 1000, n = 13): MotionSample[] =>
+    Array.from({ length: n }, (_, i) => ({ tMs: fromMs + i * 33, D: D((degS * i * 33) / 1000) }))
+
+  it('calls the device still below 1.5 degrees/s over the last 0.3 s', () => {
+    expect(deviceStill(turning(0))).toBe(true)
+    expect(deviceStill(turning(1))).toBe(true) // a hand holding still drifts this much
+    expect(deviceStill(turning(5))).toBe(false)
+    expect(deviceStill(turning(30))).toBe(false) // the filming pace
+  })
+
+  it('judges by the newest samples: still once a turn has stopped, turning as soon as one starts', () => {
+    const stopped = [...turning(30, 0, 10), ...Array.from({ length: 12 }, (_, i) => ({ tMs: 330 + i * 33, D: D(9.9) }))]
+    expect(deviceStill(stopped)).toBe(true)
+    const starting = [...turning(0, 0, 12), { tMs: 400, D: D(1) }]
+    expect(deviceStill(starting)).toBe(false)
+  })
+
+  it('calls the device still when there is nothing to judge by yet', () => {
+    expect(deviceStill([])).toBe(true)
+    expect(deviceStill(turning(30, 0, 4))).toBe(true) // only 0.1 s of samples
   })
 })

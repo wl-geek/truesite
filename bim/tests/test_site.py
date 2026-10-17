@@ -107,13 +107,13 @@ def test_anchors_and_project(built):
         assert sum(p * q for p, q in zip(n, u)) == 0
     for (vid, stand, look, _), a in zip(site.VIEWPOINTS, anchors):
         x, y, z = a["position_m"]
-        assert a["anchor_id"] == vid and a["qr_size_m"] == 0.23 and a["scale"] == 1.0
+        assert a["anchor_id"] == vid and a["qr_size_m"] == 0.16 and a["scale"] == 1.0
         assert z == 1.4 and a["up"] == [0, 0, 1] and a["normal"][2] == 0  # upright, code centre at chest height
         # the printed face looks at the standing spot, 1.5 m in front of it
         assert [x + 1.5 * a["normal"][0], y + 1.5 * a["normal"][1]] == pytest.approx(list(stand))
     assert anchors[0]["position_m"] == [9.0, -2.5, 1.4] and anchors[0]["normal"] == [0, -1, 0]
     desk = anchors[4]
-    assert desk["scale"] == 0.01 and desk["position_m"] == [23.5, 6.0, 0.0] and desk["qr_size_m"] == 0.07
+    assert desk["scale"] == 0.01 and desk["position_m"] == [22.4, 6.2, 0.0] and desk["qr_size_m"] == 0.062
     assert json.loads((built / "project.json").read_text(encoding="utf-8")) == {
         "project_id": "site", "name": "Building under construction (1:1)", "check_note": site.CHECK_NOTE}
 
@@ -151,7 +151,7 @@ def test_sheets_only_renders_the_sheets_and_leaves_the_model_alone(tmp_path, cap
     assert list(out.iterdir()) == []
     assert sorted(p.name for p in sheets.iterdir()) == [
         "site-D1.pdf", "site-P1.pdf", "site-P2.pdf", "site-P3.pdf", "site-P4.pdf", "site-layout.pdf"]
-    assert "WARNING" not in capsys.readouterr().err  # the A3 code keeps the full quiet zone for the Cloud Run URL
+    assert "WARNING" not in capsys.readouterr().err  # the Letter code keeps the full quiet zone for the Cloud Run URL
 
 
 def test_sheets_only_needs_a_base_url(tmp_path):

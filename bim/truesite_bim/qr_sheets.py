@@ -1,10 +1,11 @@
 """Printable TrueSite QR anchor sheets (vector PDF) + the matching anchors.json.
 
+Every sheet prints on US Letter (215.9 x 279.4 mm), the paper the team and judges have (17 Oct 2026).
 Sheets (spec sections 4.1 and 6):
-  D1  A4 portrait   desk sheet for judges: 12 cm QR; the 1:20 model appears above the code
-  D2  A3 landscape  desk sheet for the physical model: 15 cm QR + 20 x 15 cm footprint outline (1:20)
-  A1  A3 portrait   wall sheet: 23 cm QR. (The spec said 25 cm, but a 25 cm code on A3 leaves only
-                    about 3 modules of white paper around it; 23 cm keeps the full 4-module quiet zone.)
+  D1  portrait   desk sheet for judges: 12 cm QR; the 1:20 model appears above the code
+  D2  portrait   desk sheet for the physical model: 20 x 15 cm footprint outline (1:20) above a 7 cm QR
+  L1  portrait   life-size floor sheet: 16 cm QR (LIFE_* layout)
+  A1  portrait   wall sheet: 16 cm QR (LIFE_* layout)
 
 Guarantees (checked by tests/test_qr_sheets.py on the PDF itself):
   * the QR module area (outer edge of the modules, excluding the quiet zone) is exactly the
@@ -33,7 +34,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 import segno
-from reportlab.lib.pagesizes import A3, A4, landscape, portrait
+from reportlab.lib.pagesizes import landscape, letter, portrait
 from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas
 
@@ -48,6 +49,16 @@ WALL_UP = (0.0, 0.0, 1.0)
 # URL, and no printed code carries it.
 ANDROID_STEP = "Android: scan, tap Start camera, start within 1 m, then step back."
 IPHONE_LIFE_SIZE_STEP = "iPhone: scan, tap Start camera, start within 1 m, then step back."
+
+LETTER = portrait(letter)  # 215.9 x 279.4 mm
+LETTER_LANDSCAPE = landscape(letter)  # 279.4 x 215.9 mm
+# Life-size sheets (upright, wall and floor) share one portrait layout: a 16 cm code, the largest a Letter page holds
+# with the full 4-module quiet zone around a version-4 or -5 code (the Cloud Run URLs), centred near the top, and the
+# anchor id, instructions and check bar below it.
+LIFE_QR_MM = 160.0
+LIFE_QR_CENTRE_MM = (107.95, 178.0)
+LIFE_CHECK_BAR_MM = (57.95, 12.0)
+LIFE_TEXT_BOX_MM = (15.0, 70.0)
 
 
 @dataclass
@@ -84,19 +95,16 @@ def make_sheets(
     wall_normal: tuple[float, float, float] = WALL_NORMAL,
     wall_up: tuple[float, float, float] = WALL_UP,
 ) -> list[Sheet]:
-    a4 = portrait(A4)  # 210 x 297 mm
-    a3l = landscape(A3)  # 420 x 297 mm
-    a3p = portrait(A3)  # 297 x 420 mm
     common = [
-        "Print at 100% / 'Actual size' - never 'Fit to page'.",
-        "Measure the check bar. If it is not 10.0 cm, enter the measured length in the app.",
+        "Print on US Letter at 100% / 'Actual size' - never 'Fit to page'.",
+        "If the check bar is not 10.0 cm, enter its measured length in the app.",
     ]
-    d1_qr, d1_origin = (105.0, 105.0), (5.0, 185.0)
-    d2_qr, d2_origin = (100.0, 170.0), (200.0, 95.0)
+    d1_qr, d1_origin = (108.0, 98.0), (8.0, 178.0)  # the 1:20 room appears above the code
+    d2_qr, d2_origin = (166.0, 64.0), (8.0, 116.0)  # the 20 x 15 cm outline above, the code below right
     return [
         Sheet(
-            "D1", "desk", "Desk sheet A4 (1:20)", "TrueSite desk anchor D1 - model at 1:20", a4, 120.0, d1_qr,
-            check_bar_mm=(55.0, 18.0), text_box_mm=(15.0, 280.0),
+            "D1", "desk", "Desk sheet Letter (1:20)", "TrueSite desk anchor D1 - model at 1:20", LETTER, 120.0, d1_qr,
+            check_bar_mm=(57.95, 12.0), text_box_mm=(15.0, 262.0),
             position_m=desk_position(d1_qr, d1_origin, base_z), normal=[0, 0, 1], up=[0, 1, 0], scale=DESK_SCALE,
             model_origin_mm=d1_origin,
             instructions=[
@@ -108,8 +116,8 @@ def make_sheets(
             ],
         ),
         Sheet(
-            "D2", "desk", "Physical model sheet A3 (1:20)", "TrueSite desk anchor D2 - physical model 1:20", a3l,
-            150.0, d2_qr, check_bar_mm=(25.0, 40.0), text_box_mm=(200.0, 70.0),
+            "D2", "desk", "Physical model sheet Letter (1:20)", "TrueSite physical model sheet D2 - 1:20", LETTER,
+            70.0, d2_qr, check_bar_mm=(12.0, 30.0), text_box_mm=(12.0, 96.0),
             position_m=desk_position(d2_qr, d2_origin, base_z), normal=[0, 0, 1], up=[0, 1, 0], scale=DESK_SCALE,
             model_origin_mm=d2_origin, footprint_m=footprint_m,
             instructions=[
@@ -119,22 +127,21 @@ def make_sheets(
             ],
         ),
         Sheet(
-            "L1", "floor", "Life-size floor sheet A4 (1:1)", "TrueSite floor anchor L1 - life size 1:1", a4, 160.0,
-            (105.0, 180.0), check_bar_mm=(55.0, 18.0), text_box_mm=(15.0, 80.0),
+            "L1", "floor", "Life-size floor sheet Letter (1:1)", "TrueSite floor anchor L1 - life size 1:1", LETTER,
+            LIFE_QR_MM, LIFE_QR_CENTRE_MM, check_bar_mm=LIFE_CHECK_BAR_MM, text_box_mm=LIFE_TEXT_BOX_MM,
             position_m=[round(footprint_m[0] / 2, 4), round(footprint_m[1] / 2, 4), 0.0], normal=[0, 0, 1], up=[0, 1, 0],
             scale=1.0,
             instructions=[
-                "Lay the sheet flat on the floor in an open space.",
+                "Lay it flat on the floor in an open space; the demo room appears around you at real size.",
                 "The top edge points to the room's north wall.",
                 ANDROID_STEP,
                 IPHONE_LIFE_SIZE_STEP,
-                "The demo room appears around you at real size.",
                 *common,
             ],
         ),
         Sheet(
-            "A1", "wall", "Wall sheet A3 (1:1)", "TrueSite wall anchor A1 - 1:1", a3p, 230.0, (148.5, 265.0),
-            check_bar_mm=(98.5, 98.0), text_box_mm=(20.0, 80.0),
+            "A1", "wall", "Wall sheet Letter (1:1)", "TrueSite wall anchor A1 - 1:1", LETTER, LIFE_QR_MM, LIFE_QR_CENTRE_MM,
+            check_bar_mm=LIFE_CHECK_BAR_MM, text_box_mm=LIFE_TEXT_BOX_MM,
             position_m=list(wall_position), normal=list(wall_normal), up=list(wall_up), scale=1.0,
             instructions=[
                 "Tape flat to the wall at the surveyed spot, code upright.",

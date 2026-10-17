@@ -36,7 +36,8 @@ describe('askFormat (mutation-tested)', () => {
   })
 
   it('explains the daily cap and a removed element', () => {
-    expect(askErrorMessage({ status: 429, code: 'daily_cap' })).toBe("Today's question limit has been reached. Try again tomorrow.")
+    expect(askErrorMessage({ status: 429, code: 'daily_cap' })).toBe("Today's free Gemini use is used up. Try again tomorrow.")
+    expect(askErrorMessage({ status: 429, code: 'model_quota' })).toBe("Gemini's usage limit is reached. Try again in a minute.")
     expect(askErrorMessage({ status: 404, code: 'unknown_element' })).toBe('This element is no longer in the model.')
   })
 })

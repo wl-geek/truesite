@@ -2,11 +2,12 @@
  * Typed calls to the TrueSite API (contract sections 4 and 7). Same origin: in dev, Vite proxies
  * /api to FastAPI. Every call sends X-Session-Id. Failures throw ApiError:
  *   status  HTTP status, or 0 for network failures and timeouts
- *   code    detail.code from the server ("rate_limited", "daily_cap", "busy", "model_unavailable", ...),
+ *   code    detail.code from the server ("rate_limited", "daily_cap", "model_quota", "busy", "model_unavailable", ...),
  *           or "network" / "timeout" on the client side
  *   retryAfterS  detail.retry_after_s, else the Retry-After header
  */
 import { getSessionId } from '../session'
+import { reportUsageLimit, usageLimitOf } from './limits'
 import type {
   AskAnswer, AskRequest, CheckContext, CheckResponse, CheckResult, Issue, IssueDraft, IssueDraftRequest, IssueIn,
   IssueList, ProjectManifest, ReportRequest, SiteReport,
@@ -69,7 +70,12 @@ async function request(path: string, init: RequestInit = {}, timeoutMs = DEFAULT
   } finally {
     clearTimeout(timer)
   }
-  if (!res.ok) throw await errorFrom(res)
+  if (!res.ok) {
+    const err = await errorFrom(res)
+    const limit = usageLimitOf(err, path, Date.now()) // a usage limit, not an error: LimitDialog explains it
+    if (limit) reportUsageLimit(limit)
+    throw err
+  }
   return res
 }
 

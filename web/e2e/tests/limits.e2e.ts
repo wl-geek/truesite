@@ -31,6 +31,11 @@ test('per-address limit, virtual demo: the second check in an hour says when to 
   expect(Number(res.headers()['retry-after'])).toBeGreaterThan(3500)
   await expect(page.locator('.vs-notice')).toHaveText('Too many checks from this network. Try again in about 60 min.')
   await expect(page.getByRole('link', { name: 'Use a ready-made view instead' })).toHaveAttribute('href', '/samples?photos')
+  // The usage-limit popup (#117) counts down the server's wait over the page; closing it leaves the first results.
+  const popup = page.getByRole('dialog', { name: 'This network has used its Gemini checks for now' })
+  await expect(popup.getByRole('timer').locator('strong')).toHaveText(/^(1:00:00|5\d:\d\d)$/)
+  await popup.getByRole('button', { name: 'Close' }).click()
+  await expect(popup).toBeHidden()
   await page.getByRole('button', { name: 'Show results' }).click()
   await expect(page.getByRole('heading', { name: 'As-built check · P1' })).toBeVisible()
 })
@@ -45,6 +50,9 @@ test("per-address limit, ready-made view: the photo's saved result, with the rea
   await expect(page.locator('.sample-results').getByRole('status')).toHaveText(
     "Too many checks from this network, so Gemini didn't run. Showing the last real result for this photo. Try again in about 60 min.")
   await expect(page.locator('.sample-results .findings-panel .eyebrow')).toHaveText(/^Saved result from /)
+  const popup = page.getByRole('dialog', { name: 'This network has used its Gemini checks for now' })
+  await expect(popup).toBeVisible()
+  await expect(popup.getByRole('button', { name: 'Open the ready-made views' })).toHaveCount(0) // this is them
 })
 
 test('questions have their own budget: Ask still works after the check limit', async ({ page }) => {
@@ -67,7 +75,10 @@ async function untilDailyCap(page: Page, tap: () => Promise<void>): Promise<void
     const answer = page.waitForResponse('**/api/check')
     await tap()
     const res = await answer
-    if (res.status() === 429 && (await res.json()).detail?.code === 'daily_cap') return
+    const code = res.status() === 429 ? (await res.json()).detail?.code : null
+    if (code === 'daily_cap') return
+    // An address that has had its check this hour gets rate_limited, whose usage-limit popup (#117) covers the page.
+    if (code === 'rate_limited') await page.getByRole('dialog').getByRole('button', { name: 'Close' }).click()
     await newAddress(page)
   }
   throw new Error('the daily cap never answered')
@@ -77,24 +88,27 @@ test("daily cap, ready-made view: the photo's saved result, with the reason", as
   await page.goto('/samples?photos')
   await untilDailyCap(page, () => page.locator('.sample-card').first().click())
   await expect(page.locator('.sample-results').getByRole('status')).toHaveText(
-    "Today's check limit has been reached, so Gemini didn't run. Showing the last real result for this photo.")
+    "Today's free Gemini use is used up, so Gemini didn't run. Showing the last real result for this photo.")
+  await expect(page.getByRole('dialog', { name: "Today's free Gemini use is used up" })).toBeVisible()
 })
 
 test('daily cap, virtual demo: the copy says so', async ({ page }) => {
   await enterVirtualSite(page, 'P3')
   await untilDailyCap(page, () => page.getByRole('button', { name: 'Check as-built' }).click())
-  await expect(page.locator('.vs-notice')).toContainText("Today's check limit has been reached.")
+  await expect(page.locator('.vs-notice')).toContainText("Today's free Gemini use is used up.")
   await expect(page.locator('.vs-notice')).toContainText('come back tomorrow.')
   await expect(page.getByRole('link', { name: 'Use a ready-made view instead' })).toBeVisible()
+  await expect(page.getByRole('dialog', { name: "Today's free Gemini use is used up" })).toBeVisible()
 })
 
 test('daily cap, ready-made view with no saved result: the copy says so', async ({ page }) => {
   await page.goto('/samples?photos')
   await untilDailyCap(page, () => page.locator('.sample-card').nth(3).click()) // P4 was never checked on this server
-  await expect(page.getByRole('alert')).toContainText("Today's check limit has been reached.")
+  await expect(page.getByRole('alert')).toContainText("Today's check limit has been reached.") // readyMadeErrorMessage (C-25)
+  await expect(page.getByRole('dialog', { name: "Today's free Gemini use is used up" })).toBeVisible()
 })
 
-test.fixme(BUG.capCopy, async ({ page }) => {
+test(BUG.capCopy, async ({ page }) => {
   await enterVirtualSite(page, 'P4')
   await untilDailyCap(page, () => page.getByRole('button', { name: 'Check as-built' }).click())
   await expect(page.locator('.vs-notice')).not.toContainText('sample photos')

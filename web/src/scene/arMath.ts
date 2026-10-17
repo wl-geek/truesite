@@ -2,6 +2,7 @@
 import type { Anchor as ApiAnchor, ProjectManifest } from '../api/types'
 import type { Anchor as PoseAnchor, Point2 } from '../pose'
 import type { Point } from '../qr/protocol'
+import { LOOK_AROUND_MAX_S } from './motion'
 
 /** Beyond this distance the overlay is still drawn but flagged as less accurate (spec 4.2 step 3). */
 export const FAR_WARNING_M = 3
@@ -34,7 +35,7 @@ export function isDeskAnchor(anchor: ApiAnchor): boolean {
   return anchor.scale < 1
 }
 
-/** A code lying flat on the floor with the model at 1:1 around it (L1, R1, S1, ...). */
+/** A code lying flat on the floor with the model at 1:1 around it (room1 L1, rooftop R1 and R2; the site has none). */
 export function isLifeSizeFloor(anchor: ApiAnchor): boolean {
   return anchor.normal[2] > 0.9 && anchor.scale >= 0.999
 }
@@ -60,16 +61,36 @@ export function searchingSeconds(tSec: number, lastSeenSec: number, startedSec: 
   return tSec - Math.max(lastSeenSec, startedSec)
 }
 
-export type CoachState = { tracking: boolean; provisional: boolean; distanceM: number | null; mode?: 'code' | 'motion' | 'lost'; searchingS?: number }
+/**
+ * How far from the code to start (audit C-01): about five times the code's printed size, to the nearest 5 cm, at most
+ * 1 m. The reader sees a 640 px wide frame: from 1 m the 7 cm desk code (site D1) is too small to read or reach Good.
+ */
+export function startDistanceM(anchor: Pick<ApiAnchor, 'qr_size_m'>): number {
+  return Math.min(1, Math.round(anchor.qr_size_m * 5 * 20) / 20)
+}
 
-/** One short instruction for what to do next in the live view. `checkEnabled` false: this sheet can't be checked. */
-export function coachHint(s: CoachState | null, desk: boolean, checkEnabled = true): string {
+/** "about 35 cm", "about 1 m". */
+export function aboutDistance(m: number): string {
+  return m >= 1 ? `about ${Math.round(m)} m` : `about ${Math.round(m * 100)} cm`
+}
+
+export type CoachState = {
+  tracking: boolean; provisional: boolean; distanceM: number | null; mode?: 'code' | 'motion' | 'lost'; searchingS?: number; lookAroundExpired?: boolean
+}
+
+/**
+ * One short instruction for what to do next in the live view. `checkEnabled` false: this sheet can't be checked.
+ * `startM`: how far from the code to start (startDistanceM).
+ */
+export function coachHint(s: CoachState | null, desk: boolean, checkEnabled = true, startM = 1): string {
+  const near = aboutDistance(startM)
   if (s?.mode === 'motion') return 'Look around and up. Turn on the spot; point back at the code to re-align.'
   if (!s?.tracking) {
-    if ((s?.searchingS ?? 0) >= SEARCH_TIPS_AFTER_S) return "Can't find the code. Add more light, move within about 1 m and hold the phone steady."
+    if (s?.lookAroundExpired) return `Look-around paused after ${LOOK_AROUND_MAX_S} s: point back at the code to re-align.`
+    if ((s?.searchingS ?? 0) >= SEARCH_TIPS_AFTER_S) return `Can't find the code. Add more light, move within ${near} and hold the phone steady.`
     return desk ? 'Point the camera at the QR code on the sheet.' : 'Point the camera at the QR code.'
   }
-  if (s.provisional) return 'Move within about 1 m of the code, then step back slowly.'
+  if (s.provisional) return desk ? `Hold the camera ${near} from the code and keep it steady.` : `Move within ${near} of the code, then step back slowly.`
   if (isFar(s.distanceM)) return 'Move closer to the code for a more accurate overlay.'
   if (desk) return 'Walk around the sheet to look at the model. Keep the code in view.'
   return checkEnabled ? 'Aim at the area to check, then tap Check as-built.'
@@ -94,4 +115,12 @@ for (const id of ['P1', 'P2', 'P3', 'P4', 'D1']) {
 
 export function checkAvailability(anchor: ApiAnchor): CheckAvailability {
   return DEMO_SHEETS[`${anchor.project_id}/${anchor.anchor_id}`] ?? { enabled: true, note: null }
+}
+
+/**
+ * Where a live sheet's virtual demo links go (audit C-05): the same spot in the virtual demo for a site viewpoint, else
+ * the virtual demo section of the start page. `spots`: the virtual demo's viewpoint ids (P1-P4).
+ */
+export function virtualDemoHref(projectId: string, anchorId: string, spots: readonly string[]): string {
+  return projectId === 'site' && spots.includes(anchorId) ? `/samples?at=${anchorId}` : '/#virtual'
 }

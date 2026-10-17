@@ -98,13 +98,13 @@ export function HomePage() {
 
           <ul className="home-cards live-easy">
             <li className="home-card home-card-feature">
-              <span className="home-card-tag">Quickest · one A4 print</span>
+              <span className="home-card-tag">Quickest · one Letter print</span>
               <Icon name="desk" />
               <h3>On your desk · 1:100</h3>
-              <p>Print the A4 desk sheet at 100%, lay it on a table and scan it. The building stands on the page as a 1:100 scale model you can walk around and inspect.</p>
+              <p>Print the desk sheet on US Letter at 100%, lay it on a table and scan it. The building stands on the page as a 1:100 scale model you can walk around and inspect.</p>
               <div className="home-card-actions">
                 <Link to="/a/site/D1" className="btn btn-accent">Open live AR</Link>
-                <a className="btn" href="/sheets/site-D1.pdf" download><Icon name="download" />Download the A4 sheet</a>
+                <a className="btn" href="/sheets/site-D1.pdf" download><Icon name="download" />Download the desk sheet</a>
               </div>
             </li>
             <li className="home-card">
@@ -123,7 +123,7 @@ export function HomePage() {
               <h3 className="live-onsite-title">Life size 1:1 on site</h3>
               <p className="home-sub">
                 A two-storey building under construction: concrete columns with their rebar showing, a cast slab with an
-                open bay, a steel upper storey and roof trusses. Set the four A3 sheets out on a car park, stand at one and
+                open bay, a steel upper storey and roof trusses. Set the four Letter sheets out on a car park, stand at one and
                 open its live view.
               </p>
             </div>
@@ -160,13 +160,13 @@ export function HomePage() {
             <summary>Print and set out the sheets</summary>
             <div className="home-details-body">
               <div className="home-downloads">
-                <a className="btn btn-primary" href="/sheets/site-layout.pdf" download><Icon name="download" />Layout plan (A3)</a>
+                <a className="btn btn-primary" href="/sheets/site-layout.pdf" download><Icon name="download" />Layout plan (Letter)</a>
                 {SITE_VIEWPOINTS.map((v) => (
                   <a key={v.id} className="btn" href={`/sheets/site-${v.id}.pdf`} download><Icon name="download" />Sheet {v.id}</a>
                 ))}
               </div>
               <ul className="home-checklist">
-                <li>Print on A3 at <strong>100%</strong> (not "Fit") and measure the check bar: it must read 10.0 cm.</li>
+                <li>Print on US Letter at <strong>100%</strong> (not "Fit") and measure the check bar: it must read 10.0 cm.</li>
                 <li>Mount each sheet flat on a board, code centre <strong>{CODE_HEIGHT_M.toFixed(2)} m</strong> above the ground, board vertical.</li>
                 <li>Set out from point O with the layout plan. Square each board to its grid line: 1° off swings the far end about 20 cm.</li>
                 <li>Mark the X <strong>{STAND_OFF_M} m</strong> in front of each code. Calibrate the iPad once in <strong>Setup</strong>, in landscape.</li>

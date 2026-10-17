@@ -69,11 +69,14 @@ test.describe('3D model viewer', () => {
     await expect(page.getByRole('link', { name: 'See it live in AR' })).toHaveCount(0) // site only
   })
 
-  test('an unknown project shows an error with Try again', async ({ page }) => {
+  test("an unknown project says it doesn't exist and links to the site model (C-34)", async ({ page }) => {
     await page.goto('/model?project=nope')
     const alert = page.getByRole('alert')
-    await expect(alert).toContainText("Couldn't load the model.")
-    await expect(alert.getByRole('button', { name: 'Try again' })).toBeVisible()
+    await expect(alert).toHaveText(/^This link points to a project TrueSite doesn't have\./)
+    await expect(alert.getByRole('button', { name: 'Try again' })).toHaveCount(0)
+    await alert.getByRole('link', { name: 'Open the site model' }).click()
+    await expect(page).toHaveURL(/\/model$/)
+    await expect(page.locator('.model-card-name')).toBeVisible()
   })
 
   test('after a check, the viewer shows Last check results with the same findings', async ({ page }) => {
@@ -103,9 +106,10 @@ test.describe('3D model viewer', () => {
     await dialog.getByRole('button', { name: 'Save issue' }).click()
     await expect(dialog).toBeHidden()
     await expect(page.locator('.viewer-notice')).toHaveText('Issue saved.')
+    await expect(page.locator('.viewer-notice')).toBeInViewport() // C-06: not under the findings list, off screen
   })
 
-  test.fixme(BUG.viewerOverlap, async ({ page }) => {
+  test(BUG.viewerOverlap, async ({ page }) => {
     await stubGeminiFindsPlanted(page)
     await enterVirtualSite(page, 'P1')
     await runVirtualCheck(page, 'P1')

@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { Finding } from '../api/types'
 import type { Deviation } from './asBuilt'
-import { scoreCheck, scoreLine } from './score'
+import { MAX_MARKS } from '../check/marks'
+import { notCheckedText, scoreCheck, scoreLine } from './score'
 
 const f = (name: string, status: Finding['status']): Finding => ({
   mark: 1, guid: name, name, ifc_class: 'IfcColumn', status, confidence: 0.9, evidence_box: null, offset: null, explanation: '', severity: null,
@@ -17,7 +18,7 @@ describe('scoreCheck', () => {
     const s = scoreCheck([f('A', 'missing'), f('B', 'present_ok'), f('D', 'misplaced'), f('E', 'present_ok')], planted)
     expect(s.inView.map((x) => [x.planted.element, x.found])).toEqual([['A', true], ['B', false]])
     expect(s.falseAlarms.map((x) => x.name)).toEqual(['D'])
-    expect(s.outOfView.map((d) => d.element)).toEqual(['C'])
+    expect(s.notChecked.map((d) => d.element)).toEqual(['C'])
     expect(scoreLine(s)).toBe('Gemini found 1 of 2 planted defects in this view · 1 false alarm')
   })
 
@@ -51,7 +52,7 @@ describe('scoreCheck edge cases (mutation-tested)', () => {
     const s = scoreCheck([f('D', 'present_ok'), f('E', 'cannot_judge'), f('F', 'different_from_design'), f('G', 'missing')], planted)
     expect(s.falseAlarms.map((x) => x.name)).toEqual(['F', 'G'])
     expect(s.inView).toEqual([])
-    expect(s.outOfView.map((d) => d.element)).toEqual(['A', 'B', 'C'])
+    expect(s.notChecked.map((d) => d.element)).toEqual(['A', 'B', 'C'])
     expect(scoreLine(s)).toBe('No planted defect is in this view · 2 false alarms')
   })
 
@@ -67,5 +68,17 @@ describe('scoreCheck edge cases (mutation-tested)', () => {
     expect(scoreLine(s)).toBe('Gemini found 3 of 3 planted defects in this view · no false alarms')
     expect(scoreLine(scoreCheck([f('A', 'present_ok'), f('B', 'cannot_judge')], planted)))
       .toBe('Gemini found 0 of 2 planted defects in this view · no false alarms')
+  })
+})
+
+describe('planted defects the check did not cover (audit C-24)', () => {
+  it('lists every planted defect without a finding, and never says they are all out of view', () => {
+    // A may be in plain view but not among the marked elements: no finding, so not checked.
+    const s = scoreCheck([f('B', 'misplaced'), f('E', 'present_ok')], planted)
+    expect(s.notChecked.map((d) => d.element)).toEqual(['A', 'C'])
+    const text = notCheckedText(s)
+    expect(text.heading).toBe('Not checked in this view (2)')
+    expect(text.note).toBe(`Out of view, or not among the ${MAX_MARKS} elements marked for the check. Turn, or step in at another QR spot, to check them.`)
+    expect(`${text.heading} ${text.note}`).not.toMatch(/elsewhere|out of this view/i)
   })
 })

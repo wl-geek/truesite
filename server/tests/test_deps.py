@@ -93,7 +93,9 @@ def test_daily_cap_is_global_and_per_utc_day(api: TestClient, store: InMemorySto
     for ip in ("203.0.113.1", "203.0.113.2", "203.0.113.3"):
         assert api.post("/api/_t/check", headers=from_ip(ip)).status_code == 200
     r = api.post("/api/_t/check", headers=from_ip("203.0.113.4"))
-    assert r.status_code == 429 and r.json() == {"detail": {"code": "daily_cap"}}
+    # The cap resets at midnight UTC: the wait is given, so the web can count down (23:59 -> 1 min).
+    assert r.status_code == 429 and r.json() == {"detail": {"code": "daily_cap", "retry_after_s": 60}}
+    assert r.headers["Retry-After"] == "60"
     assert store.daily == {"2026-10-15": 3}
     clock.wall += timedelta(minutes=2)  # 23:59 -> 00:01 UTC: a new day
     assert api.post("/api/_t/check", headers=from_ip("203.0.113.5")).status_code == 200

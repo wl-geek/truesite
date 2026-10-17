@@ -11,7 +11,10 @@ import { anchorCorners, captureSnapshot, fallbackPose, snapshotQuality, type Sna
 import { estimatePose, type Intrinsics, type Pose, type Point2, type Quality } from '../pose'
 import { QrWorkerClient } from '../qr/qrClient'
 import { viewerPathFor } from '../router'
-import { checkAvailability, coachHint, effectiveQrSize, findAnchor, isDeskAnchor, isFar, isLifeSizeFloor, scaleLabel, walkInsideFirst } from '../scene/arMath'
+import {
+  aboutDistance, checkAvailability, coachHint, effectiveQrSize, findAnchor, isDeskAnchor, isFar, isLifeSizeFloor, scaleLabel, startDistanceM, virtualDemoHref,
+  walkInsideFirst,
+} from '../scene/arMath'
 import { makeEvalMarkers, parseEvalPoints } from '../scene/evalMarkers'
 import { paintOf } from '../scene/palette'
 import { disposePins, makePins } from '../scene/pins'
@@ -79,6 +82,8 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   const [camStopped, setCamStopped] = useState(false)
   const [starting, setStarting] = useState(false)
   const [running, setRunning] = useState(false)
+  // Motion & Orientation refused (iOS asks on Start camera): no levelling and no look-around, so say so (audit C-15).
+  const [motionOff, setMotionOff] = useState(false)
   // Live AR is made for tablets and phones: on a laptop or PC, the popup opens every time this page does.
   const handheld = useMemo(() => isHandheld(), [])
   const [deviceTip, setDeviceTip] = useState(() => !handheld)
@@ -166,6 +171,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
     let camOk = false
     try {
       const motion = await requestMotionPermission() // iOS asks inside this tap; must come before the camera prompt
+      setMotionOff(!motion)
       camRef.current = await startRearCamera(video)
       camOk = true
       qrRef.current ??= new QrWorkerClient() // reuse the worker that Start AR may have made
@@ -409,6 +415,9 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   )
   const placeView = xrPlace ?? XR_PLACE_STARTING
   const checkable = loaded ? checkAvailability(loaded.anchor) : { enabled: true, note: null }
+  // How far from the code to start: a small desk code must be held closer (audit C-01).
+  const startM = loaded ? startDistanceM(loaded.anchor) : 1
+  const virtualHref = virtualDemoHref(projectId, anchorId, SITE_VIEWPOINTS.map((v) => v.id))
   const selectFinding = (f: Finding) => setSelectedMark(f.mark)
 
   // The camera view is full screen: the site's top bar goes while the camera runs (Exit brings it back).
@@ -431,7 +440,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   }, [running, checkable.note, showNote])
   // One instruction at a time over the camera. Guidance (once aligned, or while held by the sensors) fades after a few
   // seconds so the model is in full view; a hint that asks for something stays until it's done. Any can be closed.
-  const hint = coachHint(state, desk, checkable.enabled)
+  const hint = coachHint(state, desk, checkable.enabled, startM)
   const settled = (!!state?.tracking && !state.provisional && !isFar(state.distanceM)) || state?.mode === 'motion'
   const [hiddenHint, setHiddenHint] = useState<string | null>(null)
   // Messages give way to the panels: View, Setup and the results.
@@ -447,8 +456,9 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   const warning = checkError ? { key: 'check', text: checkError, close: () => setCheckError(null) }
     : state?.qrFailed ? { key: 'qr', text: "The QR reader didn't load. Check your connection and reload.", close: () => dismiss('qr') }
       : state?.otherAnchor && !dismissed.has(`other:${state.otherAnchor.anchorId}`) ? { key: `other:${state.otherAnchor.anchorId}`, text: null, close: () => dismiss(`other:${state.otherAnchor!.anchorId}`) }
-        : isFar(state?.distanceM ?? null) && !dismissed.has('far') ? { key: 'far', text: 'More than 3 m from the code: the overlay is less accurate.', close: () => dismiss('far') }
-          : null
+        : motionOff && !dismissed.has('motion') ? { key: 'motion', text: MOTION_OFF, close: () => dismiss('motion') }
+          : isFar(state?.distanceM ?? null) && !dismissed.has('far') ? { key: 'far', text: 'More than 3 m from the code: the overlay is less accurate.', close: () => dismiss('far') }
+            : null
 
   return (
     <main className={`live-page${running ? '' : ' live-idle'}`}>
@@ -514,7 +524,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
             )}
             {!checking && !panelOpen && noteOpen && checkable.note && (
               <HudMessage onClose={() => setNoteOpen(false)}>
-                {checkable.note}{!checkable.enabled && <> <Link to={`/samples${SITE_VIEWPOINTS.some((v) => loaded?.anchor.project_id === 'site' && v.id === loaded.anchor.anchor_id) ? `?at=${anchorId}` : ''}`}>Try the check in the virtual demo</Link></>}
+                {checkable.note}{!checkable.enabled && <> <Link to={virtualHref}>Try the check in the virtual demo</Link></>}
               </HudMessage>
             )}
             {hintVisible && (
@@ -596,14 +606,14 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
                   </ol>
                 ) : desk ? (
                   <ol className="steps">
-                    <li>Tap <strong>Start camera</strong> and allow the camera.</li>
-                    <li>Point at the code from about 1 m away, then step back slowly.</li>
+                    <li>Tap <strong>Start camera</strong> and allow the camera and motion access.</li>
+                    <li>Hold the {isAppleMobile() ? device : 'phone'} {aboutDistance(startM)} from the code until it says <strong>Alignment: Good</strong>.</li>
                     <li>Walk around the sheet to look at the model.</li>
                   </ol>
                 ) : isLifeSizeFloor(loaded.anchor) ? (
                   <ol className="steps">
                     <li>Tap <strong>Start camera</strong> and allow the camera and motion access.</li>
-                    <li>Point at the code from about 1 m away, then step back slowly, keeping the code in view.</li>
+                    <li>Point at the code from {aboutDistance(startM)} away, then step back slowly, keeping the code in view.</li>
                     <li>Turn slowly on the spot and look up; point back at the code to re-align.{checkable.enabled && ' To check the build, aim at the work and tap Check as-built.'}</li>
                   </ol>
                 ) : (
@@ -666,7 +676,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
             {camError && <p className="status status-error" role="alert">{CAMERA_ERRORS[camError]}</p>}
             {(camError || error) && (
               <p className="live-links">
-                <Link to={projectMissing ? '/model' : viewerPathFor(projectId)} className="btn">Open the model viewer</Link> <Link to="/samples" className="btn">Try the virtual demo</Link>
+                <Link to={projectMissing ? '/model' : viewerPathFor(projectId)} className="btn">Open the model viewer</Link> <Link to={virtualHref} className="btn">Try the virtual demo</Link>
               </p>
             )}
           </div>
@@ -684,6 +694,9 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
 const HINT_FADE_MS = 6000
 /** The "nothing to check on this sheet" note shows this long. */
 const NOTE_MS = 6000
+/** Motion & Orientation refused (audit C-15). iOS keeps the answer until the browser is closed. */
+const MOTION_OFF = "Motion & Orientation is off, so the model won't stay level or stay in place when you turn. "
+  + 'To allow it, close the browser, open this page again and tap Allow.'
 
 /** "Life size · 1:1" in the status pill; narrow phones show just "1:1". */
 function ScaleLabel({ text }: { text: string }) {

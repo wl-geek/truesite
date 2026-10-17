@@ -1,5 +1,5 @@
 /**
- * Planar ambiguity ("flip") tests. A 12 cm code (the A4 judge sheet) seen at
+ * Planar ambiguity ("flip") tests. A 12 cm code (the Letter desk sheet) seen at
  * 1.5-3 m with 15-40 deg tilt and 0.5 px corner noise is small in the image
  * (~40-85 px), so its two IPPE poses reproject almost equally well.
  */

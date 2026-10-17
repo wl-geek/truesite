@@ -2,7 +2,7 @@
   {
     "anchor_id": "R1",
     "project_id": "rooftop",
-    "qr_size_m": 0.33,
+    "qr_size_m": 0.16,
     "position_m": [
       4.5,
       4.5,
@@ -19,7 +19,7 @@
       0
     ],
     "scale": 1.0,
-    "label": "Rooftop floor sheet A2 (1:1)"
+    "label": "Rooftop floor sheet Letter (1:1)"
   },
   {
     "anchor_id": "R2",
@@ -41,7 +41,7 @@
       0
     ],
     "scale": 1.0,
-    "label": "Rooftop floor sheet A4 (1:1)"
+    "label": "Rooftop floor sheet Letter, spare (1:1)"
   },
   {
     "anchor_id": "V1",
@@ -63,7 +63,7 @@
       1
     ],
     "scale": 1.0,
-    "label": "Viewpoint 1: inside, facing south (A4 upright, code at 1.3 m)"
+    "label": "Viewpoint 1: inside, facing south (Letter upright, code at 1.3 m)"
   },
   {
     "anchor_id": "V2",
@@ -85,7 +85,7 @@
       1
     ],
     "scale": 1.0,
-    "label": "Viewpoint 2: inside, facing west (A4 upright, code at 1.3 m)"
+    "label": "Viewpoint 2: inside, facing west (Letter upright, code at 1.3 m)"
   },
   {
     "anchor_id": "V3",
@@ -107,6 +107,6 @@
       1
     ],
     "scale": 1.0,
-    "label": "Viewpoint 3: outside the south edge, whole frame (A4 upright, code at 1.3 m)"
+    "label": "Viewpoint 3: outside the south edge, whole frame (Letter upright, code at 1.3 m)"
   }
 ]

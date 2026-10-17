@@ -18,7 +18,7 @@
 ## 2. Success criteria (true on 17 Oct)
 
 1. A judge with only the deployed link and no printer can step into the virtual demo at a QR spot (`/samples?at=P1` to `P4`) and run the as-built check on their own view. The ready-made photos (`/samples?photos`) are only the fallback. They then see the findings pinned on the 3D model (`/model`), ask an element a question, and draft and save an issue from a finding. There is no issues list.
-2. A judge who prints the A4 desk sheet (site D1) sees the building live on their desk at 1:100 (iPhone Safari and Android Chrome). The check is off on that sheet.
+2. A judge who prints the US Letter desk sheet (site D1) sees the building live on their desk at 1:100 (iPhone Safari and Android Chrome). The check is off on that sheet.
 3. The demo video shows:
    - the iPad overlay at P1–P4 on site, at 1:1
    - the D1 desk sheet at 1:100
@@ -47,9 +47,9 @@
   - a list of findings
   - pins on the 3D model
   - evidence boxes on the photo
-- **Desk mode:** the same flow with a desk anchor at the sheet's own scale. The start page's desk sheet is site D1: A4 landscape, a 7 cm code, the building at 1:100 (the card "On your desk · 1:100"), with the check off. room1 keeps two 1:20 sheets:
-  - **D1, A4:** QR only; the model appears beside it.
-  - **D2, A3, for a physical model:** QR plus the model's footprint outline, so the model sits exactly on it.
+- **Desk mode:** the same flow with a desk anchor at the sheet's own scale. The start page's desk sheet is site D1: US Letter landscape, a 62 mm code, the building at 1:100 (the card "On your desk · 1:100"), with the check off. room1 keeps two 1:20 sheets:
+  - **D1, US Letter portrait:** QR only; the model appears beside it.
+  - **D2, US Letter, for a physical model:** the exact 1:20 footprint outline on top, with a 7 cm code below it, so the model sits exactly on the outline.
 - **Sample-photo mode:** still photos that each carry their pose and calibration, so the check runs with no camera and no printing. The four shipped samples are simulated renders of the site project's planted as-built (`web/scripts/make-samples.mjs`), labelled "Simulated photo". A real photo can be captured with the app (dev-only *Save as sample*).
 
 ### 4.2 Main flow (live)
@@ -61,7 +61,7 @@
 6. Tap any element to see its properties and ask a typed question (speech input isn't built; #16). The answer cites the property names it used.
 
 ### 4.3 Demo content
-- **The site building** (project `site`): four upright A3 sheets P1–P4 at 1:1, set out on a car park from `site-layout.pdf`, and the D1 desk sheet at 1:100.
+- **The site building** (project `site`): four upright US Letter sheets P1–P4 at 1:1, set out on a car park from `site-layout.pdf`, and the D1 desk sheet at 1:100.
 - **The virtual demo:** the site's simulated as-built with ten planted defects (`web/src/sim/asBuilt.ts`), seen from P1–P4. The four ready-made photos are renders of the same as-built.
 - **room1** (the 4 × 3 m demo room with staged deviations) and **rooftop** (a 9 × 9 m concrete frame) stay in the repo, but aren't in the demo.
 - **Disclosure.** The video and deck say that the defects are planted and the views are simulated.
@@ -133,13 +133,13 @@ truesite/
 
 **anchors.json** (one entry per anchor)
 ```json
-{ "anchor_id": "A1", "project_id": "room1", "qr_size_m": 0.23,
-  "position_m": [0.10, 1.50, 1.35], "normal": [1, 0, 0], "up": [0, 0, 1], "scale": 1.0, "label": "Wall sheet A3 (1:1)" }
+{ "anchor_id": "A1", "project_id": "room1", "qr_size_m": 0.16,
+  "position_m": [0.10, 1.50, 1.35], "normal": [1, 0, 0], "up": [0, 0, 1], "scale": 1.0, "label": "Wall sheet Letter (1:1)" }
 ```
 - `position_m` is the centre of the QR, `normal` points out of the code toward the viewer, and `up` is the code's top edge direction.
-- Site anchors (the demo): P1–P4 are upright A3 sheets with 23 cm codes, centred 1.40 m above the ground, at `scale: 1`. D1 is a flat A4 desk sheet with a 7 cm code at `scale: 0.01` (1:100).
-- room1 anchors: a 23 cm code on an A3 sheet on the wall (A1; its pose is still a placeholder, not surveyed), and a 16 cm code on an A4 floor sheet (L1).
-- room1 desk anchors: codes lie flat (`normal` = +Z) with `scale: 0.05` (1:20). The A4 sheet D1 carries a 12 cm code and the A3 physical-model sheet D2 a 15 cm code. Each sheet has its own `anchor_id`.
+- Site anchors (the demo): P1–P4 are upright US Letter sheets with 16 cm codes, centred 1.40 m above the ground, at `scale: 1`. D1 is a flat US Letter desk sheet with a 62 mm code at `scale: 0.01` (1:100). Every sheet is US Letter since #119; 16 cm is the largest code a Letter page holds with the full quiet zone around the Cloud Run URL's version-5 code.
+- room1 anchors: 16 cm codes on the wall sheet (A1; its pose is still a placeholder, not surveyed) and the floor sheet (L1).
+- room1 desk anchors: codes lie flat (`normal` = +Z) with `scale: 0.05` (1:20). D1 carries a 12 cm code and the physical-model sheet D2 a 7 cm code. Each sheet has its own `anchor_id`.
 
 **elements.json** (one entry per IFC element)
 ```json
@@ -266,7 +266,7 @@ The prompt also names the printed QR code (the anchor; `distance_m` is the camer
 | QR not in the snapshot | Refuse: "Keep the code in view when you take the photo" |
 | Check bar doesn't measure 10 cm | User enters the measured length; QR size corrected for that device |
 | `image_quality` is not good | Findings shown greyed with the reason, plus a retake prompt. Their pins on the model are dimmed and Draft issue is hidden |
-| Gemini timeout or server error | The check waits 45 s per attempt (`CHECK_TIMEOUT_MS`) with one SDK retry; Ask, Draft and Report wait 25 s. On 429 or 503 the server then tries the fallback models (§7.4). If all fail: "Gemini is busy right now. Try again in a minute." for a busy or unavailable model, else "Check failed. Try again." A failed live check discards its photo |
+| Gemini timeout or server error | Each check try waits 50 s (`CHECK_TIMEOUT_MS`) with no SDK retry; a hung try (504 or timeout) is tried once more on the same model, so 100 s at worst, inside Cloud Run's and the browser's 120 s. Ask, Draft and Report wait 25 s per try with one SDK retry. On 429 or 503 the server then tries the fallback models (§7.4). Gemini's own quota after every fallback is 429 `model_quota`, and usage limits (`daily_cap`, `rate_limited`, `model_quota`) open a popup with a countdown, not an error (#117). Otherwise: "Gemini is busy right now. Try again in a minute." for a busy or unavailable model, else "Check failed. Try again." A failed live check discards its photo |
 | Response fails parsing or schema | One retry, except when the output was cut off at the token cap (`MAX_TOKENS`): a retry would be cut off and billed again. Invalid individual findings are dropped and logged |
 | Prompt or output stopped by a safety filter | No retry; plain message (422 `model_blocked`) |
 | Rate limit or daily cap reached; Gemini unavailable or failing (any 5xx); no connection | Plain message. Sample photos show their last real result, labelled "Saved result from <date>", with a line saying why the live check didn't run |

@@ -72,7 +72,7 @@ Wai found a 13-second screen recording of a commercial construction-AR app on a 
 The start page shows one project, `site`: a two-storey building under construction (18 × 12 m, 6 m bays, 3.9 m clear in the ground storey, ridge about 10.5 m), colour-coded by type like the video. `room1` and `rooftop` stay in the repo and open at `/model?project=…`, but nothing links to them.
 
 1. **Hero shot: live AR on the iPad (Michael, an open car park).**
-   - Four upright A3 sheets P1–P4 (23 cm codes, centred 1.40 m above the ground), set out with `site-layout.pdf`.
+   - Four upright US Letter sheets P1–P4 (16 cm codes, centred 1.40 m above the ground), set out with `site-layout.pdf`.
    - At each one: lock about 0.7 m from the code, step back to the X 1.5 m away, then turn on the spot and look up. Don't walk. Checklist: `docs/demo/ipad-ar-filming.md`.
    - Camera overlay only. *Check as-built* is off on the site sheets, because nothing is built there; the live view points to the virtual demo instead.
 2. **The AI moment: the virtual demo** (the start page's `#virtual`, `/samples?at=P1` to `P4`).
@@ -83,7 +83,7 @@ The start page shows one project, `site`: a two-storey building under constructi
 3. **Judges without a site:**
    - the virtual demo, which runs on any device
    - **ready-made views** (`/samples?photos`): four simulated photos with saved results, the fallback when Gemini is busy (a bare `/samples` goes to `/#virtual`)
-   - the A4 **desk sheet D1**: the building at 1:100 on a desk, with the check off
+   - the US Letter **desk sheet D1**: the building at 1:100 on a desk, with the check off
    - on a laptop or PC, a live AR page opens a popup every time: a QR code of the page for a tablet or phone, then that page's sheet to download, with how to print and place it
 4. **Also in the video:** Ask on an element, a drafted issue and the site report, the measured numbers (labelled simulated), and the Google Cloud architecture.
 
@@ -111,7 +111,7 @@ The start page shows one project, `site`: a two-storey building under constructi
 - **Deployed:** Cloud Run in `asia-southeast1`, with live Gemini, Firestore and Cloud Storage. `eval/README.md` §3 records a run on the deployed service (#105). The service URL isn't in the repo yet: add it to the README's "Live demo" line, and close #1.
 - **Gemini:**
   - `gemini-3.8-flash` on Agent Platform (`global`) with three images and LOW thinking (MEDIUM took about 65 s a check and was dropped). On 429 or 503 the server tries `gemini-3.5-flash`, then `gemini-3.5-flash-lite`.
-  - The check waits 45 s per attempt; Ask, Draft and Report wait 25 s.
+  - Each check try waits 50 s, and a hung try is tried once more on the same model (100 s at worst); Ask, Draft and Report wait 25 s per try. When a Gemini limit is hit, a popup says it is a usage limit, not an error, with a countdown (#117).
   - Results (`eval/README.md` §3, simulated as-built): about 10 of 16 planted defects found and 4 false alarms on average over three runs. A check costs about US$0.015.
   - The site has its own `check_note` (#95). The rooftop's setting-out note predates IMAGE 3, and rooftop isn't in the demo.
 - **Google Cloud:** project `truesite-hack-2026`, owned by Wai's Gmail. `make deploy` sets daily caps of 300 checks and 300 asks (30 checks per IP per hour), renders the QR sheets for the service URL and refuses to deploy without them; `make verify` ends with `SMOKE OK`.

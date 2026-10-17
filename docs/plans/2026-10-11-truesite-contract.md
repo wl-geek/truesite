@@ -38,8 +38,8 @@ truesite/
     truesite_bim/rooftop.py           # rooftop project (9 x 9 m two-storey frame, rebar cages): Frame ; r1_sheet() ; r2_sheet() ; view_sheets() ; main() (same flags as site.py)
     tests/{conftest.py, test_convert.py, test_models_room1.py, test_pipeline.py, test_qr_sheets.py, test_rooftop.py, test_site.py}
     models/room1/{model.ifc, model.glb, elements.json, anchors.json, project.json, demo_issues.json}
-    models/rooftop/{model.ifc, model.glb, elements.json, anchors.json, project.json}   # anchors R1 (A2), R2 (A4), V1–V3 (A4 upright); project.json has a check_note
-    models/site/{model.ifc, model.glb, elements.json, anchors.json, project.json}   # anchors P1–P4 (A3 upright, 1:1), D1 (A4 desk, 1:100); with --base-url, site.py also writes site-layout.pdf (set-out plan, no QR)
+    models/rooftop/{model.ifc, model.glb, elements.json, anchors.json, project.json}   # anchors R1, R2 (a spare), V1–V3 (upright), all US Letter with 16 cm codes; project.json has a check_note
+    models/site/{model.ifc, model.glb, elements.json, anchors.json, project.json}   # anchors P1–P4 (US Letter upright, 16 cm, 1:1), D1 (US Letter desk, 62 mm, 1:100); with --base-url, site.py also writes site-layout.pdf (set-out plan, no QR)
     sheets/                             # generated PDFs (git-ignored)
   server/
     pyproject.toml  uv.lock  requirements.txt (hash-pinned, for Docker)
@@ -151,7 +151,7 @@ Errors are FastAPI `HTTPException` with `detail = {"code": <code>, ...}`. Paths 
 | GET `/api/whoami` | — | `{"ip", "x_forwarded_for", "peer"}` (day-1 X-Forwarded-For check) | — |
 | GET `/api/projects/{project_id}` | — | `ProjectManifest` | 404 `unknown_project` |
 | GET `/api/projects/{project_id}/model.glb` | — | glb (`model/gltf-binary`, ETag; 304 on a matching `If-None-Match`) | 404 `unknown_project` |
-| POST `/api/check` | multipart: `photo` (JPEG ≤ 4 MiB), `render` (PNG ≤ 4 MiB), optional `overlay` (JPEG ≤ 4 MiB: the photo with each mark's design outline, Gemini's IMAGE 3), `context` (JSON string → `CheckContext`); header `X-Session-Id` | `CheckResponse` | 413 · 415 · 422 (loc `["body","context",…]`) · 404 `unknown_project` · 422 `unknown_element` (a mark's guid is not in the project; before any limit) · 429 `rate_limited` (+`retry_after_s`, `Retry-After`) · 429 `daily_cap` · 503 `busy` (cap check failed) · 503 `model_unavailable` (timeout / unavailable / rate_limited) · 502 `model_bad_output` · 422 `model_blocked` · 500 `model_bad_request` |
+| POST `/api/check` | multipart: `photo` (JPEG ≤ 4 MiB), `render` (PNG ≤ 4 MiB), optional `overlay` (JPEG ≤ 4 MiB: the photo with each mark's design outline, Gemini's IMAGE 3), `context` (JSON string → `CheckContext`); header `X-Session-Id` | `CheckResponse` | 413 · 415 · 422 (loc `["body","context",…]`) · 404 `unknown_project` · 422 `unknown_element` (a mark's guid is not in the project; before any limit) · 429 `rate_limited` (+`retry_after_s`, `Retry-After`) · 429 `daily_cap` (+`retry_after_s` to midnight UTC, `Retry-After`) · 429 `model_quota` (Gemini's own quota after every fallback model; +`retry_after_s`: Google's retry delay, else 60, `Retry-After`) · 503 `busy` (cap check failed) · 503 `model_unavailable` (timeout / unavailable) · 502 `model_bad_output` · 422 `model_blocked` · 500 `model_bad_request` |
 | GET `/api/runs/{run_id}/{photo.jpg\|render.png}` | header `X-Session-Id` | image bytes (owner session only) | 404 `unknown_run` (also another session's run) · 422 (`run_id` not `RUN_ID_PATTERN`, or another file name) |
 | GET `/api/saved-results/{sample_id}` | — | `CheckResult` with `saved_at` set | 404 `unknown_sample` · 422 (`sample_id` not `SAMPLE_ID_PATTERN`) |
 | POST `/api/ask` | `AskRequest`; header `X-Session-Id` | `AskAnswer` | 404 `unknown_project` / `unknown_element` · 429 · 503/502/422/500 as for check |
@@ -273,7 +273,7 @@ def make_checker(repo: ProjectRepo, client: Any) -> Checker   # gemini_client.ch
 def make_asker(repo: ProjectRepo, client: Any) -> Callable[[AskRequest], AskAnswer]
 def make_drafter(repo: ProjectRepo, client: Any) -> Callable[..., IssueDraft]    # (run: CheckRun, mark: int, language: str = "en")
 def make_reporter(client: Any) -> Callable[..., SiteReport]                     # (runs: list[CheckRun], language: str = "en"): deviations only, severity from each check
-def http_error_for(err: GeminiError) -> HTTPException         # timeout|unavailable|rate_limited -> 503 model_unavailable; bad_output -> 502;
+def http_error_for(err: GeminiError) -> HTTPException         # timeout|unavailable -> 503 model_unavailable; rate_limited -> 429 model_quota (+retry_after_s); bad_output -> 502;
                                                              # blocked -> 422 model_blocked; bad_request -> 500 model_bad_request
 def build_client(settings: Settings) -> Any                   # GEMINI_MODE=fake -> FakeGeminiClient(); live -> gemini_client.default_client()
 # app/main.py
@@ -283,7 +283,7 @@ def create_app(settings: Settings | None = None, *, store: Store | None = None, 
 #   Blocking work (Gemini, store) runs in the threadpool (plain def endpoints or run_in_threadpool).
 #   Middleware, outermost first: SecurityHeadersMiddleware (app/security_headers.py), BodySizeLimitMiddleware, GZip.
 #   422s keep FastAPI's body and loc paths; NaN, Infinity or 1e999 echoed in `input` come back as "NaN"/"Infinity"/"-Infinity".
-#   Gemini timeouts: REQUEST_TIMEOUT_MS = 25_000 per attempt (CHECK_TIMEOUT_MS = 45_000 for the check), one SDK retry; Cloud Run --timeout 120.
+#   Gemini timeouts: REQUEST_TIMEOUT_MS = 25_000 per attempt (CHECK_TIMEOUT_MS = 50_000 for the check, no SDK retry, one retry of a hung request on the same model), one SDK retry; Cloud Run --timeout 120.
 ```
 
 ## 7. Web modules
@@ -421,7 +421,7 @@ SettingsDep, StoreDep, RepoDep, ClientDep = Annotated[...]                      
 def enforce_rate_limit(request: Request, limiter_name: str) -> None
     # per-IP limiter only -> 429 rate_limited (+Retry-After); POST /api/issues ("issue_limiter")
 def enforce_limits(request: Request, limiter_name: str, day_suffix: str, cap: int) -> None
-    # per-IP limiter -> 429 rate_limited (+Retry-After); store.try_consume_daily(f"{day}{day_suffix}", cap) -> 429 daily_cap; store error -> 503 busy
+    # per-IP limiter -> 429 rate_limited (+Retry-After); store.try_consume_daily(f"{day}{day_suffix}", cap) -> 429 daily_cap (+retry_after_s, Retry-After: to midnight UTC); store error -> 503 busy
 ```
 
 | Router file | Part | Routes |

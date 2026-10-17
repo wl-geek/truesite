@@ -3,7 +3,7 @@ import { Scene, WebGLRenderer } from 'three'
 import { ApiError, getProject } from '../api/client'
 import type { CheckResult, Finding, ProjectManifest } from '../api/types'
 import { saveLastCheck } from '../check/lastCheck'
-import { checkErrorMessage, savedFallbackMessage } from '../check/messages'
+import { checkErrorMessage, readyMadeErrorMessage, savedFallbackMessage } from '../check/messages'
 import { runCheck, storedRunId } from '../check/runCheck'
 import { parseSampleIndex, parseSampleMeta, type SampleIndexEntry } from '../check/sampleMeta'
 import { evalRunStatus, sampleCheckInput } from '../check/sampleRun'
@@ -33,6 +33,16 @@ function releaseLoaded(l: Loaded | null): void {
   releaseRenderer(l.renderer)
 }
 
+/**
+ * To the start page's virtual demo section in place of this history entry, so Back doesn't re-open the spot just
+ * left (audit C-27) or bounce off a bare /samples again.
+ */
+function backToVirtualDemo(): void {
+  window.history.replaceState(null, '', '/')
+  navigate('/') // the address is already '/': this re-renders the route without adding an entry
+  goToSection('virtual')
+}
+
 async function getJsonFile(url: string): Promise<unknown> {
   const res = await fetch(url)
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
@@ -50,7 +60,7 @@ export function SamplesPage() {
   const site = params.get('at')
   const photos = params.has('photos') || params.has('dev')
   useEffect(() => {
-    if (!site && !photos) goToSection('virtual')
+    if (!site && !photos) backToVirtualDemo()
   }, [site, photos])
   const [samples, setSamples] = useState<SampleIndexEntry[] | null>(null)
   const [loaded, setLoaded] = useState<Loaded | null>(null)
@@ -64,6 +74,11 @@ export function SamplesPage() {
   const evalResults = useRef<Record<string, CheckResult>>({})
   const loadedRef = useRef<Loaded | null>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
+
+  // Scroll to the result once React has put it on the page: the ref is only set at commit (audit C-08).
+  useEffect(() => {
+    if (outcome) resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [outcome])
 
   useEffect(() => {
     let cancelled = false
@@ -115,10 +130,9 @@ export function SamplesPage() {
       const runId = storedRunId(res.response)
       setOutcome({ result, photoUrl: URL.createObjectURL(photo), fallback, runId, projectId: meta.project_id, label: sample.label,
         staged: sample.staged ?? null })
-      requestAnimationFrame(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
       saveLastCheck(meta.project_id, { result, runId, at: new Date().toISOString() })
     } catch (e) {
-      setError(e instanceof ApiError ? checkErrorMessage(e) : e instanceof Error ? e.message : 'Check failed. Try again.')
+      setError(e instanceof ApiError ? readyMadeErrorMessage(e) : e instanceof Error ? e.message : 'Check failed. Try again.')
     } finally {
       setRunning(null)
     }
@@ -162,7 +176,7 @@ export function SamplesPage() {
   }
   const ready = useMemo(() => samples ?? [], [samples])
 
-  if (site) return <VirtualSite key={site} viewpointId={site} onExit={() => goToSection('virtual')} />
+  if (site) return <VirtualSite key={site} viewpointId={site} onExit={backToVirtualDemo} />
   if (!photos) return null
 
   return (

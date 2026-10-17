@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { Anchor, ProjectManifest } from '../api/types'
 import {
-  checkAvailability, coachHint, effectiveQrSize, findAnchor, isDeskAnchor, isFar, isLifeSizeFloor, poseAnchor, scaleLabel, searchingSeconds,
-  SEARCH_TIPS_AFTER_S, toVideoPixels, walkInsideFirst,
+  aboutDistance, checkAvailability, coachHint, effectiveQrSize, findAnchor, isDeskAnchor, isFar, isLifeSizeFloor, poseAnchor, scaleLabel, searchingSeconds,
+  SEARCH_TIPS_AFTER_S, startDistanceM, toVideoPixels, virtualDemoHref, walkInsideFirst,
 } from './arMath'
 
 const A1: Anchor = { anchor_id: 'A1', project_id: 'room1', qr_size_m: 0.23, position_m: [0.1, 1.5, 1.35], normal: [1, 0, 0], up: [0, 0, 1], scale: 1, label: 'Wall' }
@@ -71,6 +71,38 @@ describe('arMath', () => {
     expect(coachHint({ ...lost, searchingS: 6, mode: 'motion' }, false)).toMatch(/Look around/)
   })
 
+  it('starts at a distance that suits the code size: about 35 cm for the 7 cm desk code, 1 m for P and R codes (audit C-01)', () => {
+    expect(startDistanceM({ qr_size_m: 0.07 })).toBe(0.35) // site D1
+    expect(startDistanceM({ qr_size_m: 0.12 })).toBe(0.6) // room1 D1
+    expect(startDistanceM({ qr_size_m: 0.16 })).toBe(0.8) // L1, R2, V1-V3
+    expect(startDistanceM({ qr_size_m: 0.23 })).toBe(1) // P1-P4
+    expect(startDistanceM({ qr_size_m: 0.33 })).toBe(1) // R1
+    expect(aboutDistance(0.35)).toBe('about 35 cm')
+    expect(aboutDistance(1)).toBe('about 1 m')
+  })
+
+  it('coaches a desk sheet at its own start distance, without stepping back (audit C-01)', () => {
+    const lost = { tracking: false, provisional: true, distanceM: null, mode: 'lost' as const }
+    expect(coachHint({ ...lost, searchingS: 6 }, true, false, 0.35)).toBe("Can't find the code. Add more light, move within about 35 cm and hold the phone steady.")
+    expect(coachHint({ tracking: true, provisional: true, distanceM: 0.9 }, true, false, 0.35)).toBe('Hold the camera about 35 cm from the code and keep it steady.')
+    expect(coachHint({ tracking: true, provisional: true, distanceM: 2 }, false, false, 0.8)).toBe('Move within about 80 cm of the code, then step back slowly.')
+    expect(coachHint({ ...lost, searchingS: 6 }, false, false, 1)).toBe("Can't find the code. Add more light, move within about 1 m and hold the phone steady.")
+  })
+
+  it('says look-around paused at its time limit instead of giving the search tips (audit C-14)', () => {
+    const expired = { tracking: false, provisional: true, distanceM: null, mode: 'lost' as const, searchingS: 95, lookAroundExpired: true }
+    expect(coachHint(expired, false, false)).toBe('Look-around paused after 90 s: point back at the code to re-align.')
+    expect(coachHint({ ...expired, lookAroundExpired: false }, false, false)).toMatch(/Add more light/)
+  })
+
+  it('links a live sheet to the same spot in the virtual demo, else to the virtual demo section (audit C-05)', () => {
+    const spots = ['P1', 'P2', 'P3', 'P4']
+    expect(virtualDemoHref('site', 'P1', spots)).toBe('/samples?at=P1')
+    expect(virtualDemoHref('site', 'P4', spots)).toBe('/samples?at=P4')
+    expect(virtualDemoHref('site', 'D1', spots)).toBe('/#virtual')
+    expect(virtualDemoHref('room1', 'P1', spots)).toBe('/#virtual')
+  })
+
   it('times the search from the later of the last sighting and the (re)start', () => {
     expect(searchingSeconds(12, -Infinity, 10)).toBe(2) // never seen since the camera started
     expect(searchingSeconds(30, 20, 10)).toBe(10)
@@ -123,7 +155,8 @@ describe('arMath boundaries (mutation-tested)', () => {
     expect(coachHint({ ...lost }, false)).toBe('Point the camera at the QR code.') // no search time yet
     expect(coachHint({ tracking: true, provisional: false, distanceM: 1, mode: 'motion' }, true))
       .toBe('Look around and up. Turn on the spot; point back at the code to re-align.')
-    expect(coachHint({ tracking: true, provisional: true, distanceM: 1 }, true)).toBe('Move within about 1 m of the code, then step back slowly.')
+    expect(coachHint({ tracking: true, provisional: true, distanceM: 1 }, true)).toBe('Hold the camera about 1 m from the code and keep it steady.')
+    expect(coachHint({ tracking: true, provisional: true, distanceM: 1 }, false)).toBe('Move within about 1 m of the code, then step back slowly.')
     expect(coachHint({ tracking: true, provisional: false, distanceM: 4 }, true)).toBe('Move closer to the code for a more accurate overlay.')
     expect(coachHint({ tracking: true, provisional: false, distanceM: null }, false)).toBe('Aim at the area to check, then tap Check as-built.')
     expect(coachHint({ tracking: true, provisional: false, distanceM: 1.4 }, false, false))
