@@ -2,8 +2,9 @@
 from __future__ import annotations
 
 import ipaddress
+import math
 
-from hypothesis import assume, given, settings, strategies as st
+from hypothesis import assume, example, given, settings, strategies as st
 from starlette.requests import Request
 
 from app.limits import SlidingWindowLimiter, client_ip, rate_key
@@ -130,6 +131,37 @@ def test_after_retry_after_the_next_hit_is_allowed(limit, window, gap):
     assert not limiter.hit("k")[0]  # one second early is still too early
     clock.t += 1
     assert limiter.hit("k") == (True, 0)
+
+
+TICK = 1 / 1024  # a binary fraction of a second, so the clock arithmetic below is exact
+
+
+@PROPS
+@given(st.integers(1, 3), st.integers(1, 60), st.integers(0, 60 * 1024))
+@example(1, 60, 58 * 1024 - 1)  # 2 s + 1/1024 s to wait: int(retry + 0.999) said 2 (C-40)
+def test_retry_after_is_the_wait_rounded_up_to_a_whole_second(limit, window, ticks):
+    """Retry-After is never short: waiting exactly that long always gets the next hit in (C-40)."""
+    clock = Clock()
+    limiter = SlidingWindowLimiter(limit, window, clock=clock)
+    for _ in range(limit):
+        assert limiter.hit("k") == (True, 0)
+    clock.t += min(ticks, window * 1024 - 1) * TICK  # still inside the window
+    wait = 1000.0 + window - clock.t  # until the first hit leaves the window
+    ok, retry = limiter.hit("k")
+    assert not ok and retry == math.ceil(wait)
+    clock.t += retry
+    assert limiter.hit("k") == (True, 0)
+
+
+@PROPS
+@given(st.integers(-3, 0), st.integers(1, 7200), st.lists(st.tuples(st.integers(0, 9000), st.sampled_from("ab")), max_size=8))
+def test_a_limit_below_one_refuses_every_hit_for_a_whole_window(limit, window, events):
+    """A per-IP limit of 0 switches the endpoint off: always a 429 with a window's Retry-After, never a crash (C-39)."""
+    clock = Clock()
+    limiter = SlidingWindowLimiter(limit, window, clock=clock)
+    for dt, key in events:
+        clock.t += dt
+        assert limiter.hit(key) == (False, window)
 
 
 @PROPS
