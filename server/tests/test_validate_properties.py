@@ -26,16 +26,19 @@ QUALITIES = ["good", "too_dark", "blurred", "marker_far", "occluded"]
 PROJECT_CLASSES = [("IfcColumn", True), ("IfcWall", True), ("IfcWall", False), ("IfcDoor", None),
                    ("IfcRailing", None), ("IfcFurniture", None), ("IfcPipeSegment", None), ("IfcReinforcingBar", None)]
 
-# What json.loads can hand back at the leaves, NaN and inf included. Integers stay within float range.
-scalars = st.none() | st.booleans() | st.integers(-10**9, 10**9) | st.floats() | st.text(max_size=8)
+# What json.loads can hand back at the leaves: NaN and inf included, and integers too large for a float
+# (float() and math.isfinite() raise OverflowError on those; C-37).
+HUGE = [10**400, -(10**400), 2**1024]
+scalars = st.none() | st.booleans() | st.integers() | st.sampled_from(HUGE) | st.floats() | st.text(max_size=8)
 json_values = st.recursive(
     scalars, lambda inner: st.lists(inner, max_size=3) | st.dictionaries(st.text(max_size=5), inner, max_size=3),
     max_leaves=6)
 finite = st.integers(-2000, 3000) | st.floats(-2000, 3000)
+LONG_DIGITS = "9" * 5000  # int() refuses strings over 4,300 digits (C-37)
 boxes = (st.lists(st.integers(-300, 1300), min_size=4, max_size=4)
          | st.lists(finite | scalars, min_size=3, max_size=5) | scalars)
 offsets = st.fixed_dictionaries({}, optional={
-    "direction": st.sampled_from(DIRECTIONS) | scalars,
+    "direction": st.sampled_from(DIRECTIONS) | json_values,
     "approx_cm": st.integers(-100, 900) | st.floats(-100, 900) | scalars,
 }) | scalars
 unexpected_items = st.fixed_dictionaries({}, optional={
@@ -48,8 +51,8 @@ unexpected_items = st.fixed_dictionaries({}, optional={
 def finding_dicts(n: int) -> st.SearchStrategy:
     mark = st.integers(-1, n + 2)
     return st.fixed_dictionaries({}, optional={
-        "mark": mark | mark.map(float) | mark.map(str) | mark.map(lambda m: f" {m} ") | scalars,
-        "status": st.sampled_from(STATUSES) | scalars,
+        "mark": mark | mark.map(float) | mark.map(str) | mark.map(lambda m: f" {m} ") | scalars | st.just(LONG_DIGITS),
+        "status": st.sampled_from(STATUSES) | json_values,
         "confidence": st.floats(0, 1) | scalars,
         "evidence_box": boxes,
         "offset": offsets,
@@ -60,7 +63,7 @@ def finding_dicts(n: int) -> st.SearchStrategy:
 def answers(n: int) -> st.SearchStrategy:
     """A Gemini answer for a context with n marks: right-shaped, wrong-typed or missing at every level."""
     return st.fixed_dictionaries({}, optional={
-        "image_quality": st.sampled_from(QUALITIES) | scalars,
+        "image_quality": st.sampled_from(QUALITIES) | json_values,
         "findings": st.lists(finding_dicts(n) | json_values, max_size=n + 5) | scalars,
         "unexpected": st.lists(unexpected_items, max_size=14) | scalars,
         "summary": st.text(max_size=350) | scalars,
@@ -140,6 +143,19 @@ def test_a_repaired_result_needs_no_more_repair(case):
     twice = repair_check(once.model_dump(mode="json"), ctx, elements)
     assert twice.warnings == []
     assert twice.model_dump(exclude={"warnings"}) == once.model_dump(exclude={"warnings"})
+
+
+@PROPS
+@given(checks(), json_values)
+def test_any_json_without_a_findings_list_leaves_every_mark_not_assessed(case, raw):
+    """Any JSON at all, an object or not, repairs to a valid result (C-37). json_values' keys have at most five
+    characters, so there is never a "findings" list: every mark is "can't judge", not assessed."""
+    ctx, elements, _ = case
+    result = repair_check(raw, ctx, elements)
+    CheckResult.model_validate_json(json.dumps(result.model_dump(mode="json"), allow_nan=False))
+    assert [(f.mark, f.status, f.confidence, f.explanation, f.severity) for f in result.findings] == \
+        [(m, "cannot_judge", 0.0, "not assessed", None) for m in range(1, len(ctx.visible) + 1)]
+    assert (result.image_quality, result.unexpected, result.summary) == ("good", [], "")
 
 
 @PROPS
@@ -279,13 +295,13 @@ def as_mark(value):
         return value
     if isinstance(value, float) and value.is_integer():
         return int(value)
-    if isinstance(value, str) and value.strip().isascii() and value.strip().isdigit():
+    if isinstance(value, str) and value.strip().isascii() and value.strip().isdigit() and len(value.strip()) <= 9:
         return int(value.strip())
     return None
 
 
 MARK_FORMS = (st.integers(1, 3) | st.integers(1, 3).map(float) | st.integers(1, 3).map(lambda m: f" {m}")
-              | st.sampled_from([0, 4, 25, -1, True, None, "x", 2.5, "²", float("nan")]))
+              | st.sampled_from([0, 4, 25, -1, True, None, "x", 2.5, "²", float("nan"), LONG_DIGITS, 10**400]))
 JUNK = json_values.filter(lambda v: not isinstance(v, dict) or "mark" not in v)
 
 
@@ -327,7 +343,8 @@ def test_unexpected_keeps_the_first_ten_described_confident_items(items):
 
 
 @PROPS
-@given(st.sampled_from(QUALITIES) | scalars)
+@given(st.sampled_from(QUALITIES) | json_values)
+@example(["good"])  # unhashable: was a TypeError (C-37)
 def test_image_quality_is_kept_only_when_known(value):
     result = repair_check({"image_quality": value}, ONE, {"col-1": COLUMN})
     known = isinstance(value, str) and value in QUALITIES
@@ -356,6 +373,8 @@ def test_truncate_text_keeps_what_fits_and_cuts_the_rest_with_an_ellipsis(value,
 @example(-0.5)
 @example(1.5)
 @example(float("nan"))
+@example(10**400)  # too large for a float: was an OverflowError (C-37)
+@example(-(10**400))
 def test_confidence_is_clamped_to_0_1(value):
     out = clamp_confidence(value)
     assert type(out) is float and 0.0 <= out <= 1.0
