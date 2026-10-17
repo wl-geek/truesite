@@ -53,6 +53,16 @@ export function expectClean(log: PageLog, allow: { http?: RegExp; errors?: RegEx
   expect.soft(log.csp, 'Content-Security-Policy-Report-Only violations').toEqual([])
 }
 
+/**
+ * Live AR runs only on tablets and phones: a laptop or PC gets the popup and nothing else. Desktop Chrome has the fake
+ * camera the live tests need, so their pages present as an iPad (the user agent ui/device.ts reads). Call before goto.
+ */
+export async function presentAsTablet(page: Page): Promise<void> {
+  await page.addInitScript(() => Object.defineProperty(Navigator.prototype, 'userAgent', {
+    get: () => 'Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1',
+  }))
+}
+
 // ---- the virtual demo ------------------------------------------------------------------------------------------
 
 export const VIEWPOINTS = [

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { navigate, type Route } from '../router'
 import './topbar.css'
 
-/** The start page is one page: every nav link is a section of it. The tools (virtual site, 3D model, live AR) open from buttons in those sections. */
+/** The start page is one page: these nav links are its sections. The 3D model viewer has its own page and nav link (MODEL_LINK). */
 export const SECTIONS = [
   { id: 'how', label: 'How it works', icon: 'M4 6h16M4 12h10M4 18h6' },
   { id: 'live', label: 'Live AR', icon: 'M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M9 9h6v6H9z' },
@@ -10,6 +10,8 @@ export const SECTIONS = [
   { id: 'about', label: 'About', icon: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 11v6M12 7.5v.01' },
 ] as const
 type SectionId = (typeof SECTIONS)[number]['id'] | 'top'
+/** The 3D model viewer, part of the product: a page of its own, listed in the nav after Live AR. */
+export const MODEL_LINK = { path: '/model', label: '3D model', icon: 'M12 3 20 7.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12v9M12 12 4 7.5' }
 
 /**
  * Scroll to a section of the start page, from any page (the tools navigate back to it first). The address shows
@@ -86,7 +88,7 @@ function useScrollProgress(bar: React.RefObject<HTMLElement | null>): void {
   }, [bar])
 }
 
-/** The app's top bar: brand, the start page's sections, and one call to action. On phones the sections fold into a menu. */
+/** The app's top bar: brand, the start page's sections and the 3D model, and one call to action. On phones the links fold into a menu. */
 export function TopBar({ route }: { route: Route }) {
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -112,13 +114,28 @@ export function TopBar({ route }: { route: Route }) {
     setOpen(false)
     goToSection(id)
   }
-  const links = SECTIONS.map((s) => (
-    <a key={s.id} href={`/#${s.id}`} className="tb-link" aria-current={current === s.id ? 'location' : undefined} onClick={go(s.id)}>
-      <svg className="tb-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"
-        strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={s.icon} /></svg>
-      <span>{s.label}</span>
-    </a>
-  ))
+  const openModel = (e: React.MouseEvent) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return // let new-tab clicks through
+    e.preventDefault()
+    setOpen(false)
+    if (route.name !== 'viewer') { navigate(MODEL_LINK.path); window.scrollTo(0, 0) }
+  }
+  const icon = (d: string) => (
+    <svg className="tb-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"
+      strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
+  )
+  const links = SECTIONS.flatMap((s) => {
+    const link = (
+      <a key={s.id} href={`/#${s.id}`} className="tb-link" aria-current={current === s.id ? 'location' : undefined} onClick={go(s.id)}>
+        {icon(s.icon)}<span>{s.label}</span>
+      </a>
+    )
+    return s.id !== 'live' ? [link] : [link, (
+      <a key="model" href={MODEL_LINK.path} className="tb-link" aria-current={route.name === 'viewer' ? 'page' : undefined} onClick={openModel}>
+        {icon(MODEL_LINK.icon)}<span>{MODEL_LINK.label}</span>
+      </a>
+    )]
+  })
 
   return (
     <header className="topbar" ref={barRef}>
@@ -129,7 +146,7 @@ export function TopBar({ route }: { route: Route }) {
           <span className="brand-tag">Live BIM on site</span>
         </span>
       </a>
-      <nav className="tb-nav" aria-label="Sections">{links}</nav>
+      <nav className="tb-nav" aria-label="Main">{links}</nav>
       <div className="tb-right" ref={menuRef}>
         <a href="/#live" className="tb-cta" onClick={go('live')}>Start live AR</a>
         <button type="button" className="tb-menu-btn" aria-expanded={open} aria-controls="tb-menu" aria-label="Menu" onClick={() => setOpen((o) => !o)}>
@@ -137,7 +154,7 @@ export function TopBar({ route }: { route: Route }) {
             {open ? <path d="M6 6l12 12M18 6 6 18" /> : <path d="M4 7h16M4 12h16M4 17h16" />}
           </svg>
         </button>
-        {open && <nav id="tb-menu" className="tb-menu" aria-label="Sections">{links}</nav>}
+        {open && <nav id="tb-menu" className="tb-menu" aria-label="Main">{links}</nav>}
       </div>
     </header>
   )

@@ -1,37 +1,53 @@
 import { devices } from '@playwright/test'
 import { BUG } from '../support/bugs'
-import { expectClean, expect, test, VIEWPOINTS } from '../support/fixtures'
+import { expectClean, expect, presentAsTablet, test, VIEWPOINTS } from '../support/fixtures'
 
-/** The laptop popup (#107): step 1 hands this page to a tablet or phone by QR, step 2 gives the sheet to print. */
+/**
+ * The laptop popup (#107): step 1 hands this page to a tablet or phone by QR, step 2 gives the sheet to print. On a
+ * laptop or PC it is the whole page: nothing opens the live view, and Back to home (or Escape) leaves for the start page.
+ */
 const TIP = 'Open live AR on your tablet or phone'
 const SHEET_STEP = 'Print the sheet and scan its code'
 
 test.describe('live AR on a laptop', () => {
   test.skip(({ isMobile, hasTouch }) => isMobile || hasTouch, 'laptop only')
 
-  test('a popup recommends a tablet or phone, with a QR code of this page, every time the page opens', async ({ page, log }) => {
+  test('a popup asks for a tablet or phone, with a QR code of this page, every time the page opens', async ({ page, log }) => {
     await page.goto('/a/site/P1')
     const tip = page.getByRole('dialog', { name: TIP })
     await expect(tip).toBeVisible()
     await expect(tip).toHaveAttribute('aria-modal', 'true')
     await expect(tip.getByText('Step 1 of 2')).toBeVisible()
+    await expect(tip).toContainText("so it doesn't run on a laptop or PC")
     await expect(tip.getByRole('img', { name: 'QR code for this live view' })).toHaveAttribute('src', /^data:image\/svg\+xml;utf8,/)
     await expect(tip.getByRole('button', { name: 'Next: get the sheet' })).toBeFocused()
-    await page.keyboard.press('Escape')
-    await expect(tip).toBeHidden()
-    await expect(page.locator('.live-device-note')).toHaveText('Made for tablets and smartphones: open this page on one for the best experience.')
     // Every time (#111): again on a reload of this sheet, and on another sheet.
     await page.reload()
     await expect(tip).toBeVisible()
-    await page.keyboard.press('Escape')
-    await expect(tip).toBeHidden()
     await page.goto('/a/site/P2')
     await expect(tip).toBeVisible()
     await page.waitForLoadState('networkidle')
     expectClean(log)
   })
 
-  test('step 2 gives the sheet to download, how to print and place it, and the layout plan; Back and Done', async ({ page }) => {
+  test('a computer never reaches the live view: no way past the popup, and Back to home or Escape go to the start page', async ({ page }) => {
+    await page.goto('/a/site/P1')
+    const tip = page.getByRole('dialog', { name: TIP })
+    await expect(tip.getByRole('button')).toHaveText(['Next: get the sheet', 'Back to home'])
+    await page.mouse.click(5, 300) // the backdrop does nothing
+    await expect(tip).toBeVisible()
+    await tip.getByRole('button', { name: 'Back to home' }).click()
+    await expect(page).toHaveURL(/\/#live$/)
+    await expect(page.locator('section#live')).toBeInViewport()
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+    await page.goto('/a/site/P2')
+    await expect(tip).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(page).toHaveURL(/\/#live$/)
+    await expect(page.getByRole('button', { name: 'Start camera' })).toHaveCount(0)
+  })
+
+  test('step 2 gives the sheet to download, how to print and place it, and the layout plan; back to the QR code, then home', async ({ page }) => {
     await page.goto('/a/site/P1')
     await page.getByRole('button', { name: 'Next: get the sheet' }).click()
     const sheet = page.getByRole('dialog', { name: SHEET_STEP })
@@ -47,12 +63,13 @@ test.describe('live AR on a laptop', () => {
       'On the tablet or phone, tap Start camera and point it at the code.',
     ])
     await expect(sheet.getByRole('link', { name: 'download the layout plan' })).toHaveAttribute('href', '/sheets/site-layout.pdf')
-    await sheet.getByRole('button', { name: 'Back' }).click()
+    await sheet.getByRole('button', { name: 'Back to the QR code' }).click()
     await expect(page.getByRole('dialog', { name: TIP }).getByRole('button', { name: 'Next: get the sheet' })).toBeFocused()
     await page.getByRole('button', { name: 'Next: get the sheet' }).click()
-    await sheet.getByRole('button', { name: 'Done' }).click()
+    await sheet.getByRole('button', { name: 'Back to home' }).click()
+    await expect(page).toHaveURL(/\/#live$/)
     await expect(page.getByRole('dialog')).toHaveCount(0)
-    await expect(page.getByRole('button', { name: 'Start camera' })).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Start camera' })).toHaveCount(0)
   })
 
   test('the QR code in the popup encodes this page address', async ({ page }) => {
@@ -63,19 +80,6 @@ test.describe('live AR on a laptop', () => {
     // uqr draws one path per dark module run; a code for this ~35-character URL has a version 3 grid or larger.
     const size = Number(/viewBox="0 0 (\d+) \d+"/.exec(svg)?.[1])
     expect(size).toBeGreaterThanOrEqual(29 + 4)
-  })
-
-  test('Continue on this computer closes the popup; clicking the backdrop does too', async ({ page }) => {
-    await page.goto('/a/site/P1')
-    await page.getByRole('button', { name: 'Continue on this computer' }).click()
-    await expect(page.getByRole('dialog', { name: TIP })).toBeHidden()
-    await expect(page.getByRole('heading', { level: 1, name: 'Live view · Life size · 1:1' })).toBeVisible()
-    // The next visit shows it again; the backdrop closes it.
-    await page.reload()
-    await expect(page.getByRole('dialog', { name: TIP })).toBeVisible()
-    await page.mouse.click(5, 300)
-    await expect(page.getByRole('dialog', { name: TIP })).toBeHidden()
-    await expect(page.getByRole('heading', { level: 1, name: 'Live view · Life size · 1:1' })).toBeVisible()
   })
 
   for (const v of VIEWPOINTS) {
@@ -94,6 +98,10 @@ test.describe('live AR on a laptop', () => {
     await link.click()
     await expect(page).toHaveURL(/\/#virtual$/)
   })
+})
+
+test.describe('live AR camera view (desktop Chrome as an iPad: its fake camera)', () => {
+  test.skip(({ isMobile, hasTouch }) => isMobile || hasTouch, 'desktop project only')
 
   test('with the camera on, Check as-built stays off on the live sheets and points to the virtual demo', async ({ page, log }) => {
     await page.addInitScript(() => { // remember the camera tracks the page opens
@@ -102,8 +110,8 @@ test.describe('live AR on a laptop', () => {
       const gum = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices)
       navigator.mediaDevices.getUserMedia = async (c) => { const s = await gum(c); w.__tracks.push(...s.getTracks()); return s }
     })
+    await presentAsTablet(page)
     await page.goto('/a/site/P1')
-    await page.getByRole('button', { name: 'Continue on this computer' }).click()
     const wasm = page.waitForResponse((r) => /zxing_reader-.*\.wasm$/.test(r.url()))
     await page.getByRole('button', { name: 'Start camera' }).click()
     expect((await wasm).status()).toBe(200) // the QR reader runs in its module worker

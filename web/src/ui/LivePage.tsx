@@ -39,6 +39,7 @@ import { requestMotionPermission } from '../scene/motion'
 import { QualityBadge } from './QualityBadge'
 import { SITE_VIEWPOINTS } from './siteViewpoints'
 import { DeviceTip } from './DeviceTip'
+import { goToSection } from './TopBar'
 import { sheetInfo } from './sheet'
 import { isHandheld } from './device'
 import { ReloadPrompt } from './ReloadPrompt'
@@ -84,10 +85,10 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   const [running, setRunning] = useState(false)
   // Motion & Orientation refused (iOS asks on Start camera): no levelling and no look-around, so say so (audit C-15).
   const [motionOff, setMotionOff] = useState(false)
-  // Live AR is made for tablets and phones: on a laptop or PC, the popup opens every time this page does.
+  // Live AR needs a tablet or phone: on a laptop or PC the popup opens every time and stays; its way out is the start
+  // page's Live AR section, where the sheets are.
   const handheld = useMemo(() => isHandheld(), [])
-  const [deviceTip, setDeviceTip] = useState(() => !handheld)
-  const closeDeviceTip = useCallback(() => setDeviceTip(false), [])
+  const leaveLive = useCallback(() => goToSection('live'), [])
   const [state, setState] = useState<OverlayState | null>(null)
   const [checking, setChecking] = useState(false)
   const [checkError, setCheckError] = useState<string | null>(null)
@@ -682,8 +683,8 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
           </div>
         )}
       </div>
-      {deviceTip && (
-        <DeviceTip url={window.location.href} anchor={loaded?.anchor ?? null} onClose={closeDeviceTip}
+      {!handheld && (
+        <DeviceTip url={window.location.href} anchor={loaded?.anchor ?? null} onLeave={leaveLive}
           virtualHref={projectId === 'site' && SITE_VIEWPOINTS.some((v) => v.id === anchorId) ? `/samples?at=${anchorId}` : '/#virtual'} />
       )}
     </main>
