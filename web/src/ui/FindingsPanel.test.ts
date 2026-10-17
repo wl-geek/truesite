@@ -31,4 +31,17 @@ describe('FindingsPanel', () => {
     expect(render(null)).not.toContain('Checked as shown')
     expect(render()).not.toContain('Checked as shown')
   })
+
+  it('tags findings with a saved issue and ends with the footer it is given', () => {
+    const finding = { mark: 1, guid: 'g'.repeat(22), name: 'Column', ifc_class: 'IfcColumn', status: 'missing', confidence: 0.9,
+      evidence_box: null, offset: null, explanation: '', severity: 'high' } as const
+    const html = renderToStaticMarkup(createElement(FindingsPanel, {
+      result: { ...result, findings: [finding] }, selectedMark: null, onSelect: () => undefined,
+      savedGuids: new Set([finding.guid]), footer: createElement('p', { id: 'foot' }, 'Saved issues'),
+    }))
+    expect(html).toContain('<span class="finding-saved">✓ Issue saved</span>')
+    expect(html.endsWith('<p id="foot">Saved issues</p></section>')).toBe(true)
+    expect(renderToStaticMarkup(createElement(FindingsPanel, { result: { ...result, findings: [finding] }, selectedMark: null, onSelect: () => undefined })))
+      .not.toContain('Issue saved')
+  })
 })

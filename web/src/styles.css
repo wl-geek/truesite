@@ -428,6 +428,7 @@ body {
 .finding-why { color: var(--muted); font-size: 13px; }
 .finding-risk { margin-top: 2px; padding: 4px 8px; border-radius: 8px; background: #fff3e8; color: #6b2e06; font-size: 13px; }
 .finding-src { font-weight: 700; color: inherit; }
+.finding-saved { color: #2e6b33; font-size: 12.5px; font-weight: 700; }
 .mark-dot { flex: none; width: 26px; height: 26px; border-radius: 50%; background: var(--orange); color: var(--ink); display: grid; place-items: center; font-weight: 700; font-size: 13px; }
 .btn-small { padding: 6px 10px; font-size: 13px; }
 .warn { margin: 6px 0; padding: 8px 10px; border-radius: var(--radius); background: #fff4e5; color: #8a4b00; font-size: 14px; }

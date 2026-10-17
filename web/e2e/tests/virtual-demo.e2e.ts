@@ -125,6 +125,33 @@ test.describe('virtual demo', () => {
     expectClean(log)
   })
 
+  test('the 3D model and the virtual demo share the check and the saved issues, and link to each other @handheld', async ({ page, log }) => {
+    await stubGeminiFindsPlanted(page)
+    await enterVirtualSite(page, 'P2')
+    await runVirtualCheck(page, 'P2')
+    const results = page.getByRole('complementary', { name: 'Check results' })
+    await results.getByRole('list', { name: 'Possible deviations' }).getByRole('button', { name: 'Draft issue' }).first().click()
+    const dialog = page.getByRole('dialog', { name: 'New issue' })
+    await dialog.getByRole('textbox', { name: 'Title' }).fill('Shared issue (e2e)')
+    await dialog.getByRole('button', { name: 'Save issue' }).click()
+    await expect(dialog).toBeHidden()
+
+    await results.getByRole('link', { name: 'Open the 3D model' }).click()
+    await expect(page).toHaveURL(/\/model$/)
+    await page.getByRole('button', { name: 'Last check results' }).click()
+    const viewerResults = page.getByRole('region', { name: 'As-built check results' })
+    const savedList = viewerResults.getByRole('region', { name: 'Saved issues' })
+    await expect(savedList).toContainText('Shared issue (e2e)')
+    await savedList.locator('.saved-issue-main').first().click()
+    await expect(page.locator('aside.element-panel').getByRole('region', { name: 'Saved issues for this element' })).toContainText('Shared issue (e2e)')
+    await page.locator('aside.element-panel').getByRole('button', { name: 'Close element details' }).click()
+
+    await viewerResults.getByRole('link', { name: 'Open P2 in the virtual demo' }).click()
+    await expect(page).toHaveURL(/\/samples\?at=P2$/)
+    await expect(page.getByRole('application', { name: /Virtual demo at P2/ })).toBeVisible()
+    expectClean(log)
+  })
+
   test('every planted defect in the opening view gets a numbered mark on a tablet and a phone @handheld', async ({ page, log }, testInfo) => {
     test.skip(testInfo.project.name === 'desktop-chrome', 'the P1-P4 tests above check this on a laptop')
     const uploads = await recordCheckUploads(page)
@@ -183,12 +210,26 @@ test.describe('virtual demo', () => {
     expect(issue).toMatchObject({ project_id: 'site', run_id: runId, title: 'ตรวจสอบเสา (e2e)', photo_url: `/api/runs/${runId}/photo.jpg` })
     await expect(dialog).toBeHidden()
     await expect(results.getByRole('status').filter({ hasText: 'Issue saved.' })).toBeVisible()
-    // Saved for this browser session (there is no Issues page: the API lists them).
+    // Saved for this browser session: listed under the results, its finding tagged, and copied as plain text.
     const listed = await page.evaluate(async () => {
       const r = await fetch('/api/issues?project_id=site', { headers: { 'X-Session-Id': localStorage.getItem('truesite.session')! } })
       return ((await r.json()).issues as { title: string }[]).map((i) => i.title)
     })
     expect(listed).toContain('ตรวจสอบเสา (e2e)')
+    const savedList = results.getByRole('region', { name: 'Saved issues' })
+    await expect(savedList.getByRole('listitem')).toHaveCount(1)
+    await expect(savedList).toContainText('ตรวจสอบเสา (e2e)')
+    await expect(deviations.first()).toContainText('✓ Issue saved')
+    await savedList.getByRole('button', { name: 'Copy issue' }).click()
+    await expect(savedList.getByRole('button', { name: 'Copied' })).toBeVisible()
+    const copied = await page.evaluate(() => navigator.clipboard.readText())
+    expect(copied).toMatch(/^ตรวจสอบเสา \(e2e\)\n(High|Medium|Low) severity · /)
+    expect(copied).toContain('From a TrueSite as-built check. Visual check, not a survey.')
+    // Picking it shows its element, whose details say the issue is saved.
+    await savedList.locator('.saved-issue-main').click()
+    const panel = page.locator('aside.element-panel')
+    await expect(panel.getByRole('region', { name: 'Saved issues for this element' })).toContainText('ตรวจสอบเสา (e2e)')
+    await panel.getByRole('button', { name: 'Close element details' }).click()
 
     // The day's site report from this visit's check, then in Thai, then copied.
     await results.getByRole('button', { name: "Write today's site report" }).click()

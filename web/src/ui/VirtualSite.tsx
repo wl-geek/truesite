@@ -25,6 +25,8 @@ import { typeLabel } from './elementFacts'
 import { ElementPanel } from './ElementPanel'
 import { EvidenceView } from './EvidenceView'
 import { imageQualityMessage } from './findingFormat'
+import { useSavedIssues } from './issueList'
+import { SavedIssues } from './SavedIssues'
 import { FindingsPanel } from './FindingsPanel'
 import { IssueDialog } from './IssueDialog'
 import { ReportDialog } from './ReportDialog'
@@ -272,6 +274,14 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
     if (turn) turnTo(f.guid)
   }, [turnTo])
   const findingFor = useCallback((guid: string | null) => outcome?.result.findings.find((f) => f.guid === guid) ?? null, [outcome])
+  // Saved issues are shared with the 3D model: the same browser session reads the same list.
+  const { issues, add: addIssue } = useSavedIssues(PROJECT_ID)
+  const savedGuids = useMemo(() => new Set(issues.map((i) => i.guid)), [issues])
+  const selectIssue = (i: { guid: string }) => {
+    setSelected(i.guid)
+    setSelectedMark(findingFor(i.guid)?.mark ?? null)
+    turnTo(i.guid)
+  }
 
   // Drag to look around (the world follows the finger), arrow keys too. A tap picks a finding's pin, else (with the
   // overlay on) a design element; a mouse shows the element's name on hover.
@@ -569,7 +579,8 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
           </div>
           <ScoreCard score={outcome.score} offline={offline} />
           <p className="vs-tip">Pick a finding to turn to it and see its details.</p>
-          <FindingsPanel result={outcome.result} selectedMark={selectedMark} onSelect={(f) => selectFinding(f, true)} onDraftIssue={setDraftFor} />
+          <FindingsPanel result={outcome.result} selectedMark={selectedMark} onSelect={(f) => selectFinding(f, true)} onDraftIssue={setDraftFor}
+            savedGuids={savedGuids} footer={w && <SavedIssues issues={issues} elements={w.elements} onSelect={selectIssue} />} />
           <div className="vs-compare">
             <figure>
               <figcaption>Your view: the site photo</figcaption>
@@ -597,6 +608,8 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
               <button type="button" className="btn btn-accent" onClick={() => setReportOpen(true)}>Write today's site report</button>
             </div>
           )}
+          <p className="vs-model-link">The 3D model shows this check and your saved issues too.{' '}
+            <Link to="/model" className="btn btn-small">Open the 3D model</Link></p>
           <p className="vs-judged">{judgedLine(outcome)}</p>
           {notice && <p className="note" role="status">{notice}</p>}
         </aside>
@@ -605,7 +618,8 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
       {element && w && (
         <ElementPanel projectId={PROJECT_ID} element={element} multiStorey={w.multiStorey} onClose={() => setSelected(null)}
           onZoom={() => turnTo(element.guid)} zoomLabel="Turn to element" zoomIcon="aim" finding={findingFor(element.guid)}
-          onDraftIssue={canDraft ? setDraftFor : undefined} planted={outcome ? plantedNote(element.name) : null} />
+          onDraftIssue={canDraft ? setDraftFor : undefined} planted={outcome ? plantedNote(element.name) : null}
+          savedIssues={issues.filter((i) => i.guid === element.guid)} />
       )}
 
       {reportOpen && <ReportDialog runIds={runIds} offline={offline} onClose={() => setReportOpen(false)} />}
@@ -613,7 +627,7 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
       {draftFor && w && (
         <IssueDialog open projectId={PROJECT_ID} runId={outcome?.runId ?? null} mark={draftFor.mark} finding={draftFor}
           element={w.elements.get(draftFor.guid) ?? null} onClose={() => setDraftFor(null)}
-          onSaved={() => { setDraftFor(null); setNotice('Issue saved.') }} />
+          onSaved={(issue) => { setDraftFor(null); addIssue(issue); setNotice('Issue saved.') }} />
       )}
     </div>
   )

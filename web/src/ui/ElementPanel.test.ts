@@ -1,8 +1,9 @@
 import { isValidElement, type ReactElement, type ReactNode } from 'react'
 import { describe, expect, it } from 'vitest'
-import type { Element, Finding } from '../api/types'
+import type { Element, Finding, Issue } from '../api/types'
 import { AskBox } from './AskBox'
 import { ElementPanel } from './ElementPanel'
+import { CopyIssueButton } from './SavedIssues'
 
 const el = (guid: string, ifc_class: string): Element =>
   ({ guid, ifc_class, name: `${ifc_class} ${guid.slice(0, 4)}`, storey: 'L1', bbox_m: [[0, 0, 0], [1, 1, 1]], load_bearing: null, props: {} })
@@ -30,13 +31,16 @@ describe('ElementPanel', () => {
   })
 })
 
+/** Components with state: left as elements (their own tests cover them). */
+const STATEFUL = new Set<unknown>([AskBox, CopyIssueButton])
+
 /** All the text in a rendered tree, joined (ElementPanel and its sections have no hooks). */
 function textOf(node: ReactNode): string {
   if (node === null || node === undefined || typeof node === 'boolean') return ''
   if (typeof node === 'string' || typeof node === 'number') return String(node)
   if (Array.isArray(node)) return node.map(textOf).join('')
   if (!isValidElement(node)) return ''
-  if (typeof node.type === 'function' && node.type !== AskBox) return textOf((node.type as (p: unknown) => ReactNode)(node.props))
+  if (typeof node.type === 'function' && !STATEFUL.has(node.type)) return textOf((node.type as (p: unknown) => ReactNode)(node.props))
   return textOf((node.props as { children?: ReactNode }).children)
 }
 
@@ -45,7 +49,7 @@ function buttons(node: ReactNode, label: string): ReactElement[] {
   const walk = (n: ReactNode) => {
     if (Array.isArray(n)) return n.forEach(walk)
     if (!isValidElement(n)) return
-    if (typeof n.type === 'function' && n.type !== AskBox) return walk((n.type as (p: unknown) => ReactNode)(n.props))
+    if (typeof n.type === 'function' && !STATEFUL.has(n.type)) return walk((n.type as (p: unknown) => ReactNode)(n.props))
     if (n.type === 'button' && textOf((n.props as { children?: ReactNode }).children).includes(label)) out.push(n)
     walk((n.props as { children?: ReactNode }).children)
   }
@@ -88,5 +92,21 @@ describe('ElementPanel with a check result', () => {
     expect(textOf(tree)).toContain('Planted in this demo: about 60 cm west of the design')
     expect(buttons(tree, 'Turn to element')).toHaveLength(1)
     expect(buttons(tree, 'Zoom to element')).toHaveLength(0)
+  })
+})
+
+describe('ElementPanel with saved issues', () => {
+  it('says each saved issue for this element, with its title and a Copy issue button', () => {
+    const column = el('C'.repeat(22), 'IfcColumn')
+    const issue: Issue = {
+      id: 'i1', session_id: 's', project_id: 'site', guid: column.guid, finding_ref: null, run_id: null, title: 'B2 off its grid line',
+      description: '', suggested_action: '', severity: 'high', crop_box: null, photo_url: null, created_at: new Date().toISOString(), status: 'open',
+    }
+    const tree = ElementPanel({ projectId: 'site', element: column, onClose: () => undefined, savedIssues: [issue] })
+    expect(textOf(tree)).toContain('Issue saved · just now')
+    expect(textOf(tree)).toContain('B2 off its grid line')
+    const copy = find(tree, CopyIssueButton)
+    expect((copy?.props as { issue: Issue }).issue).toBe(issue)
+    expect(find(ElementPanel({ projectId: 'site', element: column, onClose: () => undefined, savedIssues: [] }), CopyIssueButton)).toBeNull()
   })
 })

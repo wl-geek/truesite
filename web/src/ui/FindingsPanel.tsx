@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import type { CheckResult, Finding } from '../api/types'
 import { whyItMatters } from '../check/risk'
 import { groupFindings, imageQualityMessage, NOT_A_SURVEY, savedLabel, statusText, summaryCounts } from './findingFormat'
@@ -11,9 +12,15 @@ export type FindingsPanelProps = {
   onClose?: () => void
   /** "Checked as shown: ..." when layers were hidden or the model was cut during the check (runCheck). */
   viewNote?: string | null
+  /** Elements with an issue saved in this browser: their findings say so. */
+  savedGuids?: ReadonlySet<string>
+  /** Shown at the end of the panel (the saved issues). */
+  footer?: ReactNode
 }
 
-function Row({ f, selected, onSelect, onDraftIssue }: { f: Finding; selected: boolean; onSelect: (f: Finding) => void; onDraftIssue?: (f: Finding) => void }) {
+function Row({ f, selected, onSelect, onDraftIssue, saved = false }: {
+  f: Finding; selected: boolean; onSelect: (f: Finding) => void; onDraftIssue?: (f: Finding) => void; saved?: boolean
+}) {
   return (
     <li className={`finding${selected ? ' finding-selected' : ''}`}>
       <button type="button" className="finding-main" onClick={() => onSelect(f)} aria-pressed={selected}>
@@ -23,6 +30,7 @@ function Row({ f, selected, onSelect, onDraftIssue }: { f: Finding; selected: bo
           <span>{statusText(f)}</span>
           {f.explanation && <span className="finding-why"><span className="finding-src">Gemini:</span> {f.explanation}</span>}
           {whyItMatters(f) && <span className="finding-risk"><span className="finding-src">Why it matters:</span> {whyItMatters(f)}</span>}
+          {saved && <span className="finding-saved">✓ Issue saved</span>}
         </span>
         {f.severity && <span className={`badge badge-${f.severity}`}>{f.severity}</span>}
       </button>
@@ -34,7 +42,7 @@ function Row({ f, selected, onSelect, onDraftIssue }: { f: Finding; selected: bo
 }
 
 /** Results of an as-built check (spec 4.1, 4.4, 8). Model text is rendered as plain text only. */
-export function FindingsPanel({ result, selectedMark, onSelect, onDraftIssue, onClose, viewNote }: FindingsPanelProps) {
+export function FindingsPanel({ result, selectedMark, onSelect, onDraftIssue, onClose, viewNote, savedGuids, footer }: FindingsPanelProps) {
   const { deviations, unsure, ok } = groupFindings(result.findings)
   const quality = imageQualityMessage(result.image_quality)
   const greyed = quality !== null
@@ -56,7 +64,8 @@ export function FindingsPanel({ result, selectedMark, onSelect, onDraftIssue, on
         {deviations.length > 0 && (
           <ul aria-label="Possible deviations">
             {/* No drafting from a photo that wasn't good enough: retake it first (audit A-52). */}
-            {deviations.map((f) => <Row key={f.mark} f={f} selected={f.mark === selectedMark} onSelect={onSelect} onDraftIssue={greyed ? undefined : onDraftIssue} />)}
+            {deviations.map((f) => <Row key={f.mark} f={f} selected={f.mark === selectedMark} onSelect={onSelect} onDraftIssue={greyed ? undefined : onDraftIssue}
+              saved={savedGuids?.has(f.guid)} />)}
           </ul>
         )}
         {result.unexpected.length > 0 && (
@@ -78,6 +87,7 @@ export function FindingsPanel({ result, selectedMark, onSelect, onDraftIssue, on
           </details>
         )}
       </div>
+      {footer}
     </section>
   )
 }
