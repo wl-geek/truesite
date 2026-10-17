@@ -38,6 +38,41 @@ export function lookAroundPose(lock: MotionLock, D: Mat3): Pose {
   return { R, t }
 }
 
+/** A device -> world rotation from the motion sensors, stamped in ms (performance.now()). */
+export type MotionSample = { tMs: number; D: Mat3 }
+
+/** Angle between two rotations (degrees). */
+export function angleBetweenDeg(a: Mat3, b: Mat3): number {
+  const r = mat3Mul(transpose3(a), b)
+  return (Math.acos(Math.min(1, Math.max(-1, (r[0] + r[4] + r[8] - 1) / 2))) * 180) / Math.PI
+}
+
+/**
+ * The device counts as still when it turned less than `maxDegS` over the last `windowMs` of samples (oldest first).
+ * Still too when the samples don't reach that far back: nothing to judge by yet.
+ */
+export function deviceStill(samples: readonly MotionSample[], windowMs = 300, maxDegS = 1.5): boolean {
+  const last = samples[samples.length - 1]
+  if (!last) return true
+  for (let i = samples.length - 1; i >= 0; i--) {
+    const s = samples[i]
+    if (s.tMs <= last.tMs - windowMs) return angleBetweenDeg(s.D, last.D) <= (maxDegS * (last.tMs - s.tMs)) / 1000
+  }
+  return true
+}
+
+/**
+ * The look-around lock after a trusted detection (audit C-02). The smoothed QR pose lags the device while it turns, so
+ * pairing it with the newest motion sample held the model about 2 degrees off after a 30 degrees/s turn. The pose and
+ * the sample are paired only while the device is still (or for a first lock); while it turns, the lock keeps the
+ * last still pair and only moves the frozen camera centre, in case the person stepped.
+ */
+export function nextLock(prev: MotionLock | null, pose: Pose, D: Mat3, tSec: number, still: boolean): MotionLock {
+  if (still || !prev) return { R0: pose.R, t0: pose.t, D0: D, tSec }
+  const centre = mat3MulVec(transpose3(pose.R), pose.t) // minus the camera centre, in marker axes
+  return { R0: prev.R0, t0: mat3MulVec(prev.R0, centre), D0: prev.D0, tSec }
+}
+
 /** Motion sensors for look-around. iOS needs an explicit permission from a tap; others just work. */
 export async function requestMotionPermission(): Promise<boolean> {
   const DOE = (window as unknown as { DeviceOrientationEvent?: { requestPermission?: () => Promise<string> } }).DeviceOrientationEvent
