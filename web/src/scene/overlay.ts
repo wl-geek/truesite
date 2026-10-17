@@ -9,7 +9,7 @@
  * is used directly. ifcRoot.matrix = modelMatrixIfc(anchor, pose). The AR camera sits at the origin with an
  * identity world matrix; only its projection changes (projectionMatrixGL, object-fit: cover).
  */
-import { PerspectiveCamera, Scene, Vector3, WebGLRenderer } from 'three'
+import { Box3, Matrix4, PerspectiveCamera, Scene, Vector3, WebGLRenderer } from 'three'
 import type { Anchor as ApiAnchor } from '../api/types'
 import { grabRegion } from '../camera/camera'
 import { loadIntrinsics } from '../camera/intrinsics'
@@ -26,7 +26,9 @@ import { applyConstructionLook, type ConstructionLook } from './look'
 import { type Paint } from './palette'
 import { levelModelMatrix, upInGlCamera } from './level'
 import { deviceRotation, deviceStill, lookAroundPose, LOOK_AROUND_MAX_S, nextLock, type MotionLock, type MotionSample } from './motion'
-import { fullFrame, regionAround, regionToVideo, type Region } from './roi'
+import { CornerStabilizer } from './cornerFilter'
+import { followRegion, fullFrame, regionToVideo, type Region } from './roi'
+import { RotationSmoother } from './rotationFilter'
 import { createFrameWatchdog } from './watchdog'
 
 /** Edges live on their own layer so the ID-buffer render (layer 0 only) never sees them. */
@@ -34,7 +36,8 @@ export const EDGE_LAYER = 1
 const DETECT_WIDTH = 640
 /** Follow the code with a crop (scene/roi.ts) while it was seen this recently (s)... */
 const FOLLOW_FOR_S = 0.3
-/** ...but read the whole frame every so many reads, so a different code coming into view is still noticed. */
+/** ...but read the whole frame every so many reads, so a different code coming into view is still noticed (only that:
+ * its coarser corners never move the model). */
 const FULL_FRAME_EVERY = 10
 /** The QR reader's corners are whole pixels of what it reads: about half a pixel of noise, scaled to video px. */
 const CORNER_NOISE_PX = 0.5
@@ -169,10 +172,12 @@ export function createOverlay(o: OverlayOptions): Overlay {
   let deviceR: Mat3 | null = null
   const recent: MotionSample[] = []
   let lock: MotionLock | null = null
+  // The sensors' noise would turn the whole model every frame: smoothed first, heavily at rest (rotationFilter.ts).
+  const rotation = new RotationSmoother()
   const onOrientation = (e: DeviceOrientationEvent) => {
     if (e.alpha === null || e.beta === null || e.gamma === null) return
-    deviceR = deviceRotation(e.alpha, e.beta, e.gamma, screen.orientation?.angle ?? 0)
     const tMs = performance.now()
+    deviceR = rotation.filter(deviceRotation(e.alpha, e.beta, e.gamma, screen.orientation?.angle ?? 0), tMs)
     fusion?.addOrientation(deviceR, tMs)
     recent.push({ tMs, D: deviceR })
     while (recent.length > 2 && recent[1].tMs < tMs - 1000) recent.shift()
@@ -207,10 +212,13 @@ export function createOverlay(o: OverlayOptions): Overlay {
   let last: LastPose | null = null
   let lastSeen = -Infinity
   let projKey = ''
-  // The code's last corners (video px) for the next crop, and whether the last crop missed it (then: the whole frame).
+  // The code's last corners (video px) for the next crop, the crop itself (kept while the code stays inside it), and
+  // whether the last crop missed it (then: the whole frame). The corners are averaged while still (cornerFilter.ts).
   let follow: Point2[] | null = null
+  let crop: Region | null = null
   let followMissed = false
   let reads = 0
+  const steady = new CornerStabilizer()
   const listeners = new Set<(s: OverlayState) => void>()
   let state: OverlayState = {
     tracking: false, quality: null, provisional: true, distanceM: null, detectMs: null, otherAnchor: null, mode: 'lost', searchingS: 0, qrFailed: false,
@@ -239,17 +247,25 @@ export function createOverlay(o: OverlayOptions): Overlay {
     fusion?.reset()
     projKey = ''
     follow = null
+    crop = null
+    steady.reset()
   }
 
-  /** Where the reader looks this time: around the code while following it, else the whole frame. */
-  function readRegion(vw: number, vh: number): Region {
+  /**
+   * Where the reader looks this time: the crop around the code while following it, else the whole frame. `scan`: the
+   * periodic whole-frame look for a different code while following; it never moves the model.
+   */
+  function readRegion(vw: number, vh: number): { region: Region; scan: boolean } {
     reads++
-    const following = follow !== null && !followMissed && performance.now() / 1000 - lastSeen < FOLLOW_FOR_S && reads % FULL_FRAME_EVERY !== 0
-    return (following && regionAround(follow!, vw, vh)) || fullFrame(vw, vh, DETECT_WIDTH)
+    const following = follow !== null && !followMissed && performance.now() / 1000 - lastSeen < FOLLOW_FOR_S
+    if (following && reads % FULL_FRAME_EVERY === 0) return { region: fullFrame(vw, vh, DETECT_WIDTH), scan: true }
+    if (following) crop = followRegion(crop, follow!, vw, vh)
+    return { region: following && crop ? crop : fullFrame(vw, vh, DETECT_WIDTH), scan: false }
   }
 
   /** `frameMs`: when the detected frame was captured (performance.now() time), for the fusion. */
-  function onDetection(res: QrResponse, region: Region, vw: number, vh: number, frameMs: number): void {
+  function onDetection(res: QrResponse, read: { region: Region; scan: boolean }, vw: number, vh: number, frameMs: number): void {
+    const { region } = read
     if (!running) return
     if (`${vw}x${vh}` !== kSize) return // grabbed before a rotation: K and the tracker are for the new size now
     const tSec = performance.now() / 1000
@@ -260,10 +276,12 @@ export function createOverlay(o: OverlayOptions): Overlay {
       if (link && (link.projectId !== anchor.project_id || link.anchorId !== anchor.anchor_id)) otherAnchor = link
       else if (link) corners = regionToVideo(res.detection.corners, region)
     }
+    if (read.scan && corners) return // the whole-frame look found our code: the crop's finer corners keep the pose
     if (corners) follow = corners
-    followMissed = corners === null && (region.sw < vw || region.sh < vh) // a crop that missed: next time, the whole frame
+    if (!read.scan) followMissed = corners === null && (region.sw < vw || region.sh < vh) // a crop that missed: next time, the whole frame
     if (corners) cornerListeners.forEach((cb) => cb(corners!, vw, vh))
-    const tracked = tracker.update(corners, tSec, CORNER_NOISE_PX * (region.sw / region.outW))
+    const noisePx = CORNER_NOISE_PX * (region.sw / region.outW)
+    const tracked = tracker.update(corners && steady.update(corners, tSec, noisePx), tSec, noisePx)
     if (tracked) {
       lastSeen = tSec
       last = { pose: { R: tracked.raw.R, t: tracked.raw.t }, K, quality: tracked.quality, corners: corners!, videoW: vw, videoH: vh, tSec }
@@ -287,6 +305,33 @@ export function createOverlay(o: OverlayOptions): Overlay {
 
   // No video frames for 1 s (a call, an app switch, another app took the camera): hide the model and say so,
   // instead of freezing on the last "Good" state with Check enabled.
+  // Test hook (e2e live-ar stability): when the page defines window.__arFrames as an array, every rendered frame adds
+  // the screen position (CSS px) of the model's bounding-box corners and how the frame was posed, so the overlay's
+  // jitter can be measured against a still camera. Nothing happens without it.
+  const frameLog = (globalThis as unknown as { __arFrames?: unknown[] }).__arFrames
+  const boxCorners: Vector3[] = []
+  if (Array.isArray(frameLog)) {
+    model.ifcRoot.updateMatrixWorld(true)
+    const toLocal = new Matrix4().copy(model.ifcRoot.matrixWorld).invert()
+    const box = new Box3()
+    for (const m of model.meshes) {
+      m.geometry.computeBoundingBox()
+      box.union(m.geometry.boundingBox!.clone().applyMatrix4(new Matrix4().multiplyMatrices(toLocal, m.matrixWorld)))
+    }
+    for (let i = 0; i < 8; i++) boxCorners.push(new Vector3(i & 1 ? box.max.x : box.min.x, i & 2 ? box.max.y : box.min.y, i & 4 ? box.max.z : box.min.z))
+  }
+  let posedBy = 'qr'
+  const logFrame = (cw: number, ch: number) => {
+    if (!Array.isArray(frameLog) || !model.ifcRoot.visible) return
+    const v = new Vector3()
+    const pts = boxCorners.map((c) => {
+      v.copy(c).applyMatrix4(model.ifcRoot.matrixWorld).project(camera)
+      return [((v.x + 1) / 2) * cw, ((1 - v.y) / 2) * ch]
+    })
+    frameLog.push({ t: performance.now(), by: posedBy, pts })
+    if (frameLog.length > 2000) frameLog.shift()
+  }
+
   const watchdog = createFrameWatchdog(() => {
     model.ifcRoot.visible = false
     emit({ tracking: false, quality: null, provisional: true, distanceM: null, detectMs: null, otherAnchor: null, mode: 'lost',
@@ -308,6 +353,7 @@ export function createOverlay(o: OverlayOptions): Overlay {
     }
     look.update(ORIGIN) // the AR camera sits at the world origin
     renderer.render(scene, camera)
+    logFrame(cw, ch)
   }
 
   function tick(now: number = performance.now(), meta?: VideoFrameCallbackMetadata): void {
@@ -320,18 +366,20 @@ export function createOverlay(o: OverlayOptions): Overlay {
       watchdog.frame()
       ensureIntrinsics(vw, vh)
       if (!qr.busy) {
-        const region = readRegion(vw, vh)
-        qr.detect(grabRegion(video, grabCtx!, region)).then((res) => onDetection(res, region, vw, vh, frameMs)).catch(() => undefined)
+        const read = readRegion(vw, vh)
+        qr.detect(grabRegion(video, grabCtx!, read.region)).then((res) => onDetection(res, read, vw, vh, frameMs)).catch(() => undefined)
       }
     }
     const pose = fused(now) && model.ifcRoot.visible ? fusion!.poseAt(frameMs) : null
     if (pose) {
       model.ifcRoot.matrix.fromArray(levelledBy(modelMatrixIfc(pAnchor, pose), fusion!.orientationAt(frameMs)))
       model.ifcRoot.matrixWorldNeedsUpdate = true
+      posedBy = 'fused'
     } else if (lock && deviceR && holdBySensors(state.mode, performance.now() / 1000, lastSeen, lock, o.motion)) {
       model.ifcRoot.matrix.fromArray(levelled(modelMatrixIfc(pAnchor, lookAroundPose(lock, deviceR))))
       model.ifcRoot.matrixWorldNeedsUpdate = true
-    }
+      posedBy = 'hold'
+    } else posedBy = 'qr'
     render()
     schedule()
   }
@@ -368,12 +416,14 @@ export function createOverlay(o: OverlayOptions): Overlay {
       K = next
       tracker = newTracker()
       fusion?.reset()
+      steady.reset()
       projKey = ''
     },
     setQrSizeCorrection(factor) {
       s = effectiveQrSize(anchor, factor)
       tracker = newTracker()
       fusion?.reset()
+      steady.reset()
     },
     onCorners(cb) {
       cornerListeners.add(cb)
