@@ -110,3 +110,30 @@ describe('ElementPanel with saved issues', () => {
     expect(find(ElementPanel({ projectId: 'site', element: column, onClose: () => undefined, savedIssues: [] }), CopyIssueButton)).toBeNull()
   })
 })
+
+describe('ElementPanel as a compact sheet (live AR on a phone)', () => {
+  const column: Element = { ...el('C'.repeat(22), 'IfcColumn'), bbox_m: [[0, 0, 0], [0.45, 0.45, 4.5]],
+    props: { Material: 'Concrete C30/37', 'Pset_ColumnCommon.LoadBearing': true, 'TrueSite_Notes.Design': '8 T20 bars' } }
+
+  it('peeks: what it is, two facts and More details, without Ask or the IFC data', () => {
+    let toggled = 0
+    const tree = ElementPanel({ projectId: 'site', element: column, onClose: () => undefined, size: { compact: true, toggle: () => toggled++ } })
+    expect(find(tree, AskBox)).toBeNull()
+    expect(textOf(tree)).not.toContain('BIM data (IFC)')
+    expect(textOf(tree)).not.toContain('8 T20 bars')
+    const [more] = buttons(tree, 'More details')
+    ;(more.props as { onClick: () => void }).onClick()
+    const [grab] = buttons(tree, '').filter((b) => (b.props as { className?: string }).className === 'ep-grabber')
+    expect((grab.props as { 'aria-expanded': boolean })['aria-expanded']).toBe(false)
+    ;(grab.props as { onClick: () => void }).onClick()
+    expect(toggled).toBe(2)
+  })
+
+  it('opens fully with the same grabber, which now shows less', () => {
+    const tree = ElementPanel({ projectId: 'site', element: column, onClose: () => undefined, size: { compact: false, toggle: () => undefined } })
+    expect(find(tree, AskBox)).not.toBeNull()
+    expect(buttons(tree, 'More details')).toHaveLength(0)
+    const [grab] = buttons(tree, '').filter((b) => (b.props as { className?: string }).className === 'ep-grabber')
+    expect((grab.props as { 'aria-label': string })['aria-label']).toBe('Collapse details')
+  })
+})

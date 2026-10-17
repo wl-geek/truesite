@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { type CSSProperties, type PointerEvent as ReactPointerEvent, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { ApiError, getProject } from '../api/client'
 import type { Anchor, CheckResult, Finding, ProjectManifest } from '../api/types'
 import { CameraError, startRearCamera, stopCamera, watchCamera, type CameraStart } from '../camera/camera'
@@ -29,8 +29,11 @@ import { ModelControls } from './ModelControls'
 import { freshCanvas } from '../scene/glContext'
 import { disposeModel, loadModel, type LoadedModel } from '../scene/loadModel'
 import { createOverlay, type Overlay, type OverlayState } from '../scene/overlay'
+import { pickElement, pickPin } from '../scene/pick'
 import { CalibrationPanel } from './CalibrationPanel'
+import { ElementPanel } from './ElementPanel'
 import { EvidenceView } from './EvidenceView'
+import { imageQualityMessage } from './findingFormat'
 import { FindingsPanel } from './FindingsPanel'
 import { IssueDialog } from './IssueDialog'
 import { Link } from './Link'
@@ -43,6 +46,8 @@ import { goToSection } from './TopBar'
 import { sheetInfo } from './sheet'
 import { isHandheld } from './device'
 import { ReloadPrompt } from './ReloadPrompt'
+import { useMedia } from './useMedia'
+import './liveDetails.css'
 
 export type LivePageProps = { projectId: string; anchorId: string }
 
@@ -95,6 +100,13 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   const [outcome, setOutcome] = useState<Outcome | null>(null)
   const [showResults, setShowResults] = useState(false)
   const [selectedMark, setSelectedMark] = useState<number | null>(null)
+  // The tapped element (its details panel), and whether that panel only peeks (phones in portrait).
+  const [selected, setSelected] = useState<string | null>(null)
+  const [peek, setPeek] = useState(true)
+  const side = useMedia(AR_SIDE_PANEL)
+  const [dockW, setDockW] = useState(0)
+  const [tapTipSeen, setTapTipSeen] = useState(() => readFlag(TAP_TIP_KEY))
+  const pressRef = useRef<{ x: number; y: number; t: number } | null>(null)
   const [draftFor, setDraftFor] = useState<Finding | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [calibrating, setCalibrating] = useState(false)
@@ -416,10 +428,77 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   )
   const placeView = xrPlace ?? XR_PLACE_STARTING
   const checkable = loaded ? checkAvailability(loaded.anchor) : { enabled: true, note: null }
+  const element = selected ? elements.get(selected) : undefined
+  const multiStorey = useMemo(() => new Set((loaded?.project.elements ?? []).map((e) => e.storey)).size > 1, [loaded])
   // How far from the code to start: a small desk code must be held closer (audit C-01).
   const startM = loaded ? startDistanceM(loaded.anchor) : 1
   const virtualHref = virtualDemoHref(projectId, anchorId, SITE_VIEWPOINTS.map((v) => v.id))
-  const selectFinding = (f: Finding) => setSelectedMark(f.mark)
+  /** A finding (in the results, or its pin) opens its element's details; the results make way. */
+  const selectFinding = (f: Finding) => {
+    setSelectedMark(f.mark)
+    select(f.guid)
+    setShowResults(false)
+  }
+  function select(guid: string | null) {
+    setSelected(guid)
+    setPeek(true)
+    if (!guid) return
+    setShowControls(false)
+    markTapTipSeen()
+  }
+  function markTapTipSeen() {
+    setTapTipSeen(true)
+    writeFlag(TAP_TIP_KEY)
+  }
+
+  // A tap on the camera view (not a drag, not a long press) picks what is drawn under the finger: a finding's pin
+  // first, then an element of the model; a tap beside the model closes the details.
+  function onPress(e: ReactPointerEvent<HTMLDivElement>) {
+    pressRef.current = e.isPrimary ? { x: e.clientX, y: e.clientY, t: performance.now() } : null
+  }
+  function onRelease(e: ReactPointerEvent<HTMLDivElement>) {
+    const press = pressRef.current
+    pressRef.current = null
+    const overlay = overlayRef.current
+    const canvas = canvasHostRef.current?.querySelector('canvas')
+    if (!press || !overlay || !canvas || calibrating || checking) return
+    if (Math.hypot(e.clientX - press.x, e.clientY - press.y) > TAP_SLOP_PX || performance.now() - press.t > TAP_MAX_MS) return
+    const r = canvas.getBoundingClientRect()
+    const ndc = { x: ((e.clientX - r.left) / r.width) * 2 - 1, y: -((e.clientY - r.top) / r.height) * 2 + 1 }
+    const view = { viewW: r.width, viewH: r.height }
+    if (!overlay.model.ifcRoot.visible) return // tracking lost: nothing is drawn, so nothing to tap
+    const mark = pickPin(pinsRef.current, overlay.camera, ndc, view)
+    const pinned = mark === null ? undefined : outcome?.result.findings.find((f) => f.mark === mark)
+    if (pinned) return selectFinding(pinned)
+    const guid = pickElement(overlay.model, overlay.camera, ndc, { ...view, clip: overlay.look.clipPlanes() })
+    setSelectedMark(guid ? outcome?.result.findings.find((f) => f.guid === guid)?.mark ?? null : null)
+    select(guid)
+  }
+
+  // The tapped element is painted orange in the overlay (and again on a new overlay after a camera restart).
+  useEffect(() => {
+    if (running) overlayRef.current?.look.highlight(selected)
+  }, [selected, running])
+  useEffect(() => {
+    if (!running) setSelected(null)
+  }, [running])
+  useEffect(() => {
+    if (!selected) return
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setSelected(null)
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [selected])
+  // A side panel covers the right of the view: the status, the messages and the actions keep to the rest.
+  const stageRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const panel = stageRef.current?.querySelector<HTMLElement>(':scope > .ar-details')
+    if (!side || !panel) return setDockW(0)
+    const measure = () => setDockW(panel.offsetWidth)
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(panel)
+    return () => ro.disconnect()
+  }, [side, selected])
 
   // The camera view is full screen: the site's top bar goes while the camera runs (Exit brings it back).
   useEffect(() => {
@@ -445,13 +524,20 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   const settled = (!!state?.tracking && !state.provisional && !isFar(state.distanceM)) || state?.mode === 'motion'
   const [hiddenHint, setHiddenHint] = useState<string | null>(null)
   // Messages give way to the panels: View, Setup and the results.
-  const panelOpen = showControls || calibrating || showResults
+  const panelOpen = showControls || calibrating || showResults || selected !== null
   const hintVisible = !checking && !panelOpen && !noteOpen && hint !== hiddenHint
   useEffect(() => { // the fade counts only while the hint is on screen
     if (!settled || !hintVisible) return
     const id = setTimeout(() => setHiddenHint(hint), HINT_FADE_MS)
     return () => clearTimeout(id)
   }, [hint, settled, hintVisible])
+  // Teach tapping in context (once): when the overlay is aligned and the guidance has faded.
+  const tapTip = running && settled && !tapTipSeen && !checking && !panelOpen && !noteOpen && !hintVisible
+  useEffect(() => {
+    if (!tapTip) return
+    const id = setTimeout(markTapTipSeen, TAP_TIP_MS)
+    return () => clearTimeout(id)
+  }, [tapTip])
   const [dismissed, setDismissed] = useState<ReadonlySet<string>>(new Set())
   const dismiss = (key: string) => setDismissed((d) => new Set(d).add(key))
   const warning = checkError ? { key: 'check', text: checkError, close: () => setCheckError(null) }
@@ -499,9 +585,9 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
           </>
         )}
       </div>
-      <div className="live-stage">
+      <div ref={stageRef} className={`live-stage${element && side ? ' ar-has-details' : ''}`} style={{ '--ar-dock': `${dockW}px` } as CSSProperties}>
         <video ref={videoRef} className="live-video" playsInline muted autoPlay />
-        <div ref={canvasHostRef} />
+        <div ref={canvasHostRef} onPointerDown={onPress} onPointerUp={onRelease} onPointerCancel={() => { pressRef.current = null }} />
 
         {running && (
           <div className="live-top">
@@ -531,6 +617,9 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
             {hintVisible && (
               <HudMessage onClose={() => setHiddenHint(hint)}>{hint}</HudMessage>
             )}
+            {tapTip && !warning && (
+              <HudMessage onClose={markTapTipSeen}>Tap any part of the model to see what it is.</HudMessage>
+            )}
           </div>
         )}
 
@@ -547,11 +636,12 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
           </div>
         )}
 
-        {running && !showResults && !calibrating && (
+        {/* A details sheet (portrait) takes the bottom of the screen: the actions come back when it closes. */}
+        {running && !showResults && !calibrating && !(element && !side) && (
           <div className="live-actions">
-            <button type="button" className="btn" onClick={() => setCalibrating(true)} aria-label="Camera setup">Setup</button>
-            <button type="button" className="btn" onClick={() => setShowControls((v) => !v)} aria-pressed={showControls}>View</button>
-            {outcome && <button type="button" className="btn" onClick={() => setShowResults(true)}>Results</button>}
+            <button type="button" className="btn" onClick={() => { setSelected(null); setCalibrating(true) }} aria-label="Camera setup">Setup</button>
+            <button type="button" className="btn" onClick={() => { setSelected(null); setShowControls((v) => !v) }} aria-pressed={showControls}>View</button>
+            {outcome && <button type="button" className="btn" onClick={() => { setSelected(null); setShowResults(true) }}>Results</button>}
             {dev && <button type="button" className="btn" onClick={saveSample} disabled={!state?.tracking}>Save as sample</button>}
             {/* On a sheet that can't be checked, the button stays tappable and says why. */}
             <button type="button" className={`btn btn-accent${checkable.enabled ? '' : ' btn-unavailable'}`} aria-disabled={!checkable.enabled || undefined}
@@ -574,6 +664,13 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
               viewNote={outcome.viewNote} />
             {notice && <p className="note" role="status">{notice}</p>}
           </div>
+        )}
+
+        {running && element && loaded && (
+          <ElementPanel className="ar-details" projectId={loaded.project.project_id} element={element} multiStorey={multiStorey}
+            onClose={() => select(null)} finding={outcome?.result.findings.find((f) => f.guid === element.guid) ?? null}
+            onDraftIssue={outcome && imageQualityMessage(outcome.result.image_quality) === null && outcome.runId ? setDraftFor : undefined}
+            size={side ? undefined : { compact: peek, toggle: () => setPeek((v) => !v) }} />
         )}
 
         {!running && (
@@ -693,6 +790,21 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
 
 /** Guidance fades this long after it appears once the overlay is aligned. */
 const HINT_FADE_MS = 6000
+/** Where the tapped element's details go: beside the view in landscape (tablets, phones on their side), else a sheet. */
+const AR_SIDE_PANEL = '(min-width: 900px), (orientation: landscape) and (min-width: 600px)'
+/** A tap moves less than this (CSS px) and lasts less than this (ms); anything else is not a tap. */
+const TAP_SLOP_PX = 10
+const TAP_MAX_MS = 600
+/** "Tap any part of the model" shows once per browser session, for this long. */
+const TAP_TIP_MS = 9000
+const TAP_TIP_KEY = 'truesite.tapTip'
+
+function readFlag(key: string): boolean {
+  try { return sessionStorage.getItem(key) === '1' } catch { return false }
+}
+function writeFlag(key: string): void {
+  try { sessionStorage.setItem(key, '1') } catch { /* storage off: the tip may show again next time */ }
+}
 /** The "nothing to check on this sheet" note shows this long. */
 const NOTE_MS = 6000
 /** Motion & Orientation refused (audit C-15). iOS keeps the answer until the browser is closed. */

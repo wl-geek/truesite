@@ -28,6 +28,12 @@ export type ElementPanelProps = {
   planted?: string | null
   /** This browser's saved issues for this element. */
   savedIssues?: readonly Issue[]
+  /**
+   * A sheet that peeks first (live AR on a phone): compact shows what it is, its check result, two facts and More
+   * details; a grabber at the top switches between the two.
+   */
+  size?: { compact: boolean; toggle: () => void }
+  className?: string
 }
 
 const hex = (n: number) => `#${n.toString(16).padStart(6, '0')}`
@@ -37,11 +43,18 @@ const hex = (n: number) => `#${n.toString(16).padStart(6, '0')}`
  * material and role, the design notes, Ask Gemini about it, and the IFC data folded away for BIM people.
  */
 export function ElementPanel({ projectId, element, multiStorey = false, onClose, onZoom, zoomLabel = 'Zoom to element', zoomIcon = 'zoom',
-  finding, onDraftIssue, planted, savedIssues = [] }: ElementPanelProps) {
+  finding, onDraftIssue, planted, savedIssues = [], size, className }: ElementPanelProps) {
   const title = element.name || 'Unnamed element'
   const s = summarise(element, { multiStorey })
+  const compact = size?.compact ?? false
   return (
-    <aside className="panel element-panel" aria-label={`${s.typeLabel}: ${title}`}>
+    <aside className={['panel element-panel', compact ? 'ep-compact' : '', className ?? ''].filter(Boolean).join(' ')} aria-label={`${s.typeLabel}: ${title}`}>
+      {size && (
+        <button type="button" className="ep-grabber" onClick={size.toggle} aria-expanded={!compact}
+          aria-label={compact ? 'Expand details' : 'Collapse details'}>
+          <span aria-hidden="true" />
+        </button>
+      )}
       <header className="ep-head">
         <div className="ep-title">
           <p className="ep-type"><span className="swatch" style={{ background: hex(KIND_COLOURS[s.kind]) }} aria-hidden="true" />{s.typeLabel}</p>
@@ -73,6 +86,18 @@ export function ElementPanel({ projectId, element, multiStorey = false, onClose,
         </section>
       )}
       {planted && <p className="ep-planted"><strong>Planted in this demo:</strong> {planted}</p>}
+      {compact ? (
+        <>
+          {s.facts.length > 0 && (
+            <dl className="ep-facts">
+              {s.facts.slice(0, 2).map((f) => (
+                <div key={f.label} className="ep-fact"><dt>{f.label}</dt><dd>{f.value}</dd></div>
+              ))}
+            </dl>
+          )}
+          <button type="button" className="btn ep-more-btn" onClick={size!.toggle}>More details</button>
+        </>
+      ) : <>
       {s.facts.length > 0 && (
         <dl className="ep-facts">
           {s.facts.map((f) => (
@@ -101,6 +126,7 @@ export function ElementPanel({ projectId, element, multiStorey = false, onClose,
           ))}
         </dl>
       </details>
+      </>}
     </aside>
   )
 }

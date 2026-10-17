@@ -1,8 +1,8 @@
 /**
  * Live AR end to end in Chromium with a synthetic camera (spec 4.1, 4.2; docs/demo/ipad-ar-filming.md).
  *
- * The camera is a ray-traced Y4M video with exact ground truth (live-ar-videos.py): the site P1 sheet (upright A3,
- * 23 cm code at 1.40 m) or the D1 desk sheet, seen by a 1920 x 1080 camera with the app's default intrinsics.
+ * The camera is a ray-traced Y4M video with exact ground truth (live-ar-videos.py): the site P1 sheet (upright US Letter,
+ * 16 cm code at 1.40 m) or the D1 desk sheet, seen by a 1920 x 1080 camera with the app's default intrinsics.
  * Each test launches Chromium with
  *   --use-fake-device-for-media-stream --use-fake-ui-for-media-stream --use-file-for-fake-video-capture=<video>
  * on an iPad Pro 11 landscape context (screen angle 90), opens /a/site/<id> and checks what a user sees: the start
@@ -42,7 +42,7 @@ const SITE_COPY = {
   heading: 'Live view · Life size · 1:1',
   coachTracking: 'Turn slowly on the spot and look up; point back at the code to re-align.',
   coachSearch: 'Point the camera at the QR code.',
-  coachTips: "Can't find the code. Add more light, move within about 1 m and hold the phone steady.",
+  coachTips: "Can't find the code. Add more light, move within about 80 cm and hold the phone steady.", // 16 cm Letter code
   coachLookAround: 'Look around and up. Turn on the spot; point back at the code to re-align.',
   noCheck: 'This sheet shows the design where nothing is built yet, so there is nothing to check here.',
   noCheckLink: 'Try the check in the virtual demo',
@@ -404,8 +404,8 @@ test('D1 desk sheet: the building at 1:100 beside the code', async () => {
   await expect(page.locator('.live-start h1')).toHaveText('Live view · Scale model · 1:100')
   await expect(page.locator('.live-start')).toContainText("The model appears as a 1:100 scale model beside the code, like an architect's model on the table.")
   await expect(page.locator('.live-start ol.steps li').first()).toContainText('Tap Start camera and allow the camera and motion access.')
-  // The 7 cm code is held about 35 cm away, not 1 m, and nothing says step back (audit C-01)
-  await expect(page.locator('.live-start ol.steps li').nth(1)).toHaveText('Hold the iPad about 35 cm from the code until it says Alignment: Good.')
+  // The 62 mm code is held about 30 cm away, not 1 m, and nothing says step back (audit C-01)
+  await expect(page.locator('.live-start ol.steps li').nth(1)).toHaveText('Hold the iPad about 30 cm from the code until it says Alignment: Good.')
   await expect(page.locator('.live-start')).not.toContainText(/step back|about 1 m/)
   await startCamera(page)
   const badge = await waitBadge(page, /^Alignment: Good · /)
@@ -501,9 +501,14 @@ test('P1 head-on from the X (1.5 m) without locking close first: aligned, or fla
   const st = await H.liveState(page)
   const fit = await overlayFit(page, 'p1-x', 0, truth(anchor('P1')), 'p1-x-headon')
   console.log('head-on at the X', JSON.stringify({ first: badge, later: st.badge, coach: st.coach[0], ...fit }))
-  // A head-on view can be ambiguous (the pose flip): then the badge must say so (provisional, never Good).
+  // A head-on view from afar can't pin the code's tilt down (and can flip): it must then stay provisional, never
+  // Good, and the coach says to lock on close first (16 cm Letter code: within about 80 cm).
   if (/Good/.test(st.badge)) expectAligned(fit, 'head-on at the X, badge Good')
-  else expect(st.badge).toContain('Start within about 1 m of the code, then step back')
+  else {
+    expect(st.badge).toMatch(/^Alignment: (Fair|Poor)/)
+    await closeNote(page)
+    await expect.poll(async () => (await H.liveState(page)).coach).toEqual(['Move within about 80 cm of the code, then step back slowly.'])
+  }
 })
 
 test('Camera interruptions: frames stall (hide, then resume) and the track ends (back to Start camera, restart works)', async () => {

@@ -2,6 +2,8 @@
 // Requirements: secure context (HTTPS or localhost), call from a user gesture (tap),
 // <video playsinline muted autoplay> (iOS goes fullscreen without playsinline).
 
+import type { Region } from '../scene/roi'
+
 export interface CameraStart {
   stream: MediaStream
   track: MediaStreamTrack
@@ -100,4 +102,16 @@ export function grabFrame(video: HTMLVideoElement, ctx: CanvasRenderingContext2D
   ctx.imageSmoothingQuality = 'high'
   ctx.drawImage(video, 0, 0, w, h)
   return ctx.getImageData(0, 0, w, h)
+}
+
+/** One region of the frame (scene/roi.ts) as image data for the QR reader, at the region's read size. */
+export function grabRegion(video: HTMLVideoElement, ctx: CanvasRenderingContext2D, r: Region): ImageData {
+  if (ctx.canvas.width !== r.outW || ctx.canvas.height !== r.outH) {
+    ctx.canvas.width = r.outW
+    ctx.canvas.height = r.outH
+  }
+  ctx.imageSmoothingEnabled = true
+  ctx.imageSmoothingQuality = 'high'
+  ctx.drawImage(video, r.sx, r.sy, r.sw, r.sh, 0, 0, r.outW, r.outH)
+  return ctx.getImageData(0, 0, r.outW, r.outH)
 }

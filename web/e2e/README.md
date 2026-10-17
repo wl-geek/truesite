@@ -38,7 +38,7 @@ so keep that for a smoke run of `start-page`, `live` and `a11y`.
 ### Live AR with a synthetic camera (`live-ar`)
 
 `tests/live-ar.e2e.ts` plays ray-traced camera videos with exact ground truth (`scripts/live-ar-videos.py`): the
-upright A3 sheet P1 (23 cm code at 1.40 m) and P2-P4 on the site, and the D1 desk sheet, each seen by a 1920 x 1080
+upright sheet P1 (the 16 cm code of anchors.json at 1.40 m) and P2-P4 on the site, and the D1 desk sheet, each seen by a 1920 x 1080
 camera with the app's default intrinsics. Every test launches its own Chromium with
 `--use-file-for-fake-video-capture=<video>` on an iPad Pro 11 landscape context, taps Start camera and compares the
 overlay's pixels with the model's silhouette projected from the true pose. Motion events are computed from the pose of
@@ -60,6 +60,7 @@ timing-sensitive (software WebGL, a 1080p camera), so if one fails under load, r
 npx playwright test --project live-ar                   # about 3 min
 ```
 
+`tests/live-ar-details.e2e.ts` taps the overlay (tablet panel, phone sheet, the tap tip) with the same videos.
 Screenshots, overlay masks and fits go to `test-results/live-ar/`.
 
 ## Projects
