@@ -19,12 +19,7 @@ export const BUG = {
 } as const
 
 /** axe findings that belong to a known bug: rule id plus a pattern on the node's selector. */
-export const KNOWN_AXE: { rule: string; node: RegExp; bug: string }[] = [
-  { rule: 'color-contrast', node: /\.mark-dot|\.mode-chip/, bug: BUG.orangeContrast },
-  { rule: 'target-size', node: /summary$/, bug: BUG.summaryTargets },
-]
+export const KNOWN_AXE: { rule: string; node: RegExp; bug: string }[] = []
 
 /** Undersized tap targets that belong to a known bug (smallTapTargets output). */
-export const KNOWN_SMALL_TARGETS: { target: RegExp; bug: string }[] = [
-  { target: /^summary "(Matches the design|Can't judge) \(\d+\)"/, bug: BUG.summaryTargets },
-]
+export const KNOWN_SMALL_TARGETS: { target: RegExp; bug: string }[] = []

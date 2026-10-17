@@ -164,11 +164,11 @@ test.describe('live AR errors', () => {
     await expect(page.locator('.model-card-name')).toHaveText('Building under construction')
   })
 
-  test.fixme(BUG.tipOverBrokenLink, async ({ page }) => {
+  test(BUG.tipOverBrokenLink, async ({ page }) => {
     for (const url of ['/a/nope/P1', '/a/site/P9']) {
       await page.goto(url)
       await expect(page.getByRole('alert')).toBeVisible()
-      await expect(page.getByRole('dialog', { name: TIP })).toHaveCount(0)
+      await expect(page.getByRole('dialog')).toHaveCount(0) // any title: the popup's changed since #107
     }
   })
 })
