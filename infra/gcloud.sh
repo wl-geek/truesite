@@ -37,7 +37,8 @@ GEMINI_LOCATION="${GEMINI_LOCATION:-global}"     # decided on day 1 by the Gemin
 GEMINI_BACKEND="${GEMINI_BACKEND:-enterprise}"
 # Every gcloud call targets PROJECT_ID, whatever project `gcloud config` has active on this machine.
 export CLOUDSDK_CORE_PROJECT="$PROJECT_ID"
-# Sheets deploy must render and verify must find: the start page's downloads, the rooftop demo and the building site viewpoints.
+# Sheets deploy must render and verify must find, each with a QR for the service URL: the start page's downloads (site
+# P1-P4 and D1) and the main sheets of the room1 and rooftop demos (D1, L1, R1, R2), which their live pages still link.
 REQUIRED_SHEETS="room1-D1 room1-L1 rooftop-R1 rooftop-R2 site-P1 site-P2 site-P3 site-P4 site-D1"
 # Sheets with no QR, so no link to check, that deploy must still render and verify must still find: the site set-out plan.
 PLAN_SHEETS="site-layout"
@@ -189,7 +190,7 @@ deploy() {
   [ -f Dockerfile ] && [ -d bim ] && [ -d web ] || die "run this from the repo root"
   local url env secrets=""
   env="STORE_BACKEND=gcp,GCS_BUCKET=$BUCKET,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,GEMINI_MODE=live"
-  env="$env,DAILY_CHECK_CAP=300,DAILY_ASK_CAP=300,CHECKS_PER_IP_PER_HOUR=30,TRUSTED_PROXY_HOPS=1"  # judges share office IPs; about US$0.004 a check
+  env="$env,DAILY_CHECK_CAP=300,DAILY_ASK_CAP=300,CHECKS_PER_IP_PER_HOUR=30,TRUSTED_PROXY_HOPS=1"  # judges share office IPs; about US$0.015 a check (eval/README.md section 3)
   case "$GEMINI_BACKEND" in
     enterprise) env="$env,GOOGLE_GENAI_USE_ENTERPRISE=true,GOOGLE_CLOUD_LOCATION=$GEMINI_LOCATION" ;;
     # The SDK ignores GEMINI_API_KEY while GOOGLE_GENAI_USE_ENTERPRISE=true, so the flag goes with the key.

@@ -272,9 +272,11 @@ test('P1 gravity levelling: a board leaning back 4 degrees, without and with mot
   expectAligned(levUp, 'levelled by gravity')
   expect(levUp.iouAtZero).toBeGreaterThan(levLean.iouAtZero)
 
-  // 3. A sensor that disagrees by more than 8 degrees (12 degree roll) is refused: back to the QR pose.
+  // 3. A sensor that disagrees by more than 8 degrees (12 degree roll) is refused: back to the QR pose. Since #107 the
+  //    fused pose first re-anchors on the jumped sensor (8 consistent detections; under 1 s here), then levelling
+  //    refuses the correction, so allow 2 s.
   await H.motion.constant(page, H.orientationFor(H.rolled(v.cams[0].R, 12), angle))
-  await page.waitForTimeout(800)
+  await page.waitForTimeout(2000)
   const refused = await overlayFit(page, 'p1-lean4', 0, leaning, 'p1-lean4-badmotion-vs-leaning')
   console.log('lean, 12 deg off motion', JSON.stringify(refused))
   expectAligned(refused, 'levelling refused beyond 8 degrees')

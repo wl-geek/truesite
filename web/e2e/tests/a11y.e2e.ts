@@ -48,12 +48,16 @@ test.describe('accessibility (axe-core, serious and critical)', () => {
     }
   })
 
-  test('live AR: the laptop popup, the start panel and the running camera view', async ({ page }) => {
-    test.slow() // four full scans
+  test('live AR: both steps of the laptop popup, the start panel and the running camera view', async ({ page }) => {
+    test.slow() // five full scans
     await page.goto('/a/site/P1')
-    await expect(page.getByRole('dialog')).toBeVisible()
+    await expect(page.getByRole('dialog', { name: 'Open live AR on your tablet or phone' })).toBeVisible()
     expect(await scan(page, 'live-popup')).toEqual([])
-    await page.getByRole('button', { name: 'Continue on this computer' }).click()
+    await page.getByRole('button', { name: 'Next: get the sheet' }).click()
+    await expect(page.getByRole('dialog', { name: 'Print the sheet and scan its code' })).toBeVisible()
+    expect(await scan(page, 'live-popup-sheet')).toEqual([])
+    await page.getByRole('button', { name: 'Done' }).click()
+    await expect(page.getByRole('dialog')).toHaveCount(0)
     expect(await scan(page, 'live-start')).toEqual([])
     await page.getByRole('button', { name: 'Start camera' }).click()
     await expect(page.getByRole('heading', { name: 'Calibrate this camera (10 s)' })).toBeVisible()
@@ -61,7 +65,7 @@ test.describe('accessibility (axe-core, serious and critical)', () => {
     await page.getByRole('button', { name: 'Skip' }).click()
     await page.getByRole('button', { name: 'Skip' }).click()
     await expect(page.locator('.hud-scale')).toBeVisible()
-    expect(await scan(page, 'live-running')).toEqual([])
+    expect(await scan(page, 'live-running')).toEqual([]) // with the icon-only Exit control, which needs its name
   })
 
   test('3D model with an element and an answer @handheld', async ({ page }) => {

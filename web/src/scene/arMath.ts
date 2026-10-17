@@ -35,7 +35,7 @@ export function isDeskAnchor(anchor: ApiAnchor): boolean {
   return anchor.scale < 1
 }
 
-/** A code lying flat on the floor with the model at 1:1 around it (L1, R1, S1, ...). */
+/** A code lying flat on the floor with the model at 1:1 around it (room1 L1, rooftop R1 and R2; the site has none). */
 export function isLifeSizeFloor(anchor: ApiAnchor): boolean {
   return anchor.normal[2] > 0.9 && anchor.scale >= 0.999
 }
