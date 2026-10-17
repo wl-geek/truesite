@@ -16,7 +16,8 @@ Research proofs (verified 11 Oct with running code) back every choice marked ✔
 | `bim/` (uv project `truesite-bim`) | `ifcopenshell==0.9.0` ✔ (0.8.5 is incompatible) · `segno==1.6.6` · `reportlab==5.0.1` · dev: `pytest==9.1.1`, `pymupdf==1.28.2` (tests only), `zxing-cpp==3.1.1` (tests only) |
 | `server/` (uv project `truesite-server`, package `app`) | `fastapi==0.143.0` · `uvicorn[standard]==0.54.0` · `pydantic==2.14.0` · `python-multipart==0.0.32` · `google-genai==2.29.0` · `httpx==0.28.1` · `google-cloud-firestore==2.34.1` · `google-cloud-storage==3.17.0` · dev: `pytest==9.1.1`, `httpx2==2.13.1` (Starlette 1.7's TestClient imports it ✔), `hypothesis==6.170.1` (property tests) |
 | `web/` | `vite@8.3.4` · `@vitejs/plugin-react@6.1.2` · `react@19.3.0` `react-dom@19.3.0` · `@types/react@19.3.0` `@types/react-dom@19.3.0` · `typescript@6.0.3` · `vitest@4.1.11` (5.x needs Node 22 ✔) · `three@0.186.1` · `@types/three@0.186.0` · `zxing-wasm@3.1.5` · `@vitejs/plugin-basic-ssl@2.3.0` · `@types/node@20.19.43` · `uqr@0.1.3` (`DeviceTip.tsx`: on a computer, the live page's address as a QR for a tablet) · dev: `qrcode@1.5.4`, `@types/qrcode@1.5.6`, `pngjs@7.0.0`, `@types/pngjs@6.0.5`, `puppeteer-core@24.43.1` (`scripts/make-samples.mjs` only) |
-| Model | `gemini-3.8-flash` (GA), Agent Platform location **`global`** (not offered in `asia-southeast1` ✔) |
+| `web/e2e/` (its own `package.json`; not in `make test` or the image) | dev: `@playwright/test@1.64.1` · `@axe-core/playwright@4.14.0` · `pngjs@7.0.0` · `@types/pngjs@6.0.5` · `@types/node@20.19.43` · `typescript@6.0.3` |
+| Model | `gemini-3.8-flash` (GA), Agent Platform location **`global`** (not offered in `asia-southeast1` ✔); on 429/503 `gemini-3.5-flash`, then `gemini-3.5-flash-lite` |
 | Cloud | Cloud Run `asia-southeast1`, Firestore Native `asia-southeast1`, one GCS bucket, gcloud CLI 588.0.0 |
 
 ## 2. Repository layout
@@ -51,11 +52,11 @@ truesite/
     app/limits.py      # client_ip, rate_key, SlidingWindowLimiter ✔
     app/store.py       # Store Protocol, InMemoryStore, blob_key ✔
     app/store_gcp.py   # FirestoreGcsStore ✔
-    app/gemini_client.py  # verified Gemini layer ✔ (build_*_request, generate_json, check_asbuilt, ask_element, draft_issue, GeminiError)
+    app/gemini_client.py  # verified Gemini layer ✔ (build_*_request, generate_json, check_asbuilt, ask_element, draft_issue, write_report, GeminiError)
     app/fake_gemini.py # FakeGeminiClient: deterministic offline stand-in with the same generate_content surface
     app/severity.py    # severity_for
     app/validate.py    # repair_check
-    app/services.py    # make_checker, make_asker, make_drafter, error mapping
+    app/services.py    # make_checker, make_asker, make_drafter, make_reporter, error mapping
     app/security_headers.py  # SecurityHeadersMiddleware (headers in §4)
     app/deps.py        # FastAPI dependencies shared by the routers (SessionId, StoreDep, RepoDep, enforce_limits, ...); routers never import main.py
     app/routes/{projects,check,ask,issues}.py   # the §4 endpoints, one router per area
@@ -84,14 +85,16 @@ truesite/
     src/scene/evalMarkers.ts    # ?eval=1 crosses at the surveyed points
     src/scene/placement.ts      # levelled placement for world-tracked AR (gravity up, detected floor)
     src/scene/level.ts          # gravity levelling for the camera overlay: rotate about the code until IFC Z is up
+    src/scene/fusion.ts         # PoseFusion: the camera overlay's QR pose fused with the motion sensors, each frame posed at its capture time (#107)
     src/scene/glContext.ts      # releaseRenderer (dispose + forceContextLoss), context-loss watchdog, fresh canvases
     src/scene/xrStart.ts  src/scene/xrPlace.ts  src/scene/xrWalk.ts   # Android WebXR: start/fallback, Start AR (place by code), Walk inside (hit-test)
     src/scene/walkthrough.ts    # Walk inside via the phone's own AR viewer: AR Quick Look (USDZ) on iPhone/iPad, Scene Viewer on Android
     src/scene/palette.js + palette.d.ts            # colour by element type: kindOf, isSolid, paintOf, materialParams (plain JS: shared with scripts/make-usdz.mjs)
     src/scene/usdzVariants.js + usdzVariants.d.ts  # Quick Look distance variants: usdzPlan, usdzFile, pickUsdzRadius (shared with scripts/make-usdz.mjs)
-    scripts/make-usdz.mjs                          # prebuild: public/models/<project>.usdz and <project>-r<R>.usdz (git-ignored)
+    scripts/make-usdz.mjs                          # prebuild: public/models/<project>.usdz (git-ignored); a <project>-r<R>.usdz variant only where usdzPlan finds a radius that leaves something out, which no current project has
     scripts/make-samples.mjs  scripts/sample-specs.json   # renders the simulated sample photos into public/samples (§8) in headless Chrome
     src/check/marks.ts  src/check/snapshot.ts  src/check/runCheck.ts
+    src/check/outlines.ts       # IMAGE 3 of the check: a ring just outside each marked element's design outline (#104)
     src/check/lastCheck.ts  src/check/messages.ts  src/check/sampleMeta.ts  src/check/sampleRun.ts   # last check per session, error copy, sample photos (§8)
     src/check/risk.ts           # "Why it matters": a fixed rule per element kind and finding, never from the model
     src/sim/asBuilt.ts          # SITE_AS_BUILT: the ten planted defects of the simulated site, and their plain-words description
@@ -102,9 +105,11 @@ truesite/
     src/test-support/{synthQr,qrPng,stubRenderer}.ts   # test-only: synthetic QR views, real QR PNGs, a node stand-in for WebGLRenderer
     src/ui/*.tsx  src/ui/*.ts                      # pages and panels; the .ts files hold their pure, tested text helpers
     src/ui/ReloadPrompt.tsx     # "The 3D view stopped. Tap to reload." after a permanent WebGL context loss
+    src/ui/DeviceTip.tsx  src/ui/sheet.ts            # laptop/PC popup on live AR: a QR code of the page, then its sheet and how to print and place it
+    e2e/                        # Playwright suite (own package.json, *.e2e.ts specs, support/bugs.ts known bugs); see e2e/README.md
   infra/gcloud.sh  infra/lifecycle.json
   eval/README.md  eval/overlay.csv  eval/labels.json  eval/summarise.py
-  docs/specs/  docs/plans/  docs/research/  docs/demo/   docs/BRIEF.md  docs/submission-checklist.md  docs/audit-2026-10-15.md  docs/audit-2026-10-16.md
+  docs/specs/  docs/plans/  docs/research/  docs/demo/   docs/BRIEF.md  docs/submission-checklist.md  docs/audit-2026-10-15.md  docs/audit-2026-10-16.md  docs/audit-2026-10-17.md
 ```
 
 ## 3. Conventions (fixed)
@@ -162,7 +167,7 @@ Every response carries the headers from `app/security_headers.py`: `X-Content-Ty
 Client routes (the SPA fallback serves index.html):
 - `/`: the start page.
 - `/model`: the viewer. `?project={project_id}` picks the project; the default is `site` (`DEFAULT_PROJECT_ID` in `ViewerPage.tsx`).
-- `/a/{project_id}/{anchor_id}`: live AR. The demo shows the camera overlay only. `?xr=1` brings back Walk inside (Quick Look / WebXR hit-test) and Android Start AR. `?eval=1` shows the eval crosses, and `?dev=1` adds Save as sample.
+- `/a/{project_id}/{anchor_id}`: live AR. The demo shows the camera overlay only. `?xr=1` brings back Walk inside (Quick Look / WebXR hit-test) and Android Start AR. `?eval=1` shows the eval crosses, and `?dev=1` adds Save as sample. `?arlag=<ms>` (up to 300; default 60) sets the frame lag the sensor fusion assumes when the browser doesn't stamp each frame's capture time. On a laptop or PC the page opens the `DeviceTip` popup every time.
 - `/samples`: `?at={P1..P4}` opens the virtual site at that QR spot (`VirtualSite.tsx`), and `?photos` opens the still sample photos (§8). `?dev=1` shows the photos too, plus Run all samples. A bare `/samples` scrolls to the start page's virtual demo section.
 
 Any other path, including the old `/issues`, goes to the start page. Since #75, issues are drafted and saved from a finding, and no page lists them. `GET /api/issues` stays for the API.
@@ -203,8 +208,12 @@ class CheckRun:         run_id, session_id, project_id, anchor_id, created_at: d
 
 class AskRequest:       project_id, guid, question: str 1..300
 class AskAnswer:        answer: str (<=600), cited_properties: list[str], confidence: float 0..1
-class IssueDraftRequest: run_id: str (RUN_ID_PATTERN), mark: int 1..25
+IssueLanguage = Literal["en","th","my","id","ms","vi","zh","ja"]   # the crew's language for drafts and reports
+class IssueDraftRequest: run_id: str (RUN_ID_PATTERN), mark: int 1..25, language: IssueLanguage = "en"   # extra="forbid"
 class IssueDraft:       title: str (<=80), description: str (<=500), suggested_action: str (<=200)
+class ReportRequest:    run_ids: list[str (RUN_ID_PATTERN)] (1..8, this session's runs), language: IssueLanguage = "en"   # extra="forbid"
+class SiteReport:       title: str (<=100), summary: str (<=700), safety: list[str] (<=10), structure: list[str] (<=10),
+                        progress: list[str] (<=10), next_steps: list[str] (<=8), checks: int   # Gemini's draft; a person approves it
 class IssueIn:          project_id, guid, finding_ref: str | None ("<run_id>:<mark>"), run_id: str | None (RUN_ID_PATTERN), title (1..120),
                         description (<=2000) = "", suggested_action (<=600) = "", severity: Severity | None, crop_box: Box | None
 class Issue(IssueIn):   id, session_id, photo_url: str | None, created_at: datetime, status: Literal["open","closed"] = "open"
@@ -217,11 +226,12 @@ TypeScript (`web/src/api/types.ts`): identical field names. The API's `VisibleEl
 ```python
 # app/config.py — @dataclass(frozen=True) Settings; Settings.from_env() reads these env vars (defaults in brackets):
 #   STATIC_DIR [<repo>/web/dist]  MODELS_DIR [<repo>/bim/models]  MAX_UPLOAD_BYTES [4 MiB]  MAX_BODY_BYTES [13 MiB: three files + context]
-#   CHECKS_PER_IP_PER_HOUR [10]  ASKS_PER_IP_PER_HOUR [30]  DAILY_CHECK_CAP [300]  DAILY_ASK_CAP [1000]   (infra/gcloud.sh deploys 100 and 300)
+#   CHECKS_PER_IP_PER_HOUR [10]  ASKS_PER_IP_PER_HOUR [30]  DAILY_CHECK_CAP [300]  DAILY_ASK_CAP [1000]   (make deploy sets 30 checks/IP/h and daily caps of 300 and 300)
 #   ISSUES_PER_IP_PER_HOUR [30]  ISSUES_PER_SESSION [100]  API_DOCS [off; 1 = Swagger UI at /api/docs]
 #   TRUSTED_PROXY_HOPS [1]  STORE_BACKEND [memory|gcp]  GOOGLE_CLOUD_PROJECT  GCS_BUCKET  FIRESTORE_DATABASE [(default)]
 #   GEMINI_MODE [fake|live]  (live uses GOOGLE_GENAI_USE_ENTERPRISE=true + GOOGLE_CLOUD_PROJECT + GOOGLE_CLOUD_LOCATION=global,
 #                             or GEMINI_API_KEY as the fallback backend)
+#   GEMINI_FALLBACK_MODEL [gemini-3.5-flash,gemini-3.5-flash-lite]   (read by app/gemini_client.py: tried in order on 429/503; "" turns it off)
 # app/projects.py
 class UnknownProject(Exception): ...
 class UnknownElement(Exception): ...
@@ -249,6 +259,7 @@ def blob_key(session_id: str, run_id: str, name: str) -> str          # "uploads
 STRUCTURAL_CLASSES = {"IfcColumn","IfcBeam","IfcSlab","IfcFooting","IfcMember","IfcPile","IfcPlate",
                       "IfcReinforcingBar","IfcReinforcingMesh","IfcTendon"}   # rebar rates high; marks still rank it after structure
 WALL_CLASSES = {"IfcWall","IfcWallStandardCase"}                         # structural only when load_bearing is True
+SAFETY_CLASSES = {"IfcRailing"}                                          # a missing guardrail is a fall hazard: rates high (#103)
 OPENINGS_SERVICES = {"IfcDoor","IfcWindow","IfcPipeSegment","IfcPipeFitting","IfcDuctSegment","IfcDuctFitting",
                      "IfcFlowSegment","IfcFlowFitting","IfcCableCarrierSegment","IfcOpeningElement"}
 def severity_for(element: Element, status: Status) -> Severity | None   # None for present_ok / cannot_judge
@@ -257,10 +268,11 @@ CONFIDENCE_FLOOR = 0.5
 def repair_check(raw: dict, ctx: CheckContext, elements: dict[str, Element]) -> CheckResult
 def with_project_identity(ctx: CheckContext, elements: dict[str, Element]) -> CheckContext   # mark names/classes from the project
 # app/services.py
-Checker = Callable[[bytes, bytes, CheckContext], dict]        # returns CheckResult.model_dump(mode="json")
-def make_checker(repo: ProjectRepo, client: Any) -> Checker   # gemini_client.check_asbuilt(..., project_note=repo.check_note(...)) -> repair_check -> + usage/model_version
+Checker = Callable[..., dict]   # (photo_jpeg, render_png, ctx: CheckContext, overlay_jpeg: bytes | None = None) -> CheckResult.model_dump(mode="json")
+def make_checker(repo: ProjectRepo, client: Any) -> Checker   # gemini_client.check_asbuilt(..., project_note=repo.check_note(...), overlay_jpeg=...) -> repair_check -> + usage/model_version
 def make_asker(repo: ProjectRepo, client: Any) -> Callable[[AskRequest], AskAnswer]
-def make_drafter(repo: ProjectRepo, client: Any) -> Callable[[CheckRun, int], IssueDraft]
+def make_drafter(repo: ProjectRepo, client: Any) -> Callable[..., IssueDraft]    # (run: CheckRun, mark: int, language: str = "en")
+def make_reporter(client: Any) -> Callable[..., SiteReport]                     # (runs: list[CheckRun], language: str = "en"): deviations only, severity from each check
 def http_error_for(err: GeminiError) -> HTTPException         # timeout|unavailable|rate_limited -> 503 model_unavailable; bad_output -> 502;
                                                              # blocked -> 422 model_blocked; bad_request -> 500 model_bad_request
 def build_client(settings: Settings) -> Any                   # GEMINI_MODE=fake -> FakeGeminiClient(); live -> gemini_client.default_client()
@@ -294,6 +306,7 @@ export function getSavedResult(sampleId: string): Promise<CheckResult>
 export function fetchRunImage(runId: string, name: 'photo.jpg' | 'render.png'): Promise<string>   // object URL
 export function ask(req: AskRequest): Promise<AskAnswer>
 export function draftIssue(req: IssueDraftRequest): Promise<IssueDraft>
+export function writeReport(req: ReportRequest): Promise<SiteReport>   // POST /api/report
 export function createIssue(req: IssueIn): Promise<Issue>
 export function listIssues(projectId?: string): Promise<{ issues: Issue[]; demo: Issue[] }>   // no projectId: every project; no page calls it since #75
 // src/pose/index.ts — verified public API, unchanged: Intrinsics {f,cx,cy}, Pose {R,t}, Anchor {position_m,normal,up,scale},
@@ -335,11 +348,17 @@ export function findingAnchorPoint(el: Element): [number, number, number]   // I
 export function makePins(findings: Finding[], elements: Map<string, Element>, opts?: { radiusM?: number; dim?: boolean }): THREE.Group   // add under ifcRoot; dim when image_quality isn't "good"
 // src/check/marks.ts
 export const MAX_MARKS = 25
-export function classPriority(ifcClass: string): number   // 0 structure, 1 openings/services, 2 other
-export function selectMarks(visible: VisibleElement[], indexToGuid: string[], elements: Map<string, Element>, max?: number): MarkedElement[]
+export function classPriority(ifcClass: string): number   // 0 structure and guardrails, 1 openings, services, slabs and footings, 2 the rest (incl. rebar)
+export function markWeight(v: Pick<VisibleElement, 'pixels' | 'box'>): number   // on-screen size weighted towards the frame centre
+export function selectMarks(visible: VisibleElement[], indexToGuid: string[], elements: Map<string, Element>, max?: number): MarkedElement[]   // by tier; types take turns within a tier
 export function keyDims(el: Element): string
 export function markCentres(marks, visible, indexToGuid, width, height): Map<number, [number, number]>   // fractions 0..1, from VisibleElement.anchor
-export function drawMarks(ctx: CanvasRenderingContext2D, centres: Map<number, [number, number]>, width: number, height: number): void
+export function drawMarks(ctx: CanvasRenderingContext2D, centres: Map<number, [number, number]>, width: number, height: number, scale = 1): void   // 0.7 on IMAGE 3
+// src/check/outlines.ts — IMAGE 3 (#104); runCheck builds it after the design render, and the check runs without it if that fails
+export const RING_COLOUR: readonly [number, number, number]   // magenta
+export function ringSize(width: number): { gap: number; line: number }   // a 5-6 px gap and a 2-3 px line at photo sizes
+export function ringMask(buf: Uint8Array, width: number, height: number, ringed: ReadonlySet<number>, gap: number, line: number): Uint8Array   // never on a ringed element
+export function paintMask(img: ImageData, mask: Uint8Array, rgb?: readonly [number, number, number]): void
 // src/check/snapshot.ts
 export type Snapshot = { photo: Blob; photoW: number; photoH: number; videoW: number; videoH: number; corners: Point[] | null; text: string | null }
 export function captureSnapshot(video: HTMLVideoElement, qr?: QrWorkerClient): Promise<Snapshot>   // JPEG (long side <= 1600 px, quality 0.85); re-detects the code on the full frame (waits <= 1 s for the reader)
@@ -410,7 +429,7 @@ def enforce_limits(request: Request, limiter_name: str, day_suffix: str, cap: in
 | `app/routes/projects.py` | 1 | `/api/projects/{project_id}`, `/api/projects/{project_id}/model.glb` |
 | `app/routes/check.py` | 3 | `/api/check`, `/api/runs/{run_id}/{name}`, `/api/saved-results/{sample_id}` |
 | `app/routes/ask.py` | 4 | `/api/ask` |
-| `app/routes/issues.py` | 4 | `/api/issues/draft`, `/api/issues` (POST and GET) |
+| `app/routes/issues.py` | 4 | `/api/issues/draft`, `/api/report` (added in #90), `/api/issues` (POST and GET; no page calls GET since #75) |
 
 `/api/health` and `/api/whoami` live in `main.py`. Part 1's `main.py` already contains the `include_router` lines for all four routers. Parts 3 and 4 *create* their router files, and Part 1 ships each of them as a stub (`router = APIRouter()` with no routes), so `main.py` never changes after Part 1.
 
@@ -424,7 +443,7 @@ def enforce_limits(request: Request, limiter_name: str, day_suffix: str, cap: in
 
 Later additions: `src/ui/HomePage.tsx`, the start page at `/`. `src/ui/IssuesPage.tsx` was removed in #75, because issues are saved from their finding.
 
-`App.tsx` never changes after Part 1. Shared panels have one owner each:
+`App.tsx` was meant to stay as Part 1 left it, but it has changed since (the start page, #75, #76, #78, #82): it renders `TopBar` on every route, routes `/` to `HomePage`, and sets a `document.title` per route. Change it only for a new route. Shared panels have one owner each:
 
 | Panel | Owner |
 |---|---|
