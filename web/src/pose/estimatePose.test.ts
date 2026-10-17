@@ -5,7 +5,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { centredIntrinsics, focalFromHfov, markerCorners, projectPoint } from './camera';
-import { estimatePose, isValidQuad } from './estimatePose';
+import { estimatePose, isValidQuad, signedAreaPx } from './estimatePose';
 import { type Point2, type Vec3, mat3Mul, norm3, sub3 } from './linalg';
 import { rotationAngleBetween, rotationFromVector } from './rotation';
 import { gaussian, insideImage, makeMarkerPose, noisyCorners, percentile, randomViewDir, rng, uniform } from './testing/synth';
@@ -81,5 +81,53 @@ describe('estimatePose end to end', () => {
     expect(est.widthPx).toBeGreaterThan(200);
     expect(est.quality).toBe('good');
     expect(est.rmsPx).toBeLessThan(1e-6);
+  });
+});
+
+describe('estimatePose input checks (mutation-tested)', () => {
+  const sq: Point2[] = [[500, 300], [700, 300], [700, 500], [500, 500]]; // TL, TR, BR, BL: clockwise on screen
+
+  it('accepts a convex quad that winds clockwise on screen, and nothing else', () => {
+    expect(isValidQuad(sq)).toBe(true);
+    expect(isValidQuad([sq[0], sq[3], sq[2], sq[1]])).toBe(false); // mirrored: the code seen from behind
+    expect(isValidQuad(sq.slice(0, 3))).toBe(false);
+    expect(isValidQuad([...sq, [600, 400]])).toBe(false);
+    expect(isValidQuad([sq[0], sq[1], [NaN, 500], sq[3]])).toBe(false);
+    expect(isValidQuad([sq[0], [700, Infinity], sq[2], sq[3]])).toBe(false);
+    // a dart: each corner in turn pushed inside the quad
+    for (let k = 0; k < 4; k++) {
+      const dart = sq.map((p) => [...p] as Point2);
+      dart[k] = [600 + (sq[k][0] - 600) * -0.2, 400 + (sq[k][1] - 400) * -0.2];
+      expect(isValidQuad(dart), `corner ${k} pushed in`).toBe(false);
+    }
+    expect(isValidQuad([[500, 300], [600, 300], [700, 300], [500, 500]])).toBe(false); // three in a row
+  });
+
+  it('returns null for a bad quad or a code size that is not positive', () => {
+    const truth = makeTruth();
+    const img = markerCorners(0.2).map((X) => projectPoint(K, truth, X)!) as Point2[];
+    expect(estimatePose(img, 0.2, K)).not.toBeNull();
+    expect(estimatePose([img[0], img[3], img[2], img[1]], 0.2, K)).toBeNull();
+    for (const s of [0, -0.2, NaN]) expect(estimatePose(img, s, K), String(s)).toBeNull();
+  });
+
+  it('passes maxIterations on to the refinement', () => {
+    const truth = makeTruth();
+    const img = markerCorners(0.2).map((X) => projectPoint(K, truth, X)!).map(([u, v], i) => [u + (i % 2 ? 0.7 : -0.6), v + (i < 2 ? 0.5 : -0.4)] as Point2);
+    expect(estimatePose(img, 0.2, K, null, { maxIterations: 0 })!.iterations).toBe(0);
+    expect(estimatePose(img, 0.2, K)!.iterations).toBeGreaterThan(0);
+  });
+
+  function makeTruth() {
+    return { R: mat3Mul(rotationFromVector([Math.PI, 0, 0]), rotationFromVector([0.35, 0.2, 0.1])), t: [0.05, -0.03, 0.8] as Vec3 };
+  }
+});
+
+describe('signedAreaPx (mutation-tested)', () => {
+  it('is positive for a clockwise-on-screen polygon and gives its area', () => {
+    expect(signedAreaPx([[0, 0], [100, 0], [100, 50], [0, 50]])).toBe(5000);
+    expect(signedAreaPx([[0, 0], [0, 50], [100, 50], [100, 0]])).toBe(-5000);
+    expect(signedAreaPx([[10, 10], [40, 10], [10, 30]])).toBe(300);
+    expect(signedAreaPx([])).toBe(0);
   });
 });

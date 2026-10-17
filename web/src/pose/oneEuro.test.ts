@@ -149,3 +149,69 @@ describe('PoseSmoother', () => {
     expect(Math.abs(out.t[2] - 1)).toBeLessThan(0.003);
   });
 });
+
+describe('One Euro edge cases (mutation-tested)', () => {
+  const q90z: Quat = [0, 0, Math.SQRT1_2, Math.SQRT1_2];
+
+  it('keeps the vector length and starts afresh after reset', () => {
+    const f = new OneEuroVector(P);
+    f.filter([1, 2, 3], 0);
+    expect(f.filter([2, 3, 4], 1 / FPS)).toHaveLength(3);
+    f.reset();
+    expect(f.filter([10, 20, 30], 2 / FPS)).toEqual([10, 20, 30]);
+    const s = new OneEuroFilter(P);
+    s.filter(1, 0);
+    s.filter(5, 1 / FPS);
+    s.reset();
+    expect(s.filter(-3, 2 / FPS)).toBe(-3);
+  });
+
+  it('normalises the input quaternion and restarts after a long gap with the default gap', () => {
+    const f = new OneEuroQuaternion(P);
+    expect(f.filter([0, 0, 0, 2], 0)).toEqual([0, 0, 0, 1]);
+    const after = f.filter([0, 0, 2 * Math.SQRT1_2, 2 * Math.SQRT1_2], 2); // 2 s later: no blending with the old one
+    after.forEach((v, i) => expect(v).toBeCloseTo(q90z[i], 12));
+  });
+
+  it('ignores a repeated timestamp instead of dividing by zero', () => {
+    const f = new OneEuroQuaternion(P);
+    const first = f.filter(q90z, 1);
+    expect(f.filter([0, 0, 0, 1], 1)).toEqual(first);
+    const next = f.filter([0, 0, 0.6, 0.8], 1 + 1 / FPS);
+    expect(next.every(Number.isFinite)).toBe(true);
+  });
+
+  it('smooths half-turn quaternions (w = 0), the usual pose of a code facing the camera', () => {
+    const f = new OneEuroQuaternion(P);
+    f.filter([1, 0, 0, 0], 0);
+    const a = 0.05;
+    const out = f.filter([Math.cos(a), Math.sin(a), 0, 0], 1 / FPS);
+    expect(out.every(Number.isFinite)).toBe(true);
+    const turned = Math.atan2(out[1], out[0]);
+    expect(turned).toBeGreaterThan(0);
+    expect(turned).toBeLessThan(a);
+  });
+
+  it('gives the same output for q and -q (the same rotation)', () => {
+    const f1 = new OneEuroQuaternion(P);
+    const f2 = new OneEuroQuaternion(P);
+    let r = rotationFromVector([0.1, 2.9, 0.2]);
+    for (let i = 0; i < 20; i++) {
+      r = mat3Mul(rotationFromVector([0.02, -0.03, 0.04]), r);
+      const q = quatFromRotation(r);
+      const a = f1.filter(q, i / FPS);
+      const b = f2.filter(i % 3 === 1 ? (q.map((x) => -x) as Quat) : q, i / FPS);
+      expect(rotationAngleBetween(rotationFromQuat(a), rotationFromQuat(b))).toBeLessThan(1e-6); // acos floor ~1e-8
+    }
+  });
+
+  it('resets translation and rotation together', () => {
+    const sm = new PoseSmoother();
+    for (let i = 0; i < 10; i++) sm.filter({ R: rotationFromVector([0, 0, 0.1 * i]), t: [0, 0, 1 + 0.01 * i] }, i / FPS);
+    sm.reset();
+    const R = rotationFromVector([2.8, 0.3, 0]);
+    const out = sm.filter({ R, t: [0.3, -0.2, 2] }, 10 / FPS);
+    expect(out.t).toEqual([0.3, -0.2, 2]);
+    expect(rotationAngleBetween(out.R, R)).toBeLessThan(1e-9);
+  });
+});

@@ -19,3 +19,10 @@ describe('gradeQuality (spec 7.1 step 7)', () => {
     expect(codeWidthPx([[0, 0], [100, 0], [100, 50], [0, 50]])).toBe(75);
   });
 });
+
+describe('gradeQuality with a bad width (mutation-tested)', () => {
+  it('is poor when the code width is not a number, however low the RMS', () => {
+    expect(gradeQuality(1, Infinity)).toBe('poor');
+    expect(gradeQuality(1, Number.NaN)).toBe('poor');
+  });
+});

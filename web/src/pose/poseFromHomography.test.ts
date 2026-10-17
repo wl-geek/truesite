@@ -38,3 +38,12 @@ describe('poseFromHomography', () => {
     expect(rotationAngleBetween(pose.R, truth.R)).toBeLessThan(1e-7);
   });
 });
+
+describe('poseFromHomography degenerate input (mutation-tested)', () => {
+  it('returns null when a column of K^-1 H vanishes or is not finite', () => {
+    expect(poseFromHomography([0, 1, 640, 0, 1, 360, 0, 0, 1], K)).toBeNull();
+    expect(poseFromHomography([1, 0, 640, 1, 0, 360, 0, 0, 1], K)).toBeNull();
+    expect(poseFromHomography([NaN, 0, 640, 0, 1, 360, 0, 0, 1], K)).toBeNull();
+    expect(poseFromHomography([Infinity, 0, 640, 0, 1, 360, 0, 0, 1], K)).toBeNull();
+  });
+});

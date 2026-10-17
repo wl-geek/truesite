@@ -47,3 +47,41 @@ describe('projectionMatrixGL', () => {
     expect(again[1]).toBeCloseTo(200, 9);
   });
 });
+
+describe('fit and helpers (mutation-tested)', () => {
+  it('fits the video with cover by default', () => {
+    expect(fitTransform(1920, 1080, 800, 800)).toEqual(fitTransform(1920, 1080, 800, 800, 'cover'));
+    expect(fitTransform(1920, 1080, 800, 800).scale).toBeCloseTo(800 / 1080, 12);
+  });
+
+  it('letterboxes with contain: the whole frame inside the viewport, centred', () => {
+    const m = fitTransform(1920, 1080, 800, 800, 'contain');
+    expect(m.scale).toBeCloseTo(800 / 1920, 12);
+    expect(m.offsetX).toBeCloseTo(0, 12);
+    expect(m.offsetY).toBeCloseTo((800 - 1080 * (800 / 1920)) / 2, 12);
+    const tall = fitTransform(1080, 1920, 1000, 600, 'contain');
+    expect(tall.scale).toBeCloseTo(600 / 1920, 12);
+    expect(tall.offsetX).toBeCloseTo((1000 - 1080 * (600 / 1920)) / 2, 12);
+  });
+
+  it('maps viewport taps back to video pixels when the frame is cropped top and bottom', () => {
+    const m = fitTransform(1280, 720, 1000, 300, 'cover'); // wide viewport: video cropped vertically
+    expect(m.offsetY).toBeCloseTo((300 - 720 * (1000 / 1280)) / 2, 12);
+    for (const p of [[0, 0], [640, 360], [1280, 720], [100, 650]] as [number, number][]) {
+      const back = viewportToVideo(m, videoToViewport(m, p));
+      expect(back[0]).toBeCloseTo(p[0], 9);
+      expect(back[1]).toBeCloseTo(p[1], 9);
+    }
+  });
+
+  it('applies a projective column-major matrix like three.js', async () => {
+    const { Matrix4, Vector3 } = await import('three');
+    const m = [1.2, 0.1, -0.3, 0.05, 0.2, 0.9, 0.4, -0.02, -0.1, 0.3, 1.1, 0.03, 0.5, -0.4, 0.2, 1];
+    const p = [0.7, -1.3, 2.1];
+    const want = new Vector3(...p).applyMatrix4(new Matrix4().fromArray(m));
+    const got = applyMat4ColumnMajor(m, p);
+    expect(got[0]).toBeCloseTo(want.x, 12);
+    expect(got[1]).toBeCloseTo(want.y, 12);
+    expect(got[2]).toBeCloseTo(want.z, 12);
+  });
+});
