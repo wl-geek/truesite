@@ -20,7 +20,7 @@
 .sample-card[aria-busy='true'] .sample-card-cta { background: var(--orange); color: var(--ink); }
 .sample-results-title { grid-column: 1 / -1; margin: 8px 0 0; font-size: 20px; }
 .sample-truth { padding: 10px 14px; border: 1px dashed var(--line); border-radius: 12px; background: var(--white); font-size: 14px; }
-.sample-truth summary { min-height: 32px; font-weight: 600; cursor: pointer; }
+.sample-truth summary { min-height: 44px; align-content: center; font-weight: 600; cursor: pointer; }
 .sample-truth ul { margin: 6px 0 0; padding-left: 18px; }
 .sample-results { scroll-margin-top: calc(var(--topbar-h) + 8px); }
 @media (prefers-reduced-motion: reduce) { .sample-card { transition: none; } .sample-card:hover:not(:disabled) { transform: none; } }

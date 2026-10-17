@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ApiError, writeReport } from '../api/client'
 import type { IssueLanguage, SiteReport } from '../api/types'
-import { askErrorMessage } from './askFormat'
+import { issueErrorMessage } from './issueFormat'
 import { LANGUAGES } from './languages'
+import { useModal } from './modal'
 
 /** `offline`: the server runs the offline stand-in, so the draft isn't Gemini's (audit C-04). */
 type Props = { runIds: string[]; offline?: boolean; onClose: () => void }
@@ -13,6 +14,8 @@ export function ReportDialog({ runIds, offline = false, onClose }: Props) {
   const [report, setReport] = useState<SiteReport | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
+  const dialog = useRef<HTMLDivElement>(null)
+  useModal(dialog, true, onClose)
 
   useEffect(() => {
     let cancelled = false
@@ -20,7 +23,7 @@ export function ReportDialog({ runIds, offline = false, onClose }: Props) {
     setError(null)
     writeReport({ run_ids: runIds, language })
       .then((r) => !cancelled && setReport(r))
-      .catch((e: unknown) => !cancelled && setError(askErrorMessage(e instanceof ApiError ? e : new ApiError(String(e), 0)).replace("Couldn't answer", "Couldn't write the report")))
+      .catch((e: unknown) => !cancelled && setError(issueErrorMessage(e instanceof ApiError ? e : new ApiError(String(e), 0), 'report')))
     return () => { cancelled = true }
   }, [runIds, language])
 
@@ -36,7 +39,7 @@ export function ReportDialog({ runIds, offline = false, onClose }: Props) {
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="panel modal report-modal" role="dialog" aria-modal="true" aria-labelledby="report-title" onClick={(e) => e.stopPropagation()}>
+      <div className="panel modal report-modal" role="dialog" aria-modal="true" aria-labelledby="report-title" ref={dialog} onClick={(e) => e.stopPropagation()}>
         <header className="panel-head">
           <div>
             <p className="eyebrow">Draft by {offline ? 'the offline stand-in' : 'Gemini'} · check before sending</p>

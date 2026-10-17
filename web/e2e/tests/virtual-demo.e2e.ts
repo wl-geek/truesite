@@ -195,7 +195,7 @@ test.describe('virtual demo', () => {
     await expect(dialog.getByRole('textbox', { name: 'Title' })).toHaveValue('Keep me')
   })
 
-  test.fixme(BUG.issueErrorCopy, async ({ page }) => {
+  test(BUG.issueErrorCopy, async ({ page }) => {
     await stubGeminiFindsPlanted(page)
     await enterVirtualSite(page, 'P2')
     await runVirtualCheck(page, 'P2')
