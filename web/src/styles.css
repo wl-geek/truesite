@@ -362,26 +362,50 @@ body {
 .live-video, .live-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .live-video { object-fit: cover; }
 .live-canvas { pointer-events: none; }
-.live-top { position: absolute; top: 12px; left: 12px; right: 12px; display: flex; flex-direction: column; gap: 8px; align-items: flex-start; }
+/* While the camera runs the view is full screen (LivePage toggles .ar-running): the site's top bar goes, Exit brings it back. */
+.ar-running .topbar { display: none; }
+.ar-running .live-page { inset: 0; }
+.live-top { position: absolute; top: max(12px, env(safe-area-inset-top)); left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right));
+  display: flex; flex-direction: column; gap: 8px; align-items: flex-start; pointer-events: none; }
+.live-top > * { pointer-events: auto; }
+/* Heads-up display: dark and translucent so the model shows around it. */
+.hud-row { display: flex; gap: 8px; align-items: center; max-width: 100%; }
+.hud-exit, .hud-status, .hud-msg { background: rgba(11, 31, 51, 0.72); color: var(--white); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); }
+.hud-exit { flex: none; width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; }
+.hud-exit:focus-visible, .hud-msg-close:focus-visible { outline: 3px solid var(--orange); outline-offset: 2px; }
+.hud-status { display: flex; align-items: center; min-height: 40px; padding: 0 14px; border-radius: 999px; font-size: 14px; white-space: nowrap; overflow: hidden; }
+.hud-scale { font-weight: 700; padding-right: 10px; margin-right: 10px; border-right: 1px solid rgba(255, 255, 255, 0.35); }
+@media (max-width: 399px) { .hud-wide { display: none; } }
+.hud-msg { display: flex; align-items: flex-start; gap: 4px; max-width: min(460px, 100%); padding: 4px 4px 4px 12px; border-radius: 14px; font-size: 14px; line-height: 1.4; }
+.hud-msg p { margin: 0; flex: 1; padding: 8px 0; }
+.hud-msg a { color: var(--white); font-weight: 700; text-decoration: underline; }
+.hud-msg-warn { background: rgba(178, 60, 6, 0.9); }
+.hud-msg-close { flex: none; width: 36px; height: 36px; margin: 0; padding: 0; display: grid; place-items: center; border: 0; border-radius: 50%; background: transparent; color: var(--white); cursor: pointer; }
+.hud-msg-close:hover { background: rgba(255, 255, 255, 0.15); }
 .live-start { position: absolute; left: 16px; right: 16px; bottom: 24px; max-width: 520px; margin: 0 auto; }
 .live-idle { background: linear-gradient(180deg, rgba(11, 31, 51, 0.55), rgba(11, 31, 51, 0.92)), #0b1f33 url(/hero-site.webp) center / cover no-repeat; }
 @media (min-width: 720px) { .live-idle .live-start { top: 50%; bottom: auto; transform: translateY(-50%); } }
 .live-device-note { margin: 12px 0 0; padding: 8px 12px; border-radius: 10px; background: #fff3e8; color: #8a3a08; font-size: 14px; font-weight: 600; }
 .live-virtual { margin: 12px 0 0; padding-top: 10px; border-top: 1px solid var(--line); font-size: 14px; }
+.live-start a:not(.btn) { color: var(--steel); font-weight: 600; }
 .live-start h1 { margin: 4px 0 8px; }
 .live-warning { margin: 0; padding: 6px 10px; border-radius: var(--radius); background: rgba(255, 106, 19, 0.92); color: var(--white); font-size: 14px; }
 .live-warning a { color: var(--white); font-weight: 600; }
 .live-links { display: flex; gap: 8px; flex-wrap: wrap; }
-.q-badge { margin: 0; padding: 6px 10px; border-radius: var(--radius); color: var(--white); font-size: 14px; background: rgba(11, 31, 51, 0.85); display: flex; flex-wrap: wrap; gap: 0 4px; }
-.q-badge.q-good { background: var(--q-good); }
-.q-badge.q-fair { background: var(--q-fair); }
-.q-badge.q-poor { background: var(--q-poor); }
-.q-hint { flex-basis: 100%; font-size: 12px; opacity: 0.9; }
+/* Alignment in the status pill: a coloured dot, bright enough to read on the dark pill. */
+.q-badge { margin: 0; display: flex; align-items: center; gap: 0 4px; color: var(--white); font-size: 14px; }
+.q-badge::before { content: ''; flex: none; width: 10px; height: 10px; margin-right: 4px; border-radius: 50%; background: var(--q-dot, #9aa7b4); }
+.q-badge.q-good { --q-dot: #4ade80; }
+.q-badge.q-fair { --q-dot: #fbbf24; }
+.q-badge.q-poor { --q-dot: #f87171; }
 
 /* ---- check results ------------------------------------------------------------------------ */
-.live-actions { position: absolute; left: 16px; right: 16px; bottom: 24px; display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; justify-content: safe center; }
-.live-actions .btn { flex: 1 1 0; min-width: 0; padding: 0 10px; }
-.live-actions .btn-accent { flex-basis: 100%; } /* Check as-built: its own full-width row */
+.live-actions { position: absolute; left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right)); bottom: max(16px, env(safe-area-inset-bottom));
+  display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; justify-content: safe center; }
+/* One compact row: Setup and View at their own width, Check as-built grows; on a narrow phone with Results too it wraps. */
+.live-actions .btn { flex: 0 0 auto; min-width: 0; min-height: 44px; padding: 0 16px; background: rgba(255, 255, 255, 0.94); }
+.live-actions .btn-accent { flex: 1 1 160px; max-width: 360px; background: var(--orange); }
+.live-actions .btn-unavailable { opacity: 0.6; }
 .results-sheet { position: absolute; left: 0; right: 0; bottom: 0; max-height: 78%; overflow-y: auto; background: var(--paper); border-radius: 14px 14px 0 0; padding: 12px; display: grid; gap: 12px; }
 @media (min-width: 900px) { .results-sheet { grid-template-columns: 1.2fr 1fr; align-items: start; } }
 .findings-panel h2 { font-size: 17px; }
@@ -472,6 +496,13 @@ body {
 .layer-chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip-on { background: var(--ink); color: var(--white); border-color: var(--ink); }
 .live-controls { position: absolute; left: 0; right: 0; bottom: 132px; display: flex; justify-content: center; } /* above two rows of live actions */
+.live-controls .model-controls { max-height: calc(100dvh - 132px - 72px); overflow-y: auto; }
+/* A phone held landscape is too short for the panel above the buttons: it goes to the right and scrolls. */
+@media (orientation: landscape) and (max-height: 560px) {
+  .live-stage .live-controls { left: auto; right: max(12px, env(safe-area-inset-right)); top: max(12px, env(safe-area-inset-top));
+    bottom: calc(max(16px, env(safe-area-inset-bottom)) + 56px); align-items: flex-start; }
+  .live-stage .live-controls .model-controls { width: min(360px, 46vw); max-height: 100%; }
+}
 
 /* Issue dialog: the crew's language for Gemini's draft. */
 .issue-language { display: grid; gap: 4px; margin: 0 0 10px; font-size: 14px; font-weight: 600; }
