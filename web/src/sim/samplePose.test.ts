@@ -35,3 +35,22 @@ describe('samplePose', () => {
     }
   })
 })
+
+describe('cameraRows (mutation-tested)', () => {
+  const rows = (R: number[]) => [R.slice(0, 3), R.slice(3, 6), R.slice(6, 9)]
+  const det = (R: number[]) => R[0] * (R[4] * R[8] - R[5] * R[7]) - R[1] * (R[3] * R[8] - R[5] * R[6]) + R[2] * (R[3] * R[7] - R[4] * R[6])
+
+  it('is a right-handed camera: right, down, forward', () => {
+    for (const [look, pitch] of [[[-1, 0], 16], [[0, 1], -10], [[1, 0], 40]] as [[number, number], number][]) {
+      expect(det(cameraRows(look, pitch))).toBeCloseTo(1, 12)
+    }
+    const [right, down] = rows(cameraRows([-1, 0], 0)) // facing west, level
+    expect(right.map((v) => v + 0)).toEqual([0, 1, 0]) // north is on the right
+    expect(down.map((v) => v + 0)).toEqual([0, 0, -1])
+  })
+
+  it('takes the look direction at any length', () => {
+    cameraRows([0, 2], 12).forEach((v, i) => expect(v).toBeCloseTo(cameraRows([0, 1], 12)[i], 12))
+    cameraRows([3, 4], -5).forEach((v, i) => expect(v).toBeCloseTo(cameraRows([0.6, 0.8], -5)[i], 12))
+  })
+})

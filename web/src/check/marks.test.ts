@@ -94,3 +94,67 @@ describe('marks', () => {
     expect(markCentres(marks, visible, ['b'], 640, 360).get(1)).toEqual([0.1, 0.1])
   })
 })
+
+describe('marks (mutation-tested)', () => {
+  it('ranks structure and guardrails first; openings, services, slabs and footings second; the rest last', () => {
+    for (const cls of ['IfcColumn', 'IfcBeam', 'IfcMember', 'IfcPile', 'IfcPlate', 'IfcWall', 'IfcWallStandardCase', 'IfcRailing']) {
+      expect(classPriority(cls), cls).toBe(0)
+    }
+    for (const cls of ['IfcDoor', 'IfcWindow', 'IfcPipeSegment', 'IfcPipeFitting', 'IfcDuctSegment', 'IfcDuctFitting', 'IfcFlowSegment',
+      'IfcFlowFitting', 'IfcCableCarrierSegment', 'IfcOpeningElement', 'IfcSlab', 'IfcFooting']) {
+      expect(classPriority(cls), cls).toBe(1)
+    }
+    expect(classPriority('')).toBe(2)
+    expect(classPriority('IfcReinforcingBar')).toBe(2)
+    expect(classPriority('IfcColumnType')).toBe(2) // exact class names only
+  })
+
+  it('ignores zero, negative and non-numeric quantities', () => {
+    const box: Element['bbox_m'] = [[0, 0, 0], [0.3, 0.3, 3]]
+    expect(keyDims(el('c', 'IfcColumn', { 'Q.Width_mm': 0, 'Q.Length_mm': 3000 }, box))).toBe('300 × 300 mm section, 3000 mm high')
+    expect(keyDims(el('c', 'IfcColumn', { 'Q.Width_mm': -200, 'Q.Length_mm': 3000 }, box))).toBe('300 × 300 mm section, 3000 mm high')
+    expect(keyDims(el('c', 'IfcColumn', { 'Q.Width_mm': '200', 'Q.Length_mm': Infinity }, box))).toBe('300 × 300 mm section')
+    expect(keyDims(el('c', 'IfcColumn', { 'Q.Width_mm': 199.6 }, box))).toBe('200 mm wide') // whole millimetres
+  })
+
+  it('skips a degenerate box section and a box with no size at all', () => {
+    // a column modelled as a line (zero plan size) gets no section, only its height
+    expect(keyDims(el('c', 'IfcColumn', { 'Q.Length_mm': 3000 }, [[1, 1, 0], [1, 1, 3]]))).toBe('3000 mm high')
+    expect(keyDims(el('c', 'IfcColumn', { 'Q.Length_mm': 3000 }, [[1, 1, 0], [1, 1.3, 3]]))).toBe('3000 mm high') // a wall-thin box
+    expect(keyDims(el('b', 'IfcBeam', { 'Q.Length_mm': 2000 }, [[0, 0, 3], [2, 0.2, 3]]))).toBe('2000 mm long') // no depth
+    expect(keyDims(el('x', 'IfcFurniture', {}, [[2, 2, 2], [2, 2, 2]]))).toBe('')
+    // the box fallback measures each side, wherever the box sits
+    expect(keyDims(el('x', 'IfcFurniture', {}, [[10, 20, 3], [10.9, 20.45, 3.75]]))).toBe('900 × 450 × 750 mm')
+    expect(keyDims(el('x', 'IfcFurniture', {}, [[0, 0, 0], [0, 0, 0.75]]))).toBe('0 × 0 × 750 mm')
+  })
+
+  it('words wall widths as thickness, other widths and depths plainly, and keeps it short', () => {
+    expect(keyDims(el('w', 'IfcWallStandardCase', { 'Q.Width_mm': 200 }))).toBe('200 mm thick')
+    expect(keyDims(el('s', 'IfcSlab', { 'Q.Width_mm': 3000, 'Q.Depth_mm': 250 }))).toBe('3000 mm wide, 250 mm deep')
+    expect(keyDims(el('s', 'IfcSlab', { 'Q.Depth_mm': 250 }))).toBe('250 mm deep')
+    const long = keyDims(el('p', 'IfcPipeSegment', {
+      'Q.OuterDiameter_mm': 123456789, 'Q.Width_mm': 123456789, 'Q.Depth_mm': 123456789, 'Q.Height_mm': 123456789, 'Q.Length_mm': 123456789,
+    }))
+    expect(long).toHaveLength(80)
+    expect(long.startsWith('Ø123456789 mm, 123456789 mm wide, ')).toBe(true)
+  })
+
+  it('keeps the largest region of an element, whichever comes first', () => {
+    const elements = new Map([['w', el('w', 'IfcWall')]])
+    for (const visible of [[vis(0, 50, 1, 1), vis(1, 500, 2, 2)], [vis(1, 500, 2, 2), vis(0, 50, 1, 1)]]) {
+      const marks = selectMarks(visible, ['w', 'w'], elements)
+      expect(marks).toHaveLength(1)
+      expect(markCentres(marks, visible, ['w', 'w'], 100, 100).get(1)).toEqual([0.02, 0.02])
+    }
+    // equal regions: the first one seen wins in both places
+    const tie = [vis(0, 300, 10, 10), vis(1, 300, 90, 90)]
+    expect(markCentres(selectMarks(tie, ['w', 'w'], elements), tie, ['w', 'w'], 100, 100).get(1)).toEqual([0.1, 0.1])
+  })
+
+  it('gives no centre to a mark whose element is no longer visible, and skips unknown pixels', () => {
+    const elements = new Map([['a', el('a', 'IfcWall')], ['b', el('b', 'IfcWall')]])
+    const marks = selectMarks([vis(0, 100), vis(1, 50)], ['a', 'b'], elements)
+    const centres = markCentres(marks, [vis(0, 100, 30, 40), vis(2, 999, 1, 1)], ['a', 'b', ''], 100, 100)
+    expect([...centres.entries()]).toEqual([[1, [0.3, 0.4]]])
+  })
+})

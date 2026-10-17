@@ -48,3 +48,39 @@ describe('the defects featured at each QR spot', () => {
     }
   })
 })
+
+describe('the planted truth (mutation-tested)', () => {
+  it('is exactly what the shipped sample photos say was staged (re-render the samples after changing it)', () => {
+    const index: { sample_id: string; project_id: string; staged?: string[] }[] =
+      JSON.parse(readFileSync(new URL('../../public/samples/index.json', import.meta.url), 'utf8'))
+    const site = index.filter((s) => s.project_id === 'site')
+    expect(site.length).toBeGreaterThan(0)
+    const truth = SITE_AS_BUILT.map(describeDeviation)
+    for (const s of site) {
+      expect(s.staged, s.sample_id).toEqual(truth)
+      const meta = JSON.parse(readFileSync(new URL(`../../public/samples/${s.sample_id}/meta.json`, import.meta.url), 'utf8'))
+      expect(meta.staged, `${s.sample_id}/meta.json`).toEqual(truth)
+    }
+  })
+
+  it('moves a shifted concrete column together with its own rebar cage', () => {
+    let columns = 0
+    for (const d of SITE_AS_BUILT) {
+      const grid = /^RC column (\w+)$/.exec(d.element)?.[1]
+      if (!grid || d.kind !== 'shifted') continue
+      columns++
+      expect(d.alsoMoves, d.element).toEqual([`Column cage ${grid}`])
+    }
+    expect(columns).toBeGreaterThan(0)
+  })
+
+  it('words every compass direction and height', () => {
+    expect(direction([-0.6, 0, 0])).toBe('west')
+    expect(direction([0, 0.6, 0])).toBe('north')
+    expect(direction([0, -0.6, 0])).toBe('south')
+    expect(direction([0.6, 0, 0])).toBe('east')
+    expect(direction([0.1, 0, -0.3])).toBe('lower')
+    expect(direction([0.3, 0.2, 0.1])).toBe('east') // mostly east
+    expect(direction([0.2, -0.3, 0.1])).toBe('south')
+  })
+})
