@@ -24,9 +24,11 @@
 .vs-status { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); margin: 0; padding: 12px 16px; border-radius: 12px; background: rgba(255, 255, 255, 0.94); color: var(--ink); font-weight: 600; }
 .vs-status-error { color: var(--sev-high); }
 .vs > .status { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); margin: 0; z-index: 2; } /* ReloadPrompt */
-.vs-coach { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(380px, calc(100% - 32px)); padding: 16px 18px; border-radius: 14px; background: rgba(255, 255, 255, 0.95); color: var(--ink); box-shadow: 0 12px 40px rgba(11, 31, 51, 0.3); }
+/* A first drag often starts on the card, in the middle of the view: it goes through to the canvas, which turns the
+   view and dismisses the card, instead of selecting the card's text (audit C-09). Got it still takes taps. */
+.vs-coach { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(380px, calc(100% - 32px)); padding: 16px 18px; border-radius: 14px; background: rgba(255, 255, 255, 0.95); color: var(--ink); box-shadow: 0 12px 40px rgba(11, 31, 51, 0.3); pointer-events: none; -webkit-user-select: none; user-select: none; }
 .vs-coach p { margin: 0 0 8px; }
-.vs-coach .vs-btn { margin-top: 4px; border-color: var(--steel); background: var(--steel); }
+.vs-coach .vs-btn { margin-top: 4px; border-color: var(--steel); background: var(--steel); pointer-events: auto; }
 
 .vs-bottom { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 16px calc(16px + env(safe-area-inset-bottom)); pointer-events: none; }
 .vs-bottom > * { pointer-events: auto; }

@@ -23,7 +23,7 @@ export function checkErrorMessage(err: ErrorInfo): string {
     case 'rate_limited':
       return `Too many checks from this network. Try again${retryIn(err)}.`
     case 'daily_cap':
-      return "Today's check limit has been reached. Try the sample photos, or come back tomorrow."
+      return "Today's check limit has been reached. Try the ready-made views (saved results), or come back tomorrow."
     case 'model_blocked':
       return "This photo couldn't be checked. Try a different view."
     case 'network':
@@ -35,6 +35,16 @@ export function checkErrorMessage(err: ErrorInfo): string {
     default:
       return 'Check failed. Try again.'
   }
+}
+
+/**
+ * Ready-made views (/samples?photos): a check that failed with no saved result to fall back to. The daily cap
+ * can't send people to the page they're on (audit C-25).
+ */
+export function readyMadeErrorMessage(err: ErrorInfo): string {
+  return err.code === 'daily_cap'
+    ? "Today's check limit has been reached. Saved results still show where a view has one; come back tomorrow for a new check."
+    : checkErrorMessage(err)
 }
 
 /** Sample photos: why the live check didn't run, shown above the saved result it falls back to (spec section 8). */

@@ -1,13 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { ApiError } from '../api/client'
-import { checkErrorMessage, savedFallbackMessage, toCheckError } from './messages'
+import { checkErrorMessage, readyMadeErrorMessage, savedFallbackMessage, toCheckError } from './messages'
 
 describe('checkErrorMessage', () => {
   it('explains each failure plainly', () => {
     expect(checkErrorMessage({ status: 0, code: 'nothing_visible' })).toMatch(/None of the model/)
     expect(checkErrorMessage({ status: 0, code: 'no_pose' })).toBe('Keep the code in view when you take the photo.')
     expect(checkErrorMessage({ status: 429, code: 'rate_limited', retryAfterS: 600 })).toBe('Too many checks from this network. Try again in about 10 min.')
-    expect(checkErrorMessage({ status: 429, code: 'daily_cap' })).toMatch(/sample photos/)
+    expect(checkErrorMessage({ status: 429, code: 'daily_cap' }))
+      .toBe("Today's check limit has been reached. Try the ready-made views (saved results), or come back tomorrow.")
     expect(checkErrorMessage({ status: 503, code: 'model_unavailable' })).toBe('Gemini is busy right now. Try again in a minute.')
     expect(checkErrorMessage({ status: 500, code: 'internal' })).toBe('Check failed. Try again.')
     expect(checkErrorMessage({ status: 0, code: 'network' })).toMatch(/No connection/)
@@ -27,6 +28,20 @@ describe('checkErrorMessage', () => {
     expect(local).toBeInstanceOf(ApiError)
     expect(local.status).toBe(0)
     expect(local.code).toBe('local')
+  })
+})
+
+describe('readyMadeErrorMessage (audit C-25)', () => {
+  it("on the ready-made views, the daily cap says saved results still show, without pointing to the page it's on", () => {
+    const capped = readyMadeErrorMessage({ status: 429, code: 'daily_cap' })
+    expect(capped).toBe("Today's check limit has been reached. Saved results still show where a view has one; come back tomorrow for a new check.")
+    expect(capped).not.toMatch(/sample photos|ready-made/i)
+  })
+
+  it('says the same as the check for everything else', () => {
+    for (const err of [{ status: 429, code: 'rate_limited', retryAfterS: 600 }, { status: 503, code: 'model_unavailable' }, { status: 0, code: 'network' }, { status: 500 }]) {
+      expect(readyMadeErrorMessage(err)).toBe(checkErrorMessage(err))
+    }
   })
 })
 

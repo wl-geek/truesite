@@ -8,6 +8,18 @@
 .model-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0; padding: 0; list-style: none; font-size: 13px; color: var(--ink); }
 .model-legend li { display: inline-flex; align-items: center; gap: 6px; }
 .swatch { width: 12px; height: 12px; border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15); }
+/* The element panel sits in the stage, so the findings list under it stays free (audit C-06); on phones its sheet
+   stays inside the stage too. */
+@media (max-width: 899px) {
+  .viewer-stage > .element-panel { max-height: min(55dvh, calc(100% - 12px)); }
+}
+/* "Issue saved.": pinned to the bottom of the screen, wherever the findings list is scrolled (audit C-06). */
+.viewer-notice {
+  position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); z-index: 6; transform: translateX(-50%);
+  width: max-content; max-width: calc(100% - 32px); margin: 0; padding: 8px 14px; border-radius: 10px;
+  background: rgba(11, 31, 51, 0.92); color: var(--white); font-size: 14px; font-weight: 600; text-align: center;
+  box-shadow: 0 8px 24px rgba(11, 31, 51, 0.25);
+}
 /* Phones: the next-step button runs full width at the bottom and the hint sits above it. */
 @media (max-width: 719px) {
   .viewer-stage .viewer-check-btn { left: 16px; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); }
