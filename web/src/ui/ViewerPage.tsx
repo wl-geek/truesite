@@ -12,6 +12,9 @@ import { modelFacts, viewerTitle } from './viewerFacts'
 import { ElementPanel } from './ElementPanel'
 import { FindingsPanel } from './FindingsPanel'
 import { imageQualityMessage } from './findingFormat'
+import { useSavedIssues } from './issueList'
+import { SavedIssues } from './SavedIssues'
+import { SITE_VIEWPOINTS } from './siteViewpoints'
 import { IssueDialog } from './IssueDialog'
 import { Link } from './Link'
 import { isUnknownProject } from './liveFormat'
@@ -156,6 +159,9 @@ export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: str
 
   const elements = useMemo(() => new Map((loaded?.project.elements ?? []).map((e) => [e.guid, e])), [loaded])
   const element = selected ? elements.get(selected) : undefined
+  // Saved issues are shared with the virtual demo: the same browser session reads the same list.
+  const { issues, add: addIssue } = useSavedIssues(loaded?.project.project_id ?? null)
+  const savedGuids = useMemo(() => new Set(issues.map((i) => i.guid)), [issues])
   const selectFinding = (f: Finding) => {
     setSelectedMark(f.mark)
     setSelected(f.guid)
@@ -166,8 +172,27 @@ export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: str
     setShowCheck(true)
     if (!wide) requestAnimationFrame(() => document.querySelector('.viewer-page > .findings-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
   }
+  // A check from the virtual demo (or its ready-made views) was taken at one of the site's QR spots: go back there.
+  const checkSpot = lastCheck && lastCheck.result.project_id === 'site'
+    ? SITE_VIEWPOINTS.find((v) => v.id === lastCheck.result.anchor_id) ?? null : null
   const findings = lastCheck && showCheck && (
-    <FindingsPanel result={lastCheck.result} selectedMark={selectedMark} onSelect={selectFinding} onDraftIssue={setDraftFor} onClose={() => setShowCheck(false)} />
+    <FindingsPanel result={lastCheck.result} selectedMark={selectedMark} onSelect={selectFinding} onDraftIssue={setDraftFor} onClose={() => setShowCheck(false)}
+      savedGuids={savedGuids} footer={(
+        <>
+          <SavedIssues issues={issues} elements={elements} onSelect={(i) => {
+            setSelectedMark(lastCheck.result.findings.find((f) => f.guid === i.guid)?.mark ?? null)
+            setSelected(i.guid)
+            viewerRef.current?.focus(i.guid)
+            if (!wide) stageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }) // the model is above the list
+          }} />
+          {checkSpot && (
+            <p className="viewer-check-spot">
+              This check was taken at {checkSpot.id}, {checkSpot.name}.{' '}
+              <Link to={`/samples?at=${checkSpot.id}`} className="btn btn-small">Open {checkSpot.id} in the virtual demo</Link>
+            </p>
+          )}
+        </>
+      )} />
   )
   const stageStyle = { '--dock-l': `${docks.left}px`, '--dock-r': `${docks.right}px` } as CSSProperties
 
@@ -226,7 +251,8 @@ export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: str
           <ElementPanel projectId={loaded.project.project_id} element={element} multiStorey={modelFacts(loaded.project).storeys > 1}
             onClose={() => setSelected(null)} onZoom={() => viewerRef.current?.focus(element.guid)}
             finding={lastCheck?.result.findings.find((f) => f.guid === element.guid) ?? null}
-            onDraftIssue={lastCheck && imageQualityMessage(lastCheck.result.image_quality) === null ? setDraftFor : undefined} />
+            onDraftIssue={lastCheck && imageQualityMessage(lastCheck.result.image_quality) === null ? setDraftFor : undefined}
+            savedIssues={issues.filter((i) => i.guid === element.guid)} />
         )}
         {notice && <p className="viewer-notice" role="status">{notice}</p>}
       </div>
@@ -234,7 +260,7 @@ export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: str
       {draftFor && (
         <IssueDialog open projectId={loaded?.project.project_id ?? projectId} runId={lastCheck?.runId ?? null} mark={draftFor.mark} finding={draftFor}
           element={elements.get(draftFor.guid) ?? null} onClose={() => setDraftFor(null)}
-          onSaved={() => { setDraftFor(null); setNotice('Issue saved.') }} />
+          onSaved={(issue) => { setDraftFor(null); addIssue(issue); setNotice('Issue saved.') }} />
       )}
     </main>
   )

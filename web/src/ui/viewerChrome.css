@@ -96,3 +96,5 @@
    at the top. */
 .viewer-page .findings-panel .finding { flex-wrap: wrap; justify-content: flex-end; }
 .viewer-page .findings-panel .finding-main { flex-basis: 100%; align-items: flex-start; }
+/* Under the check results: where the check was taken, and a way back there in the virtual demo. */
+.viewer-check-spot { display: grid; gap: 8px; justify-items: start; margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13.5px; }

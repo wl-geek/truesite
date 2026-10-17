@@ -1,9 +1,11 @@
-import type { Element, Finding } from '../api/types'
+import type { Element, Finding, Issue } from '../api/types'
 import { whyItMatters } from '../check/risk'
 import { KIND_COLOURS } from '../scene/palette'
 import { AskBox } from './AskBox'
 import { askSuggestions, summarise } from './elementFacts'
 import { NOT_A_SURVEY, statusText } from './findingFormat'
+import { CopyIssueButton } from './SavedIssues'
+import { savedWhen } from './issueList'
 import './elementPanel.css'
 
 export type ElementPanelProps = {
@@ -24,6 +26,8 @@ export type ElementPanelProps = {
   onDraftIssue?: (f: Finding) => void
   /** The virtual demo only: what was planted on this element, said once a check has run. */
   planted?: string | null
+  /** This browser's saved issues for this element. */
+  savedIssues?: readonly Issue[]
 }
 
 const hex = (n: number) => `#${n.toString(16).padStart(6, '0')}`
@@ -33,7 +37,7 @@ const hex = (n: number) => `#${n.toString(16).padStart(6, '0')}`
  * material and role, the design notes, Ask Gemini about it, and the IFC data folded away for BIM people.
  */
 export function ElementPanel({ projectId, element, multiStorey = false, onClose, onZoom, zoomLabel = 'Zoom to element', zoomIcon = 'zoom',
-  finding, onDraftIssue, planted }: ElementPanelProps) {
+  finding, onDraftIssue, planted, savedIssues = [] }: ElementPanelProps) {
   const title = element.name || 'Unnamed element'
   const s = summarise(element, { multiStorey })
   return (
@@ -57,6 +61,17 @@ export function ElementPanel({ projectId, element, multiStorey = false, onClose,
         </button>
       )}
       {finding && <CheckSection finding={finding} onDraftIssue={onDraftIssue} />}
+      {savedIssues.length > 0 && (
+        <section className="ep-issues" aria-label="Saved issues for this element">
+          {savedIssues.map((issue) => (
+            <div key={issue.id} className="ep-issue">
+              <p className="ep-issue-head"><span aria-hidden="true">✓ </span>Issue saved · {savedWhen(issue.created_at)}</p>
+              <p className="ep-issue-title">{issue.title}</p>
+              <CopyIssueButton issue={issue} elementName={title} />
+            </div>
+          ))}
+        </section>
+      )}
       {planted && <p className="ep-planted"><strong>Planted in this demo:</strong> {planted}</p>}
       {s.facts.length > 0 && (
         <dl className="ep-facts">

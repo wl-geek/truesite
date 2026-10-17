@@ -36,3 +36,10 @@
 .ep-check-note { color: var(--muted); font-size: 12px; }
 .ep-planted { margin: 10px 0 0; padding: 8px 12px; border-radius: 10px; background: var(--ink); color: #dfe8f1; font-size: 13.5px; }
 .ep-planted strong { color: var(--white); }
+/* Issues saved for this element: what was logged, and a copy to send on. */
+.ep-issues { display: grid; gap: 8px; margin: 10px 0 0; }
+.ep-issue { display: grid; gap: 4px; padding: 10px 12px; border: 1px solid rgba(46, 125, 50, 0.4); border-radius: 12px; background: #f1f8f2; }
+.ep-issue p { margin: 0; }
+.ep-issue-head { color: #2e6b33; font-size: 12px; font-weight: 700; letter-spacing: 0.03em; }
+.ep-issue-title { color: var(--ink); font-size: 14.5px; font-weight: 600; }
+.ep-issue .copy-issue { justify-self: start; }

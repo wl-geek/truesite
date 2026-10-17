@@ -1,0 +1,14 @@
+/* SavedIssues.tsx: the saved issues under the check results (3D model and virtual demo). */
+.saved-issues { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+.saved-issues h3 { margin: 0 0 8px; color: var(--ink); font-size: 15px; }
+.saved-issues ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.saved-issue { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.saved-issue-main {
+  display: flex; flex-basis: 100%; align-items: flex-start; gap: 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--white); color: inherit; font: inherit; text-align: left; cursor: pointer;
+}
+.saved-issue-main:hover { border-color: var(--steel); }
+.saved-issue-text { display: grid; flex: 1; gap: 2px; font-size: 14px; }
+.saved-issue-text span { color: var(--muted); font-size: 13px; }
+.saved-issues .note { margin: 8px 0 0; }
+.copy-issue { min-height: 36px; }
