@@ -9,11 +9,15 @@ routers read it through app/deps.py and never import this module.
 from __future__ import annotations
 
 import logging
+import math
 from collections.abc import Callable
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from fastapi import FastAPI, Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from starlette.middleware.gzip import GZipMiddleware
 
 from .config import Settings
@@ -41,6 +45,24 @@ def _log_info_to_stderr() -> None:
         handler.setFormatter(logging.Formatter("%(levelname)s %(name)s: %(message)s"))
         log.addHandler(handler)
         log.setLevel(logging.INFO)
+
+
+def _strict_json(value: Any) -> Any:
+    """`value` with NaN and the infinities spelled as strings ("NaN", "Infinity", "-Infinity"): strict JSON,
+    and so JSONResponse and the browser's JSON.parse, has no words for them."""
+    if isinstance(value, float) and not math.isfinite(value):
+        return "NaN" if math.isnan(value) else ("Infinity" if value > 0 else "-Infinity")
+    if isinstance(value, dict):
+        return {k: _strict_json(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [_strict_json(v) for v in value]
+    return value
+
+
+async def validation_error_422(request: Request, exc: RequestValidationError) -> JSONResponse:
+    """FastAPI's own 422 body (same shape, same loc paths), made strict JSON. json.loads reads NaN, Infinity and
+    1e999 (as inf); the default handler echoed them back in `input` and JSONResponse refused them: a 500 (C-12)."""
+    return JSONResponse(status_code=422, content={"detail": _strict_json(jsonable_encoder(exc.errors()))})
 
 
 def build_store(settings: Settings) -> Store:
@@ -91,6 +113,7 @@ def create_app(
     docs = settings.api_docs  # off in production: Swagger UI loads an unpinned jsDelivr script (A-71)
     app = FastAPI(title="TrueSite", docs_url="/api/docs" if docs else None, redoc_url=None,
                   openapi_url="/api/openapi.json" if docs else None)
+    app.add_exception_handler(RequestValidationError, validation_error_422)
     app.state.settings = settings
     app.state.store = store if store is not None else build_store(settings)
     app.state.repo = repo if repo is not None else ProjectRepo(settings.models_dir)

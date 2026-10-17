@@ -208,6 +208,20 @@ def test_site_report_from_the_sessions_checks(client):
     assert any("Door" in item for item in rep["structure"])  # the fake check flags the door as misplaced
 
 
+def test_site_report_list_fields_of_the_wrong_type_are_coerced(client, monkeypatch):
+    """C-38: a lone string in a list field became one-letter bullets, and a number or a boolean a 500."""
+    session = new_session()
+    run_id, _ = check_run(client, session)
+    answer = {"title": "Day report", "summary": "Two spots checked.", "safety": "Fall hazard at the east edge",
+              "structure": 1, "progress": 2.5, "next_steps": True}
+    monkeypatch.setattr(services.gemini_client, "write_report", lambda facts, **kw: {"result": answer})
+    r = client.post("/api/report", json={"run_ids": [run_id]}, headers=hdr(session))
+    assert r.status_code == 200, r.text
+    rep = r.json()
+    assert (rep["safety"], rep["structure"], rep["progress"], rep["next_steps"]) == \
+        (["Fall hazard at the east edge"], [], [], [])
+
+
 def test_site_report_is_session_scoped_and_validated(client):
     session = new_session()
     run_id, _ = check_run(client, session)

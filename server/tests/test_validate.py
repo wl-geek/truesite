@@ -1,4 +1,6 @@
 """validate.repair_check: the server-side rules of spec section 6, one test per rule."""
+import pytest
+
 from app.schemas import CheckContext, Element
 from app.validate import repair_check, with_project_identity
 
@@ -132,6 +134,37 @@ def test_marks_sent_as_integral_floats_or_digit_strings_are_kept():
     assert [f.status for f in r.findings] == ["present_ok", "missing", "present_ok"] and r.warnings == []
     r = repair_check(raw([finding(1.5), finding(True), finding("two"), finding(float("nan"))]), CTX, ELEMENTS)
     assert all(f.explanation == "not assessed" for f in r.findings)
+
+
+def test_malformed_but_valid_json_is_repaired_not_raised():
+    """C-37: a list or dict where a word belongs was a TypeError (unhashable), a number too large for a float an
+    OverflowError and a 5,000-digit mark a ValueError, so POST /api/check answered 500."""
+    huge = 10 ** 400
+    r = repair_check(raw([finding(1, status=["missing"], confidence=huge),
+                          finding(2, status="misplaced", evidence_box=[huge, 0, 10, 10],
+                                  offset={"direction": {"to": "left"}, "approx_cm": 30}),
+                          finding(3, status="misplaced", evidence_box=[0, 0, 10, -huge],
+                                  offset={"direction": "left", "approx_cm": huge}),
+                          finding("9" * 5000), finding(huge)],
+                         unexpected=[{"description": "Ladder", "confidence": huge, "evidence_box": [0, 0, huge, 10]},
+                                     {"description": "Hose", "confidence": -huge}],
+                         image_quality=["good"]),
+                     CTX, ELEMENTS)
+    f1, f2, f3 = r.findings
+    assert (f1.status, f1.confidence, f1.severity) == ("cannot_judge", 1.0, None)
+    assert (f2.status, f2.evidence_box, f2.offset, f2.severity) == ("misplaced", None, None, "medium")
+    assert (f3.status, f3.evidence_box, f3.offset, f3.severity) == ("misplaced", None, None, "high")
+    assert [(u.description, u.confidence, u.evidence_box) for u in r.unexpected] == [("Ladder", 1.0, None)]
+    assert r.image_quality == "good" and any(w.startswith("image_quality") for w in r.warnings)
+    assert sum(w.startswith("dropped a finding for unknown mark") for w in r.warnings) == 2
+
+
+@pytest.mark.parametrize("answer", [None, [], [finding(1)], "present_ok", 3, 2.5, True])
+def test_an_answer_that_is_not_an_object_leaves_every_mark_not_assessed(answer):
+    r = repair_check(answer, CTX, ELEMENTS)
+    assert [(f.mark, f.status, f.confidence, f.explanation) for f in r.findings] == \
+        [(m, "cannot_judge", 0.0, "not assessed") for m in (1, 2, 3)]
+    assert (r.image_quality, r.unexpected, r.summary) == ("good", [], "")
 
 
 def test_invalid_status_and_confidence_are_repaired():

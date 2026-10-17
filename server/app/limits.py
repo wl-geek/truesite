@@ -26,6 +26,7 @@ backstop.
 from __future__ import annotations
 
 import ipaddress
+import math
 import threading
 import time
 from collections import OrderedDict, deque
@@ -96,8 +97,10 @@ class SlidingWindowLimiter:
             while q and q[0] <= cutoff:
                 q.popleft()
             if len(q) >= self.limit:
-                retry = q[0] + self.window_s - now
-                return False, max(1, int(retry + 0.999))
+                # Until the oldest hit leaves the window, rounded up so waiting that long is enough. A limit
+                # of 0 (the endpoint switched off) records no hits: a whole window.
+                retry = q[0] + self.window_s - now if q else self.window_s
+                return False, max(1, math.ceil(retry))
             q.append(now)
             return True, 0
 

@@ -104,6 +104,27 @@ def test_window_slides_rather_than_resets() -> None:
     assert [lim.hit("a")[0] for _ in range(6)] == [True] * 5 + [False]
 
 
+def test_a_limit_of_zero_refuses_every_hit_for_a_whole_window() -> None:
+    """C-39: CHECKS_PER_IP_PER_HOUR=0 (checks switched off) was an IndexError, so the endpoints answered 500."""
+    clk = FakeClock()
+    lim = SlidingWindowLimiter(0, 3600, clock=clk)
+    assert lim.hit("1.2.3.4") == (False, 3600)
+    clk.t = 7200.5
+    assert lim.hit("1.2.3.4") == (False, 3600)
+    assert SlidingWindowLimiter(-1, 60, clock=clk).hit("a") == (False, 60)
+
+
+def test_retry_after_rounds_up() -> None:
+    """C-40: int(retry + 0.999) rounded 2.0005 s down to 2, so a client that waited that long was refused again."""
+    clk = FakeClock()
+    lim = SlidingWindowLimiter(1, 3600, clock=clk)
+    assert lim.hit("a") == (True, 0)
+    clk.t = 3597.9995  # the t=0 hit leaves the window 2.0005 s from now
+    assert lim.hit("a") == (False, 3)
+    clk.t += 3
+    assert lim.hit("a") == (True, 0)
+
+
 def test_denied_hits_are_not_recorded() -> None:
     clk = FakeClock()
     lim = SlidingWindowLimiter(1, 10, clock=clk)

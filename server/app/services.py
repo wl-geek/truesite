@@ -112,6 +112,13 @@ def with_label(text: str, limit: int) -> str:
 _DEVIATIONS = {"missing", "misplaced", "different_from_design"}
 
 
+def _report_items(value: Any, n: int) -> list[str]:
+    """Up to ``n`` non-blank strings of at most 200 characters from a report list field. The model may send a
+    lone string there (one item, not one per letter) or a number, boolean or object (no items)."""
+    values = [value] if isinstance(value, str) else value if isinstance(value, list) else []
+    return [truncate_text(x, 200) for x in values if isinstance(x, str) and x.strip()][:n]
+
+
 def make_reporter(client: Any) -> Callable[..., SiteReport]:
     """The day's site report drafted from the session's stored checks: deviations only, severity from code."""
 
@@ -129,12 +136,12 @@ def make_reporter(client: Any) -> Callable[..., SiteReport]:
         out = gemini_client.write_report({"checks": checks}, language=language, client=client)
         log_usage("report", out)
         raw = out["result"]
-        items = lambda key, n: [truncate_text(x, 200) for x in raw.get(key) or [] if isinstance(x, str) and x.strip()][:n]
         return SiteReport(
             title=truncate_text(raw.get("title"), 100) or f"Site report: {len(runs)} check{'s' if len(runs) != 1 else ''}",
             summary=with_label(truncate_text(raw.get("summary"), 700), 700),
-            safety=items("safety", 10), structure=items("structure", 10), progress=items("progress", 10),
-            next_steps=items("next_steps", 8), checks=len(runs),
+            safety=_report_items(raw.get("safety"), 10), structure=_report_items(raw.get("structure"), 10),
+            progress=_report_items(raw.get("progress"), 10), next_steps=_report_items(raw.get("next_steps"), 8),
+            checks=len(runs),
         )
 
     return report

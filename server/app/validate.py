@@ -18,11 +18,23 @@ STATUSES = set(get_args(Status))
 DIRECTIONS = set(get_args(Direction))
 IMAGE_QUALITIES = set(get_args(ImageQuality))
 LOW_CONFIDENCE = "Low confidence."
+MARK_DIGITS_MAX = 9
 
 
 def _finite_number(value: Any) -> bool:
-    # json.loads accepts NaN and 1e400 (inf); round() raises on both.
-    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+    # json.loads accepts NaN and 1e400 (inf); round() raises on both. An integer too large for a float
+    # (400 digits, say) makes math.isfinite() raise OverflowError: no usable number either.
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return False
+    try:
+        return math.isfinite(value)
+    except OverflowError:
+        return False
+
+
+def _one_of(value: Any, allowed: set[str]) -> bool:
+    """Membership for untrusted JSON: a list or an object is unhashable, so `value in allowed` would raise."""
+    return isinstance(value, str) and value in allowed
 
 
 def truncate_text(value: Any, limit: int) -> str:
@@ -33,7 +45,7 @@ def truncate_text(value: Any, limit: int) -> str:
 def clamp_confidence(value: Any) -> float:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         return 0.0
-    return min(1.0, max(0.0, float(value)))
+    return float(min(1.0, max(0.0, value)))  # clamped first: float() raises on an integer too large for a float
 
 
 def _box(value: Any) -> list[int] | None:
@@ -48,7 +60,7 @@ def _box(value: Any) -> list[int] | None:
 
 
 def _offset(value: Any) -> Offset | None:
-    if not isinstance(value, dict) or value.get("direction") not in DIRECTIONS or value.get("direction") == "none":
+    if not isinstance(value, dict) or not _one_of(value.get("direction"), DIRECTIONS) or value["direction"] == "none":
         return None
     cm = value.get("approx_cm")
     if not _finite_number(cm):
@@ -57,11 +69,12 @@ def _offset(value: Any) -> Offset | None:
 
 
 def _mark(value: Any) -> Any:
-    """Marks are ints; 3.0 and "3" are read as 3. Anything else is returned unchanged (and dropped)."""
+    """Marks are ints; 3.0 and "3" are read as 3. Anything else is returned unchanged (and dropped).
+    Digit strings are read only up to MARK_DIGITS_MAX characters: int() refuses strings over 4,300 digits."""
     if isinstance(value, float) and math.isfinite(value) and value.is_integer():
         return int(value)
-    if isinstance(value, str) and value.strip().isascii() and value.strip().isdigit():
-        return int(value.strip())
+    if isinstance(value, str) and (s := value.strip()).isascii() and s.isdigit() and len(s) <= MARK_DIGITS_MAX:
+        return int(s)
     return value
 
 
@@ -82,11 +95,15 @@ def _element(guid: str, ifc_class: str, name: str, elements: dict[str, Element])
 
 
 def repair_check(raw: dict, ctx: CheckContext, elements: dict[str, Element]) -> CheckResult:
+    """Total: any JSON value gives a valid CheckResult; with nothing usable, every mark is "can't judge"."""
     warnings: list[str] = []
     marks = {v.mark: v for v in ctx.visible}
+    if not isinstance(raw, dict):  # gemini_client only hands over objects, but nothing here relies on it
+        warnings.append(f"answer is a {type(raw).__name__}, not an object; nothing used")
+        raw = {}
 
     image_quality = raw.get("image_quality")
-    if image_quality not in IMAGE_QUALITIES:
+    if not _one_of(image_quality, IMAGE_QUALITIES):
         warnings.append(f"image_quality {image_quality!r} not recognised; treated as good")
         image_quality = "good"
 
@@ -106,7 +123,7 @@ def repair_check(raw: dict, ctx: CheckContext, elements: dict[str, Element]) -> 
         status = item.get("status")
         confidence = clamp_confidence(item.get("confidence"))
         explanation = truncate_text(item.get("explanation"), EXPLANATION_MAX)
-        if status not in STATUSES:
+        if not _one_of(status, STATUSES):
             status = "cannot_judge"
         elif confidence < CONFIDENCE_FLOOR and status != "cannot_judge":
             # Don't show the guess for the old status under "can't judge".

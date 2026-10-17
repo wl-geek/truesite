@@ -46,8 +46,9 @@ class Settings:
 
     # Upload limits (spec section 6: photo and render at most 4 MB each).
     max_upload_bytes: int = 4 * MiB
-    # Whole-request cap, enforced while the body streams in: two files + context + multipart overhead.
-    max_body_bytes: int = 9 * MiB
+    # Whole-request cap, enforced while the body streams in: three files (photo, render, outline overlay)
+    # + context + multipart overhead.
+    max_body_bytes: int = 13 * MiB
 
     # Abuse limits (spec section 9). Per-IP limits are per instance; the daily caps are global (store).
     checks_per_ip_per_hour: int = 10
@@ -84,7 +85,7 @@ class Settings:
             static_dir=Path(os.environ.get("STATIC_DIR") or DEFAULT_STATIC_DIR),
             models_dir=Path(os.environ.get("MODELS_DIR") or DEFAULT_MODELS_DIR),
             max_upload_bytes=_int("MAX_UPLOAD_BYTES", 4 * MiB),
-            max_body_bytes=_int("MAX_BODY_BYTES", 9 * MiB),
+            max_body_bytes=_int("MAX_BODY_BYTES", 13 * MiB),
             checks_per_ip_per_hour=_int("CHECKS_PER_IP_PER_HOUR", 10),
             asks_per_ip_per_hour=_int("ASKS_PER_IP_PER_HOUR", 30),
             daily_check_cap=_int("DAILY_CHECK_CAP", 300),
