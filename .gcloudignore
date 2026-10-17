@@ -23,3 +23,6 @@ capture/
 .playwright-mcp/
 .cache/
 bim/sheets/
+
+# The Playwright suite and its camera videos (web/e2e/.videos is about 1.7 GB) are not part of the image.
+web/e2e/
