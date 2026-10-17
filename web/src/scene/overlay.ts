@@ -124,6 +124,16 @@ export function holdBySensors(mode: OverlayState['mode'], nowS: number, lastSeen
 }
 
 /**
+ * Whether a detection feeds the fusion (audit C-02): not while the device turns faster than 10 degrees/s. Its motion
+ * sample is then from a slightly different moment than the frame (sensor and frame timing), and a few such detections
+ * at the filming pace held the model about 1 degree off after the turn. Turning on the spot, the code's orientation and
+ * the camera position the fusion holds don't change anyway; at walking pace the detections still go in.
+ */
+export function feedsFusion(recent: readonly MotionSample[]): boolean {
+  return deviceStill(recent, 200, 10)
+}
+
+/**
  * Look-around ran out (audit C-14): the motion sensors held the model, and the code has been out of view for
  * LOOK_AROUND_MAX_S. The coach then says so instead of giving the search tips. `held`: there was a lock or a fused pose.
  */
@@ -236,7 +246,7 @@ export function createOverlay(o: OverlayOptions): Overlay {
     if (tracked) {
       lastSeen = tSec
       last = { pose: { R: tracked.raw.R, t: tracked.raw.t }, K, quality: tracked.quality, corners: corners!, videoW: vw, videoH: vh, tSec }
-      fusion?.addDetection(tracked.raw, tracked.quality, tracked.provisional, tracked.raw.distanceM, frameMs)
+      if (feedsFusion(recent)) fusion?.addDetection(tracked.raw, tracked.quality, tracked.provisional, tracked.raw.distanceM, frameMs)
       if (!fused(tSec * 1000)) { // posed every frame in tick() when fused
         model.ifcRoot.matrix.fromArray(levelled(modelMatrixIfc(pAnchor, tracked.smoothed)))
         model.ifcRoot.matrixWorldNeedsUpdate = true
