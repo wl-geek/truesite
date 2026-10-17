@@ -36,3 +36,35 @@ describe('levelled placement', () => {
     expect(edge).toBeCloseTo(0.2, 9)
   })
 })
+
+describe('levelled placement (mutation-tested)', () => {
+  it('takes the heading from IFC X flattened, at full scale, when the code is tilted about a diagonal', () => {
+    const axis = new Vector3(1, 0, 1).normalize()
+    const rot = new Quaternion().setFromAxisAngle(new Vector3(0, 1, 0), 30 * deg)
+      .multiply(new Quaternion().setFromAxisAngle(axis, 25 * deg)).multiply(ifcToWorld)
+    const code = new Vector3(0.5, 1.2, -1)
+    const anchor = new Vector3(2, 3, 1.2)
+    for (const s of [1, 0.05]) {
+      const m = levelledPlacement(rot, code, anchor, s, null)
+      const flat = new Vector3(1, 0, 0).applyQuaternion(rot).setY(0).normalize()
+      const east = new Vector3(anchor.x + 1, anchor.y, anchor.z).applyMatrix4(m).sub(code)
+      expect(east.length()).toBeCloseTo(s, 9) // one IFC metre is s world metres
+      expect(east.clone().normalize().distanceTo(flat)).toBeLessThan(1e-9)
+      const up = new Vector3(anchor.x, anchor.y, anchor.z + 1).applyMatrix4(m).sub(code)
+      expect(up.x).toBeCloseTo(0, 9)
+      expect(up.z).toBeCloseTo(0, 9)
+      expect(up.y).toBeCloseTo(s, 9)
+    }
+  })
+
+  it('falls back to IFC Y for the heading when IFC X points straight up', () => {
+    const rot = new Quaternion().setFromAxisAngle(new Vector3(0, 0, 1), 90 * deg).multiply(ifcToWorld) // IFC X -> world up
+    const m = levelledPlacement(rot, new Vector3(0, 1, 0), new Vector3(0, 0, 1), 1, null)
+    expect(m.elements.every(Number.isFinite)).toBe(true)
+    const o = new Vector3(0, 0, 0).applyMatrix4(m)
+    const x = new Vector3(1, 0, 0).applyMatrix4(m).sub(o)
+    const z = new Vector3(0, 0, 1).applyMatrix4(m).sub(o)
+    expect(x.distanceTo(new Vector3(1, 0, 0))).toBeLessThan(1e-9) // IFC Y lay along world -Z, so IFC X = Y x Z is world +X
+    expect(z.distanceTo(new Vector3(0, 1, 0))).toBeLessThan(1e-9)
+  })
+})

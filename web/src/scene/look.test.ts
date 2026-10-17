@@ -1,4 +1,4 @@
-import { BoxGeometry, Group, Mesh, MeshBasicMaterial, Vector3 } from 'three'
+import { BoxGeometry, Group, LineBasicMaterial, LineSegments, Matrix4, Mesh, MeshBasicMaterial, Vector3 } from 'three'
 import { describe, expect, it } from 'vitest'
 import { buildLoadedModel } from './loadModel'
 import { applyConstructionLook, layerOf, layerOpacity, viewNote } from './look'
@@ -133,5 +133,105 @@ describe('viewNote', () => {
       .toBe('Checked as shown: Structure hidden; Doors, windows, services hidden.')
     expect(viewNote({ ...none, sectionM: 1 })).toBe('Checked as shown: cut above 1.0 m.')
     expect(viewNote({ ...none, radiusM: 6 })).toBe('Checked as shown: view distance 6 m.')
+  })
+})
+
+describe('construction look (mutation-tested)', () => {
+  const COL = 'C'.repeat(22), COL2 = 'K'.repeat(22), BAR = 'R'.repeat(22), DOOR = 'D'.repeat(22)
+  const classes: Record<string, string> = { [COL]: 'IfcColumn', [COL2]: 'IfcColumn', [BAR]: 'IfcReinforcingBar', [DOOR]: 'IfcDoor' }
+  function model4() {
+    const g = new Group()
+    for (const name of [COL, COL2, BAR, DOOR]) {
+      const m = new Mesh(new BoxGeometry(1, 1, 1), new MeshBasicMaterial())
+      m.name = name
+      g.add(m)
+    }
+    return buildLoadedModel(g, new Set(Object.keys(classes)))
+  }
+  const mesh = (m: ReturnType<typeof model4>, name: string) => m.meshes.find((x) => x.name === name)!
+  const edgesOf = (x: Mesh) => x.children.filter((c): c is LineSegments => c instanceof LineSegments)
+
+  it('fades doors, services and other elements from 0.4, structure from 0.45, rebar from solid', () => {
+    expect(layerOpacity('openings', 0)).toBeCloseTo(0.4, 9)
+    expect(layerOpacity('other', 0)).toBeCloseTo(0.4, 9)
+    expect(layerOpacity('structure', 0.5)).toBeCloseTo((0.45 + 0.45 * 0.05) / 2, 9) // linear: half way to 5 % of its base
+    expect(layerOpacity('rebar', 2)).toBeCloseTo(0.05, 9) // out-of-range slider values are clamped
+    expect(layerOpacity('structure', -1)).toBeCloseTo(0.45, 9)
+  })
+
+  it('shares one see-through material per layer and kind, so the slider fades every mesh', () => {
+    const m = model4()
+    const look = applyConstructionLook(m, (g) => classes[g], 3)
+    const a = mesh(m, COL).material as MeshBasicMaterial
+    expect(mesh(m, COL2).material).toBe(a)
+    look.setTransparency(1)
+    for (const name of [COL, COL2, BAR, DOOR]) expect((mesh(m, name).material as MeshBasicMaterial).opacity, name).toBeCloseTo(0.05, 9)
+    expect(a.transparent).toBe(true)
+    expect(a.depthWrite).toBe(false) // see-through structure must not hide what is behind it
+    expect((mesh(m, BAR).material as MeshBasicMaterial).depthWrite).toBe(true) // solid rebar does
+    look.dispose()
+  })
+
+  it('outlines structure in steel blue and the rest in orange on the edge layer, never rebar', () => {
+    const m = model4()
+    const look = applyConstructionLook(m, (g) => classes[g], 3)
+    const [colEdges] = edgesOf(mesh(m, COL))
+    const [doorEdges] = edgesOf(mesh(m, DOOR))
+    const blue = (colEdges.material as LineBasicMaterial).color
+    const orange = (doorEdges.material as LineBasicMaterial).color
+    expect(blue.b).toBeGreaterThan(blue.r)
+    expect(orange.r).toBeGreaterThan(orange.b)
+    expect(edgesOf(mesh(m, COL2))[0].material).toBe(colEdges.material) // one edge material per kind
+    expect(edgesOf(mesh(m, BAR))).toEqual([])
+    for (const e of [colEdges, doorEdges]) {
+      expect(e.layers.isEnabled(3)).toBe(true)
+      expect(e.layers.isEnabled(0)).toBe(false) // kept out of the ID buffer and the design render
+    }
+    look.dispose()
+    expect(edgesOf(mesh(m, COL))).toEqual([])
+    expect(edgesOf(mesh(m, DOOR))).toEqual([])
+  })
+
+  it('frees its materials and edge geometry on dispose', () => {
+    const m = model4()
+    const look = applyConstructionLook(m, (g) => classes[g], 3)
+    const [edges] = edgesOf(mesh(m, COL))
+    const disposed: string[] = []
+    edges.geometry.addEventListener('dispose', () => disposed.push('edge geometry'))
+    ;(edges.material as LineBasicMaterial).addEventListener('dispose', () => disposed.push('edge material'))
+    ;(mesh(m, COL).material as MeshBasicMaterial).addEventListener('dispose', () => disposed.push('face material'))
+    look.dispose()
+    expect(disposed.sort()).toEqual(['edge geometry', 'edge material', 'face material'])
+  })
+
+  it('keeps a hidden layer hidden when the view distance changes, and shows the rest again without one', () => {
+    const m = model4()
+    const look = applyConstructionLook(m, (g) => classes[g], 3)
+    look.setLayerVisible('rebar', false)
+    look.setRadius(50)
+    look.update(new Vector3(0, 0, 1))
+    expect(mesh(m, BAR).visible).toBe(false)
+    expect(mesh(m, COL).visible).toBe(true)
+    look.update(new Vector3(0, 0, 100)) // everything beyond the view distance
+    expect(m.meshes.every((x) => !x.visible)).toBe(true)
+    look.setRadius(null) // no update() needed: the layers come straight back
+    expect(m.meshes.filter((x) => x.visible).map((x) => x.name).sort()).toEqual([COL, COL2, DOOR].sort())
+    look.dispose()
+  })
+
+  it('moves the cut with the model', () => {
+    const m = model4()
+    const look = applyConstructionLook(m, (g) => classes[g], 3)
+    look.setSection(2)
+    m.ifcRoot.matrix.copy(new Matrix4().makeTranslation(0, 0, 10)) // the model placed 10 m higher
+    m.ifcRoot.matrixWorldNeedsUpdate = true
+    look.update()
+    expect(look.clipPlanes()[0].distanceToPoint(new Vector3(0, 0, 12))).toBeCloseTo(0, 9)
+    look.dispose()
+  })
+
+  it('names the Other layer when it is hidden', () => {
+    const all = { structure: true, rebar: true, openings: true, other: true }
+    expect(viewNote({ transparency: 0, sectionM: null, radiusM: null, layers: { ...all, other: false } })).toBe('Checked as shown: Other hidden.')
   })
 })

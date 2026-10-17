@@ -102,3 +102,11 @@ describe('model matrix: CV pipeline == GL pipeline', () => {
     expect(mat3MulVec(IFC_FROM_GLTF, g)).toEqual([0.3, 2.2, 1.1]);
   });
 });
+
+describe('anchor axes (mutation-tested)', () => {
+  it('refuses an anchor whose up is parallel to its normal', () => {
+    expect(() => markerAxesInModel({ ...room, up: [0, -1, 0] })).toThrow('anchor.up must not be parallel to anchor.normal');
+    expect(() => markerAxesInModel({ ...room, up: [0, 3, 0] })).toThrow(/parallel/);
+    expect(() => markerAxesInModel({ ...room, up: [0, -1, 0.6] })).not.toThrow(); // leaning, but not parallel
+  });
+});

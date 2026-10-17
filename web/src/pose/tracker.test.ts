@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { centredIntrinsics, focalFromHfov, markerCorners, projectPoint } from './camera';
-import { type Point2, norm3, sub3 } from './linalg';
+import { estimatePose } from './estimatePose';
+import { type Point2, type Vec3, norm3, sub3 } from './linalg';
 import { rotationAngleBetween } from './rotation';
-import { makeMarkerPose, noisyCorners, rng } from './testing/synth';
+import { makeMarkerPose, noisyCorners, rng, uniform } from './testing/synth';
 import { PoseTracker } from './tracker';
 
 const W = 1280, H = 720;
@@ -80,5 +81,66 @@ describe('PoseTracker', () => {
     for (let i = 0; i < 30; i++) tr.update(img(a), i / FPS);
     const out = tr.update(img(b), 30 / FPS)!;
     expect(rotationAngleBetween(out.smoothed.R, b.R) * DEG).toBeLessThan(0.01);
+  });
+});
+
+describe('PoseTracker edge cases (mutation-tested)', () => {
+  const img = (p: { R: number[]; t: Vec3 }, s = 0.25) => markerCorners(s).map((X) => projectPoint(K, p, X)!) as Point2[];
+
+  /** Noisy frames until one whose estimate is ambiguous with the given grade. */
+  function ambiguousFrame(s: number, dmin: number, dmax: number, sigma: number, quality: 'good' | 'poor', seed: number): Point2[] {
+    const r = rng(seed);
+    for (let k = 0; k < 400; k++) {
+      const pose = makeMarkerPose({ distance: uniform(r, dmin, dmax), tiltDeg: uniform(r, 5, 25), tiltAzDeg: uniform(r, 0, 360) });
+      const c = noisyCorners(K, pose, s, sigma, r);
+      const est = c && estimatePose(c, s, K);
+      if (c && est && est.ambiguous && est.quality === quality) return c;
+    }
+    throw new Error(`no ambiguous ${quality} frame found`);
+  }
+
+  it('returns null for a frame it cannot solve, without throwing, and carries on', () => {
+    const tr = new PoseTracker(0.25, K);
+    const a = makeMarkerPose({ distance: 0.8, tiltDeg: 35, tiltAzDeg: 20 });
+    const c = img(a);
+    expect(tr.update(c, 0)).not.toBeNull();
+    expect(tr.update([c[0], c[3], c[2], c[1]], 1 / FPS)).toBeNull(); // mirrored corners
+    expect(tr.update([c[0], c[0], c[0], c[0]], 2 / FPS)).toBeNull();
+    expect(tr.update(c, 3 / FPS)).not.toBeNull();
+  });
+
+  it('caps an ambiguous good frame at fair until trusted, and never raises a poor one', () => {
+    const good = ambiguousFrame(0.25, 1.8, 2.2, 1.0, 'good', 11); // a 25 cm code about 2 m away, a shaky detector
+    const first = new PoseTracker(0.25, K).update(good, 0)!;
+    expect([first.raw.quality, first.provisional, first.quality]).toEqual(['good', true, 'fair']);
+    const poor = ambiguousFrame(0.12, 2.8, 3.6, 0.5, 'poor', 12); // a 12 cm code over 3 m away
+    const p = new PoseTracker(0.12, K).update(poor, 0)!;
+    expect([p.provisional, p.quality]).toEqual([true, 'poor']);
+    // once an unambiguous frame was seen, the same good frame keeps its grade
+    const trusted = new PoseTracker(0.25, K);
+    expect(trusted.update(img(makeMarkerPose({ distance: 0.6, tiltDeg: 40, tiltAzDeg: 10 })), 0)!.provisional).toBe(false);
+    const again = trusted.update(good, 1 / FPS)!;
+    expect(again.provisional).toBe(false);
+    expect(again.quality).toBe(again.raw.quality);
+    expect(again.raw.quality).toBe('good');
+  });
+
+  it('restarts the smoothing after losing the code for lostAfterSec, even inside the smoother\'s own gap', () => {
+    const tr = new PoseTracker(0.25, K, { lostAfterSec: 0.2 });
+    const a = makeMarkerPose({ distance: 0.8, tiltDeg: 35, tiltAzDeg: 20 });
+    for (let i = 0; i < 15; i++) tr.update(img(a), i / FPS);
+    const b = { R: a.R, t: [a.t[0] + 0.1, a.t[1], a.t[2] + 0.2] as Vec3 };
+    const out = tr.update(img(b), 14 / FPS + 0.3)!; // a 0.3 s gap: over lostAfterSec, under the smoother's 0.5 s
+    expect(norm3(sub3(out.smoothed.t, out.raw.t))).toBeLessThan(1e-12);
+  });
+
+  it('keeps easing through a moderate turn below jumpResetDeg', () => {
+    const tr = new PoseTracker(0.25, K);
+    const a = makeMarkerPose({ distance: 0.8, tiltDeg: 30, tiltAzDeg: 20 });
+    const b = makeMarkerPose({ distance: 0.8, tiltDeg: 40, tiltAzDeg: 20 }); // 10 degrees away
+    for (let i = 0; i < 30; i++) tr.update(img(a), i / FPS);
+    const out = tr.update(img(b), 30 / FPS)!;
+    expect(rotationAngleBetween(out.raw.R, b.R) * DEG).toBeLessThan(0.01);
+    expect(rotationAngleBetween(out.smoothed.R, b.R) * DEG).toBeGreaterThan(1);
   });
 });

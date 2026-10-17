@@ -54,3 +54,15 @@ describe('Quick Look distance variants', () => {
     expect(pickUsdzRadius(5, { radii: [], reach: 6 })).toBeNull() // no variants written: the full model
   })
 })
+
+describe('Quick Look distance variants (mutation-tested)', () => {
+  it('writes variants when any anchor is a 1:1 floor code, not only when all are', () => {
+    const wall = { position_m: [0, 3, 1.3] as [number, number, number], normal: [0, -1, 0] as [number, number, number], scale: 1 }
+    expect(usdzPlan([wall, floor], elements).radii).toEqual([8])
+  })
+
+  it('writes no variant that would leave out everything', () => {
+    const far = [el(40, 40, 41, 41), el(50, 50, 51, 51)]
+    expect(usdzPlan([floor], far).radii).toEqual([])
+  })
+})

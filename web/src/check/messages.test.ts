@@ -40,3 +40,22 @@ describe('savedFallbackMessage', () => {
     for (const status of [500, 502, 503]) expect(savedFallbackMessage({ status, code: 'model_unavailable' })).toMatch(/^Gemini couldn't run the check.*last real result/)
   })
 })
+
+describe('check messages (mutation-tested)', () => {
+  it('says "later" when the server gives no wait, and rounds a wait up to whole minutes', () => {
+    expect(checkErrorMessage({ status: 429, code: 'rate_limited' })).toBe('Too many checks from this network. Try again later.')
+    expect(checkErrorMessage({ status: 429, code: 'rate_limited', retryAfterS: 90 })).toBe('Too many checks from this network. Try again in about 2 min.')
+    expect(checkErrorMessage({ status: 429, code: 'rate_limited', retryAfterS: 5 })).toBe('Too many checks from this network. Try again in about 1 min.')
+  })
+
+  it('asks for another view when Gemini refuses the photo', () => {
+    expect(checkErrorMessage({ status: 422, code: 'model_blocked' })).toBe("This photo couldn't be checked. Try a different view.")
+  })
+
+  it('blames the server only for 5xx when a sample falls back to its saved result', () => {
+    expect(savedFallbackMessage({ status: 400, code: 'bad_request' })).toBe("The live check didn't run. Showing the last real result for this photo.")
+    expect(savedFallbackMessage({ status: 500 })).toBe("Gemini couldn't run the check right now. Showing the last real result for this photo.")
+    expect(savedFallbackMessage({ status: 429, code: 'rate_limited' }))
+      .toBe("Too many checks from this network, so Gemini didn't run. Showing the last real result for this photo. Try again later.")
+  })
+})

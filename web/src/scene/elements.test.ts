@@ -112,3 +112,107 @@ describe('mark anchors', () => {
     expect(v.anchor).toEqual(v.centroid)
   })
 })
+
+describe('elements (mutation-tested)', () => {
+  it('accepts a GUID only as the whole name', () => {
+    expect(IFC_GUID_RE.test(`x${GUID_WALL}`)).toBe(false)
+    expect(IFC_GUID_RE.test(`${GUID_WALL}x`)).toBe(false)
+    // GLTFLoader's de-duplicated name is GUID + "_1": still base-64 characters, but not a GUID
+    const node = new Object3D()
+    node.name = `${GUID_DOOR}_1`
+    expect(guidOf(node)).toBeNull()
+  })
+
+  /** A top-down test image (row 0 = top) stored GL-style, bottom row first. */
+  function image(w: number, h: number) {
+    const buf = new Uint8Array(w * h * 4)
+    const ids = new Int32Array(w * h).fill(-1)
+    const set = (index: number, x: number, y: number) => {
+      const c = idColor(index)
+      const o = ((h - 1 - y) * w + x) * 4
+      buf[o] = Math.round(c.r * 255); buf[o + 1] = Math.round(c.g * 255); buf[o + 2] = Math.round(c.b * 255); buf[o + 3] = 255
+      ids[y * w + x] = index
+    }
+    const paint = (index: number, x0: number, y0: number, x1: number, y1: number) => {
+      for (let y = Math.max(0, y0); y <= Math.min(h - 1, y1); y++) for (let x = Math.max(0, x0); x <= Math.min(w - 1, x1); x++) set(index, x, y)
+    }
+    return { buf, ids, set, paint }
+  }
+
+  it('reports element 0 (ID colour 0, 0, 1), which is not the background', () => {
+    const { buf, paint } = image(4, 4)
+    paint(0, 0, 0, 1, 1)
+    const [v] = visibleFromIdBuffer(buf, 4, 4, 0)
+    expect(v).toMatchObject({ index: 0, pixels: 4, box: [0, 0, 500, 500] })
+  })
+
+  it('boxes an L-shaped region whose top row is the narrowest', () => {
+    const { buf, paint } = image(10, 10)
+    paint(2, 1, 1, 2, 8) // the upright of the L, top at row 1
+    paint(2, 1, 7, 8, 8) // the foot reaches column 8
+    const [v] = visibleFromIdBuffer(buf, 10, 10, 0)
+    expect(v.box).toEqual([100, 100, 900, 900])
+  })
+
+  it('keeps a region whose share of the frame equals the minimum exactly', () => {
+    const { buf, paint } = image(10, 10)
+    paint(1, 0, 0, 0, 0) // 1 % of the frame
+    expect(visibleFromIdBuffer(buf, 10, 10, 0.01)).toHaveLength(1)
+    expect(visibleFromIdBuffer(buf, 10, 10, 0.0101)).toHaveLength(0)
+  })
+
+  it("keeps the centroid when it is the element's own pixel, even on the region's edge", () => {
+    const { buf, paint, ids } = image(20, 20)
+    paint(6, 9, 2, 12, 17) // a thick upright...
+    paint(6, 13, 9, 13, 10) // ...with a small tab on its right: the centroid lands on its left edge column
+    const [v] = visibleFromIdBuffer(buf, 20, 20, 0)
+    const cx = Math.floor(v.centroid.x), cy = Math.floor(v.centroid.y)
+    expect(ids[cy * 20 + cx]).toBe(6)
+    expect(v.anchor).toEqual(v.centroid)
+  })
+
+  it('puts the mark on the pixel deepest inside the element (chamfer 3-4), nearest the centroid on ties', () => {
+    // Brute force over random shapes whose centroid falls off the element: rings, U shapes, split regions.
+    let a = 12345
+    const rand = () => ((a = (a * 1103515245 + 12345) >>> 0) / 4294967296)
+    const R = (lo: number, hi: number) => lo + Math.floor(rand() * (hi - lo + 1))
+    let checked = 0
+    for (let trial = 0; trial < 400 && checked < 60; trial++) {
+      const W = R(12, 28), H = R(12, 28)
+      const img = image(W, H)
+      for (let k = 0, n = R(2, 4); k < n; k++) img.paint(5, R(0, W - 3), R(0, H - 3), R(2, W - 1), R(2, H - 1))
+      for (let k = 0, n = R(1, 3); k < n; k++) img.paint(9, R(0, W - 1), R(0, H - 1), R(0, W - 1), R(0, H - 1)) // occluders
+      for (let k = 0, n = R(0, 6); k < n; k++) img.set(R(0, 1) ? 9 : 5, R(0, W - 1), R(0, H - 1)) // speckle
+      const v = visibleFromIdBuffer(img.buf, W, H, 0).find((e) => e.index === 5)
+      if (!v) continue
+      const own = (x: number, y: number) => x >= 0 && y >= 0 && x < W && y < H && img.ids[y * W + x] === 5
+      if (own(Math.floor(v.centroid.x), Math.floor(v.centroid.y))) continue
+      checked++
+      // Exact chamfer 3-4 distance from each pixel of the element to the nearest pixel that isn't (frame edge included).
+      const dist = (x: number, y: number) => {
+        let best = Infinity
+        for (let qy = -1; qy <= H; qy++) for (let qx = -1; qx <= W; qx++) {
+          if (own(qx, qy)) continue
+          const dx = Math.abs(qx - x), dy = Math.abs(qy - y)
+          best = Math.min(best, 3 * Math.max(dx, dy) + Math.min(dx, dy))
+        }
+        return best
+      }
+      let maxD = -1
+      const deep: [number, number][] = []
+      for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+        if (!own(x, y)) continue
+        const d = dist(x, y)
+        if (d > maxD) { maxD = d; deep.length = 0 }
+        if (d === maxD) deep.push([x, y])
+      }
+      const ax = v.anchor.x - 0.5, ay = v.anchor.y - 0.5
+      expect(Number.isInteger(ax) && Number.isInteger(ay), `trial ${trial}: anchor on a pixel centre`).toBe(true)
+      expect(own(ax, ay), `trial ${trial}: anchor on the element`).toBe(true)
+      expect(dist(ax, ay), `trial ${trial}: anchor as deep as it gets`).toBe(maxD)
+      const r = (x: number, y: number) => (x + 0.5 - v.centroid.x) ** 2 + (y + 0.5 - v.centroid.y) ** 2
+      expect(r(ax, ay), `trial ${trial}: nearest the centroid among the deepest`).toBeCloseTo(Math.min(...deep.map(([x, y]) => r(x, y))), 9)
+    }
+    expect(checked).toBeGreaterThanOrEqual(30)
+  })
+})

@@ -43,3 +43,32 @@ describe('findingFormat', () => {
     expect(summaryCounts(r)).toBe("1 possible deviation · 1 match · 0 can't judge")
   })
 })
+
+describe('findingFormat (mutation-tested)', () => {
+  it('orders deviations of the same severity by mark, whatever order they came in', () => {
+    const g = groupFindings([f(9, 'missing', 'high'), f(4, 'misplaced', 'high'), f(7, 'missing', 'low'), f(2, 'missing', 'low')])
+    expect(g.deviations.map((x) => x.mark)).toEqual([4, 9, 2, 7])
+  })
+
+  it('labels every status and offset direction', () => {
+    expect(statusText({ status: 'present_ok', offset: null })).toBe('Matches the design')
+    expect(statusText({ status: 'different_from_design', offset: null })).toBe('Different from design')
+    expect(statusText({ status: 'missing', offset: null })).toBe('Missing')
+    expect(offsetText({ direction: 'down', approx_cm: 20 })).toBe('about 20 cm lower')
+    expect(offsetText({ direction: 'forward', approx_cm: 40 })).toBe('about 40 cm closer')
+    expect(offsetText({ direction: 'right', approx_cm: 0 })).toBe('slightly right')
+  })
+
+  it('explains each kind of unusable photo differently', () => {
+    const msgs = (['too_dark', 'blurred', 'marker_far', 'occluded'] as const).map(imageQualityMessage)
+    expect(new Set(msgs).size).toBe(4)
+    expect(msgs[0]).toMatch(/too dark/)
+    expect(msgs[2]).toMatch(/too far away/)
+    expect(msgs[3]).toMatch(/in the way/)
+  })
+
+  it('counts plural deviations', () => {
+    const r = { findings: [f(1, 'missing', 'high'), f(2, 'misplaced', 'low'), f(3, 'cannot_judge', null)] } as CheckResult
+    expect(summaryCounts(r)).toBe("2 possible deviations · 0 match · 1 can't judge")
+  })
+})

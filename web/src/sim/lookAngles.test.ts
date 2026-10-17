@@ -29,3 +29,20 @@ describe('lookAngles', () => {
     expect(wrap(deviceLook(deviceRotation(90, 90, 0, 0)).yaw - Math.PI)).toBeCloseTo(0, 6)
   })
 })
+
+describe('lookAngles (mutation-tested)', () => {
+  it('clamps the pitch to 55 degrees down and 80 up', () => {
+    expect(clampPitch(-10)).toBeCloseTo((-55 * Math.PI) / 180, 12)
+    expect(clampPitch(10)).toBeCloseTo((80 * Math.PI) / 180, 12)
+    expect(clampPitch(0.3)).toBe(0.3)
+  })
+
+  it('points the view along yaw and pitch together: a unit vector with that heading and elevation', () => {
+    for (const [yaw, pitch] of [[Math.PI / 6, Math.PI / 4], [-2.5, -0.6], [2, 1.2]]) {
+      const [x, y, z] = forwardOf({ yaw, pitch })
+      expect(Math.hypot(x, y, z)).toBeCloseTo(1, 12)
+      expect(Math.atan2(y, x)).toBeCloseTo(yaw, 12)
+      expect(Math.asin(z)).toBeCloseTo(pitch, 12)
+    }
+  })
+})

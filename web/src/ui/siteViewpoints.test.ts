@@ -20,3 +20,10 @@ describe('SITE_VIEWPOINTS', () => {
     expect(SITE_VIEWPOINTS.map((v) => compass(v.look))).toEqual(['north', 'east', 'west', 'west'])
   })
 })
+
+describe('compass (mutation-tested)', () => {
+  it('names all four grid directions and nothing else', () => {
+    expect([compass([0, 1]), compass([0, -1]), compass([1, 0]), compass([-1, 0])]).toEqual(['north', 'south', 'east', 'west'])
+    expect(compass([1, 1])).toBe('')
+  })
+})

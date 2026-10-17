@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
-  ApiError, ask, createIssue, draftIssue, fetchRunImage, getProject, getSavedResult, listIssues, postCheck,
+  ApiError, ask, createIssue, draftIssue, fetchRunImage, getProject, getSavedResult, listIssues, postCheck, writeReport,
 } from './client'
 import type { CheckContext } from './types'
 
@@ -134,5 +134,81 @@ describe('api client', () => {
     expect(calls[0].url).toBe('/api/runs/r1/photo.jpg')
     expect(new Headers(calls[0].init.headers).get('X-Session-Id')).toMatch(UUID_V4)
     URL.revokeObjectURL(url)
+  })
+})
+
+describe('api client (mutation-tested)', () => {
+  beforeEach(() => vi.useRealTimers())
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.unstubAllGlobals()
+  })
+
+  /** A fetch that never answers, only rejects when aborted (the timeout). */
+  function hangingFetch() {
+    vi.stubGlobal('fetch', vi.fn((_url: string, init: RequestInit) => new Promise((_resolve, reject) => {
+      init.signal?.addEventListener('abort', () => reject(new DOMException('aborted', 'AbortError')))
+    })))
+  }
+
+  async function timesOutAfter(call: () => Promise<unknown>, ms: number) {
+    vi.useFakeTimers()
+    hangingFetch()
+    let settled = false
+    const p = caught(call()).finally(() => { settled = true })
+    await vi.advanceTimersByTimeAsync(ms - 1)
+    expect(settled).toBe(false)
+    await vi.advanceTimersByTimeAsync(1)
+    const err = await p
+    expect([err.status, err.code, err.message]).toEqual([0, 'timeout', 'Request timed out'])
+    vi.useRealTimers()
+  }
+
+  it('names its errors ApiError and says what failed on the client side', async () => {
+    mockFetch(() => jsonResponse(404, { detail: 'Not Found' }))
+    expect((await caught(getProject('room1'))).name).toBe('ApiError')
+    vi.stubGlobal('fetch', vi.fn(() => Promise.reject(new TypeError('Failed to fetch'))))
+    expect((await caught(getProject('room1'))).message).toBe('Network error')
+  })
+
+  it('prefers detail.retry_after_s over the Retry-After header', async () => {
+    mockFetch(() => jsonResponse(429, { detail: { code: 'rate_limited', retry_after_s: 120 } }, { 'Retry-After': '30' }))
+    expect((await caught(getProject('room1'))).retryAfterS).toBe(120)
+  })
+
+  it('reads a Retry-After header of whole seconds only', async () => {
+    const cases: [string, number | undefined][] = [['45', 45], ['30s', undefined], ['v2', undefined], ['1.5', undefined],
+      ['Wed, 21 Oct 2026 07:28:00 GMT', undefined]]
+    for (const [header, want] of cases) {
+      mockFetch(() => jsonResponse(503, { detail: { code: 'busy' } }, { 'Retry-After': header }))
+      expect((await caught(getProject('room1'))).retryAfterS, header).toBe(want)
+    }
+  })
+
+  it('clears its timeout as soon as the response arrives', async () => {
+    vi.useFakeTimers()
+    mockFetch(() => jsonResponse(200, { project_id: 'site' }))
+    await getProject('site')
+    expect(vi.getTimerCount()).toBe(0)
+  })
+
+  it('fetches saved results by sample id and posts the site report', async () => {
+    mockFetch(() => jsonResponse(200, {}))
+    await getSavedResult('site-p1-south')
+    await getSavedResult('a b/c')
+    await writeReport({ run_ids: ['r1', 'r2'], language: 'th' })
+    expect(calls.map((c) => [c.url, c.init.method ?? 'GET'])).toEqual([
+      ['/api/saved-results/site-p1-south', 'GET'], ['/api/saved-results/a%20b%2Fc', 'GET'], ['/api/report', 'POST'],
+    ])
+    expect(JSON.parse(calls[2].init.body as string)).toEqual({ run_ids: ['r1', 'r2'], language: 'th' })
+    expect(new Headers(calls[2].init.headers).get('Content-Type')).toBe('application/json')
+  })
+
+  it('gives the Gemini calls 60 s and plain calls 30 s', async () => {
+    await timesOutAfter(() => ask({ project_id: 'site', guid: 'g', question: 'q' }), 60_000)
+    await timesOutAfter(() => draftIssue({ run_id: 'r1', mark: 1 }), 60_000)
+    await timesOutAfter(() => writeReport({ run_ids: ['r1'] }), 60_000)
+    await timesOutAfter(() => createIssue({ project_id: 'site', guid: 'g', title: 't' }), 30_000)
+    await timesOutAfter(() => getProject('site'), 30_000)
   })
 })

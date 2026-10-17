@@ -36,3 +36,36 @@ describe('scoreCheck with elements that moved together', () => {
     expect(s.falseAlarms).toEqual([])
   })
 })
+
+describe('scoreCheck edge cases (mutation-tested)', () => {
+  it('counts every deviation status as found, but not "can\'t judge" or a match', () => {
+    for (const status of ['missing', 'misplaced', 'different_from_design'] as const) {
+      expect(scoreCheck([f('A', status)], planted).inView[0].found, status).toBe(true)
+    }
+    for (const status of ['present_ok', 'cannot_judge'] as const) {
+      expect(scoreCheck([f('A', status)], planted).inView[0].found, status).toBe(false)
+    }
+  })
+
+  it('never counts a match or a "can\'t judge" on an unchanged element as a false alarm', () => {
+    const s = scoreCheck([f('D', 'present_ok'), f('E', 'cannot_judge'), f('F', 'different_from_design'), f('G', 'missing')], planted)
+    expect(s.falseAlarms.map((x) => x.name)).toEqual(['F', 'G'])
+    expect(s.inView).toEqual([])
+    expect(s.outOfView.map((d) => d.element)).toEqual(['A', 'B', 'C'])
+    expect(scoreLine(s)).toBe('No planted defect is in this view · 2 false alarms')
+  })
+
+  it('keeps the planted entry and Gemini\'s finding together', () => {
+    const finding = f('B', 'misplaced')
+    const [x] = scoreCheck([finding], planted).inView
+    expect(x.planted).toBe(planted[1])
+    expect(x.finding).toBe(finding)
+  })
+
+  it('counts several planted defects found in one view', () => {
+    const s = scoreCheck([f('A', 'missing'), f('B', 'misplaced'), f('C', 'missing')], planted)
+    expect(scoreLine(s)).toBe('Gemini found 3 of 3 planted defects in this view · no false alarms')
+    expect(scoreLine(scoreCheck([f('A', 'present_ok'), f('B', 'cannot_judge')], planted)))
+      .toBe('Gemini found 0 of 2 planted defects in this view · no false alarms')
+  })
+})

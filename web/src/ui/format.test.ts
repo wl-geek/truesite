@@ -37,3 +37,16 @@ describe('element panel formatting', () => {
     ])
   })
 })
+
+describe('element panel formatting (mutation-tested)', () => {
+  it('shows text as it is, without JSON quotes', () => {
+    expect(formatValue('S275')).toBe('S275')
+    expect(formatValue('')).toBe('')
+    expect(formatValue(0)).toBe('0')
+  })
+
+  it('puts Material first even when other names sort before it', () => {
+    const rows = propertyRows({ ...WALL, props: { Zone: 'B', Area: 12, Material: 'Concrete', LoadBearing: true } })
+    expect(rows.map(([k]) => k)).toEqual(['Material', 'Area', 'LoadBearing', 'Zone'])
+  })
+})
