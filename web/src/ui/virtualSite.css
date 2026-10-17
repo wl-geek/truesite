@@ -4,7 +4,7 @@
 .vs-canvas:active { cursor: grabbing; }
 .vs-canvas:focus-visible { outline: 3px solid var(--orange); outline-offset: -3px; }
 
-.vs-top { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px; pointer-events: none; }
+.vs-top { position: absolute; top: 10px; left: max(10px, env(safe-area-inset-left)); right: max(10px, env(safe-area-inset-right)); display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px; pointer-events: none; }
 .vs-top > * { pointer-events: auto; }
 .vs-chip { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px; border-radius: 10px; background: rgba(11, 31, 51, 0.82); color: var(--white); font-size: 14px; font-weight: 600; }
 .vs-chip-tag { padding: 2px 7px; border-radius: 6px; background: var(--orange); color: var(--ink); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
@@ -39,13 +39,14 @@
 .vs-check:disabled { cursor: default; opacity: 0.85; }
 
 .vs-results {
-  position: absolute; left: 0; right: 0; bottom: 0; max-height: 78%; overflow-y: auto; display: grid; gap: 12px; padding: 14px 16px calc(18px + env(safe-area-inset-bottom));
+  position: absolute; left: 0; right: 0; bottom: 0; max-height: 78%; overflow-y: auto; display: grid; gap: 12px;
+  padding: 14px max(16px, env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
   border-radius: 18px 18px 0 0; background: var(--paper); box-shadow: 0 -12px 40px rgba(11, 31, 51, 0.35);
 }
 .vs-results-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .vs-results-head h2 { margin: 0; font-size: 18px; }
 .vs-truth { padding: 10px 14px; border: 1px dashed var(--line); border-radius: 12px; background: var(--white); font-size: 14px; }
-.vs-truth summary { min-height: 32px; font-weight: 600; cursor: pointer; }
+.vs-truth summary { min-height: 44px; align-content: center; font-weight: 600; cursor: pointer; }
 .vs-truth ul { margin: 6px 0 0; padding-left: 18px; }
 @media (min-width: 900px) {
   .vs-results { left: auto; top: 0; width: 440px; max-height: none; border-radius: 0; box-shadow: -12px 0 40px rgba(11, 31, 51, 0.3); }

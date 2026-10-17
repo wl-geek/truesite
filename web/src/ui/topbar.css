@@ -22,7 +22,7 @@
 
 .tb-right { position: relative; display: flex; align-items: center; gap: 8px; margin-left: auto; }
 .tb-cta {
-  display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: 10px; background: var(--orange);
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 16px; border-radius: 10px; background: var(--orange);
   color: var(--ink); font-size: 14px; font-weight: 800; text-decoration: none; transition: background-color 0.18s;
 }
 .tb-cta:hover { background: #ff7f33; }
