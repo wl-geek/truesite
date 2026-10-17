@@ -76,7 +76,7 @@ test.describe('accessibility (axe-core, serious and critical)', () => {
     await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2)
     const panel = page.locator('aside.element-panel')
     await expect(panel).toBeVisible()
-    await panel.getByRole('button', { name: 'What material is it?' }).click()
+    await panel.locator('.ask-chips .chip').first().click()
     await expect(panel.locator('.ask-answer')).toBeVisible()
     expect(await scan(page, 'model-panel')).toEqual([])
   })

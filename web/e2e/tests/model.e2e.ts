@@ -19,11 +19,13 @@ test.describe('3D model viewer', () => {
   test('opens the building site by default with its colour key, and links to live AR @handheld', async ({ page, log }) => {
     await page.goto('/model')
     await expect(page).toHaveTitle('3D model · TrueSite')
-    await expect(page.locator('.model-card-name')).toHaveText('Building under construction')
-    await expect(page.locator('.model-card-meta')).toHaveText('191 elements · coloured by type')
-    await expect(page.getByRole('list', { name: 'Colour key' }).getByRole('listitem')).toHaveText(
-      ['Column', 'Beam', 'Truss', 'Purlin', 'Brace', 'Concrete', 'Rebar', 'Other'])
-    await expect(page.getByText('Drag to orbit · pinch or scroll to zoom · tap an element for its data')).toBeVisible()
+    await expect(page.getByRole('combobox', { name: 'Model' })).toHaveValue('site')
+    const unfold = page.getByRole('button', { name: 'Show the model card' }) // phones start with the card folded
+    if (await unfold.isVisible()) await unfold.click()
+    await expect(page.locator('.model-card-meta').first()).toHaveText('19.8 × 13.8 m overall, 10.65 m high · 191 elements')
+    await expect(page.getByRole('list', { name: 'Colour key' }).getByRole('button')).toHaveText(
+      [/^Column \d+$/, /^Beam \d+$/, /^Truss \d+$/, /^Purlin \d+$/, /^Brace \d+$/, /^Concrete \d+$/, /^Rebar \d+$/, /^Other \d+$/])
+    await expect(page.getByText('Drag to orbit · scroll or pinch to zoom · tap an element for its details')).toBeVisible()
     await expect(page.locator('canvas.viewer-canvas')).toHaveAttribute('aria-label', '3D model: Building under construction (1:1)')
     await page.getByRole('link', { name: 'See it live in AR' }).click()
     await expect(page).toHaveURL(/\/#live$/)
@@ -34,11 +36,13 @@ test.describe('3D model viewer', () => {
   test('tap an element: its data, then Ask answers from the model data only @handheld', async ({ page, log }) => {
     await page.goto('/model')
     const name = await tapAnElement(page)
-    const panel = page.getByRole('complementary', { name: `Properties of ${name}` })
-    await expect(panel).toBeVisible()
-    await expect(panel.locator('dl.facts dt')).toHaveText(['Storey', 'Load bearing', 'GUID'])
-    await expect(panel.locator('dd.mono')).toHaveText(/^[0-9A-Za-z_$]{22}$/) // an IFC GlobalId
-    expect(await panel.locator('table.props').first().locator('tr').count()).toBeGreaterThan(0)
+    const panel = page.locator('aside.element-panel')
+    await expect(panel).toHaveAccessibleName(new RegExp(`: ${name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`)) // "Roof purlin: Purlin P1 A-B"
+    await expect(panel.locator('.ep-type')).not.toBeEmpty()
+    expect(await panel.locator('.ep-facts .ep-fact').count()).toBeGreaterThan(0)
+    await expect(panel).not.toContainText(/Pset_|Qto_|TrueSite_Notes|PredefinedType/) // plain words, no IFC keys
+    await panel.getByText('BIM data (IFC)').click() // the IFC data is there, folded away
+    await expect(panel.locator('.ep-tech dd.mono')).toHaveText(/^[0-9A-Za-z_$]{22}$/) // an IFC GlobalId
     await expect(page.getByText('Drag to orbit')).toBeHidden()
 
     const ask = panel.getByRole('region', { name: 'Ask about this element' })
@@ -52,12 +56,14 @@ test.describe('3D model viewer', () => {
     await expect(answer).toBeVisible()
     await expect(answer).toContainText("Answers come only from this element's model data. Check before you build.")
     await expect(answer.locator('table caption')).toHaveText('From the model')
-    // A suggestion chip asks straight away.
-    await ask.getByRole('button', { name: 'Any install notes?' }).click()
-    await expect(question).toHaveValue('Any install notes?')
+    // A suggestion chip (picked for this element) asks straight away.
+    const chip = ask.locator('.chip').first()
+    const chipText = (await chip.textContent())!
+    await chip.click()
+    await expect(question).toHaveValue(chipText)
     await expect(answer).toBeVisible()
 
-    await panel.getByRole('button', { name: 'Close properties' }).click()
+    await panel.getByRole('button', { name: 'Close element details' }).click()
     await expect(panel).toBeHidden()
     await expect(page.getByText('Drag to orbit')).toBeVisible()
     expectClean(log)
@@ -65,7 +71,7 @@ test.describe('3D model viewer', () => {
 
   test('?project=rooftop opens the rooftop frame', async ({ page }) => {
     await page.goto('/model?project=rooftop')
-    await expect(page.locator('.model-card-name')).toHaveText('Rooftop frame (2 storeys, 1:1)')
+    await expect(page.getByRole('combobox', { name: 'Model' })).toHaveValue('rooftop')
     await expect(page.getByRole('link', { name: 'See it live in AR' })).toHaveCount(0) // site only
   })
 
@@ -76,7 +82,7 @@ test.describe('3D model viewer', () => {
     await expect(alert.getByRole('button', { name: 'Try again' })).toHaveCount(0)
     await alert.getByRole('link', { name: 'Open the site model' }).click()
     await expect(page).toHaveURL(/\/model$/)
-    await expect(page.locator('.model-card-name')).toBeVisible()
+    await expect(page.locator('.model-card')).toBeVisible()
   })
 
   test('after a check, the viewer shows Last check results with the same findings', async ({ page }) => {

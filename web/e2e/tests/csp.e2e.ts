@@ -23,7 +23,7 @@ test.describe('Content-Security-Policy-Report-Only', () => {
     await page.goto('/model')
     const box = (await page.locator('canvas.viewer-canvas').boundingBox())!
     await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2)
-    await page.locator('aside.element-panel').getByRole('button', { name: 'What material is it?' }).click()
+    await page.locator('aside.element-panel .ask-chips .chip').first().click()
     await expect(page.locator('.ask-answer')).toBeVisible()
     expect(log.csp).toEqual([])
   })

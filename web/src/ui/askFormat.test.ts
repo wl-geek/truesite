@@ -8,7 +8,7 @@ const el: Element = { guid: 'g', ifc_class: 'IfcWall', name: 'Wall W-01', storey
 describe('askFormat', () => {
   it('shows cited fields with the element’s own values', () => {
     expect(citedRows(el, ['Pset_WallCommon.FireRating', 'load_bearing', 'storey'])).toEqual([
-      ['Pset_WallCommon.FireRating', '60 min'], ['load_bearing', 'Yes'], ['storey', 'Level 1']])
+      ['Fire rating', '60 min'], ['Load-bearing', 'Yes'], ['Storey', 'Level 1']])
   })
   it('flags low confidence', () => {
     expect(confidenceNote(0.4)).toMatch(/Low confidence/)
@@ -26,8 +26,8 @@ describe('askFormat', () => {
 
 describe('askFormat (mutation-tested)', () => {
   it('shows the bounding box as two corner points', () => {
-    expect(citedRows(el, ['bbox_m'])).toEqual([['bbox_m', '(0, 0, 0) – (3, 0.1, 2.7)']])
-    expect(citedRows(el, ['ifc_class', 'name'])).toEqual([['ifc_class', 'IfcWall'], ['name', 'Wall W-01']])
+    expect(citedRows(el, ['bbox_m'])).toEqual([['Extent (model coordinates)', '(0, 0, 0) – (3, 0.1, 2.7)']])
+    expect(citedRows(el, ['ifc_class', 'name'])).toEqual([['IFC class', 'IfcWall'], ['Name', 'Wall W-01']])
   })
 
   it('flags confidence below one half only', () => {

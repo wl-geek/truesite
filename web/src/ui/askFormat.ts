@@ -1,5 +1,6 @@
 import type { ApiError } from '../api/client'
 import type { Element } from '../api/types'
+import { propLabel } from './elementFacts'
 import { formatValue, loadBearingText } from './format'
 
 export const MAX_QUESTION = 300
@@ -11,7 +12,7 @@ export function citedRows(element: Element, cited: readonly string[]): [string, 
     ifc_class: element.ifc_class, name: element.name, storey: element.storey, load_bearing: loadBearingText(element.load_bearing),
     bbox_m: element.bbox_m.map((p) => `(${p.join(', ')})`).join(' – '),
   }
-  return cited.map((k) => [k, k in core ? core[k] : formatValue(element.props[k])])
+  return cited.map((k) => [propLabel(k), k in core ? core[k] : formatValue(element.props[k])]) // plain labels, not IFC keys
 }
 
 export function confidenceNote(confidence: number): string | null {

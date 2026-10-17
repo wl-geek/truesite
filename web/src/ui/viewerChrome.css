@@ -1,17 +1,34 @@
 /* 3D model page extras (ViewerPage.tsx): the model card with its colour key. */
 .model-card {
-  position: absolute; top: 12px; left: max(12px, env(safe-area-inset-left)); z-index: 2; max-width: min(320px, calc(100% - 24px)); padding: 12px 14px;
-  border: 1px solid var(--line); border-radius: 14px; background: rgba(255, 255, 255, 0.94); box-shadow: 0 8px 24px rgba(11, 31, 51, 0.1);
+  position: absolute; top: 12px; left: max(12px, env(safe-area-inset-left)); z-index: 2; max-width: min(340px, calc(100% - 24px)); padding: 10px 12px 12px;
+  border: 1px solid var(--line); border-radius: 14px; background: rgba(255, 255, 255, 0.95); box-shadow: 0 8px 24px rgba(11, 31, 51, 0.1);
 }
-.model-card-name { margin: 0; font-weight: 800; color: var(--ink); line-height: 1.25; }
-.model-card-meta { margin: 2px 0 8px; color: var(--muted); font-size: 13px; }
-.model-legend { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 0; padding: 0; list-style: none; font-size: 13px; color: var(--ink); }
-.model-legend li { display: inline-flex; align-items: center; gap: 6px; }
-.swatch { width: 12px; height: 12px; border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15); }
+.model-card-folded { padding: 6px 8px 6px 12px; }
+.model-card-top { display: flex; align-items: center; gap: 8px; }
+.model-switch select {
+  max-width: 250px; padding: 4px 6px; border: 1px solid transparent; border-radius: 8px; background: transparent;
+  color: var(--ink); font: inherit; font-size: 16px; font-weight: 800; cursor: pointer;
+}
+.model-switch select:hover { border-color: var(--line); }
+.model-card-fold {
+  flex: none; margin-left: auto; width: 40px; height: 40px; border: 1px solid var(--line); border-radius: 10px;
+  background: var(--white); color: var(--steel); font-size: 18px; line-height: 1; cursor: pointer;
+}
+.model-card-meta { margin: 2px 0 0 6px; color: var(--muted); font-size: 13px; }
+.model-legend-title { margin: 10px 0 6px 6px; color: var(--muted); font-size: 12px; font-weight: 600; }
+.model-legend { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.legend-btn {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 12px; border: 1px solid var(--line);
+  border-radius: 999px; background: var(--white); color: var(--ink); font: inherit; font-size: 13px; cursor: pointer;
+}
+.legend-btn:hover { border-color: var(--steel); }
+.legend-btn[aria-pressed='false'] { opacity: 0.45; text-decoration: line-through; }
+.legend-n { color: var(--muted); font-size: 12px; }
+.swatch { flex: none; width: 12px; height: 12px; border-radius: 3px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.15); }
 /* The element panel sits in the stage, so the findings list under it stays free (audit C-06); on phones its sheet
    stays inside the stage too. */
 @media (max-width: 899px) {
-  .viewer-stage > .element-panel { max-height: min(55dvh, calc(100% - 12px)); }
+  .viewer-stage > .element-panel { max-height: min(50dvh, calc(100% - 12px)); }
 }
 /* "Issue saved.": pinned to the bottom of the screen, wherever the findings list is scrolled (audit C-06). */
 .viewer-notice {
@@ -25,3 +42,58 @@
   .viewer-stage .viewer-check-btn { left: 16px; right: 16px; bottom: calc(16px + env(safe-area-inset-bottom)); }
   .viewer-stage:has(.viewer-check-btn) .hint { bottom: calc(74px + env(safe-area-inset-bottom)); }
 }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
+/* The sky behind the model (the canvas is transparent). */
+.viewer-stage { background: linear-gradient(180deg, #d6e3f0 0%, #e9f0f6 50%, #f6f8fb 100%); }
+
+/* View tools: bottom left on wide screens; a column of icons at the top right on phones. */
+.viewer-tools {
+  position: absolute; left: max(12px, env(safe-area-inset-left)); bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 3;
+  display: flex; gap: 4px; padding: 5px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 8px 24px rgba(11, 31, 51, 0.1);
+}
+.vt-btn {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 44px; min-width: 44px; justify-content: center; padding: 0 12px;
+  border: 0; border-radius: 10px; background: transparent; color: var(--steel); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+}
+.vt-btn svg { flex: none; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.vt-btn:hover { background: var(--paper); }
+.vt-btn[aria-pressed='true'] { background: var(--steel); color: var(--white); }
+@media (max-width: 719px) {
+  .viewer-tools { top: 12px; right: max(12px, env(safe-area-inset-right)); left: auto; bottom: auto; flex-direction: column; }
+  .vt-btn { padding: 0; width: 44px; height: 44px; font-size: 0; } /* icons only; the text stays the accessible name */
+  .model-card { max-width: calc(100% - 84px); }
+}
+
+/* Hover label (mouse only). */
+.viewer-hover {
+  position: fixed; z-index: 7; display: grid; gap: 1px; max-width: 260px; margin: 0; padding: 6px 10px; border-radius: 8px;
+  background: rgba(11, 31, 51, 0.92); color: rgba(255, 255, 255, 0.8); font-size: 12px; pointer-events: none;
+}
+.viewer-hover strong { color: var(--white); font-size: 14px; }
+
+/* Element details: plain-language facts first, the IFC data folded away. */
+.ep-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.ep-type { display: inline-flex; align-items: center; gap: 8px; margin: 0; color: var(--steel); font-size: 13px; font-weight: 700; }
+.ep-title h2 { margin: 4px 0 2px; font-size: 20px; line-height: 1.2; }
+.ep-where { margin: 0; color: var(--muted); font-size: 14px; }
+.ep-zoom { min-height: 36px; margin-top: 10px; padding: 0 12px; font-size: 14px; }
+.ep-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin: 14px 0; }
+.ep-fact { padding: 10px 12px; border-radius: 12px; background: var(--paper); }
+.ep-fact:first-child { grid-column: 1 / -1; }
+.ep-fact dt { color: var(--muted); font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
+.ep-fact dd { margin: 3px 0 0; color: var(--ink); font-size: 15px; font-weight: 600; line-height: 1.3; overflow-wrap: anywhere; }
+.ep-notes { margin: 0 0 14px; padding: 10px 14px; border-left: 3px solid var(--orange); border-radius: 0 12px 12px 0; background: #fff6ef; }
+.ep-notes h3 { margin: 0 0 4px; color: #8a3a08; font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; }
+.ep-notes p { margin: 0; color: var(--ink); font-size: 14px; line-height: 1.45; }
+.ep-more { display: grid; gap: 4px; margin: 0 0 14px; font-size: 14px; }
+.ep-more div { display: flex; justify-content: space-between; gap: 12px; padding: 6px 0; border-top: 1px solid var(--line); }
+.ep-more dt { color: var(--muted); }
+.ep-more dd { margin: 0; text-align: right; }
+.ep-tech { margin-top: 14px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 13px; }
+.ep-tech summary { color: var(--muted); font-weight: 600; cursor: pointer; }
+.ep-tech dl { display: grid; gap: 4px; margin: 8px 0 0; }
+.ep-tech dl div { display: grid; grid-template-columns: 90px 1fr; gap: 8px; }
+.ep-tech dt { color: var(--muted); }
+.ep-tech dd { margin: 0; overflow-wrap: anywhere; }

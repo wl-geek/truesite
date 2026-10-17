@@ -3,10 +3,10 @@ import { ApiError, ask } from '../api/client'
 import type { AskAnswer, Element } from '../api/types'
 import { askErrorMessage, citedRows, confidenceNote, MAX_QUESTION, SUGGESTIONS } from './askFormat'
 
-export type AskBoxProps = { projectId: string; element: Element }
+export type AskBoxProps = { projectId: string; element: Element; suggestions?: readonly string[] }
 
 /** Ask about this element; answers come only from its own model data, with the fields cited (spec 4.2 step 6). */
-export function AskBox({ projectId, element }: AskBoxProps) {
+export function AskBox({ projectId, element, suggestions = SUGGESTIONS }: AskBoxProps) {
   const [question, setQuestion] = useState('')
   const [busy, setBusy] = useState(false)
   const [answer, setAnswer] = useState<AskAnswer | null>(null)
@@ -38,12 +38,12 @@ export function AskBox({ projectId, element }: AskBoxProps) {
     <section className="ask-box" aria-label="Ask about this element">
       <h3>Ask about this element</h3>
       <form onSubmit={onSubmit} className="ask-form">
-        <input type="text" value={question} maxLength={MAX_QUESTION} placeholder="e.g. What's the fire rating?"
+        <input type="text" value={question} maxLength={MAX_QUESTION} placeholder={`e.g. ${suggestions[0] ?? "What's the fire rating?"}`}
           onChange={(e) => setQuestion(e.target.value)} aria-label="Your question" disabled={busy} />
         <button type="submit" className="btn btn-primary" disabled={busy || !question.trim()}>{busy ? 'Asking…' : 'Ask'}</button>
       </form>
       <div className="ask-chips">
-        {SUGGESTIONS.map((s) => (
+        {suggestions.map((s) => (
           <button key={s} type="button" className="chip" onClick={() => void submit(s)} disabled={busy}>{s}</button>
         ))}
       </div>
@@ -57,7 +57,7 @@ export function AskBox({ projectId, element }: AskBoxProps) {
               <caption>From the model</caption>
               <tbody>
                 {citedRows(element, answer.cited_properties).map(([k, v]) => (
-                  <tr key={k}><th scope="row" className="mono">{k}</th><td>{v}</td></tr>
+                  <tr key={k}><th scope="row">{k}</th><td>{v}</td></tr>
                 ))}
               </tbody>
             </table>

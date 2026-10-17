@@ -6,7 +6,10 @@ import { freshCanvas, watchContextLoss } from '../scene/glContext'
 import { disposeModel, loadModel, type LoadedModel } from '../scene/loadModel'
 import { disposePins, makePins } from '../scene/pins'
 import { KIND_COLOURS, paintOf, type Kind } from '../scene/palette'
-import { createViewer, type Viewer } from '../scene/viewer'
+import { createViewer, type Viewer, type ViewPreset } from '../scene/viewer'
+import { navigate, viewerPathFor } from '../router'
+import { typeLabel } from './elementFacts'
+import { modelFacts, VIEWER_PROJECTS } from './viewerFacts'
 import { ElementPanel } from './ElementPanel'
 import { FindingsPanel } from './FindingsPanel'
 import { IssueDialog } from './IssueDialog'
@@ -44,6 +47,10 @@ export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: str
   const [selectedMark, setSelectedMark] = useState<number | null>(null)
   const [draftFor, setDraftFor] = useState<Finding | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const [hiddenKinds, setHiddenKinds] = useState<ReadonlySet<Kind>>(new Set())
+  const [view, setView] = useState<ViewPreset>('iso')
+  const [xray, setXray] = useState(false)
+  const [hover, setHover] = useState<{ name: string; type: string; x: number; y: number } | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -74,6 +81,10 @@ export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: str
     const stopWatch = watchContextLoss(canvas, () => setGlDead(true))
     viewerRef.current = viewer
     const off = viewer.onPick(setSelected)
+    const offHover = viewer.onHover((guid, x, y) => {
+      const e = guid ? rows.get(guid) : undefined
+      setHover(e ? { name: e.name || 'Unnamed element', type: typeLabel(e), x, y } : null)
+    })
     // Pins from this session's last as-built check (spec 4.1: findings pinned on the 3D model).
     const last = loadLastCheck(loaded.project.project_id)
     setLastCheck(last)
@@ -82,6 +93,7 @@ export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: str
     return () => {
       if (pins) disposePins(pins)
       off()
+      offHover()
       stopWatch()
       viewer.dispose()
       canvas.remove()
@@ -92,6 +104,32 @@ export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: str
   useEffect(() => {
     viewerRef.current?.highlight(selected)
   }, [selected, loaded])
+  useEffect(() => { viewerRef.current?.setHiddenKinds(hiddenKinds) }, [hiddenKinds, loaded])
+  useEffect(() => { viewerRef.current?.setXray(xray) }, [xray, loaded, selected])
+  // Escape closes the element details.
+  useEffect(() => {
+    if (!selected) return
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setSelected(null)
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [selected])
+  // The element panel covers the right side (wide screens) or the bottom (phones): centre the view beside or above it.
+  useEffect(() => {
+    const viewer = viewerRef.current
+    const panel = document.querySelector<HTMLElement>('.viewer-stage > .element-panel')
+    if (!viewer) return
+    if (!panel) { viewer.setInset(0, 0); return }
+    const measure = () => {
+      const wide = window.matchMedia('(min-width: 900px)').matches
+      viewer.setInset(wide ? panel.offsetWidth + 24 : 0, wide ? 0 : panel.offsetHeight)
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(panel)
+    return () => { ro.disconnect(); viewer.setInset(0, 0) }
+  }, [selected, loaded])
+  const toggleKind = (k: Kind) => setHiddenKinds((h) => { const n = new Set(h); if (n.has(k)) n.delete(k); else n.add(k); return n })
+  const changeView = (v: ViewPreset) => { setView(v); viewerRef.current?.setView(v) }
 
   // "Issue saved." floats over the screen (it would sit under the findings list), so it goes after a few seconds.
   useEffect(() => {
@@ -125,8 +163,27 @@ export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: str
             )}
           </div>
         )}
-        {loaded && <ModelCard project={loaded.project} />}
-        {loaded && !element && <p className="hint">Drag to orbit · pinch or scroll to zoom · tap an element for its data</p>}
+        {loaded && <ModelCard project={loaded.project} hidden={hiddenKinds} onToggle={toggleKind} />}
+        {loaded && (
+          <div className="viewer-tools" role="toolbar" aria-label="View">
+            <button type="button" className="vt-btn" onClick={() => changeView(view)} title="Show the whole model">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" /></svg>Reset view
+            </button>
+            <button type="button" className="vt-btn" aria-pressed={view === 'top'} onClick={() => changeView(view === 'top' ? 'iso' : 'top')}
+              title={view === 'top' ? 'Back to the 3D view' : 'Look straight down on the plan'}>
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16v16H4zM4 12h16M12 4v16" /></svg>{view === 'top' ? 'Show 3D' : 'Show plan'}
+            </button>
+            <button type="button" className="vt-btn" aria-pressed={xray} onClick={() => setXray((x) => !x)} title="See through the model">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 7.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12v9M12 12 4 7.5" /></svg>X-ray
+            </button>
+          </div>
+        )}
+        {hover && !element && (
+          <p className="viewer-hover" style={{ left: hover.x + 14, top: hover.y + 14 }} aria-hidden="true">
+            <strong>{hover.name}</strong>{hover.type}
+          </p>
+        )}
+        {loaded && !element && <p className="hint">Drag to orbit · scroll or pinch to zoom · tap an element for its details</p>}
         {loaded && !lastCheck && loaded.project.project_id === 'site' && (
           <a href="/#live" className="btn btn-accent viewer-check-btn" onClick={(e) => { e.preventDefault(); goToSection('live') }}>See it live in AR</a>
         )}
@@ -138,7 +195,8 @@ export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: str
         {/* In the stage, not over the page: the findings list under the stage and its Draft issue buttons stay
             free (audit C-06). */}
         {loaded && element && (
-          <ElementPanel projectId={loaded.project.project_id} element={element} onClose={() => setSelected(null)} />
+          <ElementPanel projectId={loaded.project.project_id} element={element} multiStorey={modelFacts(loaded.project).storeys > 1}
+            onClose={() => setSelected(null)} onZoom={() => viewerRef.current?.focus(element.guid)} />
         )}
         {notice && <p className="viewer-notice" role="status">{notice}</p>}
       </div>
@@ -159,21 +217,49 @@ const KIND_LABELS: Record<Kind, string> = {
   opening: 'Opening', other: 'Other',
 }
 
-/** Project name, element count and the colour key for the element types in this model. */
-function ModelCard({ project }: { project: ProjectManifest }) {
-  const kinds = useMemo(() => {
-    const present = new Set(project.elements.map((e) => paintOf(e).kind))
-    return (Object.keys(KIND_LABELS) as Kind[]).filter((k) => present.has(k))
+/**
+ * Which model, its size and materials at a glance, and the colour key: tap a type to hide or show it. On phones the
+ * card folds to its title, so the model has the screen.
+ */
+function ModelCard({ project, hidden, onToggle }: { project: ProjectManifest; hidden: ReadonlySet<Kind>; onToggle: (k: Kind) => void }) {
+  const counts = useMemo(() => {
+    const n = new Map<Kind, number>()
+    for (const e of project.elements) n.set(paintOf(e).kind, (n.get(paintOf(e).kind) ?? 0) + 1)
+    return n
   }, [project])
+  const kinds = (Object.keys(KIND_LABELS) as Kind[]).filter((k) => counts.has(k))
+  const facts = useMemo(() => modelFacts(project), [project])
+  const [open, setOpen] = useState(() => typeof window === 'undefined' || window.matchMedia('(min-width: 720px)').matches)
   return (
-    <div className="model-card">
-      <p className="model-card-name">{project.name.replace(/\s*\(1:1\)$/, '')}</p>
-      <p className="model-card-meta">{project.elements.length} elements · coloured by type</p>
-      <ul className="model-legend" aria-label="Colour key">
-        {kinds.map((k) => (
-          <li key={k}><span className="swatch" style={{ background: `#${KIND_COLOURS[k].toString(16).padStart(6, '0')}` }} />{KIND_LABELS[k]}</li>
-        ))}
-      </ul>
+    <div className={`model-card${open ? '' : ' model-card-folded'}`}>
+      <div className="model-card-top">
+        <label className="model-switch">
+          <span className="sr-only">Model</span>
+          <select value={project.project_id} onChange={(e) => navigate(viewerPathFor(e.target.value))}>
+            {VIEWER_PROJECTS.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </label>
+        <button type="button" className="model-card-fold" aria-expanded={open} onClick={() => setOpen((o) => !o)}
+          aria-label={open ? 'Fold the model card' : 'Show the model card'}>{open ? '–' : '+'}</button>
+      </div>
+      {open && (
+        <>
+          <p className="model-card-meta">{facts.size} · {project.elements.length} elements</p>
+          {facts.materials.length > 0 && <p className="model-card-meta">{facts.materials.join(' · ')}</p>}
+          <p className="model-legend-title">Colour key · tap to hide or show</p>
+          <ul className="model-legend" aria-label="Colour key">
+            {kinds.map((k) => (
+              <li key={k}>
+                <button type="button" className="legend-btn" aria-pressed={!hidden.has(k)} onClick={() => onToggle(k)}
+                  title={`${hidden.has(k) ? 'Show' : 'Hide'} ${KIND_LABELS[k].toLowerCase()} (${counts.get(k)})`}>
+                  <span className="swatch" style={{ background: `#${KIND_COLOURS[k].toString(16).padStart(6, '0')}` }} />
+                  {KIND_LABELS[k]} <span className="legend-n">{counts.get(k)}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
     </div>
   )
 }
