@@ -26,7 +26,7 @@ def test_defaults_point_into_the_repo() -> None:
     assert s == Settings()
     assert s.static_dir == DEFAULT_STATIC_DIR == REPO_ROOT / "web" / "dist"
     assert s.models_dir == DEFAULT_MODELS_DIR == REPO_ROOT / "bim" / "models"
-    assert (s.max_upload_bytes, s.max_body_bytes) == (4 * MiB, 9 * MiB)
+    assert (s.max_upload_bytes, s.max_body_bytes) == (4 * MiB, 13 * MiB)
     assert (s.checks_per_ip_per_hour, s.asks_per_ip_per_hour) == (10, 30)
     assert (s.daily_check_cap, s.daily_ask_cap) == (300, 1000)
     assert (s.issues_per_ip_per_hour, s.issues_per_session) == (30, 100)
@@ -34,6 +34,15 @@ def test_defaults_point_into_the_repo() -> None:
     assert s.trusted_proxy_hops == 1
     assert (s.store_backend, s.gcp_project, s.gcs_bucket, s.firestore_database) == ("memory", None, None, "(default)")
     assert s.gemini_mode == "fake"
+
+
+def test_the_body_cap_fits_a_check_with_three_images_at_the_file_limit() -> None:
+    """C-41: photo, render and overlay at the per-file limit, the largest context (64 Ki characters, at most
+    4 bytes each in UTF-8) and 64 KiB for multipart boundaries and headers all fit under the default cap."""
+    from app.routes.check import MAX_CONTEXT_CHARS
+
+    s = Settings()
+    assert 3 * s.max_upload_bytes + 4 * MAX_CONTEXT_CHARS + 64 * 1024 <= s.max_body_bytes
 
 
 def test_every_variable_is_read(monkeypatch: pytest.MonkeyPatch) -> None:

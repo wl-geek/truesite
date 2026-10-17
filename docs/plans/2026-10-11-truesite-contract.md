@@ -216,7 +216,7 @@ TypeScript (`web/src/api/types.ts`): identical field names. The API's `VisibleEl
 
 ```python
 # app/config.py — @dataclass(frozen=True) Settings; Settings.from_env() reads these env vars (defaults in brackets):
-#   STATIC_DIR [<repo>/web/dist]  MODELS_DIR [<repo>/bim/models]  MAX_UPLOAD_BYTES [4 MiB]  MAX_BODY_BYTES [9 MiB]
+#   STATIC_DIR [<repo>/web/dist]  MODELS_DIR [<repo>/bim/models]  MAX_UPLOAD_BYTES [4 MiB]  MAX_BODY_BYTES [13 MiB: three files + context]
 #   CHECKS_PER_IP_PER_HOUR [10]  ASKS_PER_IP_PER_HOUR [30]  DAILY_CHECK_CAP [300]  DAILY_ASK_CAP [1000]   (infra/gcloud.sh deploys 100 and 300)
 #   ISSUES_PER_IP_PER_HOUR [30]  ISSUES_PER_SESSION [100]  API_DOCS [off; 1 = Swagger UI at /api/docs]
 #   TRUSTED_PROXY_HOPS [1]  STORE_BACKEND [memory|gcp]  GOOGLE_CLOUD_PROJECT  GCS_BUCKET  FIRESTORE_DATABASE [(default)]
@@ -270,6 +270,7 @@ def create_app(settings: Settings | None = None, *, store: Store | None = None, 
 #   On startup, seeds each project's demo_issues.json into the store as session "demo" with ids "demo-<project>-<n>" (upsert, idempotent).
 #   Blocking work (Gemini, store) runs in the threadpool (plain def endpoints or run_in_threadpool).
 #   Middleware, outermost first: SecurityHeadersMiddleware (app/security_headers.py), BodySizeLimitMiddleware, GZip.
+#   422s keep FastAPI's body and loc paths; NaN, Infinity or 1e999 echoed in `input` come back as "NaN"/"Infinity"/"-Infinity".
 #   Gemini timeouts: REQUEST_TIMEOUT_MS = 25_000 per attempt (CHECK_TIMEOUT_MS = 45_000 for the check), one SDK retry; Cloud Run --timeout 120.
 ```
 

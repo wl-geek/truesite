@@ -92,6 +92,22 @@ def test_per_ip_rate_limit(make_client):
     assert r.status_code == 429 and r.json()["detail"]["code"] == "rate_limited" and "retry-after" in r.headers
 
 
+def test_a_per_ip_limit_of_zero_switches_checks_off(make_client):
+    """C-39: CHECKS_PER_IP_PER_HOUR=0 crashed the limiter, so every check answered 500 instead of 429."""
+    r = post(make_client(checks_per_ip_per_hour=0))
+    assert r.status_code == 429, r.text
+    assert r.json()["detail"] == {"code": "rate_limited", "retry_after_s": 3600} and r.headers["retry-after"] == "3600"
+
+
+def test_three_images_at_the_file_limit_fit_under_the_body_cap(client):
+    """C-41: since #104 a check carries photo, render and outline overlay. Three 4 MiB files (a 12 MiB body)
+    got a 413 from the old 9 MiB cap, which was sized for two."""
+    limit = 4 * 1024 * 1024
+    photo, render = JPEG + b"\x00" * (limit - len(JPEG)), PNG + b"\x00" * (limit - len(PNG))
+    r = post(client, photo=photo, render=render, overlay=photo)
+    assert r.status_code == 200, r.text
+
+
 def test_daily_cap_across_ips(make_client):
     assert post(make_client(peer="198.51.100.1", daily_check_cap=1)).status_code == 200
     r = post(make_client(peer="198.51.100.2", daily_check_cap=1))
