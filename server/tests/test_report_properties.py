@@ -11,11 +11,12 @@ from datetime import datetime, timezone
 from unittest.mock import patch
 
 import pytest
-from hypothesis import HealthCheck, given, settings, strategies as st
+from hypothesis import HealthCheck, example, given, settings, strategies as st
 from pydantic import ValidationError
 
 from app import services
 from app.schemas import CheckRun, IssueDraftRequest, ReportRequest, SiteReport
+from app.validate import truncate_text
 
 LANGUAGES = ["en", "th", "my", "id", "ms", "vi", "zh", "ja"]
 RUN = "a" * 22
@@ -68,8 +69,9 @@ def test_run_ids_must_look_like_server_run_ids(run_id):
 # ---- the report Gemini drafts --------------------------------------------------------------------------
 scalars = st.none() | st.booleans() | st.integers(-1000, 1000) | st.floats() | st.text(max_size=20)
 texts = st.text(max_size=900) | st.sampled_from([LABEL, "All clear. visual check, not a survey", "   "]) | scalars
-# List fields stay lists (or missing / null) here: a string or a number in their place is a known defect.
-lists = st.none() | st.lists(st.text(max_size=260) | scalars, max_size=14)
+# List fields can come back as a lone string (one item), a number, a boolean or an object (no items): C-38.
+lists = (st.none() | st.lists(st.text(max_size=260) | scalars, max_size=14) | scalars
+         | st.dictionaries(st.text(max_size=8), scalars, max_size=3))
 answers = st.fixed_dictionaries({}, optional={"title": texts, "summary": texts, "safety": lists, "structure": lists,
                                               "progress": lists, "next_steps": lists})
 
@@ -81,8 +83,15 @@ def stored_run(i: int) -> CheckRun:
                     photo_key="p", render_key="r")
 
 
+def given_items(value) -> list[str]:
+    """The items a report list field holds: a list's non-blank strings, or a lone non-blank string."""
+    values = [value] if isinstance(value, str) else value if isinstance(value, list) else []
+    return [x for x in values if isinstance(x, str) and x.strip()]
+
+
 @PROPS
 @given(answers, st.integers(1, 8), st.sampled_from(LANGUAGES))
+@example({"safety": "Fall hazard at the east edge", "structure": 1, "progress": 2.5, "next_steps": True}, 1, "en")
 def test_any_report_answer_becomes_a_report_within_its_limits_with_the_label(raw, n_runs, language):
     with patch.object(services.gemini_client, "write_report", return_value={"result": raw}) as write:
         report = services.make_reporter(None)([stored_run(i) for i in range(n_runs)], language)
@@ -92,7 +101,7 @@ def test_any_report_answer_becomes_a_report_within_its_limits_with_the_label(raw
     assert 0 < len(report.title) <= 100 and len(report.summary) <= 700
     assert "visual check, not a survey" in report.summary.lower()  # copy rule: a draft, not a survey
     for key, cap in (("safety", 10), ("structure", 10), ("progress", 10), ("next_steps", 8)):
-        items = getattr(report, key)
-        given_items = [x for x in raw.get(key) or [] if isinstance(x, str) and x.strip()]
-        assert len(items) == min(cap, len(given_items))
+        items, given = getattr(report, key), given_items(raw.get(key))
+        assert len(items) == min(cap, len(given))
         assert all(item.strip() and len(item) <= 200 for item in items)
+        assert items == [truncate_text(x, 200) for x in given[:cap]]  # whole items, never letters
