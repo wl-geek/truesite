@@ -38,9 +38,10 @@ To measure on real photos instead:
 |---|---|---|---|
 | Photo + design render (two images) | 8 | 5 | 1 |
 | + IMAGE 3 outlines, 1 px gap | 10 | 7 | 1 |
-| **+ IMAGE 3 outlines, 5 px gap (shipped)** | **12, 11** | **5, 8** | 2 |
+| **+ IMAGE 3 outlines, 5 px gap (shipped)** | **12, 11, 7** | **5, 8, 0** | 3 (the third on the deployed service) |
 | + size cut-off and a "can't judge thin members" prompt (dropped) | 9, 9 | 4, 5 | 2 |
 | Closed outlines that cross neighbours (dropped) | 8 | 3 | 1 |
+| Medium thinking instead of low (dropped) | 3 and 4 in the two views that finished | 1, 5 | 1 (about 65 s a check; most checks hit the 45 s limit twice and failed) |
 
 **What works:**
 - elements not built: an uncast column with only its cage, open-bay beams, a missing guardrail
@@ -51,4 +52,4 @@ To measure on real photos instead:
 - thin far members: purlins and truss diagonals
 - a pad footing under a shifted column, which Gemini often says moved with it
 
-Runs vary by ±1–3 defects, so read single runs as rough.
+Runs vary a lot, and P3 alone has gone from 0 to 3 of 4. Read single runs as rough: the shipped version averages about 10 of 16 found and 4 false alarms over 3 runs.
