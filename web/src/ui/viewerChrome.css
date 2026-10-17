@@ -28,7 +28,10 @@
 /* The element panel sits in the stage, so the findings list under it stays free (audit C-06); on phones its sheet
    stays inside the stage too. */
 @media (max-width: 899px) {
-  .viewer-stage > .element-panel { max-height: min(50dvh, calc(100% - 12px)); }
+  /* The results sit under the model here: the model keeps most of the screen, and the element sheet leaves part of it
+     in view (the view centres above the sheet). */
+  .viewer-page > .viewer-stage { min-height: max(320px, 62dvh); }
+  .viewer-stage > .element-panel { max-height: min(50dvh, 58%); }
 }
 /* "Issue saved.": pinned to the bottom of the screen, wherever the findings list is scrolled (audit C-06). */
 .viewer-notice {
@@ -47,23 +50,43 @@
 /* The sky behind the model (the canvas is transparent). */
 .viewer-stage { background: linear-gradient(180deg, #d6e3f0 0%, #e9f0f6 50%, #f6f8fb 100%); }
 
-/* View tools: bottom left on wide screens; a column of icons at the top right on phones. */
+/* View tools: bottom centre of the free middle (between the docked results and the element details) on wide screens;
+   a column of icons at the top right on phones. --dock-l and --dock-r are the docked panels' widths (ViewerPage). */
+.viewer-stage { --dock-l: 0px; --dock-r: 0px; --free-mid: calc((var(--dock-l) + 100% - var(--dock-r)) / 2); }
 .viewer-tools {
-  position: absolute; left: max(12px, env(safe-area-inset-left)); bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 3;
-  display: flex; gap: 4px; padding: 5px; border: 1px solid var(--line); border-radius: 14px; background: rgba(255, 255, 255, 0.95);
+  position: absolute; left: var(--free-mid); bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 3; transform: translateX(-50%);
+  display: flex; gap: 4px; padding: 5px; border: 1px solid var(--line); border-radius: 14px; background: var(--white);
   box-shadow: 0 8px 24px rgba(11, 31, 51, 0.1);
 }
 .vt-btn {
   display: inline-flex; align-items: center; gap: 6px; min-height: 44px; min-width: 44px; justify-content: center; padding: 0 12px;
-  border: 0; border-radius: 10px; background: transparent; color: var(--steel); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer;
+  border: 0; border-radius: 10px; background: transparent; color: var(--steel); font: inherit; font-size: 14px; font-weight: 600;
+  white-space: nowrap; cursor: pointer;
 }
 .vt-btn svg { flex: none; width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .vt-btn:hover { background: var(--paper); }
 .vt-btn[aria-pressed='true'] { background: var(--steel); color: var(--white); }
+/* A narrow free middle: icons only (the text stays the accessible name, the title says what each does). */
+.viewer-tight .vt-btn { padding: 0; width: 44px; font-size: 0; gap: 0; }
+@media (min-width: 720px) {
+  /* The hint floats above the tools, in the free middle; the card stops short of both, and scrolls if it must. */
+  .viewer-stage > .hint { left: var(--free-mid); bottom: calc(80px + env(safe-area-inset-bottom)); max-width: calc(100% - var(--dock-l) - var(--dock-r) - 32px); }
+  .model-card { max-height: calc(100% - 24px - 116px); overflow-y: auto; overscroll-behavior: contain; }
+  .viewer-stage > .viewer-check-btn { right: calc(var(--dock-r) + 16px); }
+}
 @media (max-width: 719px) {
-  .viewer-tools { top: 12px; right: max(12px, env(safe-area-inset-right)); left: auto; bottom: auto; flex-direction: column; }
+  .viewer-tools { top: 12px; right: max(12px, env(safe-area-inset-right)); left: auto; bottom: auto; transform: none; flex-direction: column; }
   .vt-btn { padding: 0; width: 44px; height: 44px; font-size: 0; } /* icons only; the text stays the accessible name */
-  .model-card { max-width: calc(100% - 84px); }
+  .model-card { max-width: calc(100% - 84px); max-height: calc(100% - 24px); overflow-y: auto; overscroll-behavior: contain; }
+}
+/* Wide screens: the check results dock on the left of the model, full height, and scroll on their own; the element
+   details dock on the right. Narrower screens keep the results under the model (audit C-06). */
+@media (min-width: 900px) {
+  .viewer-stage > .findings-panel {
+    position: absolute; top: 12px; bottom: 12px; left: max(12px, env(safe-area-inset-left)); z-index: 4; width: clamp(300px, 30vw, 400px);
+    overflow-y: auto; overscroll-behavior: contain; box-shadow: 0 8px 24px rgba(11, 31, 51, 0.18);
+  }
+  .viewer-stage > .element-panel { width: clamp(300px, 30vw, 380px); }
 }
 
 /* Hover label (mouse only). */
@@ -97,3 +120,7 @@
 .ep-tech dl div { display: grid; grid-template-columns: 90px 1fr; gap: 8px; }
 .ep-tech dt { color: var(--muted); }
 .ep-tech dd { margin: 0; overflow-wrap: anywhere; }
+/* The viewer's findings: Draft issue goes under its finding, so the finding text gets the full width; the badge sits
+   at the top. */
+.viewer-page .findings-panel .finding { flex-wrap: wrap; justify-content: flex-end; }
+.viewer-page .findings-panel .finding-main { flex-basis: 100%; align-items: flex-start; }

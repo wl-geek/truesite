@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { type CSSProperties, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { getProject } from '../api/client'
 import type { Finding, ProjectManifest } from '../api/types'
 import { loadLastCheck, type LastCheck } from '../check/lastCheck'
@@ -6,7 +6,7 @@ import { freshCanvas, watchContextLoss } from '../scene/glContext'
 import { disposeModel, loadModel, type LoadedModel } from '../scene/loadModel'
 import { disposePins, makePins } from '../scene/pins'
 import { KIND_COLOURS, paintOf, type Kind } from '../scene/palette'
-import { createViewer, type Viewer, type ViewPreset } from '../scene/viewer'
+import { createViewer, NO_INSET, type Viewer, type ViewPreset } from '../scene/viewer'
 import { navigate, viewerPathFor } from '../router'
 import { typeLabel } from './elementFacts'
 import { modelFacts, VIEWER_PROJECTS } from './viewerFacts'
@@ -21,6 +21,22 @@ import './viewerChrome.css'
 
 export const DEFAULT_PROJECT_ID = 'site'
 const NOTICE_MS = 8000
+/** From this width the check results dock on the left of the model and the element details on the right. */
+const WIDE = '(min-width: 900px)'
+/** The free middle is narrower than this: the view tools show icons only. */
+const TIGHT_PX = 560
+
+function useMedia(query: string): boolean {
+  const [on, setOn] = useState(() => typeof window !== 'undefined' && window.matchMedia(query).matches)
+  useEffect(() => {
+    const m = window.matchMedia(query)
+    const change = () => setOn(m.matches)
+    change()
+    m.addEventListener('change', change)
+    return () => m.removeEventListener('change', change)
+  }, [query])
+  return on
+}
 
 type Loaded = { project: ProjectManifest; model: LoadedModel }
 type LoadError = { message: string; unknownProject: boolean }
@@ -36,6 +52,8 @@ export function viewerLoadError(err: unknown): LoadError {
 export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: string }) {
   // The viewer's canvas is made per viewer (freshCanvas): a released WebGL context can't be used again.
   const canvasHostRef = useRef<HTMLDivElement>(null)
+  const stageRef = useRef<HTMLDivElement>(null)
+  const wide = useMedia(WIDE)
   const viewerRef = useRef<Viewer | null>(null)
   const [glDead, setGlDead] = useState(false)
   const [loaded, setLoaded] = useState<Loaded | null>(null)
@@ -51,6 +69,8 @@ export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: str
   const [view, setView] = useState<ViewPreset>('iso')
   const [xray, setXray] = useState(false)
   const [hover, setHover] = useState<{ name: string; type: string; x: number; y: number } | null>(null)
+  /** Pixels the docked panels cover on the left (check results) and right (element details) of the stage. */
+  const [docks, setDocks] = useState({ left: 0, right: 0, tight: false })
 
   useEffect(() => {
     let cancelled = false
@@ -113,21 +133,29 @@ export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: str
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
   }, [selected])
-  // The element panel covers the right side (wide screens) or the bottom (phones): centre the view beside or above it.
+  // Wide screens: the check results dock on the left, the element details on the right; phones: the element details are
+  // a bottom sheet. Centre the view in what's left, and keep the tools and buttons in that free middle.
+  const docked = wide && showCheck && lastCheck !== null
   useEffect(() => {
     const viewer = viewerRef.current
-    const panel = document.querySelector<HTMLElement>('.viewer-stage > .element-panel')
-    if (!viewer) return
-    if (!panel) { viewer.setInset(0, 0); return }
+    const stage = stageRef.current
+    if (!viewer || !stage) return
     const measure = () => {
-      const wide = window.matchMedia('(min-width: 900px)').matches
-      viewer.setInset(wide ? panel.offsetWidth + 24 : 0, wide ? 0 : panel.offsetHeight)
+      const panel = stage.querySelector<HTMLElement>(':scope > .element-panel')
+      const results = stage.querySelector<HTMLElement>(':scope > .findings-panel')
+      const edge = (el: HTMLElement | null) => (el ? el.offsetWidth + 24 : 0)
+      const left = wide ? edge(results) : 0
+      const right = wide ? edge(panel) : 0
+      viewer.setInset({ left, right, bottom: !wide && panel ? panel.offsetHeight : 0 })
+      const tight = stage.clientWidth - left - right < TIGHT_PX
+      setDocks((d) => (d.left === left && d.right === right && d.tight === tight ? d : { left, right, tight }))
     }
     measure()
     const ro = new ResizeObserver(measure)
-    ro.observe(panel)
-    return () => { ro.disconnect(); viewer.setInset(0, 0) }
-  }, [selected, loaded])
+    ro.observe(stage)
+    for (const el of stage.querySelectorAll<HTMLElement>(':scope > .element-panel, :scope > .findings-panel')) ro.observe(el)
+    return () => { ro.disconnect(); viewer.setInset(NO_INSET) }
+  }, [selected, loaded, wide, docked])
   const toggleKind = (k: Kind) => setHiddenKinds((h) => { const n = new Set(h); if (n.has(k)) n.delete(k); else n.add(k); return n })
   const changeView = (v: ViewPreset) => { setView(v); viewerRef.current?.setView(v) }
 
@@ -143,11 +171,21 @@ export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: str
   const selectFinding = (f: Finding) => {
     setSelectedMark(f.mark)
     setSelected(f.guid)
+    // Phones and narrow tablets: the results are under the model, so bring the model (and the element) into view.
+    if (!wide) stageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
   }
+  const openResults = () => {
+    setShowCheck(true)
+    if (!wide) requestAnimationFrame(() => document.querySelector('.viewer-page > .findings-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' }))
+  }
+  const findings = lastCheck && showCheck && (
+    <FindingsPanel result={lastCheck.result} selectedMark={selectedMark} onSelect={selectFinding} onDraftIssue={setDraftFor} onClose={() => setShowCheck(false)} />
+  )
+  const stageStyle = { '--dock-l': `${docks.left}px`, '--dock-r': `${docks.right}px` } as CSSProperties
 
   return (
     <main className="viewer-page">
-      <div className="viewer-stage">
+      <div ref={stageRef} className={`viewer-stage${docks.tight ? ' viewer-tight' : ''}`} style={stageStyle}>
         <div ref={canvasHostRef} />
         {!loaded && !error && <p className="status">Loading the model…</p>}
         {glDead && <ReloadPrompt />}
@@ -163,7 +201,8 @@ export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: str
             )}
           </div>
         )}
-        {loaded && <ModelCard project={loaded.project} hidden={hiddenKinds} onToggle={toggleKind} />}
+        {/* Wide screens with the results open: the results take the card's place (closing them brings it back). */}
+        {loaded && !docked && <ModelCard project={loaded.project} hidden={hiddenKinds} onToggle={toggleKind} />}
         {loaded && (
           <div className="viewer-tools" role="toolbar" aria-label="View">
             <button type="button" className="vt-btn" onClick={() => changeView(view)} title="Show the whole model">
@@ -188,21 +227,20 @@ export function ViewerPage({ projectId = DEFAULT_PROJECT_ID }: { projectId?: str
           <a href="/#live" className="btn btn-accent viewer-check-btn" onClick={(e) => { e.preventDefault(); goToSection('live') }}>See it live in AR</a>
         )}
         {lastCheck && !showCheck && (
-          <button type="button" className="btn btn-accent viewer-check-btn" onClick={() => setShowCheck(true)}>
+          <button type="button" className="btn btn-accent viewer-check-btn" onClick={openResults}>
             Last check results
           </button>
         )}
-        {/* In the stage, not over the page: the findings list under the stage and its Draft issue buttons stay
-            free (audit C-06). */}
+        {/* In the stage, not over the page: the findings list (docked left, or under the stage on narrow screens)
+            and its Draft issue buttons stay free (audit C-06). */}
+        {docked && findings}
         {loaded && element && (
           <ElementPanel projectId={loaded.project.project_id} element={element} multiStorey={modelFacts(loaded.project).storeys > 1}
             onClose={() => setSelected(null)} onZoom={() => viewerRef.current?.focus(element.guid)} />
         )}
         {notice && <p className="viewer-notice" role="status">{notice}</p>}
       </div>
-      {lastCheck && showCheck && (
-        <FindingsPanel result={lastCheck.result} selectedMark={selectedMark} onSelect={selectFinding} onDraftIssue={setDraftFor} onClose={() => setShowCheck(false)} />
-      )}
+      {!docked && findings}
       {draftFor && (
         <IssueDialog open projectId={loaded?.project.project_id ?? projectId} runId={lastCheck?.runId ?? null} mark={draftFor.mark} finding={draftFor}
           element={elements.get(draftFor.guid) ?? null} onClose={() => setDraftFor(null)}

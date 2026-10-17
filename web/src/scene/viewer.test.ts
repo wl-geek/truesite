@@ -2,7 +2,7 @@ import { BoxGeometry, Group, Mesh, MeshBasicMaterial, type MeshStandardMaterial 
 import { describe, expect, it } from 'vitest'
 import { buildLoadedModel } from './loadModel'
 import { KIND_COLOURS, type Paint } from './palette'
-import { applyTypeColours, frameDistance, isTap, pointerToNdc } from './viewer'
+import { applyTypeColours, frameDistance, insetView, isTap, NO_INSET, pointerToNdc } from './viewer'
 
 describe('viewer pointer helpers', () => {
   const rect = { left: 100, top: 50, width: 400, height: 200 }
@@ -56,5 +56,32 @@ describe('viewer colours', () => {
     expect(unknown).toBe(original) // no element row: left as the glb has it
     restore()
     expect(model.meshes.every((m) => m.material === original)).toBe(true)
+  })
+})
+
+describe('insetView', () => {
+  // Where the virtual image's centre lands on the canvas.
+  const centre = (v: ReturnType<typeof insetView>) => [v.fullW / 2 - v.offsetX, v.fullH / 2 - v.offsetY]
+
+  it('leaves the view alone with no panels', () => {
+    expect(insetView(1000, 600, NO_INSET)).toMatchObject({ fullW: 1000, fullH: 600, offsetX: 0, offsetY: 0, freeW: 1000, freeH: 600 })
+  })
+
+  it('centres the model between the results on the left and the element details on the right', () => {
+    expect(centre(insetView(1000, 600, { left: 0, right: 400, bottom: 0 }))).toEqual([300, 300])
+    expect(centre(insetView(1000, 600, { left: 400, right: 0, bottom: 0 }))).toEqual([700, 300])
+    const both = insetView(1000, 600, { left: 400, right: 300, bottom: 0 })
+    expect(centre(both)).toEqual([550, 300])
+    expect(both.freeW).toBe(300)
+  })
+
+  it('centres above a bottom sheet', () => {
+    expect(centre(insetView(400, 800, { left: 0, right: 0, bottom: 300 }))).toEqual([200, 250])
+  })
+
+  it('keeps a fifth of the width uncovered', () => {
+    const v = insetView(1000, 600, { left: 700, right: 700, bottom: 0 })
+    expect(v.freeW).toBeCloseTo(200, 9)
+    expect(centre(v)[0]).toBeCloseTo(500, 9)
   })
 })

@@ -5,7 +5,7 @@ import { askErrorMessage, citedRows, confidenceNote, MAX_QUESTION, SUGGESTIONS }
 
 export type AskBoxProps = { projectId: string; element: Element; suggestions?: readonly string[] }
 
-/** Ask about this element; answers come only from its own model data, with the fields cited (spec 4.2 step 6). */
+/** Ask Gemini about this element; it answers only from the element's own model data, with the fields cited (spec 4.2 step 6). */
 export function AskBox({ projectId, element, suggestions = SUGGESTIONS }: AskBoxProps) {
   const [question, setQuestion] = useState('')
   const [busy, setBusy] = useState(false)
@@ -35,12 +35,16 @@ export function AskBox({ projectId, element, suggestions = SUGGESTIONS }: AskBox
   const note = answer ? confidenceNote(answer.confidence) : null
 
   return (
-    <section className="ask-box" aria-label="Ask about this element">
-      <h3>Ask about this element</h3>
+    <section className="ask-box" aria-label="Ask Gemini about this element">
+      <h3 className="ask-title">
+        <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 2c.6 5.3 4.7 9.4 10 10-5.3.6-9.4 4.7-10 10-.6-5.3-4.7-9.4-10-10 5.3-.6 9.4-4.7 10-10Z" /></svg>
+        Ask Gemini about this element
+      </h3>
+      <p className="ask-sub">Gemini answers from this element's BIM data only and shows which fields it used.</p>
       <form onSubmit={onSubmit} className="ask-form">
         <input type="text" value={question} maxLength={MAX_QUESTION} placeholder={`e.g. ${suggestions[0] ?? "What's the fire rating?"}`}
           onChange={(e) => setQuestion(e.target.value)} aria-label="Your question" disabled={busy} />
-        <button type="submit" className="btn btn-primary" disabled={busy || !question.trim()}>{busy ? 'Asking…' : 'Ask'}</button>
+        <button type="submit" className="btn btn-primary" disabled={busy || !question.trim()}>{busy ? 'Asking Gemini…' : 'Ask Gemini'}</button>
       </form>
       <div className="ask-chips">
         {suggestions.map((s) => (
@@ -62,7 +66,7 @@ export function AskBox({ projectId, element, suggestions = SUGGESTIONS }: AskBox
               </tbody>
             </table>
           )}
-          <p className="note">Answers come only from this element's model data. Check before you build.</p>
+          <p className="note">Gemini's answer, from this element's model data only. Check before you build.</p>
         </div>
       )}
     </section>

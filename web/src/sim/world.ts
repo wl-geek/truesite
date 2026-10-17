@@ -137,34 +137,71 @@ function groundTexture(rand: () => number): CanvasTexture {
   return t
 }
 
-/** A QR-like pattern (finder squares and random modules) for the board: decorative, it doesn't scan. */
+/**
+ * The life-size site sheet (bim/truesite_bim/qr_sheets.py, LIFE_* layout): US Letter portrait, a 16 cm code whose
+ * centre is 178 mm above the sheet's bottom edge, in metres.
+ */
+export const SHEET_M = { w: 0.2159, h: 0.2794, code: 0.16, codeUp: 0.178 } as const
+/** The rigid board the sheet is mounted on shows this much around it. */
+const BOARD_MARGIN_M = 0.01
+const BOARD_THICK_M = 0.012
+const POLE_M = 0.03
+
+/**
+ * The stand for a code centre `codeZ` above the ground: the board's centre and height, and a pole that rises from
+ * the foot to the board's middle, behind it (so the board is held, not floating, and the pole doesn't show above it).
+ */
+export function qrStand(codeZ: number): { boardZ: number; boardH: number; poleH: number } {
+  const boardZ = codeZ - (SHEET_M.codeUp - SHEET_M.h / 2)
+  return { boardZ, boardH: SHEET_M.h + 2 * BOARD_MARGIN_M, poleH: boardZ }
+}
+
+/**
+ * The printed face: the grey board edge, the white Letter sheet, a QR-like code (finder squares and random modules)
+ * where the real sheet prints it, the viewpoint label, the instruction lines and the check bar. Decorative: it doesn't scan.
+ */
 function qrTexture(rand: () => number, label: string): CanvasTexture {
-  const n = 29
-  const cell = 12
-  const [c, g] = canvas(n * cell + 8 * cell, n * cell + 16 * cell)
-  g.fillStyle = '#ffffff'
+  const px = 3 // canvas pixels per mm
+  const mm = (v: number) => Math.round(v * px)
+  const margin = BOARD_MARGIN_M * 1000
+  const [pageW, pageH] = [SHEET_M.w * 1000, SHEET_M.h * 1000]
+  const [c, g] = canvas(mm(pageW + 2 * margin), mm(pageH + 2 * margin))
+  g.fillStyle = '#9a978f'
   g.fillRect(0, 0, c.width, c.height)
+  g.fillStyle = '#ffffff'
+  g.fillRect(mm(margin), mm(margin), mm(pageW), mm(pageH))
+  // Page coordinates in mm, measured from the sheet's top-left corner, as canvas pixels.
+  const at = (x: number, y: number, w: number, h: number) => g.fillRect(mm(margin + x), mm(margin + y), mm(w), mm(h))
+  const n = 29
+  const cell = (SHEET_M.code * 1000) / n
+  const x0 = pageW / 2 - (SHEET_M.code * 1000) / 2
+  const y0 = pageH - SHEET_M.codeUp * 1000 - (SHEET_M.code * 1000) / 2
   g.fillStyle = '#111111'
-  const x0 = 4 * cell
-  const y0 = 4 * cell
   const finder = (fx: number, fy: number) => {
-    g.fillRect(x0 + fx * cell, y0 + fy * cell, 7 * cell, 7 * cell)
+    at(x0 + fx * cell, y0 + fy * cell, 7 * cell, 7 * cell)
     g.fillStyle = '#ffffff'
-    g.fillRect(x0 + (fx + 1) * cell, y0 + (fy + 1) * cell, 5 * cell, 5 * cell)
+    at(x0 + (fx + 1) * cell, y0 + (fy + 1) * cell, 5 * cell, 5 * cell)
     g.fillStyle = '#111111'
-    g.fillRect(x0 + (fx + 2) * cell, y0 + (fy + 2) * cell, 3 * cell, 3 * cell)
+    at(x0 + (fx + 2) * cell, y0 + (fy + 2) * cell, 3 * cell, 3 * cell)
   }
   for (let i = 0; i < n; i++) {
     for (let j = 0; j < n; j++) {
       const inFinder = (i < 8 && j < 8) || (i >= n - 8 && j < 8) || (i < 8 && j >= n - 8)
-      if (!inFinder && rand() < 0.5) g.fillRect(x0 + i * cell, y0 + j * cell, cell, cell)
+      if (!inFinder && rand() < 0.5) at(x0 + i * cell, y0 + j * cell, cell, cell)
     }
   }
   finder(0, 0)
   finder(n - 7, 0)
   finder(0, n - 7)
-  g.font = `bold ${cell * 4}px system-ui, sans-serif`
-  g.fillText(label, x0, y0 + (n + 6) * cell)
+  // The instruction block (LIFE_TEXT_BOX_MM: 15 mm from the left, its top 70 mm above the bottom edge) and the check bar.
+  const textTop = pageH - 70
+  g.font = `bold ${mm(12)}px system-ui, sans-serif`
+  g.textBaseline = 'top'
+  g.fillText(label, mm(margin + 15), mm(margin + textTop))
+  g.fillStyle = '#8a8a8a'
+  for (const [i, w] of [140, 175, 160, 120].entries()) at(15, textTop + 18 + i * 7, w, 2.5)
+  g.fillStyle = '#111111'
+  at(57.95, pageH - 12 - 5, 100, 5)
   const t = texture(c)
   t.magFilter = NearestFilter
   t.center.set(0.5, 0.5)
@@ -172,22 +209,24 @@ function qrTexture(rand: () => number, label: string): CanvasTexture {
   return t
 }
 
-/** The upright US Letter board on its stand at an anchor: printed face towards anchor.normal, code centre at the anchor. */
+/** The upright Letter sheet on its board and stand at an anchor: printed face towards anchor.normal, code centre at the anchor. */
 function qrBoard(anchor: Anchor, rand: () => number): Group {
   const g = new Group()
   const [nx, ny] = anchor.normal
   const [x, y, z] = anchor.position_m
-  const board = new Mesh(new BoxGeometry(0.2159, 0.012, 0.2794), [
+  const { boardZ, boardH, poleH } = qrStand(z)
+  const board = new Mesh(new BoxGeometry(SHEET_M.w + 2 * BOARD_MARGIN_M, BOARD_THICK_M, boardH), [
     MAT.footing, MAT.footing, new MeshStandardMaterial({ map: qrTexture(rand, anchor.anchor_id), roughness: 0.8 }), MAT.footing,
     MAT.footing, MAT.footing,
   ])
   // BoxGeometry faces: +x, -x, +y, -y, +z, -z. Turn the box so its +y face looks along the normal.
   board.rotation.z = Math.atan2(ny, nx) - Math.PI / 2
-  board.position.set(x, y, z - 0.025) // the code sits in the board's upper part (about 9% of its height above the middle)
-  const pole = new Mesh(new BoxGeometry(0.03, 0.03, z - 0.2), MAT.brace)
-  pole.position.set(x - 0.02 * nx, y - 0.02 * ny, (z - 0.2) / 2)
+  board.position.set(x, y, boardZ)
+  const back = (BOARD_THICK_M + POLE_M) / 2 // the pole touches the board's back
+  const pole = new Mesh(new BoxGeometry(POLE_M, POLE_M, poleH), MAT.brace)
+  pole.position.set(x - back * nx, y - back * ny, poleH / 2)
   const foot = new Mesh(new BoxGeometry(0.5, 0.5, 0.03), MAT.brace)
-  foot.position.set(x - 0.02 * nx, y - 0.02 * ny, 0.015)
+  foot.position.set(x - back * nx, y - back * ny, 0.015)
   for (const m of [board, pole, foot]) {
     m.castShadow = true
     m.receiveShadow = true

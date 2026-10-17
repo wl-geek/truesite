@@ -45,16 +45,16 @@ test.describe('3D model viewer', () => {
     await expect(panel.locator('.ep-tech dd.mono')).toHaveText(/^[0-9A-Za-z_$]{22}$/) // an IFC GlobalId
     await expect(page.getByText('Drag to orbit')).toBeHidden()
 
-    const ask = panel.getByRole('region', { name: 'Ask about this element' })
+    const ask = panel.getByRole('region', { name: 'Ask Gemini about this element' })
     const question = ask.getByRole('textbox', { name: 'Your question' })
-    await expect(ask.getByRole('button', { name: 'Ask' })).toBeDisabled()
+    await expect(ask.getByRole('button', { name: 'Ask Gemini' })).toBeDisabled()
     await question.fill('What material is it?')
     const sent = page.waitForRequest((r) => r.url().endsWith('/api/ask') && r.method() === 'POST')
-    await ask.getByRole('button', { name: 'Ask' }).click()
+    await ask.getByRole('button', { name: 'Ask Gemini' }).click()
     expect(JSON.parse((await sent).postData()!)).toMatchObject({ project_id: 'site', question: 'What material is it?' })
     const answer = ask.locator('.ask-answer')
     await expect(answer).toBeVisible()
-    await expect(answer).toContainText("Answers come only from this element's model data. Check before you build.")
+    await expect(answer).toContainText("Gemini's answer, from this element's model data only. Check before you build.")
     await expect(answer.locator('table caption')).toHaveText('From the model')
     // A suggestion chip (picked for this element) asks straight away.
     const chip = ask.locator('.chip').first()

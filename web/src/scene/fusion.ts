@@ -1,7 +1,7 @@
 /**
  * Sensor fusion for the camera overlay: the QR code says where the code is, the motion sensors say how the device is
  * turned. A tilt or heading error of 1° in one QR pose swings the far end of a 10 m building by about 20 cm, and the
- * QR pose of a 23 cm code wobbles by a degree or more from frame to frame; the sensors' rotation is smooth.
+ * QR pose of a 16 cm code wobbles by a degree or more from frame to frame; the sensors' rotation is smooth.
  *
  * Each detection gives, with D the device -> world rotation at that frame's capture time (motion.ts frames):
  *   - the code's orientation in the world, R_wm = D C R_cm. The code doesn't move, so this is a weighted running
