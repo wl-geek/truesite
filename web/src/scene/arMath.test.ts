@@ -144,7 +144,7 @@ describe('site sheets (mutation-tested)', () => {
     for (const id of ['P1', 'P2', 'P3', 'P4', 'D1']) {
       const a: Anchor = { ...L1, anchor_id: id, project_id: 'site' }
       expect(checkAvailability(a), id).toEqual({
-        enabled: false, note: 'This sheet shows the design where nothing is built yet, so there is nothing to check. Try the virtual demo.',
+        enabled: false, note: 'This sheet shows the design where nothing is built yet, so there is nothing to check here.',
       })
     }
     expect(checkAvailability({ ...L1, anchor_id: 'P5', project_id: 'site' })).toEqual({ enabled: true, note: null })
