@@ -172,18 +172,18 @@ function qrTexture(rand: () => number, label: string): CanvasTexture {
   return t
 }
 
-/** The upright A3 board on its stand at an anchor: printed face towards anchor.normal, code centre at the anchor. */
+/** The upright US Letter board on its stand at an anchor: printed face towards anchor.normal, code centre at the anchor. */
 function qrBoard(anchor: Anchor, rand: () => number): Group {
   const g = new Group()
   const [nx, ny] = anchor.normal
   const [x, y, z] = anchor.position_m
-  const board = new Mesh(new BoxGeometry(0.297, 0.012, 0.42), [
+  const board = new Mesh(new BoxGeometry(0.2159, 0.012, 0.2794), [
     MAT.footing, MAT.footing, new MeshStandardMaterial({ map: qrTexture(rand, anchor.anchor_id), roughness: 0.8 }), MAT.footing,
     MAT.footing, MAT.footing,
   ])
   // BoxGeometry faces: +x, -x, +y, -y, +z, -z. Turn the box so its +y face looks along the normal.
   board.rotation.z = Math.atan2(ny, nx) - Math.PI / 2
-  board.position.set(x, y, z - 0.035) // the code sits in the board's upper part
+  board.position.set(x, y, z - 0.025) // the code sits in the board's upper part (about 9% of its height above the middle)
   const pole = new Mesh(new BoxGeometry(0.03, 0.03, z - 0.2), MAT.brace)
   pole.position.set(x - 0.02 * nx, y - 0.02 * ny, (z - 0.2) / 2)
   const foot = new Mesh(new BoxGeometry(0.5, 0.5, 0.03), MAT.brace)

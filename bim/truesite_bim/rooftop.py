@@ -8,8 +8,8 @@
 - One rebar cage element per column and per beam (IfcReinforcingBar with many bar items):
   columns 8 x T20 verticals + T10 links every 0.5 m; level-2 bars run 1.0 m above the top as
   starter bars (a frame mid-construction); beams 2 + 2 x T16 + T10 links every 0.5 m.
-- Anchor R1: a 33 cm QR code flat on the roof at the centre of the middle bay (4.5, 4.5, 0),
-  top edge towards +Y. Model Z 0 is the roof surface.
+- Anchor R1: a 16 cm QR code on a US Letter sheet, flat on the roof at the centre of the middle bay (4.5, 4.5, 0),
+  top edge towards +Y. Model Z 0 is the roof surface. R2 is a spare of the same sheet.
 """
 from __future__ import annotations
 
@@ -19,11 +19,11 @@ from pathlib import Path
 
 import ifcopenshell
 import ifcopenshell.api
-from reportlab.lib.pagesizes import A2, A4, portrait
 
 from .make_demo_model import Builder
 from .pipeline import run as run_pipeline
-from .qr_sheets import ANDROID_STEP, IPHONE_LIFE_SIZE_STEP, Sheet, https_base_url, render_sheet, warn_thin_quiet_zone
+from .qr_sheets import (ANDROID_STEP, IPHONE_LIFE_SIZE_STEP, LETTER, LIFE_CHECK_BAR_MM, LIFE_QR_CENTRE_MM, LIFE_QR_MM,
+                        LIFE_TEXT_BOX_MM, Sheet, https_base_url, render_sheet, warn_thin_quiet_zone)
 
 PROJECT_ID = "rooftop"
 GRID = [0.0, 3.0, 6.0, 9.0]
@@ -32,21 +32,22 @@ COL = 0.4
 BEAM_W, BEAM_D = 0.3, 0.6
 STARTER = 1.0
 LINK_STEP = 0.5
-ANCHOR = {"anchor_id": "R1", "project_id": PROJECT_ID, "qr_size_m": 0.33, "position_m": [4.5, 4.5, 0.0],
-          "normal": [0, 0, 1], "up": [0, 1, 0], "scale": 1.0, "label": "Rooftop floor sheet A2 (1:1)"}
-# Same spot, A4 with a 16 cm code: for indoor tests, or when A2 printing is not possible (readable to ~3 m).
-ANCHOR_A4 = {**ANCHOR, "anchor_id": "R2", "qr_size_m": 0.16, "label": "Rooftop floor sheet A4 (1:1)"}
-# Three standing viewpoints for phones/tablets without world tracking (iPad): an A4 sheet upright on a
+ANCHOR = {"anchor_id": "R1", "project_id": PROJECT_ID, "qr_size_m": LIFE_QR_MM / 1000, "position_m": [4.5, 4.5, 0.0],
+          "normal": [0, 0, 1], "up": [0, 1, 0], "scale": 1.0, "label": "Rooftop floor sheet Letter (1:1)"}
+# A spare of R1 on the same spot (its own code, so two phones can each lock on one).
+ANCHOR_R2 = {**ANCHOR, "anchor_id": "R2", "label": "Rooftop floor sheet Letter, spare (1:1)"}
+# Three standing viewpoints for phones/tablets without world tracking (iPad): a Letter sheet upright on a
 # stand or taped to a pole with the code centre 1.3 m above the ground, facing the viewer, who stands
 # about 2 m in front of it and turns on the spot.
 VIEW_ANCHORS = [
-    {**ANCHOR_A4, "anchor_id": "V1", "position_m": [4.5, 2.5, 1.3], "normal": [0, 1, 0], "up": [0, 0, 1],
-     "label": "Viewpoint 1: inside, facing south (A4 upright, code at 1.3 m)"},
-    {**ANCHOR_A4, "anchor_id": "V2", "position_m": [2.5, 4.5, 1.3], "normal": [1, 0, 0], "up": [0, 0, 1],
-     "label": "Viewpoint 2: inside, facing west (A4 upright, code at 1.3 m)"},
-    {**ANCHOR_A4, "anchor_id": "V3", "position_m": [4.5, -1.5, 1.3], "normal": [0, -1, 0], "up": [0, 0, 1],
-     "label": "Viewpoint 3: outside the south edge, whole frame (A4 upright, code at 1.3 m)"},
+    {**ANCHOR_R2, "anchor_id": "V1", "position_m": [4.5, 2.5, 1.3], "normal": [0, 1, 0], "up": [0, 0, 1],
+     "label": "Viewpoint 1: inside, facing south (Letter upright, code at 1.3 m)"},
+    {**ANCHOR_R2, "anchor_id": "V2", "position_m": [2.5, 4.5, 1.3], "normal": [1, 0, 0], "up": [0, 0, 1],
+     "label": "Viewpoint 2: inside, facing west (Letter upright, code at 1.3 m)"},
+    {**ANCHOR_R2, "anchor_id": "V3", "position_m": [4.5, -1.5, 1.3], "normal": [0, -1, 0], "up": [0, 0, 1],
+     "label": "Viewpoint 3: outside the south edge, whole frame (Letter upright, code at 1.3 m)"},
 ]
+ANCHORS = [ANCHOR, ANCHOR_R2, *VIEW_ANCHORS]
 # project.json "check_note": the server adds it to every check prompt for this project. The demo is a
 # setting-out check, with boxes or cones standing in for columns, so tell the model how to judge them.
 CHECK_NOTE = (
@@ -181,47 +182,46 @@ def qr_mm(anchor: dict) -> float:
 
 
 def r1_sheet() -> Sheet:
-    page = portrait(A2)  # 420 x 594 mm
     return Sheet(
-        "R1", "floor", ANCHOR["label"], "TrueSite rooftop anchor R1 - life size 1:1", page, qr_mm(ANCHOR), (210.0, 380.0),
-        check_bar_mm=(160.0, 150.0), text_box_mm=(25.0, 120.0),
+        "R1", "floor", ANCHOR["label"], "TrueSite rooftop anchor R1 - life size 1:1", LETTER, qr_mm(ANCHOR), LIFE_QR_CENTRE_MM,
+        check_bar_mm=LIFE_CHECK_BAR_MM, text_box_mm=LIFE_TEXT_BOX_MM,
         position_m=ANCHOR["position_m"], normal=ANCHOR["normal"], up=ANCHOR["up"], scale=1.0,
         instructions=[
-            "Print at 100% on matte paper. Tape all four edges flat to the roof.",
+            "Print on US Letter at 100%, matte paper. Tape all four edges flat to the roof.",
             "Lay it at the centre of the clear area, top edge to 'north' (+Y).",
             ANDROID_STEP,
             IPHONE_LIFE_SIZE_STEP,
             "A 9 x 9 m two-storey concrete frame with rebar rises around you.",
-            "Measure the check bar: if it is not 10.0 cm, enter the length in the app.",
+            "If the check bar is not 10.0 cm, enter its measured length in the app.",
         ],
     )
 
 
 def r2_sheet() -> Sheet:
     return Sheet(
-        "R2", "floor", ANCHOR_A4["label"], "TrueSite rooftop anchor R2 (A4) - life size 1:1", portrait(A4),
-        qr_mm(ANCHOR_A4), (105.0, 180.0), check_bar_mm=(55.0, 18.0), text_box_mm=(15.0, 80.0),
-        position_m=ANCHOR_A4["position_m"], normal=ANCHOR_A4["normal"], up=ANCHOR_A4["up"], scale=1.0,
+        "R2", "floor", ANCHOR_R2["label"], "TrueSite rooftop anchor R2 (spare) - life size 1:1", LETTER,
+        qr_mm(ANCHOR_R2), LIFE_QR_CENTRE_MM, check_bar_mm=LIFE_CHECK_BAR_MM, text_box_mm=LIFE_TEXT_BOX_MM,
+        position_m=ANCHOR_R2["position_m"], normal=ANCHOR_R2["normal"], up=ANCHOR_R2["up"], scale=1.0,
         instructions=[
-            "Print at 100%. Lay it flat on the floor, top edge to 'north' (+Y).",
+            "Print on US Letter at 100%. Lay it flat on the floor, top edge to 'north' (+Y).",
             ANDROID_STEP,
             IPHONE_LIFE_SIZE_STEP,
             "The rooftop frame (9 x 9 m, two storeys) appears around the sheet.",
-            "Measure the check bar: if it is not 10.0 cm, enter the length in the app.",
+            "If the check bar is not 10.0 cm, enter its measured length in the app.",
         ],
     )
 
 
 def view_sheets() -> list[Sheet]:
     return [Sheet(
-        v["anchor_id"], "wall", v["label"], f"TrueSite rooftop viewpoint {v['anchor_id']} - life size 1:1", portrait(A4),
-        qr_mm(v), (105.0, 180.0), check_bar_mm=(55.0, 18.0), text_box_mm=(15.0, 80.0),
+        v["anchor_id"], "wall", v["label"], f"TrueSite rooftop viewpoint {v['anchor_id']} - life size 1:1", LETTER,
+        qr_mm(v), LIFE_QR_CENTRE_MM, check_bar_mm=LIFE_CHECK_BAR_MM, text_box_mm=LIFE_TEXT_BOX_MM,
         position_m=v["position_m"], normal=v["normal"], up=v["up"], scale=1.0,
         instructions=[
             "Fix the sheet UPRIGHT (stand, pole or car door), code centre 1.3 m above the ground.",
             "Stand about 2 m in front of it. Scan, Start camera, keep the code in view to lock,",
             "then turn on the spot (don't walk) to look around and up.",
-            "Measure the check bar: if it is not 10.0 cm, enter the length in the app.",
+            "If the check bar is not 10.0 cm, enter its measured length in the app.",
         ],
     ) for v in VIEW_ANCHORS]
 
@@ -243,7 +243,7 @@ def main(argv: list[str] | None = None) -> None:
         Frame().build().write(ifc)
         report = run_pipeline(ifc, a.out)
         lf = {"encoding": "utf-8", "newline": "\n"}  # LF on every OS, so Windows runs don't dirty the committed files
-        (a.out / "anchors.json").write_text(json.dumps([ANCHOR, ANCHOR_A4, *VIEW_ANCHORS], indent=2) + "\n", **lf)
+        (a.out / "anchors.json").write_text(json.dumps(ANCHORS, indent=2) + "\n", **lf)
         (a.out / "project.json").write_text(json.dumps(PROJECT) + "\n", **lf)
     if a.base_url:
         info = [render_sheet(sh, f"{a.base_url}/a/{PROJECT_ID}/{sh.anchor_id}", a.sheets_dir / f"{PROJECT_ID}-{sh.anchor_id}.pdf")

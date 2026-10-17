@@ -36,7 +36,7 @@ def test_frame_geometry(built):
 
 def test_anchor_and_project(built):
     anchors = json.loads((built / "anchors.json").read_text())
-    assert anchors == [rooftop.ANCHOR, rooftop.ANCHOR_A4, *rooftop.VIEW_ANCHORS]
+    assert anchors == [rooftop.ANCHOR, rooftop.ANCHOR_R2, *rooftop.VIEW_ANCHORS]
     assert [a["anchor_id"] for a in anchors] == ["R1", "R2", "V1", "V2", "V3"]
     assert anchors[1]["anchor_id"] == "R2" and anchors[1]["qr_size_m"] == 0.16
     assert anchors[0]["position_m"] == [4.5, 4.5, 0.0] and anchors[0]["scale"] == 1.0
@@ -66,7 +66,7 @@ def test_committed_glb_has_the_fresh_build_guids(built):
 
 def test_sheets_match_the_anchors(monkeypatch):
     sheets = [rooftop.r1_sheet(), rooftop.r2_sheet(), *rooftop.view_sheets()]
-    assert [anchor_entry(sh, rooftop.PROJECT_ID) for sh in sheets] == [rooftop.ANCHOR, rooftop.ANCHOR_A4, *rooftop.VIEW_ANCHORS]
+    assert [anchor_entry(sh, rooftop.PROJECT_ID) for sh in sheets] == [rooftop.ANCHOR, rooftop.ANCHOR_R2, *rooftop.VIEW_ANCHORS]
     # The printed code size follows the anchor row instead of a second hard-coded number.
     monkeypatch.setitem(rooftop.ANCHOR, "qr_size_m", 0.3)
     assert rooftop.r1_sheet().qr_mm == 300.0

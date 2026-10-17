@@ -2,7 +2,7 @@
 
 The demo uses the **camera overlay only**: scan an upright QR sheet, lock, then turn on the spot. Walk inside and Start AR are hidden; they come back with `?xr=1` on the page URL. The model is `site`: a two-storey building under construction, 18 × 12 m on 6 m bays, 3.9 m clear under the level 1 beams, ridge at about 10.5 m.
 
-Files: the four sheets `site-P1.pdf` … `site-P4.pdf` (A3), the layout plan `site-layout.pdf` (A3), all on the start page.
+Files: the four sheets `site-P1.pdf` … `site-P4.pdf` (US Letter, 16 cm code), the layout plan `site-layout.pdf` (US Letter), all on the start page.
 
 ## 1. The holding attitude (required)
 
@@ -20,7 +20,7 @@ Sized for a filmer about **1.70 m (5'7")** tall, standing upright.
 
 ## 2. Before the shoot (once)
 
-1. **Print** each P sheet on A3, **100% / Actual size** (not "Fit"), matte paper. Measure the **10 cm check bar**: it must read 10.0 cm (± 1 mm).
+1. **Print** each P sheet on US Letter, **100% / Actual size** (not "Fit"), matte paper. Measure the **10 cm check bar**: it must read 10.0 cm (± 1 mm).
 2. **Mount** each sheet flat on foam board or plywood, with no curl or wrinkles. Put it on a tripod, easel or stand, or tape it to a pole. Weigh it down against wind.
 3. **Set out** with the layout plan:
    - Tape a cross at **O** (grid corner A1).

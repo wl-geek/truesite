@@ -71,14 +71,14 @@ Wai found a 13-second screen recording of a commercial construction-AR app on a 
 
 1. **Hero shot (the video's opening): the rooftop of Wai's condo, 40th floor, clear sky, about 100 m² clear.**
    - Project `rooftop`: a 9 × 9 m, two-storey concrete frame (32 columns, 48 beams, 80 rebar cages with starter bars) at 1:1.
-   - The A2 sheet **R1** (33 cm code) lies at the centre of the middle bay; **R2** is an A4 test version.
+   - The US Letter sheet **R1** (16 cm code) lies at the centre of the middle bay; **R2** is a spare.
    - Scan R1 → Start camera (the camera overlay, on Android and iPhone) → start within 1 m, step back → the frame stands around the sheet, and you turn on the spot and look up. Start AR (world-locked, walk under it) stays hidden behind `?xr=1` and is untested on a device.
-   - **iPad building site (Michael, open car park):** project `site`, a two-storey building under construction (18 × 12 m, 6 m bays, 3.9 m clear in the ground storey, ridge about 10.5 m), colour-coded by type like the video. Four upright A3 sheets P1–P4 set out with `site-layout.pdf`. At each one: lock 0.7 m from the code, step back to the X 1.5 m away, turn on the spot. Camera overlay only, levelled by the motion sensors. Walk inside and Start AR are hidden (`?xr=1` brings them back). Checklist: `docs/demo/ipad-ar-filming.md`.
+   - **iPad building site (Michael, open car park):** project `site`, a two-storey building under construction (18 × 12 m, 6 m bays, 3.9 m clear in the ground storey, ridge about 10.5 m), colour-coded by type like the video. Four upright US Letter sheets P1–P4 set out with `site-layout.pdf`. At each one: lock 0.7 m from the code, step back to the X 1.5 m away, turn on the spot. Camera overlay only, levelled by the motion sensors. Walk inside and Start AR are hidden (`?xr=1` brings them back). Checklist: `docs/demo/ipad-ar-filming.md`.
 2. **The AI moment.** Boxes or cones stand where 3–4 columns go, **one about 40 cm off and one missing**. *Check as-built* finds "Column … misplaced, about 40 cm" and "Column … missing". This is a setting-out check, a real site task.
 3. **Judges without a site:**
    - `/samples` runs the real check on stored photos
-   - the A4 **desk sheet D1** shows the room at 1:20
-   - the A4 **floor sheet L1** shows the demo room at 1:1 around you
+   - the US Letter **desk sheet D1** shows the room at 1:20
+   - the US Letter **floor sheet L1** shows the demo room at 1:1 around you
 4. **Also in the video:** Ask on an element, a drafted issue, the measured accuracy, and the Google Cloud architecture.
 
 ## 5. Prototype scope (what "done" means by Sat 17 Oct)
