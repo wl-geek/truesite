@@ -7,5 +7,12 @@
 .dt-handoff img { display: block; border-radius: 8px; background: var(--white); }
 .dt-handoff p { margin: 0; font-size: 15px; }
 .dt-note { color: var(--muted); font-size: 14px; }
+.dt-step { margin: 0 0 4px !important; color: var(--steel); font-size: 13px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; }
+.dt-sheet { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; margin: 14px 0; padding: 12px 14px; border-radius: 14px; background: var(--paper); }
+.dt-sheet-name { display: grid; gap: 2px; }
+.dt-sheet-name span { color: var(--muted); font-size: 14px; }
+.dt-list { margin: 0 0 14px; padding-left: 20px; display: grid; gap: 6px; }
+.dt-virtual { margin: 14px 0 0 !important; padding-top: 12px; border-top: 1px solid var(--line); }
 .dt-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 @media (max-width: 420px) { .dt-handoff { grid-template-columns: 1fr; justify-items: center; text-align: center; } }
+.dt a:not(.btn) { color: var(--steel); font-weight: 600; }

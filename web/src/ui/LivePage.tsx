@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { ApiError, getProject } from '../api/client'
 import type { Anchor, CheckResult, Finding, ProjectManifest } from '../api/types'
 import { CameraError, startRearCamera, stopCamera, watchCamera, type CameraStart } from '../camera/camera'
@@ -36,6 +36,7 @@ import { requestMotionPermission } from '../scene/motion'
 import { QualityBadge } from './QualityBadge'
 import { SITE_VIEWPOINTS } from './siteViewpoints'
 import { DeviceTip } from './DeviceTip'
+import { sheetInfo } from './sheet'
 import { isHandheld } from './device'
 import { ReloadPrompt } from './ReloadPrompt'
 
@@ -78,10 +79,10 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   const [camStopped, setCamStopped] = useState(false)
   const [starting, setStarting] = useState(false)
   const [running, setRunning] = useState(false)
-  // Live AR is made for tablets and phones: on a laptop or PC, recommend switching once per visit.
+  // Live AR is made for tablets and phones: on a laptop or PC, the popup opens every time this page does.
   const handheld = useMemo(() => isHandheld(), [])
-  const [deviceTip, setDeviceTip] = useState(() => !handheld && !sessionFlag('truesite.deviceTip'))
-  const closeDeviceTip = useCallback(() => { setDeviceTip(false); sessionFlag('truesite.deviceTip', true) }, [])
+  const [deviceTip, setDeviceTip] = useState(() => !handheld)
+  const closeDeviceTip = useCallback(() => setDeviceTip(false), [])
   const [state, setState] = useState<OverlayState | null>(null)
   const [checking, setChecking] = useState(false)
   const [checkError, setCheckError] = useState<string | null>(null)
@@ -410,6 +411,45 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   const checkable = loaded ? checkAvailability(loaded.anchor) : { enabled: true, note: null }
   const selectFinding = (f: Finding) => setSelectedMark(f.mark)
 
+  // The camera view is full screen: the site's top bar goes while the camera runs (Exit brings it back).
+  useEffect(() => {
+    document.documentElement.classList.toggle('ar-running', running)
+    return () => document.documentElement.classList.remove('ar-running')
+  }, [running])
+
+  // Why this sheet can't be checked: shown when the camera starts, and again on a tap of Check as-built.
+  const [noteOpen, setNoteOpen] = useState(false)
+  const noteTimer = useRef(0)
+  const showNote = useCallback(() => {
+    setNoteOpen(true)
+    clearTimeout(noteTimer.current)
+    noteTimer.current = window.setTimeout(() => setNoteOpen(false), NOTE_MS)
+  }, [])
+  useEffect(() => {
+    if (running && checkable.note) showNote()
+    return () => clearTimeout(noteTimer.current)
+  }, [running, checkable.note, showNote])
+  // One instruction at a time over the camera. Guidance (once aligned, or while held by the sensors) fades after a few
+  // seconds so the model is in full view; a hint that asks for something stays until it's done. Any can be closed.
+  const hint = coachHint(state, desk, checkable.enabled)
+  const settled = (!!state?.tracking && !state.provisional && !isFar(state.distanceM)) || state?.mode === 'motion'
+  const [hiddenHint, setHiddenHint] = useState<string | null>(null)
+  // Messages give way to the panels: View, Setup and the results.
+  const panelOpen = showControls || calibrating || showResults
+  const hintVisible = !checking && !panelOpen && !noteOpen && hint !== hiddenHint
+  useEffect(() => { // the fade counts only while the hint is on screen
+    if (!settled || !hintVisible) return
+    const id = setTimeout(() => setHiddenHint(hint), HINT_FADE_MS)
+    return () => clearTimeout(id)
+  }, [hint, settled, hintVisible])
+  const [dismissed, setDismissed] = useState<ReadonlySet<string>>(new Set())
+  const dismiss = (key: string) => setDismissed((d) => new Set(d).add(key))
+  const warning = checkError ? { key: 'check', text: checkError, close: () => setCheckError(null) }
+    : state?.qrFailed ? { key: 'qr', text: "The QR reader didn't load. Check your connection and reload.", close: () => dismiss('qr') }
+      : state?.otherAnchor && !dismissed.has(`other:${state.otherAnchor.anchorId}`) ? { key: `other:${state.otherAnchor.anchorId}`, text: null, close: () => dismiss(`other:${state.otherAnchor!.anchorId}`) }
+        : isFar(state?.distanceM ?? null) && !dismissed.has('far') ? { key: 'far', text: 'More than 3 m from the code: the overlay is less accurate.', close: () => dismiss('far') }
+          : null
+
   return (
     <main className={`live-page${running ? '' : ' live-idle'}`}>
       <div ref={xrOverlayRef} className="xr-overlay" style={{ display: 'none' }}>
@@ -455,25 +495,31 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
         {running && (
           <div className="live-top">
             {glDead && <ReloadPrompt />}
-            <div className="live-chips">
-              {loaded && <span className="mode-chip">{scaleLabel(loaded.anchor)}</span>}
-              <QualityBadge state={state} />
+            <div className="hud-row">
+              <Link to="/#live" className="hud-exit" aria-label="Exit live AR">
+                <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" /></svg>
+              </Link>
+              <div className="hud-status">
+                {loaded && <ScaleLabel text={scaleLabel(loaded.anchor)} />}
+                <QualityBadge state={state} />
+              </div>
             </div>
-            {!checking && <p className="coach">{coachHint(state, desk, checkable.enabled)}</p>}
-            {!checking && checkable.note && (
-              <p className="coach">
-                {checkable.note}{!checkable.enabled && <> <Link to="/samples">Open the virtual demo</Link></>}
-              </p>
+            {warning && !panelOpen && (
+              <HudMessage tone="warn" onClose={warning.close} alert={warning.key === 'check' || warning.key === 'qr'}>
+                {warning.text ?? (
+                  <>This is a different code ({state!.otherAnchor!.anchorId}).{' '}
+                    <Link to={`/a/${state!.otherAnchor!.projectId}/${state!.otherAnchor!.anchorId}`}>Switch to it</Link></>
+                )}
+              </HudMessage>
             )}
-            {state?.qrFailed && <p className="live-warning" role="alert">The QR reader didn't load. Check your connection and reload.</p>}
-            {isFar(state?.distanceM ?? null) && <p className="live-warning">More than 3 m from the code: the overlay is less accurate.</p>}
-            {state?.otherAnchor && (
-              <p className="live-warning">
-                This is a different code ({state.otherAnchor.anchorId}).{' '}
-                <Link to={`/a/${state.otherAnchor.projectId}/${state.otherAnchor.anchorId}`}>Switch to it</Link>
-              </p>
+            {!checking && !panelOpen && noteOpen && checkable.note && (
+              <HudMessage onClose={() => setNoteOpen(false)}>
+                {checkable.note}{!checkable.enabled && <> <Link to={`/samples${SITE_VIEWPOINTS.some((v) => loaded?.anchor.project_id === 'site' && v.id === loaded.anchor.anchor_id) ? `?at=${anchorId}` : ''}`}>Try the check in the virtual demo</Link></>}
+              </HudMessage>
             )}
-            {checkError && <p className="live-warning" role="alert">{checkError}</p>}
+            {hintVisible && (
+              <HudMessage onClose={() => setHiddenHint(hint)}>{hint}</HudMessage>
+            )}
           </div>
         )}
 
@@ -494,9 +540,11 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
           <div className="live-actions">
             <button type="button" className="btn" onClick={() => setCalibrating(true)} aria-label="Camera setup">Setup</button>
             <button type="button" className="btn" onClick={() => setShowControls((v) => !v)} aria-pressed={showControls}>View</button>
-            {outcome && <button type="button" className="btn" onClick={() => setShowResults(true)}>Last results</button>}
+            {outcome && <button type="button" className="btn" onClick={() => setShowResults(true)}>Results</button>}
             {dev && <button type="button" className="btn" onClick={saveSample} disabled={!state?.tracking}>Save as sample</button>}
-            <button type="button" className="btn btn-accent" onClick={check} disabled={checking || !state?.tracking || !checkable.enabled}>
+            {/* On a sheet that can't be checked, the button stays tappable and says why. */}
+            <button type="button" className={`btn btn-accent${checkable.enabled ? '' : ' btn-unavailable'}`} aria-disabled={!checkable.enabled || undefined}
+              onClick={checkable.enabled ? check : showNote} disabled={checking || !state?.tracking}>
               {checking ? 'Checking…' : 'Check as-built'}
             </button>
           </div>
@@ -603,9 +651,13 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
                 )}
               </>
             )}
-            {loaded && SITE_VIEWPOINTS.some((v) => loaded.anchor.project_id === 'site' && v.id === loaded.anchor.anchor_id) && (
+            {loaded && (
               <p className="live-virtual">
-                No sheet with you? <Link to={`/samples?at=${loaded.anchor.anchor_id}`}>Try {loaded.anchor.anchor_id} in the virtual demo</Link>.
+                <a href={sheetInfo(loaded.anchor).href} download>Download sheet {loaded.anchor.anchor_id}</a>
+                {sheetInfo(loaded.anchor).paper && ` (${sheetInfo(loaded.anchor).paper}, PDF)`}
+                {SITE_VIEWPOINTS.some((v) => loaded.anchor.project_id === 'site' && v.id === loaded.anchor.anchor_id) && (
+                  <> · <Link to={`/samples?at=${loaded.anchor.anchor_id}`}>Try {loaded.anchor.anchor_id} in the virtual demo</Link></>
+                )}
               </p>
             )}
             {!handheld && loaded && (
@@ -621,10 +673,33 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
         )}
       </div>
       {deviceTip && (
-        <DeviceTip url={window.location.href} onClose={closeDeviceTip}
+        <DeviceTip url={window.location.href} anchor={loaded?.anchor ?? null} onClose={closeDeviceTip}
           virtualHref={projectId === 'site' && SITE_VIEWPOINTS.some((v) => v.id === anchorId) ? `/samples?at=${anchorId}` : '/#virtual'} />
       )}
     </main>
+  )
+}
+
+/** Guidance fades this long after it appears once the overlay is aligned. */
+const HINT_FADE_MS = 6000
+/** The "nothing to check on this sheet" note shows this long. */
+const NOTE_MS = 6000
+
+/** "Life size · 1:1" in the status pill; narrow phones show just "1:1". */
+function ScaleLabel({ text }: { text: string }) {
+  const [word, ratio] = text.split(' · ')
+  return <span className="hud-scale">{ratio ? <><span className="hud-wide">{word} · </span>{ratio}</> : text}</span>
+}
+
+/** One closable message over the camera view (dark, so the model stays visible around it). */
+function HudMessage({ children, onClose, tone, alert }: { children: ReactNode; onClose: () => void; tone?: 'warn'; alert?: boolean }) {
+  return (
+    <div className={`hud-msg${tone ? ` hud-msg-${tone}` : ''}`} role={alert ? 'alert' : 'status'}>
+      <p>{children}</p>
+      <button type="button" className="hud-msg-close" onClick={onClose} aria-label="Close this message">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" /></svg>
+      </button>
+    </div>
   )
 }
 
@@ -658,14 +733,4 @@ function startLabel(projectName: string, anchor: Anchor): string {
   const name = projectName.replace(/\s*\(1:1\)$/, '')
   const vp = anchor.project_id === 'site' ? SITE_VIEWPOINTS.find((v) => v.id === anchor.anchor_id) : undefined
   return `${name} · ${vp ? `${vp.id} ${vp.name}` : anchor.anchor_id}`
-}
-
-/** Read or set a once-per-visit flag (sessionStorage can throw in private modes: then the tip just shows again). */
-function sessionFlag(key: string, value?: boolean): boolean {
-  try {
-    if (value) sessionStorage.setItem(key, '1')
-    return sessionStorage.getItem(key) === '1'
-  } catch {
-    return false
-  }
 }

@@ -49,10 +49,11 @@ describe('styles.css on phones', () => {
     expect(value('.status', 'position')).toBeNull()
   })
 
-  it('wraps the live action bar and gives Check as-built its own row (A-18)', () => {
+  it('keeps the live actions in one compact row that wraps on a narrow phone, Check as-built growing (A-18)', () => {
     expect(value('.live-actions', 'flex-wrap')).toBe('wrap')
     expect(value('.live-actions .btn', 'min-width')).toBe('0')
-    expect(value('.live-actions .btn-accent', 'flex-basis')).toBe('100%')
+    expect(value('.live-actions .btn', 'min-height')).toBe('44px')
+    expect(value('.live-actions .btn-accent', 'flex')).toBe('1 1 160px')
     // The view controls sit above two rows of 44 px buttons (bar at 24 px from the bottom, 8 px gap).
     expect(px(value('.live-controls', 'bottom'))).toBeGreaterThanOrEqual(24 + 44 + 8 + 44)
   })

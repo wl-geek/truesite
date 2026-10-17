@@ -84,12 +84,12 @@ export type CheckAvailability = { enabled: boolean; note: string | null }
  * L1 (floor sheet) is life size: only the part of the demo room that stands around it can be checked.
  */
 const DEMO_SHEETS: Record<string, CheckAvailability> = {
-  'room1/D1': { enabled: false, note: 'Checks need the real site or our 1:20 model. Try the virtual demo.' },
+  'room1/D1': { enabled: false, note: 'Checks need the real site or our 1:20 model.' },
   'room1/L1': { enabled: true, note: 'Away from the demo room, elements will read as missing.' },
 }
 // The building site sheets show the design in an empty car park: nothing is built there to check.
 for (const id of ['P1', 'P2', 'P3', 'P4', 'D1']) {
-  DEMO_SHEETS[`site/${id}`] = { enabled: false, note: 'This sheet shows the design where nothing is built yet, so there is nothing to check. Try the virtual demo.' }
+  DEMO_SHEETS[`site/${id}`] = { enabled: false, note: 'This sheet shows the design where nothing is built yet, so there is nothing to check here.' }
 }
 
 export function checkAvailability(anchor: ApiAnchor): CheckAvailability {
