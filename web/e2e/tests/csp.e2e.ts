@@ -1,4 +1,4 @@
-import { enterVirtualSite, expect, runVirtualCheck, test } from '../support/fixtures'
+import { enterVirtualSite, expect, presentAsTablet, runVirtualCheck, test } from '../support/fixtures'
 
 /**
  * The server sends Content-Security-Policy-Report-Only (server/app/security_headers.py): browsers report what the
@@ -16,7 +16,8 @@ test.describe('Content-Security-Policy-Report-Only', () => {
     await page.waitForLoadState('networkidle')
     await page.goto('/a/site/P1') // the laptop popup draws its QR code as a data: image
     await expect(page.getByRole('dialog')).toBeVisible()
-    await page.getByRole('button', { name: 'Continue on this computer' }).click()
+    await presentAsTablet(page) // the live view itself runs only on tablets and phones
+    await page.goto('/a/site/P1')
     await page.getByRole('button', { name: 'Start camera' }).click()
     await expect(page.getByRole('heading', { name: 'Calibrate this camera (10 s)' })).toBeVisible()
     await page.waitForTimeout(1500) // let the worker compile the wasm and scan a few frames

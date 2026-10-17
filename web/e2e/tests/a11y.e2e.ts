@@ -1,7 +1,7 @@
 import AxeBuilder from '@axe-core/playwright'
 import type { Page } from '@playwright/test'
 import { BUG, KNOWN_AXE } from '../support/bugs'
-import { enterVirtualSite, expect, runVirtualCheck, stubGeminiFindsPlanted, test } from '../support/fixtures'
+import { enterVirtualSite, expect, presentAsTablet, runVirtualCheck, stubGeminiFindsPlanted, test } from '../support/fixtures'
 
 /**
  * axe-core with the WCAG 2.2 A/AA rules. Serious and critical violations fail the test; the full list is attached.
@@ -29,8 +29,8 @@ async function openStubbedResults(page: Page): Promise<void> {
 }
 
 async function startLiveCamera(page: Page): Promise<void> {
+  await presentAsTablet(page)
   await page.goto('/a/site/P1')
-  await page.getByRole('button', { name: 'Continue on this computer' }).click()
   await page.getByRole('button', { name: 'Start camera' }).click()
   await page.getByRole('button', { name: 'Skip' }).click()
   await page.getByRole('button', { name: 'Skip' }).click()
@@ -48,16 +48,20 @@ test.describe('accessibility (axe-core, serious and critical)', () => {
     }
   })
 
-  test('live AR: both steps of the laptop popup, the start panel and the running camera view', async ({ page }) => {
-    test.slow() // five full scans
+  test('live AR on a laptop: both steps of the popup', async ({ page }) => {
     await page.goto('/a/site/P1')
     await expect(page.getByRole('dialog', { name: 'Open live AR on your tablet or phone' })).toBeVisible()
     expect(await scan(page, 'live-popup')).toEqual([])
     await page.getByRole('button', { name: 'Next: get the sheet' }).click()
     await expect(page.getByRole('dialog', { name: 'Print the sheet and scan its code' })).toBeVisible()
     expect(await scan(page, 'live-popup-sheet')).toEqual([])
-    await page.getByRole('button', { name: 'Done' }).click()
-    await expect(page.getByRole('dialog')).toHaveCount(0)
+  })
+
+  test('live AR on a tablet: the start panel and the running camera view', async ({ page }) => {
+    test.slow() // three full scans
+    await presentAsTablet(page)
+    await page.goto('/a/site/P1')
+    await expect(page.getByRole('button', { name: 'Start camera' })).toBeVisible()
     expect(await scan(page, 'live-start')).toEqual([])
     await page.getByRole('button', { name: 'Start camera' }).click()
     await expect(page.getByRole('heading', { name: 'Calibrate this camera (10 s)' })).toBeVisible()

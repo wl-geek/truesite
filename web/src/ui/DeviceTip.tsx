@@ -14,21 +14,23 @@ type Props = {
   anchor: Anchor | null
   /** Where the virtual demo for this sheet is (it runs fine on a computer). */
   virtualHref: string
-  onClose: () => void
+  /** Leave live AR: back to the start page. The popup has no way into the live view on a computer. */
+  onLeave: () => void
 }
 
 /**
- * Shown when live AR is opened on a laptop or PC: live AR is made for tablets and smartphones.
- * Step 1 hands this page over to a tablet or phone by QR; step 2 gives the matching sheet to print and scan.
+ * Shown every time live AR is opened on a laptop or PC, and it stays: live AR needs a tablet's or phone's camera and
+ * motion sensors, so a computer can't use it. Step 1 hands this page over to a tablet or phone by QR; step 2 gives the
+ * matching sheet to print and scan. "Back to home" (or Escape) leaves for the start page; nothing opens the live view.
  * It waits for the sheet to load, so it never covers a broken link and hands that to a phone (audit C-29), and it
  * renders on <body>, above the top bar, as a modal that keeps focus (C-28).
  */
-export function DeviceTip({ url, anchor, virtualHref, onClose }: Props) {
+export function DeviceTip({ url, anchor, virtualHref, onLeave }: Props) {
   const [step, setStep] = useState<1 | 2>(1)
   const primary = useRef<HTMLButtonElement | HTMLAnchorElement>(null)
   const dialog = useRef<HTMLDivElement>(null)
   const qr = useMemo(() => `data:image/svg+xml;utf8,${encodeURIComponent(renderSVG(url, { border: 2 }))}`, [url])
-  useModal(dialog, anchor !== null, onClose)
+  useModal(dialog, anchor !== null, onLeave)
   useEffect(() => {
     primary.current?.focus()
   }, [step])
@@ -36,13 +38,14 @@ export function DeviceTip({ url, anchor, virtualHref, onClose }: Props) {
   const sheet = sheetInfo(anchor)
   const layoutPlan = anchor.project_id === 'site' && !sheet.flat
   return createPortal(
-    <div className="dt-backdrop" onClick={onClose}>
-      <div className="dt" role="dialog" aria-modal="true" aria-labelledby="dt-title" ref={dialog} onClick={(e) => e.stopPropagation()}>
+    <div className="dt-backdrop">
+      <div className="dt" role="dialog" aria-modal="true" aria-labelledby="dt-title" ref={dialog}>
         <p className="dt-step" aria-live="polite">Step {step} of 2</p>
         {step === 1 ? (
           <>
             <h2 id="dt-title">Open live AR on your tablet or phone</h2>
-            <p>Live AR runs on the device's camera. A tablet gives the best view; a phone works well too.</p>
+            <p>Live AR needs a tablet's or phone's camera and motion sensors, so it doesn't run on a laptop or PC. A tablet gives
+              the best view; a phone works well too.</p>
             <div className="dt-handoff">
               <img src={qr} width="132" height="132" alt="QR code for this live view" />
               <p><strong>Scan this code with your tablet or phone.</strong> This live view opens there.</p>
@@ -51,7 +54,7 @@ export function DeviceTip({ url, anchor, virtualHref, onClose }: Props) {
               <button type="button" className="btn btn-accent" ref={primary as RefObject<HTMLButtonElement>} onClick={() => setStep(2)}>
                 Next: get the sheet
               </button>
-              <button type="button" className="btn" onClick={onClose}>Continue on this computer</button>
+              <button type="button" className="btn" onClick={onLeave}>Back to home</button>
             </div>
           </>
         ) : (
@@ -75,8 +78,8 @@ export function DeviceTip({ url, anchor, virtualHref, onClose }: Props) {
               <p className="dt-note">Setting out all four site sheets: <a href="/sheets/site-layout.pdf" download>download the layout plan</a>.</p>
             )}
             <div className="dt-actions">
-              <button type="button" className="btn" onClick={() => setStep(1)}>Back</button>
-              <button type="button" className="btn" onClick={onClose}>Done</button>
+              <button type="button" className="btn" onClick={() => setStep(1)}>Back to the QR code</button>
+              <button type="button" className="btn" onClick={onLeave}>Back to home</button>
             </div>
           </>
         )}

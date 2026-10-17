@@ -34,6 +34,20 @@ test.describe('3D model viewer', () => {
     expectClean(log)
   })
 
+  test('the top bar opens the 3D model from any page and marks it as the current page @handheld', async ({ page, log }) => {
+    await page.goto('/')
+    const bar = page.locator('.tb-nav')
+    const nav = (await bar.isVisible()) ? bar : (await page.getByRole('button', { name: 'Menu' }).click(), page.locator('#tb-menu'))
+    await nav.getByRole('link', { name: '3D model' }).click()
+    await expect(page).toHaveURL(/\/model$/)
+    await expect(page.getByRole('heading', { level: 1, name: 'Building under construction' })).toBeVisible()
+    await expect(page.locator('#tb-menu')).toBeHidden() // the phone menu closes after a pick
+    const marked = (await bar.isVisible()) ? bar : (await page.getByRole('button', { name: 'Menu' }).click(), page.locator('#tb-menu'))
+    await expect(marked.getByRole('link', { name: '3D model' })).toHaveAttribute('aria-current', 'page')
+    await expect(marked.locator('[aria-current]')).toHaveCount(1)
+    expectClean(log)
+  })
+
   test('tap an element: its data, then Ask answers from the model data only @handheld', async ({ page, log }) => {
     await page.goto('/model')
     const name = await tapAnElement(page)
