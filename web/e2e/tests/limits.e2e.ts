@@ -94,7 +94,7 @@ test('daily cap, ready-made view with no saved result: the copy says so', async 
   await expect(page.getByRole('alert')).toContainText("Today's check limit has been reached.")
 })
 
-test.fixme(BUG.capCopy, async ({ page }) => {
+test(BUG.capCopy, async ({ page }) => {
   await enterVirtualSite(page, 'P4')
   await untilDailyCap(page, () => page.getByRole('button', { name: 'Check as-built' }).click())
   await expect(page.locator('.vs-notice')).not.toContainText('sample photos')

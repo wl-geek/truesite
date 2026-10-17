@@ -39,6 +39,14 @@ test.describe('ready-made views (?photos)', () => {
     expectClean(log)
   })
 
+  test('running a view scrolls to its result (C-08) @handheld', async ({ page }) => {
+    await page.goto('/samples?photos')
+    await page.locator('.sample-card').nth(3).click()
+    const title = page.locator('.sample-results h2.sample-results-title')
+    await expect(title).toHaveText(SAMPLES[3], { timeout: 60_000 })
+    await expect(title).toBeInViewport({ ratio: 1 }) // was below the fold: y = 800 at 1280 x 820, 1493 on a phone
+  })
+
   test("when Gemini can't run, the photo's saved result is shown with the reason", async ({ page }) => {
     await page.goto('/samples?photos')
     // A first live check stores this photo's result on the server (the in-memory store starts empty).
