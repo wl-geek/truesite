@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { deviceRotation } from '../scene/motion'
-import { clampPitch, deviceLook, dragLook, forwardOf, PITCH_MAX, wrap, yawOf } from './lookAngles'
+import { clampPitch, deviceLook, dragLook, forwardOf, lookToward, PITCH_MAX, turnBetween, wrap, yawOf } from './lookAngles'
 
 describe('lookAngles', () => {
   it('points the view along the yaw and pitch', () => {
@@ -44,5 +44,27 @@ describe('lookAngles (mutation-tested)', () => {
       expect(Math.atan2(y, x)).toBeCloseTo(yaw, 12)
       expect(Math.asin(z)).toBeCloseTo(pitch, 12)
     }
+  })
+})
+
+describe('turning to face an element', () => {
+  it('aims at a point: yaw in the plan, pitch up or down, clamped', () => {
+    const a = lookToward([0, 0, 1.5], [3, 3, 1.5])
+    expect(a.yaw).toBeCloseTo(Math.PI / 4, 9)
+    expect(a.pitch).toBeCloseTo(0, 9)
+    expect(lookToward([0, 0, 1.5], [0, 4, 5.5]).pitch).toBeCloseTo(Math.PI / 4, 9)
+    expect(lookToward([0, 0, 1.5], [0, 0.01, 50]).pitch).toBe(PITCH_MAX) // straight up is past the limit
+  })
+
+  it('eases along the short way round, ending exactly on the target', () => {
+    const from = { yaw: (170 * Math.PI) / 180, pitch: 0 }
+    const to = { yaw: (-170 * Math.PI) / 180, pitch: 0.2 }
+    const mid = turnBetween(from, to, 0.5)
+    expect(wrap(mid.yaw)).toBeCloseTo(Math.PI, 6) // through 180°, not back through 0°
+    expect(mid.pitch).toBeCloseTo(0.1, 9)
+    const end = turnBetween(from, to, 1)
+    expect(wrap(end.yaw)).toBeCloseTo(to.yaw, 9)
+    expect(end.pitch).toBeCloseTo(0.2, 9)
+    expect(turnBetween(from, to, 0)).toEqual(from)
   })
 })

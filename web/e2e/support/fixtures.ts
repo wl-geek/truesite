@@ -217,7 +217,10 @@ export async function smallTapTargets(page: Page, min = 24): Promise<string[]> {
     const all = [...document.querySelectorAll<HTMLElement>(sel)].filter((el) => {
       const r = el.getBoundingClientRect()
       const st = getComputedStyle(el)
+      // checkVisibility(): Chrome lays out a closed <details>'s rows (content-visibility: hidden) where they'd be, but
+      // nobody can see or tap them.
       return r.width > 0 && r.height > 0 && st.visibility !== 'hidden' && !el.closest('[aria-hidden="true"]') && r.bottom > 0 && r.top < window.innerHeight * 4
+        && el.checkVisibility()
     })
     const rects = new Map(all.map((el) => [el, el.getBoundingClientRect()]))
     const inSentence = (el: HTMLElement) => {

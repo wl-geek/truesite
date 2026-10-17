@@ -45,3 +45,11 @@ export function describeDeviation(d: Deviation): string {
   const cm = Math.round((Math.hypot(...d.offsetM) * 100) / 5) * 5
   return `${d.element}: about ${cm} cm ${direction(d.offsetM)} of the design`
 }
+
+/** What the virtual demo planted on one element, in words for its details panel (shown once a check has run). */
+export function plantedNote(name: string, deviations: readonly Deviation[] = SITE_AS_BUILT): string {
+  const own = deviations.find((d) => d.element === name)
+  if (own) return describeDeviation(own).slice(own.element.length + 2)
+  const host = deviations.find((d) => d.kind === 'shifted' && d.alsoMoves?.includes(name))
+  return host ? `moved with ${describeDeviation(host)}` : 'nothing: it was built as designed'
+}

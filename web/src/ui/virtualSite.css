@@ -1,14 +1,19 @@
-/* The virtual site (VirtualSite.tsx): a full-screen 3D view under the top bar, with controls over it. */
-.vs { position: fixed; inset: calc(var(--topbar-h) + env(safe-area-inset-top)) 0 0 0; z-index: 5; background: #cfdbe6; overflow: hidden; }
+/* The virtual site (VirtualSite.tsx): a full-screen 3D view under the top bar, with controls over it. Wide screens dock
+   the check results on the left and the element details on the right (--dock-l, --dock-r: their widths, set by
+   VirtualSite); the chip, the controls and the view itself stay in the free middle. Phones show one bottom sheet. */
+.vs { --dock-l: 0px; --dock-r: 0px; position: fixed; inset: calc(var(--topbar-h) + env(safe-area-inset-top)) 0 0 0; z-index: 5; background: #cfdbe6; overflow: hidden; }
 .vs-canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; outline: none; }
 .vs-canvas:active { cursor: grabbing; }
 .vs-canvas:focus-visible { outline: 3px solid var(--orange); outline-offset: -3px; }
 
-.vs-top { position: absolute; top: 10px; left: max(10px, env(safe-area-inset-left)); right: max(10px, env(safe-area-inset-right)); display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px; pointer-events: none; }
+.vs-top {
+  position: absolute; top: 10px; left: calc(max(10px, env(safe-area-inset-left)) + var(--dock-l));
+  right: calc(max(10px, env(safe-area-inset-right)) + var(--dock-r)); display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 8px; pointer-events: none;
+}
 .vs-top > * { pointer-events: auto; }
 .vs-chip { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 12px; border-radius: 10px; background: rgba(11, 31, 51, 0.82); color: var(--white); font-size: 14px; font-weight: 600; }
 .vs-chip-tag { padding: 2px 7px; border-radius: 6px; background: var(--orange); color: var(--ink); font-size: 12px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
-.vs-top-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .vs-btn {
   display: inline-flex; align-items: center; justify-content: center; text-decoration: none;
   min-height: 44px; padding: 0 14px; border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 10px; background: rgba(11, 31, 51, 0.72);
@@ -16,8 +21,6 @@
 }
 .vs-btn:hover:not(:disabled) { background: rgba(11, 31, 51, 0.9); }
 .vs-btn:disabled { opacity: 0.5; cursor: default; }
-.vs-btn-on { border-color: var(--orange); background: var(--orange); color: var(--ink); }
-.vs-btn-on:hover:not(:disabled) { background: #ff7f33; }
 .vs-btn-light { border-color: var(--line); background: var(--white); color: var(--steel); }
 .vs-btn-light:hover:not(:disabled) { background: #eef3f8; }
 
@@ -26,35 +29,90 @@
 .vs > .status { position: absolute; left: 50%; top: 45%; transform: translate(-50%, -50%); margin: 0; z-index: 2; } /* ReloadPrompt */
 /* A first drag often starts on the card, in the middle of the view: it goes through to the canvas, which turns the
    view and dismisses the card, instead of selecting the card's text (audit C-09). Got it still takes taps. */
-.vs-coach { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(380px, calc(100% - 32px)); padding: 16px 18px; border-radius: 14px; background: rgba(255, 255, 255, 0.95); color: var(--ink); box-shadow: 0 12px 40px rgba(11, 31, 51, 0.3); pointer-events: none; -webkit-user-select: none; user-select: none; }
+.vs-coach {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(400px, calc(100% - 32px)); padding: 16px 18px;
+  border-radius: 14px; background: rgba(255, 255, 255, 0.96); color: var(--ink); box-shadow: 0 12px 40px rgba(11, 31, 51, 0.3);
+  pointer-events: none; -webkit-user-select: none; user-select: none;
+}
 .vs-coach p { margin: 0 0 8px; }
-.vs-coach .vs-btn { margin-top: 4px; border-color: var(--steel); background: var(--steel); pointer-events: auto; }
+.vs-coach ul { margin: 0 0 10px; padding-left: 18px; display: grid; gap: 4px; font-size: 14.5px; }
+.vs-coach .vs-btn { border-color: var(--steel); background: var(--steel); pointer-events: auto; }
 
-.vs-bottom { position: absolute; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 12px 16px calc(16px + env(safe-area-inset-bottom)); pointer-events: none; }
+/* Hover label (mouse only), as in the 3D viewer. */
+.vs-hover {
+  position: fixed; z-index: 7; display: grid; gap: 1px; max-width: 260px; margin: 0; padding: 6px 10px; border-radius: 8px;
+  background: rgba(11, 31, 51, 0.92); color: rgba(255, 255, 255, 0.8); font-size: 12px; pointer-events: none;
+}
+.vs-hover strong { color: var(--white); font-size: 14px; }
+
+/* The controls: the view tools (BIM overlay switch, Turn with device, Show results) and Check as-built, in the free middle. */
+.vs-bottom {
+  position: absolute; left: var(--dock-l); right: var(--dock-r); bottom: 0; display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 12px 16px calc(16px + env(safe-area-inset-bottom)); pointer-events: none;
+}
 .vs-bottom > * { pointer-events: auto; }
 .vs-notice { margin: 0; max-width: 520px; padding: 8px 12px; border-radius: 10px; background: rgba(255, 255, 255, 0.95); color: var(--ink); font-size: 14px; }
+.vs-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 10px; width: 100%; pointer-events: none; }
+.vs-controls > * { pointer-events: auto; }
+.vs-tools {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; padding: 5px; border: 1px solid var(--line); border-radius: 14px;
+  background: var(--white); box-shadow: 0 8px 24px rgba(11, 31, 51, 0.18);
+}
+.vs-tool {
+  display: inline-flex; align-items: center; min-height: 44px; padding: 0 12px; border: 0; border-radius: 10px; background: transparent;
+  color: var(--steel); font: inherit; font-size: 14px; font-weight: 600; white-space: nowrap; cursor: pointer;
+}
+.vs-tool:hover:not(:disabled) { background: var(--paper); }
+.vs-tool[aria-pressed='true'] { background: var(--steel); color: var(--white); }
+.vs-tool:disabled { opacity: 0.5; cursor: default; }
+/* An on/off switch: a native checkbox with role="switch" (its label is its name), drawn as a track and a knob. */
+.vs-switch {
+  position: relative; display: inline-flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 12px; border-radius: 10px;
+  color: var(--steel); font-size: 14px; font-weight: 700; white-space: nowrap; cursor: pointer;
+}
+.vs-switch:hover { background: var(--paper); }
+.vs-switch input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: inherit; }
+.vs-switch-track { position: relative; flex: none; width: 40px; height: 24px; border-radius: 999px; background: #b9c4cf; transition: background-color 0.18s; }
+.vs-switch-knob { position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--white); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); transition: transform 0.18s; }
+.vs-switch input:checked + .vs-switch-track { background: var(--orange); }
+.vs-switch input:checked + .vs-switch-track .vs-switch-knob { transform: translateX(16px); }
+.vs-switch input:focus-visible + .vs-switch-track { outline: 3px solid var(--steel); outline-offset: 2px; }
+.vs-switch-off { opacity: 0.5; cursor: default; }
 .vs-check {
-  width: min(420px, 100%); min-height: 56px; padding: 0 20px; border: 0; border-radius: 14px; background: var(--orange); color: var(--ink);
+  flex: 0 1 360px; min-width: min(280px, 100%); min-height: 56px; padding: 0 20px; border: 0; border-radius: 14px; background: var(--orange); color: var(--ink);
   font: inherit; font-size: 17px; font-weight: 800; cursor: pointer; box-shadow: 0 8px 24px rgba(11, 31, 51, 0.35); transition: background-color 0.18s;
 }
 .vs-check:hover:not(:disabled) { background: #ff7f33; }
 .vs-check:disabled { cursor: default; opacity: 0.85; }
 
+/* Results: a bottom sheet on phones, docked on the left on wide screens. */
 .vs-results {
-  position: absolute; left: 0; right: 0; bottom: 0; max-height: 78%; overflow-y: auto; display: grid; gap: 12px;
-  padding: 14px max(16px, env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 4; max-height: 78%; overflow-y: auto; overscroll-behavior: contain; display: grid;
+  align-content: start; gap: 12px; padding: 14px max(16px, env(safe-area-inset-right)) calc(18px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
   border-radius: 18px 18px 0 0; background: var(--paper); box-shadow: 0 -12px 40px rgba(11, 31, 51, 0.35);
 }
 .vs-results-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .vs-results-head h2 { margin: 0; font-size: 18px; }
+.vs-tip { margin: 0; color: var(--muted); font-size: 13px; }
+.vs-results .finding { flex-wrap: wrap; justify-content: flex-end; } /* Draft issue under its finding: the text keeps the width */
+.vs-results .finding-main { flex-basis: 100%; align-items: flex-start; }
 .vs-truth { padding: 10px 14px; border: 1px dashed var(--line); border-radius: 12px; background: var(--white); font-size: 14px; }
 .vs-truth summary { min-height: 44px; align-content: center; font-weight: 600; cursor: pointer; }
 .vs-truth ul { margin: 6px 0 0; padding-left: 18px; }
-@media (min-width: 900px) {
-  .vs-results { left: auto; top: 0; width: 440px; max-height: none; border-radius: 0; box-shadow: -12px 0 40px rgba(11, 31, 51, 0.3); }
-  .vs-has-results .vs-top, .vs-has-results .vs-bottom { right: 440px; } /* keep the controls beside the panel */
+/* The element details: a bottom sheet on phones (it takes the results' place until it's closed), a side panel on wide screens. */
+.vs > .element-panel { z-index: 5; }
+@media (max-width: 899px) {
+  .vs > .element-panel { max-height: min(55dvh, 62%); }
+  .vs-has-element .vs-results { display: none; }
 }
-@media (prefers-reduced-motion: reduce) { .vs-btn, .vs-check { transition: none; } }
+@media (min-width: 900px) {
+  .vs-results {
+    left: max(12px, env(safe-area-inset-left)); right: auto; top: 12px; bottom: 12px; width: clamp(320px, 30vw, 420px); max-height: none;
+    border: 1px solid var(--line); border-radius: var(--radius); box-shadow: 0 8px 24px rgba(11, 31, 51, 0.25);
+  }
+  .vs > .element-panel { width: clamp(320px, 28vw, 380px); }
+}
+@media (prefers-reduced-motion: reduce) { .vs-btn, .vs-check, .vs-switch-track, .vs-switch-knob { transition: none; } }
 
 /* Results: the scorecard against the planted truth, and the photo next to the design render Gemini compared. */
 .vs-score { padding: 12px 14px; border-radius: 12px; background: var(--ink); color: var(--white); }

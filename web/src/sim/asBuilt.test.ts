@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
-import { describeDeviation, direction, SITE_AS_BUILT } from './asBuilt'
+import { describeDeviation, direction, plantedNote, SITE_AS_BUILT } from './asBuilt'
 
 const elements: { name: string }[] = JSON.parse(readFileSync(new URL('../../../bim/models/site/elements.json', import.meta.url), 'utf8'))
 
@@ -82,5 +82,15 @@ describe('the planted truth (mutation-tested)', () => {
     expect(direction([0.1, 0, -0.3])).toBe('lower')
     expect(direction([0.3, 0.2, 0.1])).toBe('east') // mostly east
     expect(direction([0.2, -0.3, 0.1])).toBe('south')
+  })
+})
+
+describe('plantedNote', () => {
+  it("says, for any element, what the virtual demo planted on it, or that it's built as designed", () => {
+    expect(plantedNote('RC column C2')).toBe('not cast yet: only its rebar cage stands')
+    expect(plantedNote('RC column B2')).toBe('about 60 cm west of the design')
+    expect(plantedNote('Column cage B2')).toBe('moved with RC column B2: about 60 cm west of the design')
+    expect(plantedNote('Purlin P4 B-C')).toBe('missing')
+    expect(plantedNote('Beam A1-B1')).toBe('nothing: it was built as designed')
   })
 })

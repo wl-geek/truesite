@@ -49,6 +49,7 @@ test.describe('3D model viewer', () => {
   })
 
   test('tap an element: its data, then Ask answers from the model data only @handheld', async ({ page, log }) => {
+    test.slow() // each tap picks by a GPU read-back: slow with software rendering at the iPad's 2x pixels, in parallel
     await page.goto('/model')
     const name = await tapAnElement(page)
     const panel = page.locator('aside.element-panel')

@@ -16,7 +16,7 @@ async function drag(page: Page, from: [number, number], to: [number, number]): P
 
 test.describe('virtual demo', () => {
   for (const v of VIEWPOINTS) {
-    test(`${v.id}: intro, look around, design overlay, Check as-built with the offline stand-in`, async ({ page, log }) => {
+    test(`${v.id}: intro, look around, the BIM overlay switch, Check as-built with the offline stand-in`, async ({ page, log }) => {
       const uploads = await recordCheckUploads(page)
       await enterVirtualSite(page, v.id)
       await expect(page).toHaveTitle('Virtual demo · TrueSite')
@@ -34,11 +34,12 @@ test.describe('virtual demo', () => {
       await expect.poll(async () => (await canvasShot(page)).equals(before)).toBe(false)
       for (let i = 0; i < 7; i++) await page.keyboard.press('ArrowRight')
 
-      const overlay = page.getByRole('button', { name: 'Design overlay' })
-      await expect(overlay).toHaveAttribute('aria-pressed', 'false')
+      const overlay = page.getByRole('switch', { name: 'BIM overlay' })
+      await expect(overlay).toBeChecked() // on from the start, like live AR
       await overlay.click()
-      await expect(overlay).toHaveAttribute('aria-pressed', 'true')
+      await expect(overlay).not.toBeChecked()
       await overlay.click()
+      await expect(overlay).toBeChecked()
 
       const answer = page.waitForResponse((r) => r.url().endsWith('/api/check'))
       await runVirtualCheck(page, v.id)
@@ -70,7 +71,7 @@ test.describe('virtual demo', () => {
       await expect(elsewhere).toHaveText(/^Not checked in this view \(\d\)$/)
       expect(Number(/\((\d+)\)/.exec((await elsewhere.textContent())!)![1])).toBeLessThanOrEqual(PLANTED_TOTAL - FEATURED[v.id].length)
 
-      await results.getByRole('button', { name: 'Back to the view' }).click()
+      await results.getByRole('button', { name: 'Hide results' }).click()
       await expect(results).toBeHidden()
       await page.getByRole('button', { name: 'Show results' }).click()
       await expect(results).toBeVisible()
@@ -80,6 +81,49 @@ test.describe('virtual demo', () => {
       expectClean(log)
     })
   }
+
+  test('tap the BIM overlay for an element\'s details; after a check, its result, the planted truth and Draft issue @handheld', async ({ page, log }) => {
+    await stubGeminiFindsPlanted(page)
+    await enterVirtualSite(page, 'P1')
+    await page.getByRole('button', { name: 'Got it' }).click()
+    const panel = page.locator('aside.element-panel')
+    const box = (await page.locator('canvas.vs-canvas').boundingBox())!
+    let tapped: [number, number] | null = null
+    for (const [fx, fy] of [[0.5, 0.45], [0.3, 0.5], [0.7, 0.5], [0.5, 0.3], [0.4, 0.6]] as const) {
+      await page.mouse.click(box.x + box.width * fx, box.y + box.height * fy)
+      if (await panel.isVisible({ timeout: 1500 }).catch(() => false)) { tapped = [fx, fy]; break }
+    }
+    expect(tapped, 'some tap hits a design element').not.toBeNull()
+    await expect(panel.getByRole('region', { name: 'Ask Gemini about this element' })).toBeVisible()
+    await expect(panel.getByRole('button', { name: 'Turn to element' })).toBeVisible()
+    await expect(panel).not.toContainText('Planted in this demo') // the truth waits for a check
+    await page.keyboard.press('Escape')
+    await expect(panel).toBeHidden()
+
+    // With the overlay off, a tap on the same spot opens nothing: the details come from the BIM overlay.
+    await page.getByRole('switch', { name: 'BIM overlay' }).click()
+    await page.mouse.click(box.x + box.width * tapped![0], box.y + box.height * tapped![1])
+    await expect(panel).toBeHidden()
+    await page.getByRole('switch', { name: 'BIM overlay' }).click()
+
+    // After a check, picking a finding turns to its element and shows its result, the planted truth and Draft issue.
+    await runVirtualCheck(page, 'P1')
+    const results = page.getByRole('complementary', { name: 'Check results' })
+    const first = results.getByRole('list', { name: 'Possible deviations' }).getByRole('listitem').first()
+    const name = (await first.locator('.finding-text strong').textContent())!
+    await first.locator('.finding-main').click()
+    await expect(panel.locator('h2')).toHaveText(name)
+    const result = panel.getByRole('region', { name: 'As-built check result' })
+    await expect(result).toContainText('Why it matters:')
+    await expect(panel.locator('.ep-planted')).toContainText('Planted in this demo:')
+    await result.getByRole('button', { name: 'Draft issue' }).click()
+    await expect(page.getByRole('dialog', { name: 'New issue' })).toBeVisible()
+    await page.getByRole('dialog', { name: 'New issue' }).getByRole('button', { name: 'Cancel' }).click()
+    await panel.getByRole('button', { name: 'Close element details' }).click()
+    await expect(panel).toBeHidden()
+    await expect(results).toBeVisible() // on a phone the results come back once the details close
+    expectClean(log)
+  })
 
   test('every planted defect in the opening view gets a numbered mark on a tablet and a phone @handheld', async ({ page, log }, testInfo) => {
     test.skip(testInfo.project.name === 'desktop-chrome', 'the P1-P4 tests above check this on a laptop')
@@ -214,7 +258,7 @@ test.describe('virtual demo', () => {
   test('two checks on one visit: the site report covers both', async ({ page }) => {
     await enterVirtualSite(page, 'P3')
     await runVirtualCheck(page, 'P3')
-    await page.getByRole('button', { name: 'Back to the view' }).click()
+    await page.getByRole('button', { name: 'Hide results' }).click()
     await page.locator('canvas.vs-canvas').focus()
     for (let i = 0; i < 4; i++) await page.keyboard.press('ArrowDown')
     await runVirtualCheck(page, 'P3')
