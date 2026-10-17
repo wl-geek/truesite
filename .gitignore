@@ -13,6 +13,7 @@ web/dist/
 __pycache__/
 *.pyc
 .pytest_cache/
+.hypothesis/
 .ruff_cache/
 
 # Secrets and local config

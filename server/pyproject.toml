@@ -18,6 +18,7 @@ dependencies = [
 dev = [
     "pytest==9.1.1",
     "httpx2==2.13.1",  # Starlette 1.7's TestClient imports httpx2; plain httpx only warns
+    "hypothesis==6.170.1",  # property-based tests (tests/test_*_properties.py)
 ]
 
 [tool.uv]
