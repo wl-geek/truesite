@@ -1,35 +1,62 @@
-import { devices, type Page } from '@playwright/test'
+import { devices } from '@playwright/test'
 import { BUG } from '../support/bugs'
 import { expectClean, expect, test, VIEWPOINTS } from '../support/fixtures'
 
-const TIP = 'Live AR is made for tablets and smartphones'
+/** The laptop popup (#107): step 1 hands this page to a tablet or phone by QR, step 2 gives the sheet to print. */
+const TIP = 'Open live AR on your tablet or phone'
+const SHEET_STEP = 'Print the sheet and scan its code'
 
 test.describe('live AR on a laptop', () => {
   test.skip(({ isMobile, hasTouch }) => isMobile || hasTouch, 'laptop only')
 
-  test('a popup recommends a tablet or phone, with a QR code of this page, once per visit', async ({ page, log }) => {
+  test('a popup recommends a tablet or phone, with a QR code of this page, every time the page opens', async ({ page, log }) => {
     await page.goto('/a/site/P1')
     const tip = page.getByRole('dialog', { name: TIP })
     await expect(tip).toBeVisible()
     await expect(tip).toHaveAttribute('aria-modal', 'true')
-    await expect(tip.getByRole('img', { name: 'QR code for this page' })).toHaveAttribute('src', /^data:image\/svg\+xml;utf8,/)
-    await expect(tip.getByRole('link', { name: 'Try the virtual demo' })).toBeFocused()
+    await expect(tip.getByText('Step 1 of 2')).toBeVisible()
+    await expect(tip.getByRole('img', { name: 'QR code for this live view' })).toHaveAttribute('src', /^data:image\/svg\+xml;utf8,/)
+    await expect(tip.getByRole('button', { name: 'Next: get the sheet' })).toBeFocused()
     await page.keyboard.press('Escape')
     await expect(tip).toBeHidden()
     await expect(page.locator('.live-device-note')).toHaveText('Made for tablets and smartphones: open this page on one for the best experience.')
-    // Once per visit: not again on this tab, not on another sheet either.
+    // Every time (#111): again on a reload of this sheet, and on another sheet.
     await page.reload()
-    await expect(page.getByRole('button', { name: 'Start camera' })).toBeVisible()
+    await expect(tip).toBeVisible()
+    await page.keyboard.press('Escape')
+    await expect(tip).toBeHidden()
     await page.goto('/a/site/P2')
-    await expect(page.getByRole('button', { name: 'Start camera' })).toBeVisible()
-    await expect(tip).toHaveCount(0)
+    await expect(tip).toBeVisible()
     await page.waitForLoadState('networkidle')
     expectClean(log)
   })
 
+  test('step 2 gives the sheet to download, how to print and place it, and the layout plan; Back and Done', async ({ page }) => {
+    await page.goto('/a/site/P1')
+    await page.getByRole('button', { name: 'Next: get the sheet' }).click()
+    const sheet = page.getByRole('dialog', { name: SHEET_STEP })
+    await expect(sheet.getByText('Step 2 of 2')).toBeVisible()
+    const download = sheet.getByRole('link', { name: 'Download sheet P1' })
+    await expect(download).toBeFocused()
+    await expect(download).toHaveAttribute('href', '/sheets/site-P1.pdf')
+    await expect(sheet.locator('.dt-sheet-name')).toHaveText('Sheet P1A3 · upright · PDF')
+    await expect(sheet.locator('.dt-list li')).toHaveText([
+      'Print it on A3 at 100%, not "Fit to page". Its check bar must measure 10.0 cm.',
+      'Fix it upright, with the centre of the code 1.4 m above the ground.',
+      'On the tablet or phone, tap Start camera and point it at the code.',
+    ])
+    await expect(sheet.getByRole('link', { name: 'download the layout plan' })).toHaveAttribute('href', '/sheets/site-layout.pdf')
+    await sheet.getByRole('button', { name: 'Back' }).click()
+    await expect(page.getByRole('dialog', { name: TIP }).getByRole('button', { name: 'Next: get the sheet' })).toBeFocused()
+    await page.getByRole('button', { name: 'Next: get the sheet' }).click()
+    await sheet.getByRole('button', { name: 'Done' }).click()
+    await expect(page.getByRole('dialog')).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Start camera' })).toBeVisible()
+  })
+
   test('the QR code in the popup encodes this page address', async ({ page }) => {
     await page.goto('/a/site/P3')
-    const src = await page.getByRole('img', { name: 'QR code for this page' }).getAttribute('src')
+    const src = await page.getByRole('dialog', { name: TIP }).getByRole('img', { name: 'QR code for this live view' }).getAttribute('src')
     const svg = decodeURIComponent(src!.replace(/^data:image\/svg\+xml;utf8,/, ''))
     expect(svg).toMatch(/^<svg[\s\S]*<\/svg>$/)
     // uqr draws one path per dark module run; a code for this ~35-character URL has a version 3 grid or larger.
@@ -42,13 +69,12 @@ test.describe('live AR on a laptop', () => {
     await page.getByRole('button', { name: 'Continue on this computer' }).click()
     await expect(page.getByRole('dialog', { name: TIP })).toBeHidden()
     await expect(page.getByRole('heading', { level: 1, name: 'Live view · Life size · 1:1' })).toBeVisible()
-    // A fresh visit (new tab session) shows it again; the backdrop closes it.
-    const other = await page.context().browser()!.newPage()
-    await other.goto(page.url())
-    await expect(other.getByRole('dialog', { name: TIP })).toBeVisible()
-    await other.mouse.click(5, 300)
-    await expect(other.getByRole('dialog', { name: TIP })).toBeHidden()
-    await other.close()
+    // The next visit shows it again; the backdrop closes it.
+    await page.reload()
+    await expect(page.getByRole('dialog', { name: TIP })).toBeVisible()
+    await page.mouse.click(5, 300)
+    await expect(page.getByRole('dialog', { name: TIP })).toBeHidden()
+    await expect(page.getByRole('heading', { level: 1, name: 'Live view · Life size · 1:1' })).toBeVisible()
   })
 
   for (const v of VIEWPOINTS) {
@@ -85,14 +111,20 @@ test.describe('live AR on a laptop', () => {
     await page.getByRole('button', { name: 'Skip' }).click()
     await expect(page.getByRole('heading', { name: 'Check the print scale' })).toBeVisible()
     await page.getByRole('button', { name: 'Skip' }).click()
-    await expect(page.locator('.mode-chip')).toHaveText('Life size · 1:1')
+    // The camera view since #107: closable messages over the camera, the scale in the status pill, an Exit control.
+    const note = page.locator('.live-top .hud-msg', { hasText: 'nothing to check' }) // shows for 6 s from the camera start
+    await expect(note).toHaveText('This sheet shows the design where nothing is built yet, so there is nothing to check here. Try the check in the virtual demo')
+    await expect(note).toHaveRole('status')
+    await expect(note.getByRole('button', { name: 'Close this message' })).toBeVisible()
+    await expect(page.locator('.hud-scale')).toHaveText('Life size · 1:1')
+    await expect(page.getByRole('link', { name: 'Exit live AR' })).toHaveAttribute('href', '/#live')
     await expect(page.getByText('No code in view')).toBeVisible()
-    await expect(page.getByRole('button', { name: 'Check as-built' })).toBeDisabled()
-    const note = page.locator('.live-top .coach', { hasText: 'nothing to check' })
-    await expect(note).toHaveText('This sheet shows the design where nothing is built yet, so there is nothing to check. Try the virtual demo. Open the virtual demo')
+    const check = page.getByRole('button', { name: 'Check as-built' })
+    await expect(check).toBeDisabled()
+    await expect(check).toHaveAttribute('aria-disabled', 'true') // off on this sheet, not only until the code is found
     await expect(page.locator('canvas.live-canvas')).toBeVisible()
-    await note.getByRole('link', { name: 'Open the virtual demo' }).click()
-    await expect(page).toHaveURL(/\/#virtual$/)
+    await note.getByRole('link', { name: 'Try the check in the virtual demo' }).click()
+    await expect(page).toHaveURL(/\/samples\?at=P1$/)
     // Leaving the page stops the camera: every track the page opened has ended.
     await expect.poll(() => page.evaluate(() => (window as unknown as { __tracks: MediaStreamTrack[] }).__tracks.map((t) => t.readyState)))
       .toEqual(['ended'])
@@ -140,16 +172,10 @@ test.describe('live AR on an iPad that reports a Mac', () => {
 })
 
 test.describe('live AR errors', () => {
-  /** The laptop popup also opens over a broken link (BUG.tipOverBrokenLink): close it to read the page. */
-  async function closeTipIfAny(page: Page): Promise<void> {
-    const tip = page.getByRole('dialog', { name: TIP })
-    if (await tip.isVisible()) await tip.getByRole('button', { name: 'Continue on this computer' }).click()
-  }
-
+  // The laptop popup waits for the sheet, so it never covers a broken link (BUG.tipOverBrokenLink, audit C-29).
   test('an unknown sheet says so and offers the viewer and the virtual demo @handheld', async ({ page }) => {
     await page.goto('/a/site/P9')
     await expect(page.getByRole('alert')).toHaveText("This QR code isn't set up for this project.")
-    await closeTipIfAny(page)
     await expect(page.getByRole('link', { name: 'Open the model viewer' })).toHaveAttribute('href', '/model?project=site')
     await page.locator('.live-links').getByRole('link', { name: 'Try the virtual demo' }).click()
     await expect(page).toHaveURL(/\/#virtual$/)
@@ -158,7 +184,6 @@ test.describe('live AR errors', () => {
   test('an unknown project says the sheet may be out of date and opens the default viewer @handheld', async ({ page }) => {
     await page.goto('/a/nope/P1')
     await expect(page.getByRole('alert')).toHaveText("This QR code points to a project TrueSite doesn't have. The sheet may be out of date.")
-    await closeTipIfAny(page)
     await page.getByRole('link', { name: 'Open the model viewer' }).click()
     await expect(page).toHaveURL(/\/model$/)
     await expect(page.locator('.model-card-name')).toHaveText('Building under construction')

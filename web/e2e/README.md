@@ -79,7 +79,7 @@ tracking, alignment and look-around are tested.
 | Spec | What |
 |---|---|
 | `start-page` | sections in order, nav anchors and the current-section marker, the progress line, deep links, every `/sheets` and `/models` file, SPA links, a missing sheet is a 404 |
-| `live` | the laptop popup (QR of the page, once per visit, focus, Escape, backdrop) and its absence on iPad, iPhone and an iPad that reports a Mac; the camera with Check as-built off on the live sheets; the camera stops on leaving; unknown sheet or project |
+| `live` | the laptop popup (step 1: QR of the page; step 2: the sheet to print and place; every visit, focus, Escape, backdrop) and its absence on iPad, iPhone and an iPad that reports a Mac; the camera view (scale, Exit, messages) with Check as-built off on the live sheets; the camera stops on leaving; unknown sheet or project |
 | `live-ar` | P1 first use (calibration skipped, QR detected, Alignment Good at 0.7 m, overlay within 10 px of the truth, Check as-built off), gravity levelling of a board leaning 4 degrees (and a sensor 12 degrees off refused), look-around after a turn, the model hidden and the 5 s tips without motion, no code, D1 at 1:100, P2-P4, a different code, camera blocked, `?xr=1`, head-on from the X, frames stalling and the track ending, Motion & Orientation denied |
 | `model` | the site by default, colour key, tap an element, Ask with the stand-in, `?project=rooftop`, an unknown project, Last check results, drafting from them |
 | `virtual-demo` | P1-P4: intro, turning by keys and drag, design overlay, Check as-built with the three images (photo, design render, design outlines: IMAGE 3), every planted defect in the opening view numbered (also on iPad and iPhone), the honest offline scorecard, the design render, findings; with a stubbed Gemini answer: scorecard hits and misses, Why it matters, Draft issue in Thai, save, the site report in Thai, copy; model text never rendered as HTML; ten visits in one tab keep WebGL alive; the error copy for 503, 429, 422, 502 and no connection |
@@ -95,6 +95,6 @@ still stored by the server, so drafting, saving and the report go through the re
 
 ## Known bugs
 
-`support/bugs.ts` lists the bugs this suite found that are not fixed yet. Each has a `test.fixme` with the bug's
-title that asserts the fixed behaviour; when a fix lands, change `test.fixme` to `test`. The axe and tap-target
+`support/bugs.ts` lists the bugs this suite found. Each has a test with the bug's title that asserts the fixed
+behaviour: `test.fixme` while the bug is open, `test` once the fix lands (as of 17 Oct every one is fixed and on). The axe and tap-target
 checks leave out findings of a known bug and note it on the test, so anything new still fails.
