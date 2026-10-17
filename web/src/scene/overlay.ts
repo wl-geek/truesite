@@ -28,7 +28,7 @@ import { levelModelMatrix, upInGlCamera } from './level'
 import { deviceRotation, deviceStill, lookAroundPose, LOOK_AROUND_MAX_S, nextLock, type MotionLock, type MotionSample } from './motion'
 import { CornerStabilizer } from './cornerFilter'
 import { followRegion, fullFrame, regionToVideo, type Region } from './roi'
-import { RotationSmoother } from './rotationFilter'
+import { RotationSmoother, StillRotation } from './rotationFilter'
 import { createFrameWatchdog } from './watchdog'
 
 /** Edges live on their own layer so the ID-buffer render (layer 0 only) never sees them. */
@@ -41,6 +41,8 @@ const FOLLOW_FOR_S = 0.3
 const FULL_FRAME_EVERY = 10
 /** The QR reader's corners are whole pixels of what it reads: about half a pixel of noise, scaled to video px. */
 const CORNER_NOISE_PX = 0.5
+/** The code still this long (s), in view: the camera hasn't turned, so the sensors' reading is held (StillRotation). */
+const STILL_HOLD_S = 0.3
 const ORIGIN = new Vector3()
 const LOST_AFTER_S = 0.5
 /** Detections this old are stale: the sensors hold the model from here on, well before LOST_AFTER_S (audit B-03). */
@@ -172,8 +174,10 @@ export function createOverlay(o: OverlayOptions): Overlay {
   let deviceR: Mat3 | null = null
   const recent: MotionSample[] = []
   let lock: MotionLock | null = null
-  // The sensors' noise would turn the whole model every frame: smoothed first, heavily at rest (rotationFilter.ts).
+  // The sensors' noise would turn the whole model every frame: smoothed first, heavily at rest (rotationFilter.ts),
+  // and averaged over the whole spell while the code shows that the camera is still.
   const rotation = new RotationSmoother()
+  const stillRotation = new StillRotation()
   const onOrientation = (e: DeviceOrientationEvent) => {
     if (e.alpha === null || e.beta === null || e.gamma === null) return
     const tMs = performance.now()
@@ -370,11 +374,16 @@ export function createOverlay(o: OverlayOptions): Overlay {
         qr.detect(grabRegion(video, grabCtx!, read.region)).then((res) => onDetection(res, read, vw, vh, frameMs)).catch(() => undefined)
       }
     }
-    const pose = fused(now) && model.ifcRoot.visible ? fusion!.poseAt(frameMs) : null
+    // On a stand (the code in view and its corners still): pose with the average of the whole still spell.
+    const nowS = now / 1000
+    const codeStill = state.mode === 'code' && nowS - lastSeen < 0.25 && steady.stillFor(nowS) >= STILL_HOLD_S
+    const Dframe = fused(now) && model.ifcRoot.visible ? fusion!.orientationAt(frameMs) : null
+    const Dpose = Dframe ? stillRotation.update(Dframe, codeStill) : null
+    const pose = Dpose ? fusion!.poseAt(frameMs, Dpose) : null
     if (pose) {
-      model.ifcRoot.matrix.fromArray(levelledBy(modelMatrixIfc(pAnchor, pose), fusion!.orientationAt(frameMs)))
+      model.ifcRoot.matrix.fromArray(levelledBy(modelMatrixIfc(pAnchor, pose), Dpose))
       model.ifcRoot.matrixWorldNeedsUpdate = true
-      posedBy = 'fused'
+      posedBy = codeStill ? 'fused-still' : 'fused'
     } else if (lock && deviceR && holdBySensors(state.mode, performance.now() / 1000, lastSeen, lock, o.motion)) {
       model.ifcRoot.matrix.fromArray(levelled(modelMatrixIfc(pAnchor, lookAroundPose(lock, deviceR))))
       model.ifcRoot.matrixWorldNeedsUpdate = true

@@ -72,9 +72,12 @@ export class PoseFusion {
     return true
   }
 
-  /** Marker -> camera for the frame captured at tMs, or null before the first detection or without sensors. */
-  poseAt(tMs: number): Pose | null {
-    const D = this.orientationAt(tMs)
+  /**
+   * Marker -> camera for the frame captured at tMs, or null before the first detection or without sensors. `D`: the
+   * device rotation to use instead of the sample at tMs (the still-spell average, rotationFilter.ts StillRotation).
+   */
+  poseAt(tMs: number, D_?: Mat3 | null): Pose | null {
+    const D = D_ ?? this.orientationAt(tMs)
     if (!D || !this.q || !this.p) return null
     const CDt = mat3Mul(C_FROM_DEVICE, transpose3(D))
     return { R: mat3Mul(CDt, rotationFromQuat(this.q)), t: mat3MulVec(CDt, this.p).map((v) => -v) as Vec3 }

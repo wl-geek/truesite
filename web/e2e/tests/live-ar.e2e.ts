@@ -139,7 +139,8 @@ async function startCamera(page: Page, label = 'Start camera'): Promise<void> {
 /** Close the "nothing to check on this sheet" note that opens with the camera, so the coach shows (one message at a time). */
 async function closeNote(page: Page): Promise<void> {
   const note = page.locator('.live-top .hud-msg', { hasText: 'nothing to check' })
-  if (await note.count()) await note.getByRole('button', { name: 'Close this message' }).click()
+  // It also closes itself after 6 s: a click that finds it gone is fine.
+  if (await note.count()) await note.getByRole('button', { name: 'Close this message' }).click({ timeout: 2000 }).catch(() => undefined)
   await expect(note).toHaveCount(0)
 }
 

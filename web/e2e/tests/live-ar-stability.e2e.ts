@@ -20,7 +20,7 @@ test.afterEach(async () => {
 })
 
 type Frame = { t: number; by: string; pts: [number, number][] }
-export type Jitter = { frames: number; fused: number; stepRms: number; spread: number }
+export type Jitter = { frames: number; fused: number; still: number; stepRms: number; spread: number }
 
 async function open(video: string): Promise<Page> {
   browser = await chromium.launch({ args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream', '--enable-unsafe-swiftshader',
@@ -65,7 +65,8 @@ async function measure(page: Page, ms = 4000): Promise<Jitter> {
     const mx = pts.reduce((s, p) => s + p[0], 0) / pts.length, my = pts.reduce((s, p) => s + p[1], 0) / pts.length
     spread = Math.max(spread, Math.sqrt(pts.reduce((s, p) => s + (p[0] - mx) ** 2 + (p[1] - my) ** 2, 0) / pts.length))
   }
-  return { frames: frames.length, fused: frames.filter((f) => f.by === 'fused').length, stepRms: Math.sqrt(stepSq / Math.max(1, steps)), spread }
+  return { frames: frames.length, fused: frames.filter((f) => f.by.startsWith('fused')).length, still: frames.filter((f) => f.by === 'fused-still').length,
+    stepRms: Math.sqrt(stepSq / Math.max(1, steps)), spread }
 }
 
 async function start(page: Page, video: string, motion: 'off' | 'exact' | number): Promise<void> {
@@ -79,16 +80,18 @@ async function start(page: Page, video: string, motion: 'off' | 'exact' | number
 }
 
 /**
- * Limits (CSS px per frame, RMS) with room over what the fixes measured (stabilised corners, a steady crop, the whole-
- * frame look kept out of the pose, the sensors smoothed). Before them: 0.98 / 2.27 / 44 / 1.45 / 3.21 px. Sensor noise
- * of 0.05 degrees per angle is already more than a phone's attitude shows at rest.
+ * Limits (CSS px per frame, RMS) with room over what the fixes measured: stabilised corners averaged longer while
+ * still, a steady crop, the whole-frame look kept out of the pose, the sensors smoothed, and their reading averaged
+ * over the whole spell while the code shows the camera is still. Before (17 Oct): 0.98 / 2.27 / 1.45 / 3.21 / 44 /
+ * 7.9 px; after: 0.04 / 0.02 / 0.1 / 0.07 / 0.6 / 0.09 px.
  */
 const CASES = [
-  { video: 'p1-steady', motion: 'off', maxStep: 1, note: '0.7 m from the code, no motion sensors' },
-  { video: 'p1-steady', motion: 0.05, maxStep: 1.5, note: '0.7 m, noisy sensors' },
-  { video: 'p1-x', motion: 'exact', maxStep: 0.8, note: 'the X, 1.5 m, sensors' },
-  { video: 'p1-x', motion: 0.05, maxStep: 2, note: 'the X, noisy sensors' },
-  { video: 'p1-x', motion: 'off', maxStep: 10, note: 'the X without sensors: head-on from afar the tilt is loose (Fair), still no shake' },
+  { video: 'p1-steady', motion: 'off', maxStep: 0.6, note: '0.7 m from the code, no motion sensors' },
+  { video: 'p1-steady', motion: 0.05, maxStep: 0.6, note: '0.7 m, noisy sensors' },
+  { video: 'p1-x', motion: 'exact', maxStep: 0.6, note: 'the X, 1.5 m, sensors' },
+  { video: 'p1-x', motion: 0.05, maxStep: 0.6, note: 'the X, noisy sensors' },
+  { video: 'p1-x', motion: 'off', maxStep: 3, note: 'the X without sensors: head-on from afar the tilt is loose (Fair), still no shake' },
+  { video: 'p1-x', motion: 0.15, maxStep: 0.8, note: 'the X, very noisy sensors' },
 ] as const
 
 for (const c of CASES) {
