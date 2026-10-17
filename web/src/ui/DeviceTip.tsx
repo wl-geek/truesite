@@ -1,14 +1,16 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
+import { createPortal } from 'react-dom'
 import { renderSVG } from 'uqr'
 import type { Anchor } from '../api/types'
 import { Link } from './Link'
+import { useModal } from './modal'
 import { sheetInfo } from './sheet'
 import './deviceTip.css'
 
 type Props = {
   /** This page's address, shown as a QR code so a tablet or phone can pick it up. */
   url: string
-  /** The sheet this live view is for (null while the project loads). */
+  /** The sheet this live view is for (null while the project loads, and when the link is broken). */
   anchor: Anchor | null
   /** Where the virtual demo for this sheet is (it runs fine on a computer). */
   virtualHref: string
@@ -18,24 +20,24 @@ type Props = {
 /**
  * Shown when live AR is opened on a laptop or PC: live AR is made for tablets and smartphones.
  * Step 1 hands this page over to a tablet or phone by QR; step 2 gives the matching sheet to print and scan.
+ * It waits for the sheet to load, so it never covers a broken link and hands that to a phone (audit C-29), and it
+ * renders on <body>, above the top bar, as a modal that keeps focus (C-28).
  */
 export function DeviceTip({ url, anchor, virtualHref, onClose }: Props) {
   const [step, setStep] = useState<1 | 2>(1)
   const primary = useRef<HTMLButtonElement | HTMLAnchorElement>(null)
+  const dialog = useRef<HTMLDivElement>(null)
   const qr = useMemo(() => `data:image/svg+xml;utf8,${encodeURIComponent(renderSVG(url, { border: 2 }))}`, [url])
-  const sheet = anchor ? sheetInfo(anchor) : null
-  const layoutPlan = anchor?.project_id === 'site' && !sheet?.flat
+  useModal(dialog, anchor !== null, onClose)
   useEffect(() => {
     primary.current?.focus()
   }, [step])
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
-    window.addEventListener('keydown', onKey)
-    return () => window.removeEventListener('keydown', onKey)
-  }, [onClose])
-  return (
+  if (!anchor) return null
+  const sheet = sheetInfo(anchor)
+  const layoutPlan = anchor.project_id === 'site' && !sheet.flat
+  return createPortal(
     <div className="dt-backdrop" onClick={onClose}>
-      <div className="dt" role="dialog" aria-modal="true" aria-labelledby="dt-title" onClick={(e) => e.stopPropagation()}>
+      <div className="dt" role="dialog" aria-modal="true" aria-labelledby="dt-title" ref={dialog} onClick={(e) => e.stopPropagation()}>
         <p className="dt-step" aria-live="polite">Step {step} of 2</p>
         {step === 1 ? (
           <>
@@ -57,22 +59,18 @@ export function DeviceTip({ url, anchor, virtualHref, onClose }: Props) {
             <h2 id="dt-title">Print the sheet and scan its code</h2>
             <div className="dt-sheet">
               <span className="dt-sheet-name">
-                <strong>Sheet {anchor?.anchor_id ?? ''}</strong>
-                {sheet && <span>{[sheet.paper, sheet.flat ? 'lies flat' : 'upright'].filter(Boolean).join(' · ')} · PDF</span>}
+                <strong>Sheet {anchor.anchor_id}</strong>
+                <span>{[sheet.paper, sheet.flat ? 'lies flat' : 'upright'].filter(Boolean).join(' · ')} · PDF</span>
               </span>
-              {sheet ? (
-                <a className="btn btn-accent" href={sheet.href} download ref={primary as RefObject<HTMLAnchorElement>}>
-                  Download sheet {anchor?.anchor_id}
-                </a>
-              ) : <span className="dt-note">Loading the sheet…</span>}
+              <a className="btn btn-accent" href={sheet.href} download ref={primary as RefObject<HTMLAnchorElement>}>
+                Download sheet {anchor.anchor_id}
+              </a>
             </div>
-            {sheet && (
-              <ol className="dt-list">
-                <li>{sheet.print}</li>
-                <li>{sheet.place}</li>
-                <li>On the tablet or phone, tap <strong>Start camera</strong> and point it at the code.</li>
-              </ol>
-            )}
+            <ol className="dt-list">
+              <li>{sheet.print}</li>
+              <li>{sheet.place}</li>
+              <li>On the tablet or phone, tap <strong>Start camera</strong> and point it at the code.</li>
+            </ol>
             {layoutPlan && (
               <p className="dt-note">Setting out all four site sheets: <a href="/sheets/site-layout.pdf" download>download the layout plan</a>.</p>
             )}
@@ -86,6 +84,7 @@ export function DeviceTip({ url, anchor, virtualHref, onClose }: Props) {
           Without a tablet or a printer, the virtual demo runs on this computer. <Link to={virtualHref}>Try the virtual demo</Link>
         </p>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

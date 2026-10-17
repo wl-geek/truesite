@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ApiError, createIssue, draftIssue } from '../api/client'
 import type { Element, Finding, Issue, IssueDraft, IssueLanguage } from '../api/types'
-import { askErrorMessage } from './askFormat'
-import { issueBody, templateDraft } from './issueFormat'
+import { issueBody, issueErrorMessage, templateDraft } from './issueFormat'
 import { LANGUAGES } from './languages'
+import { useModal } from './modal'
 
 export type IssueDialogProps = {
   open: boolean
@@ -23,6 +23,8 @@ export function IssueDialog({ open, projectId, runId, mark, finding, element, on
   const [drafting, setDrafting] = useState(false)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const dialog = useRef<HTMLDivElement>(null)
+  useModal(dialog, open && finding !== null, onClose)
 
   useEffect(() => {
     if (!open || !finding) return
@@ -52,7 +54,7 @@ export function IssueDialog({ open, projectId, runId, mark, finding, element, on
     try {
       onSaved(await createIssue(issueBody(projectId, finding, runId, draft)))
     } catch (e) {
-      setError(askErrorMessage(e instanceof ApiError ? e : new ApiError(String(e), 0)).replace("Couldn't answer", "Couldn't save"))
+      setError(issueErrorMessage(e instanceof ApiError ? e : new ApiError(String(e), 0)))
     } finally {
       setSaving(false)
     }
@@ -62,7 +64,7 @@ export function IssueDialog({ open, projectId, runId, mark, finding, element, on
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="panel modal" role="dialog" aria-modal="true" aria-label="New issue" onClick={(e) => e.stopPropagation()}>
+      <div className="panel modal" role="dialog" aria-modal="true" aria-label="New issue" ref={dialog} onClick={(e) => e.stopPropagation()}>
         <header className="panel-head">
           <div>
             <p className="eyebrow">Draft — check before saving</p>
