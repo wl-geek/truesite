@@ -107,7 +107,7 @@ The start page shows one project, `site`: a two-storey building under constructi
   - 15 Oct (`docs/audit-2026-10-15.md`): every high and medium finding is fixed.
   - 16 Oct (`docs/audit-2026-10-16.md`): both highs and all mediums are fixed (#95–#101), and B-22 since (#103).
   - 17 Oct (`docs/audit-2026-10-17.md`): 41 open findings, none high (13 medium, 28 low).
-- **Tests:** all green: BIM 143; server 517 passed, 9 skipped (they need the Firestore emulator); web 436 in 72 files; `tsc -b` clean. The Playwright suite in `web/e2e` (not in `make test`) has 124 passed and 15 skipped. The mutation, property and fuzz pass is in the README's Testing section (#108–#110).
+- **Tests:** all green: BIM 143; server 521 passed, 9 skipped (they need the Firestore emulator); web 486; `tsc -b` clean. The Playwright suite in `web/e2e` (not in `make test`) has 143 passed and 4 skipped. The mutation, property and fuzz pass is in the README's Testing section (#108–#110).
 - **Deployed:** Cloud Run in `asia-southeast1`, with live Gemini, Firestore and Cloud Storage. `eval/README.md` §3 records a run on the deployed service (#105). The service URL isn't in the repo yet: add it to the README's "Live demo" line, and close #1.
 - **Gemini:**
   - `gemini-3.8-flash` on Agent Platform (`global`) with three images and LOW thinking (MEDIUM took about 65 s a check and was dropped). On 429 or 503 the server tries `gemini-3.5-flash`, then `gemini-3.5-flash-lite`.

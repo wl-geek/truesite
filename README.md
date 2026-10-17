@@ -135,9 +135,9 @@ Rebuild the room model after replacing `bim/models/room1/model.ifc` with `make m
 | Suite | Command | Result (17 Oct) |
 |---|---|---|
 | BIM pipeline (pytest) | `cd bim && uv run pytest -q` | 143 passed |
-| Server (pytest, Gemini mocked) | `cd server && uv run pytest -q` | 517 passed, 9 skipped (they need the Firestore emulator) |
-| Web (vitest) and types | `cd web && npx vitest run && npx tsc -b` | 436 passed in 72 files; `tsc -b` clean |
-| End to end (Playwright) | in `web/e2e`, below | 124 passed, 15 skipped |
+| Server (pytest, Gemini mocked) | `cd server && uv run pytest -q` | 521 passed, 9 skipped (they need the Firestore emulator) |
+| Web (vitest) and types | `cd web && npx vitest run && npx tsc -b` | 486 passed; `tsc -b` clean |
+| End to end (Playwright) | in `web/e2e`, below | 143 passed, 4 skipped (desktop, iPad, iPhone, limits, live AR) |
 
 `make test` runs the first three. No suite calls live Gemini.
 
@@ -147,7 +147,7 @@ Rebuild the room model after replacing `bim/models/room1/model.ifc` with `make m
 (cd bim && uv run python -m truesite_bim.site --sheets-only --base-url https://127.0.0.1:8813 --sheets-dir ../web/public/sheets)
 (cd web && npm ci && npm run build)
 cd web/e2e && npm ci && npx playwright install chromium
-npx playwright test        # starts the servers itself; the 15 skipped are the 12 fixmes and 3 handheld-only tests
+npx playwright test        # starts the servers itself; the 4 skipped are 3 handheld-only tests and 1 known-bug fixme
 ```
 
 The live AR videos (about 1.7 GB, git-ignored) are made once with `web/e2e/scripts/live-ar-videos.py`; without them that project is left out. [web/e2e/README.md](web/e2e/README.md) has the details.
