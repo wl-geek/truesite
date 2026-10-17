@@ -41,9 +41,12 @@ MODEL_ID = "gemini-3.8-flash"
 FALLBACK_MODEL_IDS = tuple(m.strip() for m in os.environ.get("GEMINI_FALLBACK_MODEL", "gemini-3.5-flash,gemini-3.5-flash-lite")
                            .split(",") if m.strip())
 REQUEST_TIMEOUT_MS = 25_000  # HttpOptions.timeout is in MILLISECONDS
-# A 25-mark check writes about 2,000 tokens: 15-20 s, and over 25 s at busy times (504 DEADLINE_EXCEEDED, 17 Oct 2026).
-# Two attempts of 45 s still end inside Cloud Run's 120 s.
-CHECK_TIMEOUT_MS = 45_000
+# A 25-mark check writes about 2,000-2,600 tokens: 12-20 s, but now and then a request hangs (504 DEADLINE_EXCEEDED,
+# 17 Oct 2026). Each attempt gets 40 s and a hung one is tried once more on the same model (CHECK_DEADLINE_RETRIES):
+# 80 s at worst, inside Cloud Run's 120 s. The per-request HttpOptions replace the client's, so the SDK's own retry is
+# off for the check (attempts=1) and that retry is the only one.
+CHECK_TIMEOUT_MS = 40_000
+CHECK_DEADLINE_RETRIES = 1
 MAX_OUTPUT_TOKENS = 8_192  # caps response + thinking tokens together (cost guard)
 ASK_MAX_OUTPUT_TOKENS = 2_048  # Ask (<= 600 chars) and Draft (<= 780 chars) plus LOW thinking
 MAX_MARKS = 25
@@ -303,7 +306,7 @@ def build_check_request(photo_jpeg: bytes, render_png: bytes, context: dict, pro
         thinking_config=types.ThinkingConfig(thinking_level=types.ThinkingLevel.LOW),
         media_resolution=types.MediaResolution.MEDIA_RESOLUTION_HIGH,  # 1120 tokens per image on Gemini 3
         max_output_tokens=MAX_OUTPUT_TOKENS,
-        http_options=types.HttpOptions(timeout=CHECK_TIMEOUT_MS, retry_options=RETRY_OPTIONS),
+        http_options=types.HttpOptions(timeout=CHECK_TIMEOUT_MS, retry_options=types.HttpRetryOptions(attempts=1)),
         # temperature / top_p / top_k deliberately unset: Gemini 3 guidance is to keep defaults.
     )
     return {"model": MODEL_ID, "contents": contents, "config": config}
@@ -475,21 +478,32 @@ def _translate(exc: Exception) -> GeminiError:
     raise exc
 
 
-def _generate(client: Any, request: dict) -> Any:
-    """One call; while a model is overloaded or out of quota, the next of FALLBACK_MODEL_IDS."""
+def _is_deadline(err: GeminiError) -> bool:
+    """A hung request: Gemini's own deadline (504) or ours (the client timeout)."""
+    return err.kind == "timeout" or err.status == 504
+
+
+def _generate(client: Any, request: dict, deadline_retries: int = 0) -> Any:
+    """One call. A hung request is tried again on the same model up to `deadline_retries` times; while a model is
+    overloaded or out of quota, the next of FALLBACK_MODEL_IDS."""
     models = [request["model"], *(m for m in FALLBACK_MODEL_IDS if m != request["model"])]
     for i, model in enumerate(models):
-        try:
-            return client.models.generate_content(**{**request, "model": model})
-        except Exception as exc:  # noqa: BLE001 - translated below
-            err = _translate(exc)
-            if err.status not in (429, 503) or i == len(models) - 1:
-                raise err from exc
-            log.warning("gemini %s unavailable (%s): trying %s", model, err, models[i + 1])
+        for attempt in range(deadline_retries + 1):
+            try:
+                return client.models.generate_content(**{**request, "model": model})
+            except Exception as exc:  # noqa: BLE001 - translated below
+                err = _translate(exc)
+                if _is_deadline(err) and attempt < deadline_retries:
+                    log.warning("gemini %s hung (%s): trying it again", model, err)
+                    continue
+                if err.status not in (429, 503) or i == len(models) - 1:
+                    raise err from exc
+                log.warning("gemini %s unavailable (%s): trying %s", model, err, models[i + 1])
+                break
     raise AssertionError("unreachable")
 
 
-def generate_json(request: dict, *, client: Any = None, parse_attempts: int = 2) -> dict:
+def generate_json(request: dict, *, client: Any = None, parse_attempts: int = 2, deadline_retries: int = 0) -> dict:
     """Run one structured request. HTTP-level retry is done by the SDK
     (RETRY_OPTIONS); a response that does not parse is retried once here, unless it
     was cut off at max_output_tokens (a retry would be cut off and billed again)."""
@@ -501,7 +515,7 @@ def generate_json(request: dict, *, client: Any = None, parse_attempts: int = 2)
     started = time.monotonic()
     billed = {"prompt_tokens": 0, "output_tokens": 0, "thought_tokens": 0, "total_tokens": 0, "cost_usd_est": 0.0}
     for attempt in range(1, parse_attempts + 1):
-        response = _generate(client, request)
+        response = _generate(client, request, deadline_retries)
         for key, val in usage_dict(response).items():  # every attempt is billed
             billed[key] = round(billed[key] + val, 6)
         try:
@@ -530,7 +544,8 @@ def check_asbuilt(photo_jpeg: bytes, render_png: bytes, context: dict, *, projec
                   overlay_jpeg: Optional[bytes] = None, client: Any = None) -> dict:
     """As-built check. Returns {"result": <raw model dict>, "usage": {...}, ...}.
     ``result`` still needs validate.repair(): mark matching, clamping, severity."""
-    return generate_json(build_check_request(photo_jpeg, render_png, context, project_note, overlay_jpeg), client=client)
+    return generate_json(build_check_request(photo_jpeg, render_png, context, project_note, overlay_jpeg), client=client,
+                         deadline_retries=CHECK_DEADLINE_RETRIES)
 
 
 def ask_element(element: dict, question: str, *, client: Any = None) -> dict:

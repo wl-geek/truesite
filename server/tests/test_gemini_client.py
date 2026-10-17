@@ -364,7 +364,7 @@ def test_wire_request_gemini_api():
     (req,) = sent
     assert str(req.url) == "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent"
     assert req.headers["x-goog-api-key"] == "TEST-KEY"
-    assert req.headers["x-server-timeout"] == "45"  # the check's own CHECK_TIMEOUT_MS, 45_000 ms -> 45 s
+    assert req.headers["x-server-timeout"] == "40"  # the check's own CHECK_TIMEOUT_MS, 40_000 ms -> 40 s
     body = json.loads(req.content)
     parts = body["contents"][0]["parts"]
     assert [("text" if "text" in p else p["inlineData"]["mime_type"]) for p in parts] == [
@@ -391,6 +391,32 @@ def test_wire_request_with_the_outline_image():
         "text", "image/jpeg", "text", "image/png", "text", "image/jpeg", "text"]
     assert parts[4]["text"].startswith("IMAGE 3") and base64.urlsafe_b64decode(parts[5]["inlineData"]["data"]) == OVERLAY
     assert parts[6]["text"].startswith("Numbered elements to check")
+
+
+def test_a_hung_check_is_tried_once_more_on_the_same_model():
+    # A 504 or a timeout is a hung request: one more try on the same model (most checks answer in 12-20 s).
+    hung = _api_error(genai_errors.ServerError, 504, "DEADLINE_EXCEEDED")
+    client = FakeClient(hung, fake_response(GOOD_CHECK))
+    out = gc.check_asbuilt(PHOTO, RENDER, CONTEXT, client=client)
+    assert out["result"] == GOOD_CHECK and [c["model"] for c in client.models.calls] == [gc.MODEL_ID, gc.MODEL_ID]
+    client = FakeClient(httpx.ReadTimeout("slow"), hung, fake_response(GOOD_CHECK))
+    with pytest.raises(gc.GeminiError) as info:  # two hung tries: give up, inside Cloud Run's 120 s
+        gc.check_asbuilt(PHOTO, RENDER, CONTEXT, client=client)
+    assert info.value.kind == "unavailable" and len(client.models.calls) == 2
+
+
+def test_the_check_sets_its_own_deadline_and_no_sdk_retry():
+    cfg = gc.build_check_request(PHOTO, RENDER, CONTEXT)["config"]
+    assert cfg.http_options.timeout == gc.CHECK_TIMEOUT_MS == 40_000
+    assert cfg.http_options.retry_options.attempts == 1  # the retry above is the only one: 2 x 40 s at most
+
+
+def test_asks_are_not_retried_on_a_deadline_here():
+    hung = _api_error(genai_errors.ServerError, 504, "DEADLINE_EXCEEDED")
+    client = FakeClient(hung, fake_response({"answer": "a", "cited_properties": [], "confidence": 1}))
+    with pytest.raises(gc.GeminiError):  # the SDK's own retry (25 s attempts) covers Ask, inside its 60 s
+        gc.generate_json(gc.build_ask_request({"ifc_class": "IfcWall", "name": "W", "props": {}}, "Height?"), client=client)
+    assert len(client.models.calls) == 1
 
 
 def test_asks_and_drafts_keep_the_short_timeout():
@@ -434,11 +460,16 @@ def test_sdk_gives_up_after_two_429s_on_each_model():
         calls.append(request)
         return httpx.Response(429, json={"error": {"code": 429, "message": "q", "status": "RESOURCE_EXHAUSTED"}})
 
+    ask = gc.build_ask_request({"ifc_class": "IfcWall", "name": "W", "props": {}}, "Height?")
     with pytest.raises(gc.GeminiError) as info:
-        gc.check_asbuilt(PHOTO, RENDER, CONTEXT, client=mock_client(handler, api_key="K"))
+        gc.generate_json(ask, client=mock_client(handler, api_key="K"))
     models = [gc.MODEL_ID, *gc.FALLBACK_MODEL_IDS]
     assert info.value.kind == "rate_limited" and len(calls) == 2 * len(models)  # two SDK tries on each model in turn
     assert [str(c.url).split("/models/")[1].split(":")[0] for c in calls] == [m for m in models for _ in (0, 1)]
+    calls.clear()  # the check sets its own retry policy: no SDK retry, straight on to the next model
+    with pytest.raises(gc.GeminiError):
+        gc.check_asbuilt(PHOTO, RENDER, CONTEXT, client=mock_client(handler, api_key="K"))
+    assert [str(c.url).split("/models/")[1].split(":")[0] for c in calls] == models
 
 
 def test_sdk_does_not_retry_400():
