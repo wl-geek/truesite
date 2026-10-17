@@ -18,3 +18,23 @@ describe('issueFormat', () => {
     expect(issueBody('room1', f, null, templateDraft(f, null)).finding_ref).toBeNull()
   })
 })
+
+describe('issueFormat (mutation-tested)', () => {
+  it('keeps a template draft within the issue limits (title 80, description 500)', () => {
+    const d = templateDraft({ ...f, name: 'N'.repeat(120), explanation: 'E'.repeat(600) }, null)
+    expect(d.title).toHaveLength(80)
+    expect(d.title).toBe('N'.repeat(80))
+    expect(d.description).toHaveLength(500)
+    expect(d.suggested_action).toBe('Check on site and confirm with the design team before closing.')
+  })
+
+  it('starts the description with the copy rule when there is no explanation', () => {
+    expect(templateDraft({ ...f, explanation: '' }, null).description).toBe('Visual check, not a survey.')
+  })
+
+  it('trims every text field it saves', () => {
+    const body = issueBody('site', f, null, { title: '  T  ', description: '\n D \n', suggested_action: '  A ' })
+    expect([body.title, body.description, body.suggested_action]).toEqual(['T', 'D', 'A'])
+    expect(body.finding_ref).toBeNull()
+  })
+})

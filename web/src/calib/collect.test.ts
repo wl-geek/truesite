@@ -54,3 +54,13 @@ describe('calibration view collector', () => {
     expect(() => scaleFactorFromBar(70)).toThrow(/reprint/)
   })
 })
+
+describe('check bar (mutation-tested)', () => {
+  it('accepts 80 to 120 mm inclusive and refuses anything beyond', () => {
+    expect(scaleFactorFromBar(80)).toBeCloseTo(0.8, 12)
+    expect(scaleFactorFromBar(120)).toBeCloseTo(1.2, 12)
+    expect(() => scaleFactorFromBar(121)).toThrow(/reprint/)
+    expect(() => scaleFactorFromBar(79)).toThrow(/reprint/)
+    expect(() => scaleFactorFromBar(Number.NaN)).toThrow(/reprint/)
+  })
+})

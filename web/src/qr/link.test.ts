@@ -25,3 +25,11 @@ describe('parseAnchorLink', () => {
     }
   })
 })
+
+describe('parseAnchorLink (mutation-tested)', () => {
+  it('matches the whole project id, not just its start', () => {
+    expect(parseAnchorLink('https://h.test/a/site!x/P1', ORIGIN)).toBeNull()
+    expect(parseAnchorLink('https://h.test/a/site.x/P1', ORIGIN)).toBeNull()
+    expect(parseAnchorLink('https://h.test/a/site/P1', ORIGIN)).toEqual({ projectId: 'site', anchorId: 'P1' })
+  })
+})

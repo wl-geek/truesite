@@ -23,3 +23,20 @@ describe('askFormat', () => {
     expect(askErrorMessage({ status: 0 })).toBe("Couldn't answer — try again.") // not an HTTP failure: don't blame the network
   })
 })
+
+describe('askFormat (mutation-tested)', () => {
+  it('shows the bounding box as two corner points', () => {
+    expect(citedRows(el, ['bbox_m'])).toEqual([['bbox_m', '(0, 0, 0) – (3, 0.1, 2.7)']])
+    expect(citedRows(el, ['ifc_class', 'name'])).toEqual([['ifc_class', 'IfcWall'], ['name', 'Wall W-01']])
+  })
+
+  it('flags confidence below one half only', () => {
+    expect(confidenceNote(0.5)).toBeNull()
+    expect(confidenceNote(0.49)).toMatch(/Low confidence/)
+  })
+
+  it('explains the daily cap and a removed element', () => {
+    expect(askErrorMessage({ status: 429, code: 'daily_cap' })).toBe("Today's question limit has been reached. Try again tomorrow.")
+    expect(askErrorMessage({ status: 404, code: 'unknown_element' })).toBe('This element is no longer in the model.')
+  })
+})

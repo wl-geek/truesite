@@ -23,3 +23,15 @@ describe('live page load errors', () => {
     }
   })
 })
+
+describe('live page load errors (mutation-tested)', () => {
+  it('says the code is not set up, which is not a connection problem', () => {
+    const msg = liveLoadErrorMessage(new Error(UNKNOWN_ANCHOR_MESSAGE))
+    expect(msg).toMatch(/QR code/)
+    expect(msg).not.toMatch(/connection|network/i)
+  })
+
+  it('never shows a blank message for an error without one', () => {
+    expect(liveLoadErrorMessage(new Error(''))).toBe("Couldn't load the project. Check your connection and try again.")
+  })
+})

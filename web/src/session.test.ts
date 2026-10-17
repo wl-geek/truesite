@@ -59,3 +59,35 @@ describe('getSessionId', () => {
     expect(getSessionId()).toBe(id)
   })
 })
+
+describe('getSessionId (mutation-tested)', () => {
+  beforeEach(() => vi.stubGlobal('localStorage', memoryStorage()))
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('replaces a stored id with anything around a valid UUID (it is sent as a header)', async () => {
+    const { getSessionId, SESSION_ID_RE, SESSION_KEY } = await freshSession()
+    const valid = '0b0b6a43-1f4c-4b1e-9d3e-5a0e3c2f1a77'
+    for (const bad of [`x${valid}`, `${valid}x`, `${valid}\nX-Other: 1`, valid.toUpperCase()]) {
+      expect(SESSION_ID_RE.test(bad), bad).toBe(false)
+      localStorage.setItem(SESSION_KEY, bad)
+      const id = getSessionId()
+      expect(id).not.toBe(bad)
+      expect(id).toMatch(UUID_V4)
+    }
+  })
+
+  it('uses crypto.randomUUID when the page has it', async () => {
+    vi.stubGlobal('crypto', {
+      randomUUID: () => '11111111-2222-4333-8444-555555555555',
+      getRandomValues: () => { throw new Error('not expected') },
+    })
+    const { getSessionId } = await freshSession()
+    expect(getSessionId()).toBe('11111111-2222-4333-8444-555555555555')
+  })
+
+  it('pads small random bytes to two hex digits, so the fallback id keeps its shape', async () => {
+    vi.stubGlobal('crypto', { getRandomValues: (a: Uint8Array) => a.fill(0) })
+    const { getSessionId } = await freshSession()
+    expect(getSessionId()).toBe('00000000-0000-4000-8000-000000000000')
+  })
+})
