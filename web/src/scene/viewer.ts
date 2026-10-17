@@ -22,6 +22,21 @@ const TAP_MAX_MS = 500
 const HIGHLIGHT = '#FF6A13' // brand orange
 /** Direction the camera looks from in each preset (three.js world: Y up). */
 const VIEWS = { iso: new Vector3(0.75, 0.9, 1), top: new Vector3(0, 1, 0.0001) } as const
+/** Pixels of the canvas covered by panels (Viewer.setInset). */
+export type Inset = { left: number; right: number; bottom: number }
+export const NO_INSET: Inset = { left: 0, right: 0, bottom: 0 }
+/**
+ * The virtual image for a canvas `w` x `h` with panels over it: its size, where the canvas sits in it, and the uncovered
+ * size. Its centre falls in the middle of the uncovered area. Panels keep at least a fifth of the width and 30% of the
+ * height uncovered.
+ */
+export function insetView(w: number, h: number, inset: Inset) {
+  const shrink = Math.min(1, (w * 0.8) / Math.max(inset.left + inset.right, 1))
+  const [left, right] = [inset.left * shrink, inset.right * shrink]
+  const bottom = Math.min(inset.bottom, h * 0.7)
+  const shift = right - left // > 0: the uncovered middle sits left of the canvas centre
+  return { w, h, fullW: w + Math.abs(shift), fullH: h + bottom, offsetX: Math.max(shift, 0), offsetY: bottom, freeW: w - left - right, freeH: h - bottom }
+}
 export type ViewPreset = keyof typeof VIEWS
 const XRAY_OPACITY = 0.14
 
@@ -89,10 +104,10 @@ export type Viewer = {
   /** See-through model; a selected element stays solid. */
   setXray(on: boolean): void
   /**
-   * A panel covers this many pixels on the right or at the bottom: centre the view in the uncovered part, and frame
-   * the model inside it. The view shifts; the camera doesn't move.
+   * Panels cover this many pixels on the left, on the right and at the bottom: centre the view in the uncovered part,
+   * and frame the model inside it. The view shifts; the camera doesn't move.
    */
-  setInset(right: number, bottom: number): void
+  setInset(inset: Inset): void
   /** Mouse hover (not touch): the element under the pointer, or null. Returns an unsubscribe function. */
   onHover(cb: (guid: string | null, clientX: number, clientY: number) => void): () => void
   resize(): void
@@ -164,30 +179,24 @@ export function createViewer(canvas: HTMLCanvasElement, model: LoadedModel, pain
   }
 
   let view: ViewPreset = 'iso'
-  let inset = { right: 0, bottom: 0 }
+  let inset: Inset = NO_INSET
   /**
-   * The projection for the canvas and the inset: a virtual image larger by the inset, of which the canvas shows the
+   * The projection for the canvas and the inset: a virtual image larger by the imbalance, of which the canvas shows the
    * part that puts the image centre in the middle of the uncovered area (PerspectiveCamera.setViewOffset).
    */
   function applyProjection(): void {
-    const w = Math.max(canvas.clientWidth, 1)
-    const h = Math.max(canvas.clientHeight, 1)
-    const right = Math.min(inset.right, w * 0.6)
-    const bottom = Math.min(inset.bottom, h * 0.7)
-    camera.aspect = (w + right) / (h + bottom)
-    if (right || bottom) camera.setViewOffset(w + right, h + bottom, right, bottom, w, h)
+    const v = insetView(Math.max(canvas.clientWidth, 1), Math.max(canvas.clientHeight, 1), inset)
+    camera.aspect = v.fullW / v.fullH
+    if (v.fullW !== v.w || v.fullH !== v.h) camera.setViewOffset(v.fullW, v.fullH, v.offsetX, v.offsetY, v.w, v.h)
     else camera.clearViewOffset()
     camera.updateProjectionMatrix() // fine for this orbit camera; never for the AR camera
   }
   /** Distance that fits a sphere in the uncovered part of the view. */
   function fitDistance(radius: number): number {
-    const w = Math.max(canvas.clientWidth, 1)
-    const h = Math.max(canvas.clientHeight, 1)
-    const right = Math.min(inset.right, w * 0.6)
-    const bottom = Math.min(inset.bottom, h * 0.7)
+    const v = insetView(Math.max(canvas.clientWidth, 1), Math.max(canvas.clientHeight, 1), inset)
     const tanV = Math.tan((camera.fov * Math.PI) / 360)
-    const halfV = Math.atan((tanV * (h - bottom)) / (h + bottom))
-    const halfH = Math.atan((tanV * camera.aspect * (w - right)) / (w + right))
+    const halfV = Math.atan((tanV * v.freeH) / v.fullH)
+    const halfH = Math.atan((tanV * camera.aspect * v.freeW) / v.fullW)
     return radius / Math.sin(Math.min(halfV, halfH))
   }
   /** Frame a box from `dir` (default: the current preset), at a distance that fits it. */
@@ -250,9 +259,9 @@ export function createViewer(canvas: HTMLCanvasElement, model: LoadedModel, pain
     if (!userMoved) frame()
   }
 
-  function setInset(right: number, bottom: number): void {
-    if (right === inset.right && bottom === inset.bottom) return
-    inset = { right, bottom }
+  function setInset(next: Inset): void {
+    if (next.left === inset.left && next.right === inset.right && next.bottom === inset.bottom) return
+    inset = next
     applyProjection()
   }
 
