@@ -32,7 +32,7 @@ To measure on real photos instead:
 
 ## 3. Virtual demo with live Gemini (simulated as-built, 17 Oct 2026)
 
-**Simulated, not photos.** The virtual demo's *Check as-built* at each QR spot P1–P4 (1180 × 820 view, opening framing), on `gemini-3.8-flash` through Agent Platform. A planted defect counts as found when Gemini gives its element (or what moved with it) any deviation status. A false alarm is a deviation on an element we didn't change. In-view counts add up across spots: some defects show from two spots, 16 in all. One check costs about US$0.011 (about 5,600 input and 1,600–2,500 output tokens, from the logged usage).
+**Simulated, not photos.** The virtual demo's *Check as-built* at each QR spot P1–P4 (1180 × 820 view, opening framing), on `gemini-3.8-flash` through Agent Platform. A planted defect counts as found when Gemini gives its element (or what moved with it) any deviation status. A false alarm is a deviation on an element we didn't change. In-view counts add up across spots: some defects show from two spots, 16 in all. One check costs about US$0.015 with IMAGE 3: about 6,900 input and 2,600 output tokens, from the usage logged on the deployed service. Without IMAGE 3 it was about US$0.011.
 
 | Version | Found (of 16) | False alarms | Runs |
 |---|---|---|---|
