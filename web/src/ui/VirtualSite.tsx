@@ -6,6 +6,7 @@ import { ApiError, getProject } from '../api/client'
 import type { Anchor, CheckResult, Element, Finding } from '../api/types'
 import { saveLastCheck } from '../check/lastCheck'
 import { checkErrorMessage, toCheckError } from '../check/messages'
+import { loadReportRuns, rememberReportRun, reportScope, type ReportRun } from '../check/reportRuns'
 import { runCheck, storedRunId } from '../check/runCheck'
 import { releaseRenderer, watchContextLoss } from '../scene/glContext'
 import { disposeModel, parseModel, type LoadedModel } from '../scene/loadModel'
@@ -17,7 +18,7 @@ import { describeDeviation, SITE_AS_BUILT } from '../sim/asBuilt'
 import { deviceLook, dragLook, forwardOf, type LookAngles, yawOf } from '../sim/lookAngles'
 import { samplePose } from '../sim/samplePose'
 import { markFindings } from '../sim/findings3d'
-import { scoreCheck, scoreLine, type Score } from '../sim/score'
+import { notCheckedText, scoreCheck, scoreLine, type Score } from '../sim/score'
 import { buildWorld, makeAsBuilt, photoFinish, rng } from '../sim/world'
 import { EvidenceView } from './EvidenceView'
 import { FindingsPanel } from './FindingsPanel'
@@ -77,10 +78,13 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
   const [draftFor, setDraftFor] = useState<Finding | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [checkFailed, setCheckFailed] = useState(false)
-  const [runIds, setRunIds] = useState<string[]>([]) // this visit's stored checks, for the site report
+  // This browser session's stored checks at every spot, for the day's site report (audit C-03).
+  const [reportRuns, setReportRuns] = useState<ReportRun[]>(() => loadReportRuns(PROJECT_ID))
+  const runIds = useMemo(() => reportRuns.map((r) => r.runId), [reportRuns])
   const [reportOpen, setReportOpen] = useState(false)
   const [glDead, setGlDead] = useState(false)
   const outcomeRef = useRef<Outcome | null>(null)
+  const offline = outcome?.result.model_version === 'fake' // the server runs the offline stand-in, not Gemini
   const touch = useMemo(() => typeof window !== 'undefined' && 'DeviceOrientationEvent' in window && navigator.maxTouchPoints > 0, [])
 
   // Build the world once: the as-built model in the simulated site, the design for the overlay, and a third copy
@@ -351,7 +355,7 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
         if (outcome.renderUrl) URL.revokeObjectURL(outcome.renderUrl)
       }
       const runId = storedRunId(res.response)
-      if (runId) setRunIds((ids) => [...ids.filter((x) => x !== runId), runId].slice(-8))
+      if (runId) setReportRuns(rememberReportRun(PROJECT_ID, reportRuns, { runId, spot: vp.id }))
       setOutcome({
         result, photoUrl: URL.createObjectURL(shot.photo), renderUrl: res.render ? URL.createObjectURL(res.render) : null, runId,
         latencyMs: performance.now() - started, score: scoreCheck(result.findings, SITE_AS_BUILT),
@@ -424,7 +428,7 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
             <h2>As-built check · {vp.id}</h2>
             <button type="button" className="vs-btn vs-btn-light" onClick={() => setResultsOpen(false)}>Back to the view</button>
           </div>
-          <ScoreCard score={outcome.score} offline={outcome.result.model_version === 'fake'} />
+          <ScoreCard score={outcome.score} offline={offline} />
           <div className="vs-compare">
             <figure>
               <figcaption>Your view: the site photo</figcaption>
@@ -438,25 +442,26 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
             )}
           </div>
           <p className="vs-judged">{judgedLine(outcome)}</p>
-          {runIds.length > 0 && (
+          {reportRuns.length > 0 && (
             <div className="vs-report">
-              <p><strong>Done for today?</strong> Gemini writes the site report from {runIds.length === 1 ? 'this check' : `your ${runIds.length} checks`}: safety first, then structure, then progress.</p>
+              <p><strong>Done for today?</strong> {offline ? 'The offline stand-in' : 'Gemini'} writes the site report
+                from {reportScope(reportRuns, vp.id)}: safety first, then structure, then progress.</p>
               <button type="button" className="btn btn-accent" onClick={() => setReportOpen(true)}>Write today's site report</button>
             </div>
           )}
           <FindingsPanel result={outcome.result} selectedMark={selectedMark} onSelect={(f) => setSelectedMark(f.mark)} onDraftIssue={setDraftFor} />
-          {outcome.score.outOfView.length > 0 && (
+          {outcome.score.notChecked.length > 0 && (
             <details className="vs-truth">
-              <summary>Planted elsewhere on this site ({outcome.score.outOfView.length})</summary>
-              <p className="note">Out of this view, so not checked. Step in at another QR spot to find them.</p>
-              <ul>{outcome.score.outOfView.map((d) => <li key={d.element}>{describeDeviation(d)}</li>)}</ul>
+              <summary>{notCheckedText(outcome.score).heading}</summary>
+              <p className="note">{notCheckedText(outcome.score).note}</p>
+              <ul>{outcome.score.notChecked.map((d) => <li key={d.element}>{describeDeviation(d)}</li>)}</ul>
             </details>
           )}
           {notice && <p className="note" role="status">{notice}</p>}
         </aside>
       )}
 
-      {reportOpen && <ReportDialog runIds={runIds} onClose={() => setReportOpen(false)} />}
+      {reportOpen && <ReportDialog runIds={runIds} offline={offline} onClose={() => setReportOpen(false)} />}
 
       {draftFor && worldRef.current && (
         <IssueDialog open projectId={PROJECT_ID} runId={outcome?.runId ?? null} mark={draftFor.mark} finding={draftFor}

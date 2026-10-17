@@ -3,6 +3,7 @@
  * Gemini flag it? Plus anything flagged that we didn't plant. Gemini never sees the planted list.
  */
 import type { Finding } from '../api/types'
+import { MAX_MARKS } from '../check/marks'
 import type { Deviation } from './asBuilt'
 
 const DEVIATIONS = new Set<Finding['status']>(['missing', 'misplaced', 'different_from_design'])
@@ -12,8 +13,11 @@ export type Score = {
   inView: { planted: Deviation; finding: Finding; found: boolean }[]
   /** Deviations Gemini reported on elements we didn't change. */
   falseAlarms: Finding[]
-  /** Planted defects outside this view: not checked, not counted. */
-  outOfView: Deviation[]
+  /**
+   * Planted defects with no finding: not checked, not counted. Out of view, or in view but not among the elements
+   * marked for the check (at most MAX_MARKS, weighted to the centre), so not always elsewhere (audit C-24).
+   */
+  notChecked: Deviation[]
 }
 
 /** The elements a planted defect changed: the element, plus what moved with it (a shifted column's cage). */
@@ -30,7 +34,7 @@ export function scoreCheck(findings: readonly Finding[], planted: readonly Devia
   return {
     inView,
     falseAlarms: findings.filter((f) => DEVIATIONS.has(f.status) && !plantedNames.has(f.name)),
-    outOfView: planted.filter((d) => !byName.has(d.element)),
+    notChecked: planted.filter((d) => !byName.has(d.element)),
   }
 }
 
@@ -42,4 +46,12 @@ export function scoreLine(s: Score): string {
     ? `Gemini found ${found} of ${s.inView.length} planted defect${s.inView.length === 1 ? '' : 's'} in this view`
     : 'No planted defect is in this view'
   return `${head} · ${alarms === 0 ? 'no false alarms' : `${alarms} false alarm${alarms === 1 ? '' : 's'}`}`
+}
+
+/** The heading and note over the planted defects this check didn't cover (VirtualSite's results). */
+export function notCheckedText(s: Score): { heading: string; note: string } {
+  return {
+    heading: `Not checked in this view (${s.notChecked.length})`,
+    note: `Out of view, or not among the ${MAX_MARKS} elements marked for the check. Turn, or step in at another QR spot, to check them.`,
+  }
 }

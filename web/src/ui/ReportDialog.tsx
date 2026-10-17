@@ -4,10 +4,11 @@ import type { IssueLanguage, SiteReport } from '../api/types'
 import { askErrorMessage } from './askFormat'
 import { LANGUAGES } from './languages'
 
-type Props = { runIds: string[]; onClose: () => void }
+/** `offline`: the server runs the offline stand-in, so the draft isn't Gemini's (audit C-04). */
+type Props = { runIds: string[]; offline?: boolean; onClose: () => void }
 
-/** Gemini writes the day's site report from this visit's checks: safety first, then structure, then progress. */
-export function ReportDialog({ runIds, onClose }: Props) {
+/** Gemini writes the day's site report from this session's checks: safety first, then structure, then progress. */
+export function ReportDialog({ runIds, offline = false, onClose }: Props) {
   const [language, setLanguage] = useState<IssueLanguage>('en')
   const [report, setReport] = useState<SiteReport | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -38,7 +39,7 @@ export function ReportDialog({ runIds, onClose }: Props) {
       <div className="panel modal report-modal" role="dialog" aria-modal="true" aria-labelledby="report-title" onClick={(e) => e.stopPropagation()}>
         <header className="panel-head">
           <div>
-            <p className="eyebrow">Draft by Gemini · check before sending</p>
+            <p className="eyebrow">Draft by {offline ? 'the offline stand-in' : 'Gemini'} · check before sending</p>
             <h2 id="report-title">{report?.title ?? "Today's site report"}</h2>
           </div>
           <button type="button" className="icon-btn" onClick={onClose} aria-label="Close">×</button>
@@ -49,7 +50,7 @@ export function ReportDialog({ runIds, onClose }: Props) {
             {LANGUAGES.map(([code, name]) => <option key={code} value={code}>{name}</option>)}
           </select>
         </label>
-        {!report && !error && <p className="status">Gemini is writing the report from {runIds.length} check{runIds.length === 1 ? '' : 's'}…</p>}
+        {!report && !error && <p className="status">{offline ? 'The offline stand-in' : 'Gemini'} is writing the report from {runIds.length} check{runIds.length === 1 ? '' : 's'}…</p>}
         {error && <p className="status status-error" role="alert">{error}</p>}
         {report && (
           <div className="report">
