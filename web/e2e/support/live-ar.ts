@@ -450,17 +450,21 @@ export async function overlayShot(page: Page): Promise<{ png: Buffer; rect: { x:
   }
 }
 
-/** The live page's visible state: badge, chips, coach lines, warnings and the Check as-built button. */
+/**
+ * The live page's visible state: badge, scale, coach messages, warnings and the Check as-built button. Since #107 the
+ * camera view shows closable messages (.hud-msg; warnings are .hud-msg-warn) and the scale sits in the status pill.
+ */
 export async function liveState(page: Page): Promise<{ badge: string; chip: string; coach: string[]; warnings: string[]; checkDisabled: boolean | null }> {
   return page.evaluate(() => {
     const text = (sel: string) => [...document.querySelectorAll(sel)].map((e) => (e.textContent ?? '').trim())
     const btn = [...document.querySelectorAll('.live-actions button')].find((b) => /Check as-built|Checking/.test(b.textContent ?? '')) as HTMLButtonElement | undefined
     return {
       badge: text('.q-badge')[0] ?? '',
-      chip: text('.mode-chip')[0] ?? '',
-      coach: text('.live-top .coach'),
-      warnings: text('.live-top .live-warning'),
-      checkDisabled: btn ? btn.disabled : null,
+      chip: text('.hud-scale')[0] ?? '',
+      coach: text('.live-top .hud-msg:not(.hud-msg-warn) > p'),
+      warnings: text('.live-top .hud-msg-warn > p'),
+      // A sheet that can't be checked keeps the button tappable (it says why) and marks it aria-disabled.
+      checkDisabled: btn ? btn.disabled || btn.getAttribute('aria-disabled') === 'true' : null,
     }
   })
 }

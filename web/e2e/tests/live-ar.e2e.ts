@@ -44,8 +44,9 @@ const SITE_COPY = {
   coachSearch: 'Point the camera at the QR code.',
   coachTips: "Can't find the code. Add more light, move within about 1 m and hold the phone steady.",
   coachLookAround: 'Look around and up. Turn on the spot; point back at the code to re-align.',
-  noCheck: 'This sheet shows the design where nothing is built yet, so there is nothing to check. Try the virtual demo.',
-  lookAroundBadge: 'Look-around · held by motion sensors',
+  noCheck: 'This sheet shows the design where nothing is built yet, so there is nothing to check here.',
+  noCheckLink: 'Try the check in the virtual demo',
+  lookAroundBadge: 'Held by motion sensors',
   denied: 'Camera access was blocked. Allow the camera for this site in your browser settings, then try again.',
 }
 
@@ -135,6 +136,13 @@ async function startCamera(page: Page, label = 'Start camera'): Promise<void> {
   expect(v, 'the fake camera delivers the video at its own size').toEqual([manifest.width, manifest.height])
 }
 
+/** Close the "nothing to check on this sheet" note that opens with the camera, so the coach shows (one message at a time). */
+async function closeNote(page: Page): Promise<void> {
+  const note = page.locator('.live-top .hud-msg', { hasText: 'nothing to check' })
+  if (await note.count()) await note.getByRole('button', { name: 'Close this message' }).click()
+  await expect(note).toHaveCount(0)
+}
+
 async function waitBadge(page: Page, re: RegExp, timeout = 15_000): Promise<string> {
   await expect.poll(async () => (await H.liveState(page)).badge, { timeout, intervals: [100, 200, 250] }).toMatch(re)
   return (await H.liveState(page)).badge
@@ -218,9 +226,13 @@ test('P1 steady: first use, Start camera, QR detected, Alignment Good at 0.7 m, 
   expect(Number(badge.match(/· ([\d.]+) m/)![1]), 'distance to the code (badge, 0.1 m steps)').toBeCloseTo(truthDist, 1)
   const st = await H.liveState(page)
   expect(st.chip).toBe('Life size · 1:1')
-  expect(st.coach).toEqual([SITE_COPY.coachTracking, `${SITE_COPY.noCheck} Open the virtual demo`])
-  await expect(page.locator('.live-top').getByRole('link', { name: 'Open the virtual demo' })).toHaveAttribute('href', '/samples')
   expect(st.checkDisabled, 'Check as-built is off on the live sheets').toBe(true)
+  // Tapping it says why, once, and links to the same spot in the virtual demo (audit C-05)
+  await page.getByRole('button', { name: 'Check as-built' }).click({ force: true }) // aria-disabled, but tappable
+  await expect.poll(async () => (await H.liveState(page)).coach).toEqual([`${SITE_COPY.noCheck} ${SITE_COPY.noCheckLink}`])
+  await expect(page.locator('.live-top').getByRole('link', { name: SITE_COPY.noCheckLink })).toHaveAttribute('href', '/samples?at=P1')
+  await closeNote(page)
+  await expect.poll(async () => (await H.liveState(page)).coach).toEqual([SITE_COPY.coachTracking])
 
   await page.waitForTimeout(800) // let the smoothing settle
   const fit = await overlayFit(page, 'p1-steady', 0, truth(anchor('P1')), 'p1-steady')
@@ -286,6 +298,7 @@ async function lookAround(video: string, name: string): Promise<{ page: Page; er
   expect(await page.evaluate(() => (window as unknown as { __motionAsks: boolean[] }).__motionAsks), 'motion permission asked once, inside the tap').toEqual([true])
   await waitFrame(page, 0, v.turn!.startFrame - 20) // the video starts from frame 0 when the camera starts
   await waitBadge(page, /^Alignment: Good · /, 4_000)
+  await closeNote(page)
   const lastSeenFrame = v.codeVisible.lastIndexOf(true, v.turn!.startFrame + v.turn!.frames)
   const settled = v.turn!.startFrame + v.turn!.frames
   // The camera holds still after the turn until the video loops; take the shot well before the loop, and again
@@ -312,12 +325,11 @@ test('P1 look-around maths: the code is covered, then a quick turn; the model st
   expect(errors, errors.join('\n')).toEqual([])
 })
 
-// Known defect (scene/overlay.ts onDetection): the look-around lock pairs the One Euro-SMOOTHED pose of a frame with
-// the LATEST motion sample, so a lock taken while turning is off by the rotation between them. The code always
-// leaves the view during a turn, so the held model lands off by 1.3-2.8 degrees at 30 degrees/s (25-54 px here)
-// and about 3 degrees or more on a quick turn; the covered-code test above shows the maths itself is exact.
-// The test asserts the fixed behaviour: P1 turn away at 30 degrees/s (the filming pace) with motion events.
-test.fixme(BUG.lookAroundLock, async () => {
+// Fixed defect (audit C-02): the look-around lock paired the One Euro-SMOOTHED pose of a frame with the LATEST motion
+// sample, so a lock taken while turning was off by the rotation between them (1.3-2.8 degrees at 30 degrees/s, 25-54 px
+// here). The fused pose (#107) pairs each raw detection with the sample at its capture time, and the fallback lock is
+// only re-paired while the device is still (motion.ts nextLock). P1 turn away at 30 degrees/s (the filming pace).
+test(BUG.lookAroundLock, async () => {
   const { fit } = await lookAround('p1-turn-slow', 'p1-turn-slow-held')
   expectAligned(fit, 'look-around after a 30 degree/s turn')
 })
@@ -347,6 +359,7 @@ test('P1 turn away without motion events: the model hides, then the 5 s tips', a
   await startCamera(page)
   await waitFrame(page, 0, v.turn!.startFrame - 10)
   await waitBadge(page, /^Alignment: Good · /, 4_000)
+  await closeNote(page)
   const lastSeenFrame = v.codeVisible.lastIndexOf(true, v.turn!.startFrame + v.turn!.frames)
   const f1 = await waitFrame(page, lastSeenFrame + 15, lastSeenFrame + 40) // 1-2.7 s after the code left
   const st = await H.liveState(page)
@@ -366,6 +379,7 @@ test('P1 no code at all: No code in view, then the 5 s tips; Check as-built stay
   await openLive(page, 'P1')
   await startCamera(page)
   const t0 = Date.now()
+  await closeNote(page)
   let st = await H.liveState(page)
   expect(st.badge).toBe('No code in view')
   expect(st.coach[0]).toBe(SITE_COPY.coachSearch)
@@ -387,15 +401,21 @@ test('D1 desk sheet: the building at 1:100 beside the code', async () => {
   await openLive(page, 'D1')
   await expect(page.locator('.live-start h1')).toHaveText('Live view · Scale model · 1:100')
   await expect(page.locator('.live-start')).toContainText("The model appears as a 1:100 scale model beside the code, like an architect's model on the table.")
-  await expect(page.locator('.live-start ol.steps li').first()).toContainText('Tap Start camera and allow the camera.')
+  await expect(page.locator('.live-start ol.steps li').first()).toContainText('Tap Start camera and allow the camera and motion access.')
+  // The 7 cm code is held about 35 cm away, not 1 m, and nothing says step back (audit C-01)
+  await expect(page.locator('.live-start ol.steps li').nth(1)).toHaveText('Hold the iPad about 35 cm from the code until it says Alignment: Good.')
+  await expect(page.locator('.live-start')).not.toContainText(/step back|about 1 m/)
   await startCamera(page)
   const badge = await waitBadge(page, /^Alignment: Good · /)
   const v = manifest.videos['d1-desk']
   const truthDist = Math.hypot(...v.cams[0].c) // the code centre is the desk origin
   expect(Number(badge.match(/· ([\d.]+) m/)![1])).toBeCloseTo(truthDist, 1)
+  await page.getByRole('button', { name: 'Check as-built' }).click({ force: true }) // aria-disabled, but says why when tapped
+  await expect(page.locator('.live-top').getByRole('link', { name: SITE_COPY.noCheckLink })).toHaveAttribute('href', '/#virtual') // no D1 spot there (C-05)
+  await closeNote(page)
+  await expect.poll(async () => (await H.liveState(page)).coach[0]).toBe('Walk around the sheet to look at the model. Keep the code in view.')
   const st = await H.liveState(page)
   expect(st.chip).toBe('Scale model · 1:100')
-  expect(st.coach[0]).toBe('Walk around the sheet to look at the model. Keep the code in view.')
   expect(st.checkDisabled).toBe(true)
   await page.waitForTimeout(800)
   const fit = await overlayFit(page, 'd1-desk', 0, H.modelToWorld(anchor('D1'), v.sheet), 'd1-desk')
@@ -428,7 +448,7 @@ test('A different sheet in view: says which code it is and links to it', async (
   const page = await (await ipad(browser, { calibrated: true })).newPage()
   await openLive(page, 'P1')
   await startCamera(page)
-  await expect(page.locator('.live-top .live-warning')).toHaveText('This is a different code (P2). Switch to it', { timeout: 10_000 })
+  await expect(page.locator('.live-top .hud-msg-warn > p')).toHaveText('This is a different code (P2). Switch to it', { timeout: 10_000 })
   await expect(page.locator('.live-top').getByRole('link', { name: 'Switch to it' })).toHaveAttribute('href', '/a/site/P2')
   const st = await H.liveState(page)
   expect(st.badge).toBe('No code in view') // its corners are ignored: its printed size may differ
@@ -442,7 +462,7 @@ test('Camera blocked: the message and the ways on', async () => {
   await page.getByRole('button', { name: 'Start camera', exact: true }).click()
   await expect(page.locator('.live-start [role=alert]')).toHaveText(SITE_COPY.denied, { timeout: 10_000 })
   await expect(page.getByRole('link', { name: 'Open the model viewer' })).toHaveAttribute('href', '/model?project=site')
-  await expect(page.getByRole('link', { name: 'Try the virtual demo' })).toHaveAttribute('href', '/samples')
+  await expect(page.getByRole('link', { name: 'Try the virtual demo' })).toHaveAttribute('href', '/samples?at=P1') // the same spot (C-05)
   await expect(page.getByRole('button', { name: 'Start camera', exact: true })).toBeEnabled()
   await page.screenshot({ path: path.join(OUT, 'camera-denied.png') })
 })
@@ -544,13 +564,16 @@ test('iPad with Motion & Orientation denied: no look-around, the model hides whe
   expect(fit.drawnFrac).toBeLessThan(0.001)
 })
 
-// Nothing on the live page says that Motion & Orientation is off, although levelling and look-around depend on it
-// (docs/demo/ipad-ar-filming.md: "Motion is what keeps the model level"). The test asserts the fixed behaviour.
-test.fixme(BUG.motionDenied, async () => {
+// Fixed (audit C-15): the live page says that Motion & Orientation is off, since levelling and look-around depend on it
+// (docs/demo/ipad-ar-filming.md: "Motion is what keeps the model level"), and how to allow it.
+test(BUG.motionDenied, async () => {
   browser = await launch('p1-steady')
   const page = await (await ipad(browser, { calibrated: true, iosMotion: 'denied' })).newPage()
   await openLive(page, 'P1')
   await startCamera(page)
   await waitBadge(page, /^Alignment: Good · /)
   await expect(page.locator('.live-page')).toContainText(/motion/i)
+  await expect.poll(async () => (await H.liveState(page)).warnings).toEqual([
+    "Motion & Orientation is off, so the model won't stay level or stay in place when you turn. To allow it, close the browser, open this page again and tap Allow.",
+  ])
 })
