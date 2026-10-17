@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fullFrame, regionAround, regionToVideo } from './roi'
+import { followRegion, fullFrame, regionAround, regionToVideo } from './roi'
 
 describe('where the QR reader looks', () => {
   it('reads the whole frame at 640 px wide when there is no code to follow', () => {
@@ -35,5 +35,27 @@ describe('where the QR reader looks', () => {
     expect(regionToVideo([{ x: 80, y: 80 }, { x: 180, y: 80 }], r)).toEqual([[860, 440], [1060, 440]])
     const full = fullFrame(1920, 1080)
     expect(regionToVideo([{ x: 320, y: 180 }], full)).toEqual([[960, 540]])
+  })
+})
+
+describe('a steady crop', () => {
+  const at = (x: number, y: number, s = 200): [number, number][] => [[x, y], [x + s, y], [x + s, y + s], [x, y + s]]
+
+  it('keeps the same crop while the code stays well inside it, so a still code is read on the same pixel grid', () => {
+    const first = followRegion(null, at(860, 440), 1920, 1080)!
+    expect(first.sx % 8).toBe(0) // snapped: small corner changes don't move the grid
+    expect(first.sy % 8).toBe(0)
+    expect(followRegion(first, at(861, 439), 1920, 1080)).toBe(first)
+    expect(followRegion(first, at(870, 450), 1920, 1080)).toBe(first)
+  })
+
+  it('moves the crop when the code nears its edge or changes size (the camera moved or stepped closer)', () => {
+    const first = followRegion(null, at(860, 440), 1920, 1080)!
+    expect(followRegion(first, at(960, 440), 1920, 1080)).not.toBe(first) // 100 px across: near the edge
+    expect(followRegion(first, at(830, 410, 280), 1920, 1080)).not.toBe(first) // 40% bigger
+  })
+
+  it('reads the whole frame when there is no crop to be had', () => {
+    expect(followRegion(null, at(300, 100, 900), 1920, 1080)).toBeNull()
   })
 })
