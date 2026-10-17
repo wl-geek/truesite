@@ -4,6 +4,7 @@ import json
 import logging
 from datetime import timedelta
 from pathlib import Path
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
@@ -14,7 +15,8 @@ from app.main import build_store, create_app, seed_demo_issues
 from app.projects import ProjectRepo
 from app.store import InMemoryStore
 
-from .conftest import GUID_DOOR, Clock, write_project
+from .conftest import GUID_DOOR, GUID_WALL, Clock, new_session, write_project
+from .test_check_route import context as check_context, post as post_check
 
 
 def test_health_reports_modes(client: TestClient) -> None:
@@ -112,3 +114,56 @@ def test_bad_demo_rows_do_not_stop_the_app(tmp_path: Path, dist: Path, store: In
 def test_the_committed_room1_demo_issues_are_seeded(tmp_path: Path, store: InMemoryStore) -> None:
     create_app(Settings(static_dir=tmp_path / "no-dist"), store=store)
     assert [i.id for i in store.list_issues("demo", "room1")] == ["demo-room1-1", "demo-room1-2"]
+
+
+# ---- 422 bodies are strict JSON ----------------------------------------------------------------------
+RUN = "a" * 22
+# json.loads reads NaN, Infinity, -Infinity and an out-of-range 1e999 (as inf); strict JSON has no words for them.
+NON_FINITE = [("NaN", "NaN"), ("Infinity", "Infinity"), ("-Infinity", "-Infinity"), ("1e999", "Infinity")]
+JSON_POSTS = {  # path -> (body with {bad} in one field, that field's loc)
+    "/api/ask": ('{{"project_id": "testproj", "guid": "%s", "question": {bad}}}' % GUID_WALL, ["body", "question"]),
+    "/api/report": ('{{"run_ids": [{bad}]}}', ["body", "run_ids", 0]),
+    "/api/issues/draft": ('{{"run_id": "%s", "mark": {bad}}}' % RUN, ["body", "mark"]),
+    "/api/issues": ('{{"project_id": "testproj", "guid": "%s", "title": {bad}}}' % GUID_WALL, ["body", "title"]),
+}
+
+
+def strict_json(text: str) -> Any:
+    """Parse as browsers do: JSON.parse rejects NaN and Infinity."""
+    def reject(token: str) -> None:
+        raise AssertionError(f"{token} in a response body")
+    return json.loads(text, parse_constant=reject)
+
+
+@pytest.mark.parametrize("token,echo", NON_FINITE)
+@pytest.mark.parametrize("path", [*JSON_POSTS, "/api/check"])
+def test_non_finite_numbers_in_a_body_get_the_usual_422(client: TestClient, path: str, token: str, echo: str) -> None:
+    """C-12: FastAPI's default handler echoed NaN or inf back in `input`, JSONResponse refused it, and every POST
+    answered 500. The 422 keeps FastAPI's shape and loc paths; the number comes back as a string."""
+    if path == "/api/check":
+        ctx = check_context().replace('"distance_m": 1.5', f'"distance_m": {token}')
+        r, loc = post_check(client, ctx=ctx), ["body", "context", "distance_m"]
+    else:
+        body, loc = JSON_POSTS[path]
+        r = client.post(path, content=body.format(bad=token),
+                        headers={"X-Session-Id": new_session(), "Content-Type": "application/json"})
+    assert r.status_code == 422, r.text
+    detail = strict_json(r.text)["detail"]
+    assert [e["loc"] for e in detail] == [loc]
+    assert {"type", "loc", "msg", "input"} <= set(detail[0]) and detail[0]["input"] == echo
+
+
+def test_non_finite_numbers_nested_in_an_input_are_spelled_out(client: TestClient) -> None:
+    body = '{"project_id": "testproj", "guid": "%s", "question": {"q": [NaN, 1.5, -Infinity]}}' % GUID_WALL
+    r = client.post("/api/ask", content=body, headers={"X-Session-Id": new_session(), "Content-Type": "application/json"})
+    assert r.status_code == 422
+    assert strict_json(r.text)["detail"][0]["input"] == {"q": ["NaN", 1.5, "-Infinity"]}
+
+
+def test_other_422s_keep_fastapis_body(client: TestClient) -> None:
+    r = client.post("/api/ask", json={"project_id": "testproj", "guid": GUID_WALL, "question": ""},
+                    headers={"X-Session-Id": new_session()})
+    assert r.status_code == 422
+    assert r.json() == {"detail": [{"type": "string_too_short", "loc": ["body", "question"],
+                                    "msg": "String should have at least 1 character", "input": "",
+                                    "ctx": {"min_length": 1}}]}
