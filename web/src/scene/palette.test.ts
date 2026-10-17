@@ -27,7 +27,7 @@ describe('colour by element type (issue #36)', () => {
 
   it('draws steel and rebar solid, and concrete (whatever its class) see-through', () => {
     expect(isSolid('column', 'Steel S355')).toBe(true)
-    expect(isSolid('column', 'Concrete C40/50')).toBe(false) // rooftop: the cage stays visible inside
+    expect(isSolid('column', 'Concrete C40/50')).toBe(false) // a concrete column's cage stays visible inside
     expect(isSolid('beam')).toBe(true)
     expect(isSolid('rebar', 'Rebar B500B')).toBe(true)
     expect(isSolid('concrete', 'Concrete C30/37')).toBe(false)

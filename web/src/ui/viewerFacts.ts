@@ -1,12 +1,15 @@
 import type { ProjectManifest } from '../api/types'
 import { metres } from './elementFacts'
 
-/** The models the viewer offers, in the order judges meet them. */
+/** The models the viewer shows: one, the building under construction. */
 export const VIEWER_PROJECTS: readonly { id: string; name: string }[] = [
   { id: 'site', name: 'Building under construction' },
-  { id: 'rooftop', name: 'Rooftop concrete frame' },
-  { id: 'room1', name: 'Demo room' },
 ]
+
+/** The model card's title: our name for a known model, else the project's own name without its "(1:1)" scale. */
+export function viewerTitle(project: Pick<ProjectManifest, 'project_id' | 'name'>): string {
+  return VIEWER_PROJECTS.find((p) => p.id === project.project_id)?.name ?? project.name.replace(/\s*\(1:1\)$/, '')
+}
 
 /** A model at a glance, from its elements: plan size and height, the materials, and how many storeys it has. */
 export function modelFacts(project: Pick<ProjectManifest, 'elements'>): { size: string; materials: string[]; storeys: number } {

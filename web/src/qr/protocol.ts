@@ -7,7 +7,7 @@ export interface Point {
 }
 
 export interface QrDetection {
-  /** decoded payload, e.g. https://<host>/a/room1/A1 */
+  /** decoded payload, e.g. https://<host>/a/site/P1 */
   text: string
   /** outer corners of the symbol in SYMBOL order: TL, TR, BR, BL (an upside-down code's TL is at the image bottom-right) */
   corners: [Point, Point, Point, Point]

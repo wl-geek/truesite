@@ -21,7 +21,7 @@ const render = (l: ReturnType<typeof look>, maxHeightM: number) => renderToStati
 const chip = (html: string, label: string) => html.match(new RegExp(`<button[^>]*aria-pressed="(true|false)"[^>]*>${label}</button>`))?.[1]
 
 describe('ModelControls', () => {
-  it('reads "off" for a fresh look, even when the model top is not a whole tenth (rooftop 7.65 m)', () => {
+  it('reads "off" for a fresh look, even when the model top is not a whole tenth (7.65 m)', () => {
     const html = render(look(), 7.65)
     expect(html).toContain('Cut above off')
     expect(html).toContain('View distance all')

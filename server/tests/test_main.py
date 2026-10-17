@@ -9,7 +9,7 @@ from typing import Any
 import pytest
 from fastapi.testclient import TestClient
 
-from app.config import Settings
+from app.config import DEFAULT_MODELS_DIR, Settings
 from app.limits import SlidingWindowLimiter
 from app.main import build_store, create_app, seed_demo_issues
 from app.projects import ProjectRepo
@@ -111,9 +111,13 @@ def test_bad_demo_rows_do_not_stop_the_app(tmp_path: Path, dist: Path, store: In
     assert store.list_issues("demo") == []
 
 
-def test_the_committed_room1_demo_issues_are_seeded(tmp_path: Path, store: InMemoryStore) -> None:
+def test_the_committed_demo_issues_are_seeded(tmp_path: Path, store: InMemoryStore) -> None:
+    # The default models dir: whatever demo_issues.json the committed projects ship (site ships none) is seeded.
     create_app(Settings(static_dir=tmp_path / "no-dist"), store=store)
-    assert [i.id for i in store.list_issues("demo", "room1")] == ["demo-room1-1", "demo-room1-2"]
+    repo = ProjectRepo(DEFAULT_MODELS_DIR)
+    assert "site" in repo.project_ids()
+    expected = {f"demo-{p}-{n}" for p in repo.project_ids() for n in range(1, len(repo.demo_issues(p)) + 1)}
+    assert {i.id for i in store.list_issues("demo")} == expected
 
 
 # ---- 422 bodies are strict JSON ----------------------------------------------------------------------

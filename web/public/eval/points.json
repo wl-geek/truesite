@@ -1,7 +1,7 @@
 [
-  { "id": "P1", "label": "Column C-01, room-side corner at the floor", "position_m": [0.4, 0.4, 0.0] },
-  { "id": "P2", "label": "Door D-01, left jamb at 1 m", "position_m": [0.975, 0.1, 1.0] },
-  { "id": "P3", "label": "Door D-01, right jamb at 1 m", "position_m": [1.925, 0.1, 1.0] },
-  { "id": "P4", "label": "Window WN-01, left edge at sill height", "position_m": [2.0, 2.9, 0.9] },
-  { "id": "P5", "label": "North-east corner at 2 m", "position_m": [3.9, 2.9, 2.0] }
+  { "id": "E1", "label": "Column B1, south-east corner at the ground", "position_m": [6.225, -0.225, 0.0] },
+  { "id": "E2", "label": "Column C1, south-west corner at the ground", "position_m": [11.775, -0.225, 0.0] },
+  { "id": "E3", "label": "Grid line 1, 9 m east of point O", "position_m": [9.0, 0.0, 0.0] },
+  { "id": "E4", "label": "Column B2, south-east corner at the ground", "position_m": [6.225, 5.775, 0.0] },
+  { "id": "E5", "label": "Column C2, south-west corner at the ground", "position_m": [11.775, 5.775, 0.0] }
 ]

@@ -19,7 +19,8 @@ test.describe('3D model viewer', () => {
   test('opens the building site by default with its colour key, and links to live AR @handheld', async ({ page, log }) => {
     await page.goto('/model')
     await expect(page).toHaveTitle('3D model · TrueSite')
-    await expect(page.getByRole('combobox', { name: 'Model' })).toHaveValue('site')
+    await expect(page.getByRole('heading', { level: 1, name: 'Building under construction' })).toBeVisible()
+    await expect(page.getByRole('combobox')).toHaveCount(0) // one model: a title, no model switcher
     const unfold = page.getByRole('button', { name: 'Show the model card' }) // phones start with the card folded
     if (await unfold.isVisible()) await unfold.click()
     await expect(page.locator('.model-card-meta').first()).toHaveText('19.8 × 13.8 m overall, 10.65 m high · 191 elements')
@@ -67,12 +68,6 @@ test.describe('3D model viewer', () => {
     await expect(panel).toBeHidden()
     await expect(page.getByText('Drag to orbit')).toBeVisible()
     expectClean(log)
-  })
-
-  test('?project=rooftop opens the rooftop frame', async ({ page }) => {
-    await page.goto('/model?project=rooftop')
-    await expect(page.getByRole('combobox', { name: 'Model' })).toHaveValue('rooftop')
-    await expect(page.getByRole('link', { name: 'See it live in AR' })).toHaveCount(0) // site only
   })
 
   test("an unknown project says it doesn't exist and links to the site model (C-34)", async ({ page }) => {

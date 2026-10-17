@@ -1,19 +1,17 @@
 # Evaluation (spec section 10): measured numbers only
 
-## 0. Survey A1 first
-The wall anchor A1 in `bim/models/room1/anchors.json` still has the placeholder pose from `bim/truesite_bim/qr_sheets.py` (`WALL_POSITION`): code centre at model (0.1, 1.5, 1.35) m, on the west partition's inner face, 1.5 m north of model y = 0 and 1.35 m above the floor, facing east into the room. The overlay can only be as right as this pose, so before measuring, do one of these:
-- Post the US Letter wall sheet so its code centre is exactly there, code upright.
-- Or post it where it suits the room, measure its code centre and facing direction in model metres, then write them in with `uv run python -m truesite_bim.qr_sheets --project room1 --anchors-out models/room1/anchors.json --wall-position X Y Z --wall-normal NX NY NZ` (from `bim/`), then redeploy. The printed sheet doesn't change: its link is still `/a/room1/A1`.
+## 0. Set out P1 first
+The overlay can only be as right as the P1 stand. Set it out from `site-layout.pdf`: code centre at model (9, -2.5, 1.4) m, that is 9 m east of point O (grid corner A1) and 2.5 m south of grid line 1, 1.4 m above the ground, sheet upright and facing south. Then tape the points in `web/public/eval/points.json` on the ground, measured from point O (they are column corners on grid lines 1 and 2, in IFC metres).
 
-Otherwise every offset below includes the error in where the sheet is posted.
+Otherwise every offset below includes the error in where the stand is placed.
 
 ## 1. Overlay accuracy at 1, 2 and 3 m
 
 **Status (17 Oct):** not measured on a device yet; `overlay.csv` has only its header. The Playwright `live-ar` tests in `web/e2e` compare the overlay with synthetic camera videos, which checks the code, not a real phone.
 
-1. Put tape marks on the real features listed in `web/public/eval/points.json`. Each point is in IFC metres; edit the list when the real room model lands.
-2. On the phone, open `/a/room1/A1?eval=1` (HTTPS) and start the camera. Green crosses appear at the points.
-3. At 1, 2 and 3 m from the wall code, measure the on-screen offset between each cross and its tape mark, converted to millimetres on the wall (hold a ruler at the mark). Do 3 tries per distance.
+1. Tape the points listed in `web/public/eval/points.json` on the ground (§0). Each point is in IFC metres.
+2. On the tablet or phone, open `/a/site/P1?eval=1` (HTTPS) and start the camera. Green crosses appear at the points.
+3. At 1, 2 and 3 m from the code, measure the on-screen offset between each cross and its tape mark, converted to millimetres on the ground (lay a ruler at the mark). Do 3 tries per distance.
 4. Add one row per measurement to `overlay.csv`: `distance_m,point_id,offset_mm,try`.
 5. Run `python3 eval/summarise.py overlay eval/overlay.csv` and paste the table into the README.
 
@@ -23,9 +21,9 @@ Otherwise every offset below includes the error in where the sheet is posted.
 
 To measure on real photos instead:
 
-1. Capture samples with `/a/room1/A1?dev=1` → **Save as sample** (issue #9). Each tap downloads `<sample_id>-photo.jpg` and `<sample_id>-meta.json`. Package each sample like this (contract section 8):
+1. Capture samples with `/a/site/P1?dev=1` (or P2–P4) → **Save as sample** (issue #9). Each tap downloads `<sample_id>-photo.jpg` and `<sample_id>-meta.json`. Package each sample like this (contract section 8):
    - move the two files to `web/public/samples/<sample_id>/photo.jpg` and `web/public/samples/<sample_id>/meta.json`
-   - add a row to `web/public/samples/index.json`: `{"sample_id": "<sample_id>", "label": "<what judges see>", "project_id": "room1", "anchor_id": "A1"}` (the ids are in `meta.json`)
+   - add a row to `web/public/samples/index.json`: `{"sample_id": "<sample_id>", "label": "<what judges see>", "project_id": "site", "anchor_id": "P1"}` (the ids are in `meta.json`)
    - commit the folder and `index.json` together
 2. Fill `labels.json` with what each sample *should* report: `{"<sample_id>": {"<guid>": "missing" | "misplaced" | "different_from_design" | "present_ok"}}`. Use the staged deviations, and `present_ok` for everything else in view. Any other status is rejected as a typo.
 3. On the deployed app (real Gemini), open `/samples?dev=1` → **Run all samples → results.json**. Each run is also saved as that sample's fallback result for judges.

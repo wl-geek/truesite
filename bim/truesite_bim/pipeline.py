@@ -4,7 +4,7 @@ The web app joins glb nodes to elements.json rows by GUID, so the pipeline refus
 anything when the two GUID sets differ. Other files in the output directory (anchors.json,
 project.json, demo_issues.json) are left alone; anchors.json comes from qr_sheets.py.
 
-Usage (from bim/): python -m truesite_bim.pipeline models/room1/model.ifc --out models/room1
+Usage (from bim/): python -m truesite_bim.pipeline models/site/model.ifc --out models/site
 """
 from __future__ import annotations
 

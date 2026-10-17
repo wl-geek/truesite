@@ -6,7 +6,7 @@ positions(j, bin, acc_i)  -> list of (x, y, z) floats for a POSITION accessor
 named_node_bounds(path)   -> {node_name: (min_xyz, max_xyz)} in glTF world space (Y-up),
                              merging every mesh at or below each named node
 
-Usage (from bim/): python -m truesite_bim.glb_reader models/room1/model.glb
+Usage (from bim/): python -m truesite_bim.glb_reader models/site/model.glb
 """
 from __future__ import annotations
 

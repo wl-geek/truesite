@@ -12,7 +12,7 @@ from app.store import InMemoryStore
 from .conftest import APP_JS, INDEX_HTML, JPEG
 
 
-@pytest.mark.parametrize("path", ["/", "/a/room1/A1", "/a/desk-a4/D1", "/viewer", "/some/deep/client/route"])
+@pytest.mark.parametrize("path", ["/", "/a/site/P1", "/a/desk-a4/D1", "/viewer", "/some/deep/client/route"])
 def test_client_routes_fall_back_to_index(client: TestClient, path: str) -> None:
     r = client.get(path)
     assert r.status_code == 200
@@ -22,7 +22,7 @@ def test_client_routes_fall_back_to_index(client: TestClient, path: str) -> None
 
 
 def test_head_on_client_route(client: TestClient) -> None:
-    r = client.head("/a/room1/A1")
+    r = client.head("/a/site/P1")
     assert r.status_code == 200
     assert r.content == b""
 
@@ -48,16 +48,16 @@ def test_missing_asset_is_404_not_index(client: TestClient) -> None:
 
 
 def test_missing_sheet_is_404_not_index(client: TestClient) -> None:
-    # The start page links /sheets/room1-D1.pdf with `download`: index.html saved as a .pdf is worse than a 404.
-    r = client.get("/sheets/room1-D1.pdf")
+    # The start page links /sheets/site-D1.pdf with `download`: index.html saved as a .pdf is worse than a 404.
+    r = client.get("/sheets/site-D1.pdf")
     assert r.status_code == 404
     assert r.text != INDEX_HTML
 
 
 def test_sheets_are_served_as_pdf_and_revalidated(client: TestClient, dist: Path) -> None:
     (dist / "sheets").mkdir()
-    (dist / "sheets" / "room1-D1.pdf").write_bytes(b"%PDF-1.4 sheet")
-    r = client.get("/sheets/room1-D1.pdf")
+    (dist / "sheets" / "site-D1.pdf").write_bytes(b"%PDF-1.4 sheet")
+    r = client.get("/sheets/site-D1.pdf")
     assert r.status_code == 200 and r.content == b"%PDF-1.4 sheet"
     assert r.headers["content-type"] == "application/pdf"
     assert r.headers["cache-control"] == "no-cache"  # re-rendered on every deploy, so never immutable
@@ -65,14 +65,14 @@ def test_sheets_are_served_as_pdf_and_revalidated(client: TestClient, dist: Path
 
 def test_other_real_files_are_served(client: TestClient) -> None:
     assert client.get("/favicon.svg").text == "<svg/>"
-    r = client.get("/samples/room1-01.jpg")
+    r = client.get("/samples/site-01.jpg")
     assert r.content == JPEG
     assert r.headers["content-type"] == "image/jpeg"
     assert r.headers["cache-control"] == "no-cache"
 
 
 def test_model_files_get_gltf_mime_type_and_gzip(client: TestClient) -> None:
-    r = client.get("/models/room1/model.glb", headers={"Accept-Encoding": "gzip"})
+    r = client.get("/models/site/model.glb", headers={"Accept-Encoding": "gzip"})
     assert r.status_code == 200
     assert r.headers["content-type"] == "model/gltf-binary"
     assert r.headers.get("content-encoding") == "gzip"
@@ -92,7 +92,7 @@ def test_api_routes_win(client: TestClient) -> None:
 
 
 @pytest.mark.parametrize("method", ["GET", "POST", "PUT", "DELETE"])
-@pytest.mark.parametrize("path", ["/api", "/api/", "/api/nope", "/api/projects/room1/extra/deep",
+@pytest.mark.parametrize("path", ["/api", "/api/", "/api/nope", "/api/projects/site/extra/deep",
                                   "/api/projects/..%2f..%2fetc"])
 def test_unknown_api_paths_never_fall_back(client: TestClient, method: str, path: str) -> None:
     r = client.request(method, path)
@@ -109,7 +109,7 @@ def test_wrong_method_on_known_api_path_is_json_404(client: TestClient) -> None:
 
 
 def test_non_get_on_client_route_is_405(client: TestClient) -> None:
-    assert client.post("/a/room1/A1").status_code == 405
+    assert client.post("/a/site/P1").status_code == 405
 
 
 @pytest.mark.parametrize(
@@ -130,6 +130,6 @@ def test_api_only_when_no_static_dir(tmp_path: Path, models: Path) -> None:
 
 def test_usdz_is_served_with_the_ar_quick_look_type(client, dist) -> None:
     (dist / "models").mkdir(exist_ok=True)
-    (dist / "models" / "rooftop.usdz").write_bytes(b"PK\x03\x04usdz")
-    r = client.get("/models/rooftop.usdz")
+    (dist / "models" / "site.usdz").write_bytes(b"PK\x03\x04usdz")
+    r = client.get("/models/site.usdz")
     assert r.status_code == 200 and r.headers["content-type"].startswith("model/vnd.usdz+zip")

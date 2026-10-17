@@ -12,7 +12,7 @@
  *
  * Anchor (anchors.json): position_m = code centre in model coords; normal =
  * out of the code toward the viewer; up = the code's top-edge direction;
- * scale = physical metres per model metre (1 for the room, 0.05 at 1:20).
+ * scale = physical metres per model metre (1 at life size, 0.01 at 1:100).
  * Marker axes in model coords: z = normal, y = up (made orthogonal to z),
  * x = y x z. With Rqm = [x y z] (columns),
  *     p_marker = scale * Rqm^T (p_model - position_m).

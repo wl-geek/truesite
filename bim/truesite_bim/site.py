@@ -33,8 +33,7 @@ from reportlab.pdfgen import canvas
 from .make_demo_model import Builder
 from .pipeline import run as run_pipeline
 from .qr_sheets import (LETTER_LANDSCAPE, LETTER, LIFE_CHECK_BAR_MM, LIFE_QR_CENTRE_MM, LIFE_QR_MM, LIFE_TEXT_BOX_MM, Sheet,
-                        https_base_url, render_sheet, warn_thin_quiet_zone)
-from .rooftop import qr_mm
+                        https_base_url, qr_mm, render_sheet, warn_thin_quiet_zone)
 
 PROJECT_ID = "site"
 GRID_X = [0.0, 6.0, 12.0, 18.0]  # lines A-D
@@ -137,7 +136,7 @@ class SiteBuilding:
         self.tube = f.createIfcCircleProfileDef("AREA", "CHS 48", None, L(0.024))
         self.post = f.createIfcRectangleHollowProfileDef("AREA", "SHS 50", None, L(0.05), L(0.05), L(0.004), None, None)
 
-    # --- low-level geometry (as in rooftop.py: one representation can hold many extrusions) ---------
+    # --- low-level geometry (one representation can hold many extrusions) ---------
     def _point(self, x: float, y: float, z: float):
         return self.f.createIfcCartesianPoint((self.b.L(x), self.b.L(y), self.b.L(z)))
 

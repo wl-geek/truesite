@@ -69,7 +69,7 @@ Wai found a 13-second screen recording of a commercial construction-AR app on a 
 
 ## 4. Demo plan
 
-The start page shows one project, `site`: a two-storey building under construction (18 × 12 m, 6 m bays, 3.9 m clear in the ground storey, ridge about 10.5 m), colour-coded by type like the video. `room1` and `rooftop` stay in the repo and open at `/model?project=…`, but nothing links to them.
+The start page shows one project, `site`: a two-storey building under construction (18 × 12 m, 6 m bays, 3.9 m clear in the ground storey, ridge about 10.5 m), colour-coded by type like the video. It is the only project: the old demo room and rooftop frame were removed on 17 Oct.
 
 1. **Hero shot: live AR on the iPad (Michael, an open car park).**
    - Four upright US Letter sheets P1–P4 (16 cm codes, centred 1.40 m above the ground), set out with `site-layout.pdf`.
@@ -113,7 +113,7 @@ The start page shows one project, `site`: a two-storey building under constructi
   - `gemini-3.8-flash` on Agent Platform (`global`) with three images and LOW thinking (MEDIUM took about 65 s a check and was dropped). On 429 or 503 the server tries `gemini-3.5-flash`, then `gemini-3.5-flash-lite`.
   - Each check try waits 50 s, and a hung try is tried once more on the same model (100 s at worst); Ask, Draft and Report wait 25 s per try. When a Gemini limit is hit, a popup says it is a usage limit, not an error, with a countdown (#117).
   - Results (`eval/README.md` §3, simulated as-built): about 10 of 16 planted defects found and 4 false alarms on average over three runs. A check costs about US$0.015.
-  - The site has its own `check_note` (#95). The rooftop's setting-out note predates IMAGE 3, and rooftop isn't in the demo.
+  - The site has its own `check_note` (#95). (The rooftop frame and its setting-out note were removed on 17 Oct.)
 - **Google Cloud:** project `truesite-hack-2026`, owned by Wai's Gmail. `make deploy` sets daily caps of 300 checks and 300 asks (30 checks per IP per hour), renders the QR sheets for the service URL and refuses to deploy without them; `make verify` ends with `SMOKE OK`.
 - **Phone-tested on Android over the LAN (15 Oct):** desk sheet overlay ✓, live *Check as-built* call ✓, QR scan ✓.
 - **Not yet confirmed on a device:** the iPad overlay at P1–P4, the sensor axes of the fusion on iPad and iPhone (#107), look-around on iPhone, the iOS motion prompt, and the `?xr=1` modes (Android Start AR, Quick Look). In Chromium with synthetic camera videos, the overlay landed within 2 px of the truth at P1–P4 and D1 (Playwright, before #107).

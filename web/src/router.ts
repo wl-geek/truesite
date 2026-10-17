@@ -50,7 +50,7 @@ function subscribe(onChange: () => void): () => void {
   }
 }
 
-/** Re-renders on path and query changes (e.g. /model?project=rooftop -> /model). */
+/** Re-renders on path and query changes (e.g. /model?project=nope -> /model). */
 export function useRoute(): Route {
   const location = useSyncExternalStore(subscribe, () => window.location.pathname + window.location.search, () => '/')
   return useMemo(() => {

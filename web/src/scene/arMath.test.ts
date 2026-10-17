@@ -5,11 +5,11 @@ import {
   SEARCH_TIPS_AFTER_S, startDistanceM, toVideoPixels, virtualDemoHref, walkInsideFirst,
 } from './arMath'
 
-const A1: Anchor = { anchor_id: 'A1', project_id: 'room1', qr_size_m: 0.23, position_m: [0.1, 1.5, 1.35], normal: [1, 0, 0], up: [0, 0, 1], scale: 1, label: 'Wall' }
+// Made-up anchors of a made-up project: an upright code (A1), a 1:20 desk sheet (D1) and a 1:1 floor code (L1).
+const A1: Anchor = { anchor_id: 'A1', project_id: 'test', qr_size_m: 0.23, position_m: [0.1, 1.5, 1.35], normal: [1, 0, 0], up: [0, 0, 1], scale: 1, label: 'Wall' }
 const D1: Anchor = { ...A1, anchor_id: 'D1', qr_size_m: 0.12, normal: [0, 0, 1], up: [0, 1, 0], scale: 0.05 }
-const D2: Anchor = { ...D1, anchor_id: 'D2', qr_size_m: 0.15 }
 const L1: Anchor = { ...A1, anchor_id: 'L1', qr_size_m: 0.16, normal: [0, 0, 1], up: [0, 1, 0] }
-const PROJECT: ProjectManifest = { project_id: 'room1', name: 'Demo room', model_url: '/m.glb', elements: [], anchors: [A1, D1] }
+const PROJECT: ProjectManifest = { project_id: 'test', name: 'Test project', model_url: '/m.glb', elements: [], anchors: [A1, D1] }
 
 describe('arMath', () => {
   it('scales detector corners from the 640 px frame back to video pixels', () => {
@@ -71,12 +71,12 @@ describe('arMath', () => {
     expect(coachHint({ ...lost, searchingS: 6, mode: 'motion' }, false)).toMatch(/Look around/)
   })
 
-  it('starts at a distance that suits the code size: about 35 cm for the 7 cm desk code, 1 m for P and R codes (audit C-01)', () => {
+  it('starts at a distance that suits the code size: about 35 cm for the 7 cm desk code, 1 m for the P codes (audit C-01)', () => {
     expect(startDistanceM({ qr_size_m: 0.07 })).toBe(0.35) // site D1
-    expect(startDistanceM({ qr_size_m: 0.12 })).toBe(0.6) // room1 D1
-    expect(startDistanceM({ qr_size_m: 0.16 })).toBe(0.8) // L1, R2, V1-V3
-    expect(startDistanceM({ qr_size_m: 0.23 })).toBe(1) // P1-P4
-    expect(startDistanceM({ qr_size_m: 0.33 })).toBe(1) // R1
+    expect(startDistanceM({ qr_size_m: 0.12 })).toBe(0.6)
+    expect(startDistanceM({ qr_size_m: 0.16 })).toBe(0.8)
+    expect(startDistanceM({ qr_size_m: 0.23 })).toBe(1)
+    expect(startDistanceM({ qr_size_m: 0.33 })).toBe(1) // never more than 1 m
     expect(aboutDistance(0.35)).toBe('about 35 cm')
     expect(aboutDistance(1)).toBe('about 1 m')
   })
@@ -100,7 +100,7 @@ describe('arMath', () => {
     expect(virtualDemoHref('site', 'P1', spots)).toBe('/samples?at=P1')
     expect(virtualDemoHref('site', 'P4', spots)).toBe('/samples?at=P4')
     expect(virtualDemoHref('site', 'D1', spots)).toBe('/#virtual')
-    expect(virtualDemoHref('room1', 'P1', spots)).toBe('/#virtual')
+    expect(virtualDemoHref('other', 'P1', spots)).toBe('/#virtual')
   })
 
   it('times the search from the later of the last sighting and the (re)start', () => {
@@ -111,13 +111,11 @@ describe('arMath', () => {
   })
 
   it('only offers the check where there is something to check against', () => {
-    expect(checkAvailability(D1).enabled).toBe(false) // the desk sheet shows the room beside a sheet of paper
-    expect(checkAvailability(D1).note).toMatch(/real site or our 1:20 model/) // the live view links the virtual demo beside it
-    expect(checkAvailability(D2)).toEqual({ enabled: true, note: null }) // the physical 1:20 model
-    expect(checkAvailability(L1).enabled).toBe(true)
-    expect(checkAvailability(L1).note).toMatch(/read as missing/)
+    // Any sheet outside the demo list can be checked.
+    expect(checkAvailability(D1)).toEqual({ enabled: true, note: null })
+    expect(checkAvailability(L1)).toEqual({ enabled: true, note: null })
     expect(checkAvailability(A1)).toEqual({ enabled: true, note: null })
-    expect(checkAvailability({ ...D1, project_id: 'other' })).toEqual({ enabled: true, note: null })
+    expect(checkAvailability({ ...A1, anchor_id: 'P1' })).toEqual({ enabled: true, note: null }) // a P1 of another project
     // The building site shows the design in an empty car park: nothing there to check.
     const P1: Anchor = { ...L1, anchor_id: 'P1', project_id: 'site', position_m: [9, -2.5, 1.4] }
     expect(checkAvailability(P1).enabled).toBe(false)
