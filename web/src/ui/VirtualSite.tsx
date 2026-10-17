@@ -16,7 +16,8 @@ import { disposePins, makePins } from '../scene/pins'
 import { applyTypeColours, type Inset, insetView, NO_INSET } from '../scene/viewer'
 import { describeDeviation, plantedNote, SITE_AS_BUILT } from '../sim/asBuilt'
 import { deviceLook, dragLook, forwardOf, type LookAngles, lookToward, turnBetween, yawOf } from '../sim/lookAngles'
-import { overlayHighlighter, pickDesign } from '../sim/overlayPick'
+import { overlayHighlighter } from '../sim/overlayPick'
+import { pickElement } from '../scene/pick'
 import { samplePose } from '../sim/samplePose'
 import { markFindings } from '../sim/findings3d'
 import { notCheckedText, scoreCheck, scoreLine, type Score } from '../sim/score'
@@ -295,6 +296,9 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
       const r = canvas.getBoundingClientRect()
       return { x: ((e.clientX - r.left) / r.width) * 2 - 1, y: -((e.clientY - r.top) / r.height) * 2 + 1 }
     }
+    /** The design element drawn under the pointer, with the same touch tolerance as live AR (scene/pick.ts). */
+    const pickAt = (w: World, e: PointerEvent, tolerancePx?: number) =>
+      pickElement(w.design, w.camera, ndc(e), { viewW: canvas.clientWidth, viewH: canvas.clientHeight, tolerancePx })
     const down = (e: PointerEvent) => {
       last = { x: e.clientX, y: e.clientY }
       pressed = { x: e.clientX, y: e.clientY }
@@ -309,7 +313,7 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
         cancelAnimationFrame(hoverRaf)
         hoverRaf = requestAnimationFrame(() => {
           const w = worldRef.current
-          const guid = w && showDesignRef.current ? pickDesign(w.design, w.camera, ndc(e)) : null
+          const guid = w && showDesignRef.current ? pickAt(w, e, 0) : null // hover: exactly under the mouse
           const el = guid ? w!.elements.get(guid) : undefined
           setHover(el ? { name: el.name || 'Unnamed element', type: typeLabel(el), x: e.clientX, y: e.clientY } : null)
         })
@@ -338,7 +342,7 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
         if (f) return selectFinding(f, false)
       }
       if (!showDesignRef.current) return
-      const guid = pickDesign(w.design, w.camera, at)
+      const guid = pickAt(w, e)
       setSelected(guid)
       setSelectedMark(outcomeRef.current?.result.findings.find((x) => x.guid === guid)?.mark ?? null)
     }

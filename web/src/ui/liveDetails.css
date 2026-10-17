@@ -1,0 +1,20 @@
+/* Live AR: tap the model for an element's details (LivePage.tsx).
+   The AR view can't be shifted out of the way (it must match the camera), so the details keep to the edge:
+   - portrait (phones, an iPad held upright): a sheet at the bottom that peeks first (what it is, two facts), with a
+     grabber and More details for the rest; the actions come back when it closes;
+   - landscape (tablets, phones on their side): a panel on the right; the status, messages and actions keep to the
+     view beside it (--ar-dock: the panel's width, set by LivePage). The canvas takes the taps (styles.css). */
+.live-stage { --ar-dock: 0px; }
+.live-stage > .element-panel.ar-details {
+  z-index: 6; left: max(8px, env(safe-area-inset-left)); right: max(8px, env(safe-area-inset-right)); top: auto;
+  bottom: max(8px, env(safe-area-inset-bottom)); width: auto; max-height: min(72dvh, calc(100% - 120px)); padding-top: 0;
+  border-radius: 18px; box-shadow: 0 -10px 36px rgba(0, 0, 0, 0.35); overscroll-behavior: contain;
+}
+@media (min-width: 900px), (orientation: landscape) and (min-width: 600px) {
+  .live-stage > .element-panel.ar-details {
+    left: auto; top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); bottom: max(12px, env(safe-area-inset-bottom));
+    width: min(380px, 42vw); max-height: none; padding-top: 14px; border-radius: var(--radius); box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  }
+  .live-stage.ar-has-details .live-top { right: calc(var(--ar-dock) + 24px + env(safe-area-inset-right)); }
+  .live-stage.ar-has-details .live-actions { right: calc(var(--ar-dock) + 24px + env(safe-area-inset-right)); }
+}

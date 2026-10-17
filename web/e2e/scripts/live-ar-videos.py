@@ -4,7 +4,7 @@
 Chromium plays a .y4m file as the camera with
     --use-fake-device-for-media-stream --use-file-for-fake-video-capture=<file.y4m>
 and loops it. Every frame here is ray-traced from a known camera pose:
-  * site sheets: the upright A3 sheet of bim/truesite_bim/site.py (23 cm code, code centre 1.40 m above the
+  * site sheets: an upright sheet of bim/truesite_bim/site.py (the code size from anchors.json, code centre 1.40 m above the
     ground, on a pole), a car-park ground with the TRUE column and footing outlines of the site model painted on
     it, and sky;
   * D1: the A4 landscape desk sheet (70 mm code) flat on a table, with dots where the 1:100 columns stand.

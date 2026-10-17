@@ -4,7 +4,7 @@ import { estimatePose } from './estimatePose';
 import { type Point2, type Vec3, norm3, sub3 } from './linalg';
 import { rotationAngleBetween } from './rotation';
 import { makeMarkerPose, noisyCorners, rng, uniform } from './testing/synth';
-import { PoseTracker } from './tracker';
+import { PoseTracker, tiltNoiseRad } from './tracker';
 
 const W = 1280, H = 720;
 const K = centredIntrinsics(focalFromHfov(63, W), W, H);
@@ -143,4 +143,37 @@ describe('PoseTracker edge cases (mutation-tested)', () => {
     expect(rotationAngleBetween(out.raw.R, b.R) * DEG).toBeLessThan(0.01);
     expect(rotationAngleBetween(out.smoothed.R, b.R) * DEG).toBeGreaterThan(1);
   });
+
+  it("does not trust a pose whose tilt isn't pinned down: head-on and far, until a close look; then it carries on", () => {
+    const r = rng(93);
+    const s16 = 0.16; // the 16 cm code on a US Letter sheet
+    const headOnFar = makeMarkerPose({ distance: 1.5, tiltDeg: 0 });
+    const close = makeMarkerPose({ distance: 0.6, tiltDeg: 30, tiltAzDeg: 15 });
+    // Without a corner-noise figure (the old rule) a head-on code is trusted: its two mirror poses coincide.
+    const old = new PoseTracker(s16, K);
+    let oldOut = null;
+    for (let i = 0; i < 20; i++) oldOut = old.update(noisyCorners(K, headOnFar, s16, 0.5, r), i / FPS) ?? oldOut;
+    expect(oldOut?.provisional).toBe(false);
+    // With half-pixel corners the tilt there is uncertain by several degrees: provisional, never good ...
+    const tr = new PoseTracker(s16, K);
+    let t = 0;
+    for (let i = 0; i < 30; i++, t += 1 / FPS) {
+      const out = tr.update(noisyCorners(K, headOnFar, s16, 0.5, r), t, 0.5);
+      if (out) {
+        expect(out.provisional).toBe(true);
+        expect(out.quality).not.toBe('good');
+      }
+    }
+    // ... until a close look pins it down; stepping back to the far spot keeps the trust (the tracking goes on).
+    for (let i = 0; i < 10; i++, t += 1 / FPS) tr.update(noisyCorners(K, close, s16, 0.5, r), t, 0.5);
+    const back = tr.update(noisyCorners(K, headOnFar, s16, 0.5, r), t, 0.5)!;
+    expect(back.provisional).toBe(false);
+  });
+
+  it('puts a number on how well the tilt is pinned down (P1 from the camera videos)', () => {
+    expect(tiltNoiseRad(167, 1.5, 0.16, 0.5) * DEG).toBeCloseTo(3.2, 1); // head-on at the X, read at the camera's resolution
+    expect(tiltNoiseRad(330, 0.7, 0.16, 0.77) * DEG).toBeCloseTo(1.17, 1); // 0.7 m from the code, a crop read at 2/3 size
+    expect(tiltNoiseRad(330, 0.7, 0.16, 1.5) * DEG).toBeGreaterThan(2); // the same at 640 px for the whole frame
+  });
 });
+

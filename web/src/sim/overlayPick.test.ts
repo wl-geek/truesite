@@ -1,7 +1,7 @@
 import { BoxGeometry, Group, Mesh, MeshStandardMaterial, PerspectiveCamera } from 'three'
 import { describe, expect, it } from 'vitest'
 import { buildLoadedModel } from '../scene/loadModel'
-import { overlayHighlighter, pickDesign } from './overlayPick'
+import { overlayHighlighter } from './overlayPick'
 
 /** Two 1 m boxes, A at x = -2 and B at x = +2 (the same in IFC and glTF), seen from 10 m away. */
 function scene() {
@@ -21,22 +21,6 @@ function scene() {
   camera.updateMatrixWorld(true)
   return { model, camera, names }
 }
-
-describe('pickDesign', () => {
-  it("returns the design element under the pointer, or null where there's none", () => {
-    const { model, camera, names } = scene()
-    const x = (2 / (10 * Math.tan((25 * Math.PI) / 180))) // box B's centre in normalised device coordinates
-    expect(pickDesign(model, camera, { x, y: 0 })).toBe(names[1])
-    expect(pickDesign(model, camera, { x: -x, y: 0 })).toBe(names[0])
-    expect(pickDesign(model, camera, { x: 0, y: 0 })).toBeNull()
-  })
-
-  it('ignores hidden elements', () => {
-    const { model, camera, names } = scene()
-    model.meshes.filter((m) => model.meshGuid.get(m) === names[1]).forEach((m) => (m.visible = false))
-    expect(pickDesign(model, camera, { x: 2 / (10 * Math.tan((25 * Math.PI) / 180)), y: 0 })).toBeNull()
-  })
-})
 
 describe('overlayHighlighter', () => {
   it('paints the picked element orange, drawn over the rest, and gives everything back', () => {

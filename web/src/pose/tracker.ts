@@ -12,6 +12,9 @@
  *    corrected, or a different code), the smoother is reset so the overlay
  *    snaps instead of swinging through the jump.
  *  - No detection for `lostAfterSec`: everything resets.
+ *  - Given the corner noise of the read (px), a frame only counts as unambiguous when the code's tilt is also pinned
+ *    down by it (tiltNoiseRad under maxTiltNoiseDeg): head-on and far, the two mirror poses coincide, so the old rule
+ *    called those frames certain exactly when half a pixel of corner noise tilts the model by several degrees.
  */
 import { type Intrinsics } from './camera';
 import { type EstimateOptions, type PoseEstimate, estimatePose } from './estimatePose';
@@ -25,6 +28,18 @@ export interface TrackerOptions extends EstimateOptions {
   lostAfterSec?: number;
   jumpResetDeg?: number;
   smoother?: PoseSmoother;
+  /** Trust needs the tilt pinned down to within this (degrees) when the corner noise is given (default 2). */
+  maxTiltNoiseDeg?: number;
+}
+
+/**
+ * How far corner noise of `sigmaPx` can tilt the pose of a flat code (radians): the code is `s` metres, seen
+ * `widthPx` wide at `distanceM`. A tilt shows as one edge looking longer than the opposite one, by about
+ * widthPx * (s / distanceM) * tilt, and noise moves that difference by about 2 sigma. It grows with the distance
+ * squared (widthPx shrinks as well): 1.5 m from a 16 cm code, half a pixel is about 3 degrees.
+ */
+export function tiltNoiseRad(widthPx: number, distanceM: number, s: number, sigmaPx: number): number {
+  return (2 * sigmaPx * distanceM) / (widthPx * s);
 }
 
 export interface TrackedPose {
@@ -57,8 +72,11 @@ export class PoseTracker {
     this.smoother.reset();
   }
 
-  /** Feed one frame: detected corners (TL, TR, BR, BL; video px) or null if no code was found. */
-  update(corners: readonly Point2[] | null, tSec: number): TrackedPose | null {
+  /**
+   * Feed one frame: detected corners (TL, TR, BR, BL; video px) or null if no code was found. `cornerNoisePx`: how
+   * precise those corners are (video px), when known.
+   */
+  update(corners: readonly Point2[] | null, tSec: number, cornerNoisePx?: number): TrackedPose | null {
     if (tSec - this.lastSeen > (this.opts.lostAfterSec ?? 0.5)) this.reset();
     if (!corners) return null;
     const est = estimatePose(corners, this.s, this.K, this.prev, this.opts);
@@ -67,7 +85,9 @@ export class PoseTracker {
     if (this.prev && rotationAngleBetween(this.prev.R, est.R) > ((this.opts.jumpResetDeg ?? 30) * Math.PI) / 180) {
       this.smoother.reset();
     }
-    if (!est.ambiguous) this.trusted = true;
+    const pinned = cornerNoisePx === undefined
+      || tiltNoiseRad(est.widthPx, est.distanceM, this.s, cornerNoisePx) <= ((this.opts.maxTiltNoiseDeg ?? 2) * Math.PI) / 180;
+    if (!est.ambiguous && pinned) this.trusted = true;
     this.prev = est;
     const smoothed = this.smoother.filter(est, tSec);
     const provisional = !this.trusted;

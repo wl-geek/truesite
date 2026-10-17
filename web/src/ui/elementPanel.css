@@ -43,3 +43,10 @@
 .ep-issue-head { color: #2e6b33; font-size: 12px; font-weight: 700; letter-spacing: 0.03em; }
 .ep-issue-title { color: var(--ink); font-size: 14.5px; font-weight: 600; }
 .ep-issue .copy-issue { justify-self: start; }
+/* A peeking sheet (live AR, portrait): a grabber that opens and closes the full details, and the peek's More details. */
+.ep-grabber { display: block; width: 100%; height: 28px; margin: 0 0 2px; padding: 0; border: 0; background: transparent; cursor: pointer; }
+.ep-grabber span { display: block; width: 44px; height: 5px; margin: 10px auto; border-radius: 3px; background: #c3ccd6; }
+.ep-grabber:focus-visible { outline: 3px solid var(--steel); outline-offset: -3px; border-radius: 10px; }
+.ep-compact .ep-facts { margin: 12px 0 10px; }
+.ep-compact .ep-fact:first-child { grid-column: auto; }
+.ep-more-btn { width: 100%; min-height: 44px; }

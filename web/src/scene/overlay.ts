@@ -11,14 +11,14 @@
  */
 import { PerspectiveCamera, Scene, Vector3, WebGLRenderer } from 'three'
 import type { Anchor as ApiAnchor } from '../api/types'
-import { grabFrame } from '../camera/camera'
+import { grabRegion } from '../camera/camera'
 import { loadIntrinsics } from '../camera/intrinsics'
 import { modelMatrixIfc, PoseSmoother, PoseTracker, projectionMatrixGL, type Intrinsics, type Mat3, type OneEuroParams, type Point2, type Pose, type Quality } from '../pose'
 import { parseAnchorLink } from '../qr/link'
 import type { QrResponse } from '../qr/protocol'
 import type { QrWorkerClient } from '../qr/qrClient'
 import { applyProjection } from './arCamera'
-import { effectiveQrSize, poseAnchor, searchingSeconds, toVideoPixels } from './arMath'
+import { effectiveQrSize, poseAnchor, searchingSeconds } from './arMath'
 import { releaseRenderer, watchContextLoss } from './glContext'
 import type { LoadedModel } from './loadModel'
 import { PoseFusion } from './fusion'
@@ -26,11 +26,18 @@ import { applyConstructionLook, type ConstructionLook } from './look'
 import { type Paint } from './palette'
 import { levelModelMatrix, upInGlCamera } from './level'
 import { deviceRotation, deviceStill, lookAroundPose, LOOK_AROUND_MAX_S, nextLock, type MotionLock, type MotionSample } from './motion'
+import { fullFrame, regionAround, regionToVideo, type Region } from './roi'
 import { createFrameWatchdog } from './watchdog'
 
 /** Edges live on their own layer so the ID-buffer render (layer 0 only) never sees them. */
 export const EDGE_LAYER = 1
 const DETECT_WIDTH = 640
+/** Follow the code with a crop (scene/roi.ts) while it was seen this recently (s)... */
+const FOLLOW_FOR_S = 0.3
+/** ...but read the whole frame every so many reads, so a different code coming into view is still noticed. */
+const FULL_FRAME_EVERY = 10
+/** The QR reader's corners are whole pixels of what it reads: about half a pixel of noise, scaled to video px. */
+const CORNER_NOISE_PX = 0.5
 const ORIGIN = new Vector3()
 const LOST_AFTER_S = 0.5
 /** Detections this old are stale: the sensors hold the model from here on, well before LOST_AFTER_S (audit B-03). */
@@ -200,6 +207,10 @@ export function createOverlay(o: OverlayOptions): Overlay {
   let last: LastPose | null = null
   let lastSeen = -Infinity
   let projKey = ''
+  // The code's last corners (video px) for the next crop, and whether the last crop missed it (then: the whole frame).
+  let follow: Point2[] | null = null
+  let followMissed = false
+  let reads = 0
   const listeners = new Set<(s: OverlayState) => void>()
   let state: OverlayState = {
     tracking: false, quality: null, provisional: true, distanceM: null, detectMs: null, otherAnchor: null, mode: 'lost', searchingS: 0, qrFailed: false,
@@ -227,10 +238,18 @@ export function createOverlay(o: OverlayOptions): Overlay {
     tracker = newTracker()
     fusion?.reset()
     projKey = ''
+    follow = null
+  }
+
+  /** Where the reader looks this time: around the code while following it, else the whole frame. */
+  function readRegion(vw: number, vh: number): Region {
+    reads++
+    const following = follow !== null && !followMissed && performance.now() / 1000 - lastSeen < FOLLOW_FOR_S && reads % FULL_FRAME_EVERY !== 0
+    return (following && regionAround(follow!, vw, vh)) || fullFrame(vw, vh, DETECT_WIDTH)
   }
 
   /** `frameMs`: when the detected frame was captured (performance.now() time), for the fusion. */
-  function onDetection(res: QrResponse, fw: number, fh: number, vw: number, vh: number, frameMs: number): void {
+  function onDetection(res: QrResponse, region: Region, vw: number, vh: number, frameMs: number): void {
     if (!running) return
     if (`${vw}x${vh}` !== kSize) return // grabbed before a rotation: K and the tracker are for the new size now
     const tSec = performance.now() / 1000
@@ -239,10 +258,12 @@ export function createOverlay(o: OverlayOptions): Overlay {
     if (res.detection) {
       const link = parseAnchorLink(res.detection.text, o.origin)
       if (link && (link.projectId !== anchor.project_id || link.anchorId !== anchor.anchor_id)) otherAnchor = link
-      else if (link) corners = toVideoPixels(res.detection.corners, fw, fh, vw, vh)
+      else if (link) corners = regionToVideo(res.detection.corners, region)
     }
+    if (corners) follow = corners
+    followMissed = corners === null && (region.sw < vw || region.sh < vh) // a crop that missed: next time, the whole frame
     if (corners) cornerListeners.forEach((cb) => cb(corners!, vw, vh))
-    const tracked = tracker.update(corners, tSec)
+    const tracked = tracker.update(corners, tSec, CORNER_NOISE_PX * (region.sw / region.outW))
     if (tracked) {
       lastSeen = tSec
       last = { pose: { R: tracked.raw.R, t: tracked.raw.t }, K, quality: tracked.quality, corners: corners!, videoW: vw, videoH: vh, tSec }
@@ -299,10 +320,8 @@ export function createOverlay(o: OverlayOptions): Overlay {
       watchdog.frame()
       ensureIntrinsics(vw, vh)
       if (!qr.busy) {
-        const img = grabFrame(video, grabCtx!, DETECT_WIDTH)
-        const fw = img.width
-        const fh = img.height
-        qr.detect(img).then((res) => onDetection(res, fw, fh, vw, vh, frameMs)).catch(() => undefined)
+        const region = readRegion(vw, vh)
+        qr.detect(grabRegion(video, grabCtx!, region)).then((res) => onDetection(res, region, vw, vh, frameMs)).catch(() => undefined)
       }
     }
     const pose = fused(now) && model.ifcRoot.visible ? fusion!.poseAt(frameMs) : null

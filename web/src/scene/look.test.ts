@@ -235,3 +235,43 @@ describe('construction look (mutation-tested)', () => {
     expect(viewNote({ transparency: 0, sectionM: null, radiusM: null, layers: { ...all, other: false } })).toBe('Checked as shown: Other hidden.')
   })
 })
+
+describe('the tapped element', () => {
+  it('stands out in orange over the rest, keeps the cut, and gives the look its material back', () => {
+    const m = model()
+    const look = applyConstructionLook(m, (g) => cls[g], 1)
+    const column = m.meshes.find((x) => x.name === 'C'.repeat(22))!
+    const door = m.meshes.find((x) => x.name === 'D'.repeat(22))!
+    const lookMat = column.material
+    const edges = column.children.find((c) => c instanceof LineSegments) as LineSegments
+    const lookEdges = edges.material
+    look.highlight('C'.repeat(22))
+    const hl = column.material as MeshBasicMaterial
+    expect(hl).not.toBe(lookMat)
+    expect(hl.color.getHex()).toBe(0xff6a13)
+    expect(hl.depthTest).toBe(false) // drawn over the translucent model around it
+    // A tint, not a wall: the real site stays visible through it (AR: don't overpower the camera view) ...
+    expect(hl.opacity).toBeGreaterThanOrEqual(0.4)
+    expect(hl.opacity).toBeLessThanOrEqual(0.6)
+    // ... with its outline in the same orange, drawn on top.
+    expect((edges.material as LineBasicMaterial).color.getHex()).toBe(0xff6a13)
+    expect(edges.renderOrder).toBeGreaterThan(column.renderOrder)
+    expect(column.renderOrder).toBeGreaterThan(door.renderOrder)
+    look.setSection(3.3)
+    look.update()
+    expect(hl.clippingPlanes).toHaveLength(1) // a highlighted column is cut like the rest
+    look.setTransparency(0.8) // the look's own materials change; the highlight keeps its strength
+    expect(hl.opacity).toBeGreaterThanOrEqual(0.4)
+    look.highlight('D'.repeat(22))
+    expect(column.material).toBe(lookMat)
+    expect(column.renderOrder).toBe(0)
+    expect(edges.material).toBe(lookEdges)
+    expect(edges.renderOrder).toBe(0)
+    look.highlight(null)
+    expect(door.material).not.toBe(hl)
+    look.highlight('C'.repeat(22))
+    look.dispose() // back to the glb's own materials, not the highlight
+    expect(column.material).not.toBe(hl)
+    expect(column.material).not.toBe(lookMat)
+  })
+})

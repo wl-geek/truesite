@@ -37,7 +37,7 @@ function server(port: number, env: Record<string, string>, reuse: boolean): Serv
 }
 
 /** Specs that run in a project of their own. */
-const OWN_PROJECT = /(limits|live-ar)\.e2e\.ts/
+const OWN_PROJECT = /(limits|live-ar[\w-]*)\.e2e\.ts/
 
 // Fake camera for the live page: Chromium's test pattern, granted without a prompt.
 const chromiumArgs = ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream']
@@ -79,7 +79,7 @@ export default defineConfig({
     },
     ...(LIVE_AR_URL === null ? [] : [{
       name: 'live-ar',
-      testMatch: /live-ar\.e2e\.ts/,
+      testMatch: /live-ar[\w-]*\.e2e\.ts/,
       // Each test launches its own Chromium with a camera video; one at a time keeps the timing realistic.
       workers: 1,
       timeout: 120_000,

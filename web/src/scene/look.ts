@@ -19,6 +19,8 @@ export const LAYERS: { id: Layer; label: string }[] = [
 ]
 
 const STRUCTURE = /^Ifc(Column|Beam|Slab|Footing|Member|Pile|Plate|Wall|WallStandardCase)$/
+const HIGHLIGHT = 0xff6a13 // brand orange, as in the 3D viewer
+const HIGHLIGHT_ORDER = 10
 const OPENINGS = /^Ifc(Door|Window|Opening|Pipe|Duct|Flow|CableCarrier)/
 
 export function layerOf(ifcClass: string): Layer {
@@ -50,6 +52,8 @@ export type ConstructionLook = {
   clipPlanes(): Plane[]
   /** Call before each render with the viewer's world position: the cut plane and radius follow the model. */
   update(viewer?: Vector3): void
+  /** Paint one element (the tapped one) solid orange over the rest, still cut by the section; null: none. */
+  highlight(guid: string | null): void
   dispose(): void
 }
 
@@ -100,6 +104,13 @@ export function applyConstructionLook(model: LoadedModel, classOf: (guid: string
     mesh.add(line)
     edges.push(line)
   }
+  // The tapped element: brand orange like the 3D viewer's, drawn over the translucent model and cut like the rest.
+  // In AR it is a tint with an orange outline, not a solid block: the real site must stay visible through it.
+  const highlightMat = new MeshBasicMaterial({ color: HIGHLIGHT, transparent: true, opacity: 0.5, depthTest: false, depthWrite: false, side: DoubleSide })
+  highlightMat.clippingPlanes = clip
+  const highlightEdges = new LineBasicMaterial({ color: HIGHLIGHT, depthTest: false, transparent: true })
+  highlightEdges.clippingPlanes = clip
+  let lit: [Mesh | LineSegments, Material | Material[], number][] = []
   let section: number | null = null
   let radius: number | null = null
   let transparency = 0
@@ -155,7 +166,30 @@ export function applyConstructionLook(model: LoadedModel, classOf: (guid: string
       n.set(0, 0, -1).applyMatrix3(normalMatrix.getNormalMatrix(world)).normalize()
       plane.setFromNormalAndCoplanarPoint(n, p)
     },
+    highlight(guid) {
+      for (const [mesh, mat, order] of lit) {
+        mesh.material = mat
+        mesh.renderOrder = order
+      }
+      lit = []
+      if (!guid) return
+      for (const mesh of model.meshes) {
+        if (model.meshGuid.get(mesh) !== guid) continue
+        lit.push([mesh, mesh.material, mesh.renderOrder])
+        mesh.material = highlightMat
+        mesh.renderOrder = HIGHLIGHT_ORDER
+        for (const line of mesh.children) {
+          if (!(line instanceof LineSegments)) continue
+          lit.push([line, line.material, line.renderOrder])
+          line.material = highlightEdges
+          line.renderOrder = HIGHLIGHT_ORDER + 1
+        }
+      }
+    },
     dispose() {
+      look.highlight(null)
+      highlightMat.dispose()
+      highlightEdges.dispose()
       for (const line of edges) {
         line.removeFromParent()
         line.geometry.dispose()
