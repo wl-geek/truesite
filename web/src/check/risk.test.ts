@@ -73,6 +73,12 @@ describe('whyItMatters: which rule wins (mutation-tested)', () => {
     expect(whyItMatters(f({ ifc_class: 'IfcMember', name: 'brace roof north A-B (3)' }))).toMatch(/stability in wind/) // any case
     // the member rules are for IfcMember: a beam called "Truss ..." is still a beam
     expect(whyItMatters(f({ ifc_class: 'IfcBeam', name: 'Truss support beam' }))).toMatch(/tied together/)
+    expect(whyItMatters(f({ ifc_class: 'IfcBeam', name: 'Purlin P6 B-C' }))).toMatch(/tied together/)
     expect(whyItMatters(f({ ifc_class: 'IfcColumn', name: 'Brace column' }))).toBe(GENERIC_MISSING)
+    // the column rule is for columns: an RC beam or slab is not propping a floor
+    expect(whyItMatters(f({ ifc_class: 'IfcBeam', name: 'RC beam B1-B2' }))).toMatch(/tied together/)
+    expect(whyItMatters(f({ ifc_class: 'IfcSlab', name: 'RC slab L1' }))).toBe(GENERIC_MISSING)
+    // a truss member that is there but misplaced gets the general setting-out text
+    expect(whyItMatters(f({ ifc_class: 'IfcMember', name: 'Truss T2 diagonal 3', status: 'misplaced' }))).toBe(GENERIC_MISPLACED)
   })
 })
