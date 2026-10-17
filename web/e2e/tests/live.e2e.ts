@@ -187,7 +187,7 @@ test.describe('live AR errors', () => {
     await expect(page.getByRole('alert')).toHaveText("This QR code points to a project TrueSite doesn't have. The sheet may be out of date.")
     await page.getByRole('link', { name: 'Open the model viewer' }).click()
     await expect(page).toHaveURL(/\/model$/)
-    await expect(page.getByRole('combobox', { name: 'Model' })).toHaveValue('site')
+    await expect(page.getByRole('heading', { level: 1, name: 'Building under construction' })).toBeVisible()
   })
 
   test(BUG.tipOverBrokenLink, async ({ page }) => {

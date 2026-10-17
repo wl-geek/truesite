@@ -61,13 +61,18 @@ def test_project_ids_and_demo_issues(models: Path) -> None:
     assert ProjectRepo(models / "missing").project_ids() == []
 
 
-def test_the_committed_room1_project_loads() -> None:
+def test_the_committed_site_project_loads() -> None:
     repo = ProjectRepo(DEFAULT_MODELS_DIR)
-    m = repo.manifest("room1")
-    assert (m.name, len(m.elements), sorted(a.anchor_id for a in m.anchors)) == ("Demo room", 9, ["A1", "D1", "D2", "L1"])
-    assert repo.glb_path("room1").read_bytes()[:4] == b"glTF"
-    issues = [IssueIn.model_validate(row) for row in repo.demo_issues("room1")]
-    assert len(issues) == 2 and all(i.guid in repo.elements_by_guid("room1") for i in issues)
+    assert repo.project_ids() == ["site"]  # room1 and rooftop are gone
+    m = repo.manifest("site")
+    assert (m.name, len(m.elements)) == ("Building under construction (1:1)", 191)
+    assert {"IfcColumn", "IfcBeam", "IfcSlab", "IfcRailing"} <= {e.ifc_class for e in m.elements}
+    assert repo.element("site", "2yDJKtbhvGCf3rD5NKl0fK").name == "Beam A1-A2"
+    assert [a.anchor_id for a in m.anchors] == ["P1", "P2", "P3", "P4", "D1"]
+    assert [a.scale for a in m.anchors] == [1.0, 1.0, 1.0, 1.0, 0.01]  # P1-P4 upright at 1:1, D1 a 1:100 desk sheet
+    assert repo.glb_path("site").read_bytes()[:4] == b"glTF"
+    issues = [IssueIn.model_validate(row) for row in repo.demo_issues("site")]
+    assert all(i.guid in repo.elements_by_guid("site") for i in issues)
 
 
 # ---- HTTP ----------------------------------------------------------------------------------------
@@ -113,17 +118,6 @@ def test_model_glb_is_gzipped_when_asked(client: TestClient) -> None:
 def test_wrong_method_is_json_404(client: TestClient) -> None:
     r = client.post("/api/projects/testproj")
     assert r.status_code == 404 and r.headers["content-type"] == "application/json"
-
-
-def test_the_committed_rooftop_project_loads() -> None:
-    repo = ProjectRepo(DEFAULT_MODELS_DIR)
-    m = repo.manifest("rooftop")
-    classes = {e.ifc_class for e in m.elements}
-    assert len(m.elements) == 160 and classes == {"IfcColumn", "IfcBeam", "IfcReinforcingBar"}
-    assert [a.anchor_id for a in m.anchors] == ["R1", "R2", "V1", "V2", "V3"] and m.anchors[0].scale == 1.0
-    assert repo.demo_issues("rooftop") == []
-    assert "Setting-out check" in repo.check_note("rooftop") and "cannot_judge" in repo.check_note("rooftop")
-    assert repo.check_note("room1") == ""
 
 
 def test_the_committed_site_project_has_a_check_note() -> None:

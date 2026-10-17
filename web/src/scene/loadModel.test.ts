@@ -4,12 +4,12 @@ import { describe, expect, it } from 'vitest'
 import type { Element } from '../api/types'
 import { IFC_FROM_GLTF_MAT4, IFC_TO_THREE, parseModel } from './loadModel'
 
-const ROOM1 = new URL('../../../bim/models/room1/', import.meta.url)
+const SITE = new URL('../../../bim/models/site/', import.meta.url)
 
-function room1() {
-  const buf = readFileSync(new URL('model.glb', ROOM1))
+function site() {
+  const buf = readFileSync(new URL('model.glb', SITE))
   const glb = buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength) as ArrayBuffer
-  const elements = JSON.parse(readFileSync(new URL('elements.json', ROOM1), 'utf8')) as Element[]
+  const elements = JSON.parse(readFileSync(new URL('elements.json', SITE), 'utf8')) as Element[]
   return { glb, elements }
 }
 
@@ -27,9 +27,9 @@ describe('fixed IFC <-> glTF <-> three.js conversions', () => {
   })
 })
 
-describe('parseModel on the committed room1 glb', () => {
+describe('parseModel on the committed site glb', () => {
   it('maps every mesh to its element GUID and puts the model in IFC coordinates under ifcRoot', async () => {
-    const { glb, elements } = room1()
+    const { glb, elements } = site()
     const model = await parseModel(glb, new Set(elements.map((e) => e.guid)))
     expect(model.ifcRoot.matrixAutoUpdate).toBe(false)
     expect(model.gltfScene.parent).toBe(model.ifcRoot)
@@ -42,14 +42,15 @@ describe('parseModel on the committed room1 glb', () => {
     }
     const close = (got: number[], want: number[]) => got.forEach((v, i) => expect(v).toBeCloseTo(want[i], 3))
     for (const e of elements) {
-      const box = new Box3().setFromObject(model.byGuid.get(e.guid)!) // world = IFC: ifcRoot is identity here
+      // world = IFC: ifcRoot is identity here. Precise: the braces and truss diagonals are rotated, so their loose box is wider.
+      const box = new Box3().setFromObject(model.byGuid.get(e.guid)!, true)
       close(box.min.toArray(), e.bbox_m[0])
       close(box.max.toArray(), e.bbox_m[1])
     }
   })
 
   it('ignores nodes that are not known elements', async () => {
-    const { glb, elements } = room1()
+    const { glb, elements } = site()
     const known = new Set([elements[0].guid])
     const model = await parseModel(glb, known)
     expect([...model.byGuid.keys()]).toEqual([elements[0].guid])

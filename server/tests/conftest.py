@@ -69,9 +69,9 @@ def dist(tmp_path: Path) -> Path:
     (d / "assets" / "index-abc123.js").write_bytes(APP_JS.encode())  # bytes: no CRLF on Windows
     (d / "favicon.svg").write_text("<svg/>")
     (d / "samples").mkdir()
-    (d / "samples" / "room1-01.jpg").write_bytes(JPEG)
-    (d / "models" / "room1").mkdir(parents=True)
-    (d / "models" / "room1" / "model.glb").write_bytes(GLB)
+    (d / "samples" / "site-01.jpg").write_bytes(JPEG)
+    (d / "models" / "site").mkdir(parents=True)
+    (d / "models" / "site" / "model.glb").write_bytes(GLB)
     (tmp_path / "secret.txt").write_text("outside dist")
     return d
 

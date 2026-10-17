@@ -37,9 +37,9 @@ GEMINI_LOCATION="${GEMINI_LOCATION:-global}"     # decided on day 1 by the Gemin
 GEMINI_BACKEND="${GEMINI_BACKEND:-enterprise}"
 # Every gcloud call targets PROJECT_ID, whatever project `gcloud config` has active on this machine.
 export CLOUDSDK_CORE_PROJECT="$PROJECT_ID"
-# Sheets deploy must render and verify must find, each with a QR for the service URL: the start page's downloads (site
-# P1-P4 and D1) and the main sheets of the room1 and rooftop demos (D1, L1, R1, R2), which their live pages still link.
-REQUIRED_SHEETS="room1-D1 room1-L1 rooftop-R1 rooftop-R2 site-P1 site-P2 site-P3 site-P4 site-D1"
+# Sheets deploy must render and verify must find, each with a QR for the service URL: the site project's
+# viewpoints P1-P4 and its D1 desk sheet, the start page's downloads. site is the only project now.
+REQUIRED_SHEETS="site-P1 site-P2 site-P3 site-P4 site-D1"
 # Sheets with no QR, so no link to check, that deploy must still render and verify must still find: the site set-out plan.
 PLAN_SHEETS="site-layout"
 SHEETS_DIR="web/public/sheets"
@@ -76,8 +76,6 @@ make_sheets() {
   # Fresh sheets every deploy: leftovers from a LAN phone test would ship a QR for a private address.
   local url="$1" name f
   rm -rf "$SHEETS_DIR"
-  (cd bim && uv run python -m truesite_bim.qr_sheets --base-url "$url" --out-dir "../$SHEETS_DIR" >/dev/null)
-  (cd bim && uv run python -m truesite_bim.rooftop --sheets-only --base-url "$url" --sheets-dir "../$SHEETS_DIR" >/dev/null)
   (cd bim && uv run python -m truesite_bim.site --sheets-only --base-url "$url" --sheets-dir "../$SHEETS_DIR" >/dev/null)
   for name in $REQUIRED_SHEETS $PLAN_SHEETS; do
     [ -f "$SHEETS_DIR/$name.pdf" ] || die "$SHEETS_DIR/$name.pdf was not rendered"
@@ -246,7 +244,7 @@ smoke() {
   case "$health" in *"\"gemini_mode\":\"$EXPECT_GEMINI_MODE\""*) ;; *) die "gemini_mode is not $EXPECT_GEMINI_MODE" ;; esac
   case "$health" in *"\"store_backend\":\"$EXPECT_STORE_BACKEND\""*) ;; *) die "store_backend is not $EXPECT_STORE_BACKEND" ;; esac
 
-  check_get "$url/a/room1/L1" text/html  # SPA deep link, as the printed QR opens it
+  check_get "$url/a/site/P1" text/html  # SPA deep link, as the printed P1 sheet opens it
 
   # A missing sheet is a 404 (server/app/spa.py), and each one must point back at this URL.
   for name in $REQUIRED_SHEETS; do
@@ -263,11 +261,11 @@ smoke() {
   check_get "$url/samples/site-p1-south/photo.jpg" image/jpeg
 
   # One real model round trip (counts once against the daily ask cap).
-  guid="$(curl -fsS "$url/api/projects/room1" | sed -n 's/.*"guid":"\([^"]*\)".*/\1/p')" || die "GET /api/projects/room1 failed"
-  [ -n "$guid" ] || die "no element in /api/projects/room1"
+  guid="$(curl -fsS "$url/api/projects/site" | sed -n 's/.*"guid":"\([^"]*\)".*/\1/p')" || die "GET /api/projects/site failed"
+  [ -n "$guid" ] || die "no element in /api/projects/site"
   code="$(curl -sS -o "$tmp/ask.json" -w '%{http_code}' -X POST "$url/api/ask" \
     -H "X-Session-Id: $(new_session_id)" -H 'Content-Type: application/json' \
-    -d "{\"project_id\":\"room1\",\"guid\":\"$guid\",\"question\":\"What is this element?\"}")" || die "POST /api/ask failed"
+    -d "{\"project_id\":\"site\",\"guid\":\"$guid\",\"question\":\"What is this element?\"}")" || die "POST /api/ask failed"
   [ "$code" = 200 ] || die "POST /api/ask gave $code: $(cat "$tmp/ask.json")"
   echo "ok   $url/api/ask $(cat "$tmp/ask.json")"
   echo "SMOKE OK $url"

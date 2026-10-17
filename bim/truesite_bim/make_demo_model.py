@@ -1,6 +1,8 @@
-"""Author the TrueSite scripted fallback model (IFC4) with ifcopenshell.api.
+"""IFC4 authoring with ifcopenshell.api: the Builder the site model uses (site.py), and two small fixture models
+that the converter and pipeline tests build and check (tests/test_convert.py, tests/test_pipeline.py). Neither
+fixture is shipped: the app has one project, the building site.
 
-Room 1: outer footprint 4.0 x 3.0 m (X x Y), 2.7 m high, on storey "Level 1".
+Room fixture: outer footprint 4.0 x 3.0 m (X x Y), 2.7 m high, on storey "Level 1".
   - 4 walls, 0.1 m thick, inside the footprint (Pset_WallCommon LoadBearing + FireRating)
   - floor slab 4.0 x 3.0 x 0.15 m, top at Z = 0
   - column 0.3 x 0.3 m in the south-west inner corner (load-bearing)
@@ -18,7 +20,7 @@ project units (profile dims, door/window overall sizes, quantities) go through L
 GlobalIds are deterministic: uuid5(namespace, key) compressed to the IFC base64 form.
 
 Usage (from bim/):
-  python -m truesite_bim.make_demo_model --out models/room1/model.ifc [--units mm|m]
+  python -m truesite_bim.make_demo_model --out /tmp/room.ifc [--units mm|m]
   python -m truesite_bim.make_demo_model --ref-cube --out /tmp/ref_cube.ifc [--units mm|m]
 """
 from __future__ import annotations

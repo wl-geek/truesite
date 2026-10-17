@@ -25,7 +25,7 @@ pytestmark = pytest.mark.skipif(BASH is None, reason="needs bash")
 
 PROJECT = "truesite-test"
 SERVICE_URL = "https://truesite-123456789012.asia-southeast1.run.app"  # deterministic URL for the stub's number
-SHEETS = ["room1-D1", "room1-L1", "rooftop-R1", "rooftop-R2", "site-P1", "site-P2", "site-P3", "site-P4", "site-D1"]
+SHEETS = ["site-P1", "site-P2", "site-P3", "site-P4", "site-D1"]  # site is the only project
 LAYOUT = "site-layout"  # the set-out plan: no QR, so no link to the service URL, but deploy and verify still need it
 
 # "create" marks a resource kind (e.g. iam-service-accounts) as existing and fails if it already is;
@@ -45,9 +45,9 @@ esac
 exit 0
 """
 
-# "uv run python -m truesite_bim.<module> ... --base-url URL --out-dir|--sheets-dir DIR" writes stand-in PDFs
-# that link to URL (or to STUB_SHEET_URL, to fake sheets rendered for the wrong host). The names are what the real
-# modules write, including site.py's layout plan, which has no QR and so no URL (STUB_NO_LAYOUT leaves it out).
+# "uv run python -m truesite_bim.site ... --base-url URL --sheets-dir DIR" writes stand-in PDFs that link to URL
+# (or to STUB_SHEET_URL, to fake sheets rendered for the wrong host). The names are what site.py writes, including
+# its layout plan, which has no QR and so no URL (STUB_NO_LAYOUT leaves it out).
 STUB_UV = r"""#!/usr/bin/env bash
 echo "uv $*" >> "$STUB_LOG"
 [ -n "${STUB_NO_SHEETS:-}" ] && exit 0
@@ -57,8 +57,6 @@ while [ $# -gt 0 ]; do
   shift
 done
 case "$mod" in
-  *qr_sheets) names="room1-D1 room1-D2 room1-L1 room1-A1" ;;
-  *rooftop) names="rooftop-R1 rooftop-R2 rooftop-V1 rooftop-V2 rooftop-V3" ;;
   *site) names="site-P1 site-P2 site-P3 site-P4 site-D1" ;;
 esac
 mkdir -p "$dir"
@@ -117,8 +115,9 @@ def test_deploy_renders_sheets_for_the_service_url_then_deploys(stub) -> None:
     for name in SHEETS:
         assert f"{SERVICE_URL}/a/".encode() in (sheets / f"{name}.pdf").read_bytes()
     assert (sheets / f"{LAYOUT}.pdf").is_file()  # the plan has no URL, and must not stop the deploy
-    assert any("truesite_bim.rooftop --sheets-only" in c for c in calls(log, "uv "))
-    assert any("truesite_bim.site --sheets-only" in c for c in calls(log, "uv "))
+    uv = calls(log, "uv ")
+    assert any("truesite_bim.site --sheets-only" in c for c in uv)
+    assert not any("truesite_bim.rooftop" in c or "truesite_bim.qr_sheets" in c for c in uv)  # deleted projects
     [deploy] = calls(log, "gcloud run deploy")
     assert deploy.startswith(f"project={PROJECT} ")  # never the active gcloud config's project
     assert "DAILY_ASK_CAP=300" in deploy and "GOOGLE_GENAI_USE_ENTERPRISE=true" in deploy
@@ -129,9 +128,9 @@ def test_deploy_replaces_stale_sheets(stub) -> None:
     run, _ = stub
     stale = run.repo / "web" / "public" / "sheets"
     stale.mkdir()
-    (stale / "room1-X9.pdf").write_bytes(b"%PDF https://192.168.1.23:5173/a/room1/X9")
+    (stale / "site-X9.pdf").write_bytes(b"%PDF https://192.168.1.23:5173/a/site/X9")  # a LAN phone test leftover
     assert run("deploy").returncode == 0
-    assert not (stale / "room1-X9.pdf").exists()
+    assert not (stale / "site-X9.pdf").exists()
 
 
 @pytest.mark.parametrize("env", [{"STUB_NO_SHEETS": "1"}, {"STUB_SHEET_URL": "https://192.168.1.23:5173"}],
@@ -167,7 +166,7 @@ def test_every_sheet_the_start_page_links_is_rendered_and_smoke_checked() -> Non
 def test_deploy_uses_base_url_when_given(stub) -> None:
     run, log = stub
     assert run("deploy", BASE_URL="https://truesite.example.com/").returncode == 0
-    pdf = run.repo / "web" / "public" / "sheets" / "room1-D1.pdf"
+    pdf = run.repo / "web" / "public" / "sheets" / "site-D1.pdf"
     assert b"https://truesite.example.com/a/" in pdf.read_bytes()
 
 
@@ -202,7 +201,7 @@ def test_setup_can_be_run_twice(stub) -> None:
 
 # ---------------------------------------------------------------- .gcloudignore
 
-UPLOADED = ["Dockerfile", "server/app/main.py", "bim/models/room1/model.glb", "web/public/sheets/room1-D1.pdf"]
+UPLOADED = ["Dockerfile", "server/app/main.py", "bim/models/site/model.glb", "web/public/sheets/site-D1.pdf"]
 NOT_UPLOADED = ["capture/site-walk.mp4", ".playwright-mcp/page.png", "infra/sa.pem", "infra/truesite-key.json",
                 "service-account-truesite.json", "server/debug.log", ".cache/worktrees/x/Dockerfile", ".env"]
 
@@ -287,7 +286,7 @@ def test_smoke_fails_when_the_sheets_are_missing(stub, local_server) -> None:
     url, _ = local_server
     r = run("smoke", url, **LOCAL)
     assert r.returncode != 0
-    assert "sheets/room1-D1.pdf" in r.stderr
+    assert "sheets/site-P1.pdf" in r.stderr
 
 
 @pytest.mark.parametrize("missing", [f"sheets/{LAYOUT}.pdf", "models/site.usdz", "samples/index.json",

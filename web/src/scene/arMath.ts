@@ -35,7 +35,10 @@ export function isDeskAnchor(anchor: ApiAnchor): boolean {
   return anchor.scale < 1
 }
 
-/** A code lying flat on the floor with the model at 1:1 around it (room1 L1, rooftop R1 and R2; the site has none). */
+/**
+ * A code lying flat on the floor with the model at 1:1 around it. The site has none (its codes stand upright, and D1 is
+ * a 1:100 desk sheet); this stays for any project that adds one.
+ */
 export function isLifeSizeFloor(anchor: ApiAnchor): boolean {
   return anchor.normal[2] > 0.9 && anchor.scale >= 0.999
 }
@@ -100,15 +103,10 @@ export function coachHint(s: CoachState | null, desk: boolean, checkEnabled = tr
 export type CheckAvailability = { enabled: boolean; note: string | null }
 
 /**
- * Demo sheets that put the model where nothing is built. D1 (desk sheet) shows the room beside a sheet of
- * paper, so a check would report every element missing; D2 is for our physical 1:20 model and stays checkable.
- * L1 (floor sheet) is life size: only the part of the demo room that stands around it can be checked.
+ * Demo sheets that put the model where nothing is built, so a check would report every element missing: the site's
+ * viewpoints P1-P4 show the design in an empty car park, and its desk sheet D1 shows it beside a sheet of paper.
  */
-const DEMO_SHEETS: Record<string, CheckAvailability> = {
-  'room1/D1': { enabled: false, note: 'Checks need the real site or our 1:20 model.' },
-  'room1/L1': { enabled: true, note: 'Away from the demo room, elements will read as missing.' },
-}
-// The building site sheets show the design in an empty car park: nothing is built there to check.
+const DEMO_SHEETS: Record<string, CheckAvailability> = {}
 for (const id of ['P1', 'P2', 'P3', 'P4', 'D1']) {
   DEMO_SHEETS[`site/${id}`] = { enabled: false, note: 'This sheet shows the design where nothing is built yet, so there is nothing to check here.' }
 }

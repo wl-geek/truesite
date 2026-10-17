@@ -7,9 +7,8 @@ import { disposeModel, loadModel, type LoadedModel } from '../scene/loadModel'
 import { disposePins, makePins } from '../scene/pins'
 import { KIND_COLOURS, paintOf, type Kind } from '../scene/palette'
 import { createViewer, NO_INSET, type Viewer, type ViewPreset } from '../scene/viewer'
-import { navigate, viewerPathFor } from '../router'
 import { typeLabel } from './elementFacts'
-import { modelFacts, VIEWER_PROJECTS } from './viewerFacts'
+import { modelFacts, viewerTitle } from './viewerFacts'
 import { ElementPanel } from './ElementPanel'
 import { FindingsPanel } from './FindingsPanel'
 import { IssueDialog } from './IssueDialog'
@@ -256,8 +255,8 @@ const KIND_LABELS: Record<Kind, string> = {
 }
 
 /**
- * Which model, its size and materials at a glance, and the colour key: tap a type to hide or show it. On phones the
- * card folds to its title, so the model has the screen.
+ * The model's name, its size and materials at a glance, and the colour key: tap a type to hide or show it. On phones
+ * the card folds to its title, so the model has the screen.
  */
 function ModelCard({ project, hidden, onToggle }: { project: ProjectManifest; hidden: ReadonlySet<Kind>; onToggle: (k: Kind) => void }) {
   const counts = useMemo(() => {
@@ -271,12 +270,7 @@ function ModelCard({ project, hidden, onToggle }: { project: ProjectManifest; hi
   return (
     <div className={`model-card${open ? '' : ' model-card-folded'}`}>
       <div className="model-card-top">
-        <label className="model-switch">
-          <span className="sr-only">Model</span>
-          <select value={project.project_id} onChange={(e) => navigate(viewerPathFor(e.target.value))}>
-            {VIEWER_PROJECTS.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
-        </label>
+        <h1 className="model-card-title">{viewerTitle(project)}</h1>
         <button type="button" className="model-card-fold" aria-expanded={open} onClick={() => setOpen((o) => !o)}
           aria-label={open ? 'Fold the model card' : 'Show the model card'}>{open ? '–' : '+'}</button>
       </div>

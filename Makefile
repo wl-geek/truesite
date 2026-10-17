@@ -18,9 +18,9 @@ build:
 docker-build:
 	docker build -t truesite-local .
 
-# Rebuild glb + elements.json after replacing bim/models/room1/model.ifc
+# Rebuild the building site model (model.ifc, glb, elements.json, anchors.json) from bim/truesite_bim/site.py
 models:
-	cd bim && uv run python -m truesite_bim.pipeline models/room1/model.ifc --out models/room1
+	cd bim && uv run python -m truesite_bim.site --out models/site
 
 setup:
 	bash infra/gcloud.sh setup
@@ -33,6 +33,4 @@ verify:
 # Printable QR sheets for the start page, pointing at BASE_URL (e.g. the Cloud Run URL or https://<lan-ip>:5173).
 # Only the PDFs are written: the committed model files stay as they are. Warnings still show (stderr).
 sheets:
-	cd bim && uv run python -m truesite_bim.qr_sheets --base-url $(BASE_URL) --out-dir ../web/public/sheets > /dev/null
-	cd bim && uv run python -m truesite_bim.rooftop --sheets-only --base-url $(BASE_URL) --sheets-dir ../web/public/sheets > /dev/null
 	cd bim && uv run python -m truesite_bim.site --sheets-only --base-url $(BASE_URL) --sheets-dir ../web/public/sheets > /dev/null && ls ../web/public/sheets

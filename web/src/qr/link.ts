@@ -6,7 +6,7 @@ const ANCHOR_RE = /^[A-Za-z0-9_-]{1,16}$/
 /**
  * The project and anchor named by a scanned payload, or null when it is not one of our anchor links.
  * Any host is accepted (a printed sheet points at the deployed host even when testing on localhost);
- * `origin` resolves relative payloads such as "/a/room1/A1".
+ * `origin` resolves relative payloads such as "/a/site/P1".
  */
 export function parseAnchorLink(text: string, origin: string): { projectId: string; anchorId: string } | null {
   let url: URL

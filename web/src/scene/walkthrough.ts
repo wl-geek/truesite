@@ -6,8 +6,8 @@
  *   Android without WebXR: Google Scene Viewer (ARCore) with the project's raw glb URL (needs a public HTTPS URL).
  *   That glb is not recentred or coloured by type, so Scene Viewer places it by the model's own origin.
  *   (Android with WebXR walks inside TrueSite instead: xrWalk.ts.)
- * For Quick Look the model is recentred so its origin (where the viewer places it) is the anchor's spot, e.g. the
- * middle of the rooftop frame. Scaling is locked to 1:1 in both viewers. Colours by element type come from palette.js,
+ * For Quick Look the model is recentred so its origin (where the viewer places it) is a 1:1 floor code's spot, else the
+ * middle of the model's footprint (usdzCentre). Scaling is locked to 1:1 in both viewers. Colours by element type come from palette.js,
  * the same as the build-time file and the AR look.
  */
 import { Group, Matrix4, Mesh, MeshStandardMaterial, Scene, type BufferGeometry } from 'three'
