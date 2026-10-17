@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { LOOK_AROUND_MAX_S } from './motion'
-import { holdBySensors } from './overlay'
+import { holdBySensors, lookAroundExpired } from './overlay'
 
 describe('holdBySensors (audit B-03)', () => {
   const lock = { tSec: 10 }
@@ -25,5 +25,17 @@ describe('holdBySensors (audit B-03)', () => {
   it('keeps holding in look-around mode, and never while lost (the model is hidden)', () => {
     expect(holdBySensors('motion', 12, 10, lock, true)).toBe(true)
     expect(holdBySensors('lost', 10.2, 10, lock, true)).toBe(false)
+  })
+})
+
+describe('lookAroundExpired (audit C-14)', () => {
+  it('flags the look-around timeout once the code has been gone for the limit, with the sensors holding the model', () => {
+    expect(lookAroundExpired(true, true, 10 + LOOK_AROUND_MAX_S, 10)).toBe(true)
+    expect(lookAroundExpired(true, true, 10 + LOOK_AROUND_MAX_S - 0.1, 10)).toBe(false)
+  })
+
+  it('is not a timeout without the sensors, or when they never held the model (the plain 5 s search tips apply)', () => {
+    expect(lookAroundExpired(false, true, 200, 10)).toBe(false)
+    expect(lookAroundExpired(true, false, 200, 10)).toBe(false)
   })
 })

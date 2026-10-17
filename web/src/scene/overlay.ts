@@ -25,7 +25,7 @@ import { PoseFusion } from './fusion'
 import { applyConstructionLook, type ConstructionLook } from './look'
 import { type Paint } from './palette'
 import { levelModelMatrix, upInGlCamera } from './level'
-import { deviceRotation, lookAroundPose, LOOK_AROUND_MAX_S, type MotionLock } from './motion'
+import { deviceRotation, deviceStill, lookAroundPose, LOOK_AROUND_MAX_S, nextLock, type MotionLock, type MotionSample } from './motion'
 import { createFrameWatchdog } from './watchdog'
 
 /** Edges live on their own layer so the ID-buffer render (layer 0 only) never sees them. */
@@ -66,6 +66,8 @@ export type OverlayState = {
   searchingS: number
   /** The QR reader can't decode (its .wasm or worker didn't load). */
   qrFailed: boolean
+  /** Look-around ran out (LOOK_AROUND_MAX_S without the code): the model is hidden until the code is back in view. */
+  lookAroundExpired: boolean
 }
 
 /** The latest raw (unsmoothed) pose: the snapshot's flip prior and the pose used for a check. */
@@ -121,6 +123,14 @@ export function holdBySensors(mode: OverlayState['mode'], nowS: number, lastSeen
   return mode === 'code' && nowS - lastSeenS > HOLD_AFTER_S && nowS - lock.tSec < LOOK_AROUND_MAX_S
 }
 
+/**
+ * Look-around ran out (audit C-14): the motion sensors held the model, and the code has been out of view for
+ * LOOK_AROUND_MAX_S. The coach then says so instead of giving the search tips. `held`: there was a lock or a fused pose.
+ */
+export function lookAroundExpired(motion: boolean, held: boolean, nowS: number, lastSeenS: number): boolean {
+  return motion && held && nowS - lastSeenS >= LOOK_AROUND_MAX_S
+}
+
 export function createOverlay(o: OverlayOptions): Overlay {
   const { video, canvas, model, anchor, qr } = o
   const renderer = new WebGLRenderer({ canvas, alpha: true, antialias: true })
@@ -137,13 +147,18 @@ export function createOverlay(o: OverlayOptions): Overlay {
   renderer.localClippingEnabled = true
   const look = applyConstructionLook(model, o.classOf, EDGE_LAYER, o.paintOf)
 
-  // Look-around: latest device rotation, and the pose + rotation when the code was last seen.
+  // Look-around: latest device rotation, the last second of rotations (is the device still?), and the pose + rotation
+  // when the code was last seen.
   let deviceR: Mat3 | null = null
+  const recent: MotionSample[] = []
   let lock: MotionLock | null = null
   const onOrientation = (e: DeviceOrientationEvent) => {
     if (e.alpha === null || e.beta === null || e.gamma === null) return
     deviceR = deviceRotation(e.alpha, e.beta, e.gamma, screen.orientation?.angle ?? 0)
-    fusion?.addOrientation(deviceR, performance.now())
+    const tMs = performance.now()
+    fusion?.addOrientation(deviceR, tMs)
+    recent.push({ tMs, D: deviceR })
+    while (recent.length > 2 && recent[1].tMs < tMs - 1000) recent.shift()
   }
   if (o.motion) window.addEventListener('deviceorientation', onOrientation)
 
@@ -178,13 +193,14 @@ export function createOverlay(o: OverlayOptions): Overlay {
   const listeners = new Set<(s: OverlayState) => void>()
   let state: OverlayState = {
     tracking: false, quality: null, provisional: true, distanceM: null, detectMs: null, otherAnchor: null, mode: 'lost', searchingS: 0, qrFailed: false,
+    lookAroundExpired: false,
   }
   let lastEmit = 0
 
   function emit(next: OverlayState): void {
     const now = performance.now()
     const changed = next.tracking !== state.tracking || next.quality !== state.quality || next.provisional !== state.provisional
-      || next.mode !== state.mode || next.qrFailed !== state.qrFailed
+      || next.mode !== state.mode || next.qrFailed !== state.qrFailed || next.lookAroundExpired !== state.lookAroundExpired
       || (next.otherAnchor?.anchorId ?? null) !== (state.otherAnchor?.anchorId ?? null)
     state = next
     if (changed || now - lastEmit > 250) {
@@ -226,13 +242,15 @@ export function createOverlay(o: OverlayOptions): Overlay {
         model.ifcRoot.matrixWorldNeedsUpdate = true
       }
       model.ifcRoot.visible = true
-      if (deviceR && !tracked.provisional) lock = { R0: tracked.smoothed.R, t0: tracked.smoothed.t, D0: deviceR, tSec }
-      emit({ tracking: true, quality: tracked.quality, provisional: tracked.provisional, distanceM: tracked.raw.distanceM, detectMs: res.ms, otherAnchor, mode: 'code', searchingS: 0, qrFailed: qr.failed })
+      if (deviceR && !tracked.provisional) lock = nextLock(lock, tracked.smoothed, deviceR, tSec, deviceStill(recent))
+      emit({ tracking: true, quality: tracked.quality, provisional: tracked.provisional, distanceM: tracked.raw.distanceM, detectMs: res.ms, otherAnchor, mode: 'code', searchingS: 0, qrFailed: qr.failed,
+        lookAroundExpired: false })
     } else if (tSec - lastSeen > LOST_AFTER_S) {
       const canLookAround = fused(tSec * 1000) || (o.motion && lock !== null && deviceR !== null && tSec - lock.tSec < LOOK_AROUND_MAX_S)
       model.ifcRoot.visible = canLookAround
       emit({ tracking: false, quality: null, provisional: true, distanceM: null, detectMs: res.ms, otherAnchor, mode: canLookAround ? 'motion' : 'lost',
-        searchingS: searchingSeconds(tSec, lastSeen, startedSec), qrFailed: qr.failed })
+        searchingS: searchingSeconds(tSec, lastSeen, startedSec), qrFailed: qr.failed,
+        lookAroundExpired: !canLookAround && lookAroundExpired(o.motion, lock !== null || !!fusion?.hasEstimate(), tSec, lastSeen) })
     }
   }
 
@@ -241,7 +259,7 @@ export function createOverlay(o: OverlayOptions): Overlay {
   const watchdog = createFrameWatchdog(() => {
     model.ifcRoot.visible = false
     emit({ tracking: false, quality: null, provisional: true, distanceM: null, detectMs: null, otherAnchor: null, mode: 'lost',
-      searchingS: searchingSeconds(performance.now() / 1000, lastSeen, startedSec), qrFailed: qr.failed })
+      searchingS: searchingSeconds(performance.now() / 1000, lastSeen, startedSec), qrFailed: qr.failed, lookAroundExpired: false })
     render()
   })
 
