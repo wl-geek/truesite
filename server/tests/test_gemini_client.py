@@ -304,6 +304,18 @@ def _api_error(cls, code, status):
     return cls(code, {"error": {"code": code, "message": "m", "status": status}})
 
 
+def test_a_quota_refusal_carries_googles_retry_delay():
+    quota = genai_errors.ClientError(429, {"error": {"code": 429, "message": "quota", "status": "RESOURCE_EXHAUSTED", "details": [
+        {"@type": "type.googleapis.com/google.rpc.QuotaFailure"},
+        {"@type": "type.googleapis.com/google.rpc.RetryInfo", "retryDelay": "37.5s"}]}})
+    with pytest.raises(gc.GeminiError) as info:
+        gc.check_asbuilt(PHOTO, RENDER, CONTEXT, client=FakeClient(quota, quota, quota))
+    assert info.value.kind == "rate_limited" and info.value.retry_after_s == 38
+    with pytest.raises(gc.GeminiError) as plain:  # no RetryInfo: unknown
+        gc.check_asbuilt(PHOTO, RENDER, CONTEXT, client=FakeClient(*[_api_error(genai_errors.ClientError, 429, "RESOURCE_EXHAUSTED")] * 3))
+    assert plain.value.retry_after_s is None
+
+
 @pytest.mark.parametrize("exc,kind,status", [
     (_api_error(genai_errors.ClientError, 429, "RESOURCE_EXHAUSTED"), "rate_limited", 429),
     (_api_error(genai_errors.ClientError, 400, "INVALID_ARGUMENT"), "bad_request", 400),

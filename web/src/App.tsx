@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useRoute, type Route } from './router'
 import { HomePage } from './ui/HomePage'
+import { LimitDialog } from './ui/LimitDialog'
 import { TopBar } from './ui/TopBar'
 import { LivePage } from './ui/LivePage'
 import { SamplesPage } from './ui/SamplesPage'
@@ -26,6 +27,7 @@ export default function App() {
       {route.name === 'viewer' && <ViewerPage key={route.projectId ?? ''} projectId={route.projectId} />}
       {route.name === 'live' && <LivePage key={`${route.projectId}/${route.anchorId}`} projectId={route.projectId} anchorId={route.anchorId} />}
       {route.name === 'samples' && <SamplesPage />}
+      <LimitDialog />
     </div>
   )
 }

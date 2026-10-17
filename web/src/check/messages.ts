@@ -23,7 +23,9 @@ export function checkErrorMessage(err: ErrorInfo): string {
     case 'rate_limited':
       return `Too many checks from this network. Try again${retryIn(err)}.`
     case 'daily_cap':
-      return "Today's check limit has been reached. Try the ready-made views (saved results), or come back tomorrow."
+      return "Today's free Gemini use is used up. Try the ready-made views (saved results), or come back tomorrow."
+    case 'model_quota':
+      return `Gemini's usage limit is reached. Try again${retryIn(err)}.`
     case 'model_blocked':
       return "This photo couldn't be checked. Try a different view."
     case 'network':
@@ -54,7 +56,9 @@ export function savedFallbackMessage(err: ErrorInfo): string {
     case 'rate_limited':
       return `Too many checks from this network, so Gemini didn't run. ${showing} Try again${retryIn(err)}.`
     case 'daily_cap':
-      return `Today's check limit has been reached, so Gemini didn't run. ${showing}`
+      return `Today's free Gemini use is used up, so Gemini didn't run. ${showing}`
+    case 'model_quota':
+      return `Gemini's usage limit is reached, so it didn't run. ${showing} Try again${retryIn(err)}.`
     case 'network':
       return `No connection, so Gemini didn't run. ${showing}`
     case 'timeout':

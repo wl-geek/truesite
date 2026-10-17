@@ -6,8 +6,9 @@ create_app() fills in (settings, store, repo, client, now, check_limiter, ask_li
 from __future__ import annotations
 
 import logging
+import math
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Annotated, Any
 
 from fastapi import Depends, Header, HTTPException, Request
@@ -83,5 +84,7 @@ def enforce_limits(request: Request, limiter_name: str, day_suffix: str, cap: in
     except Exception:  # noqa: BLE001 - fail closed
         log.exception("daily cap check failed")
         raise HTTPException(status_code=503, detail={"code": "busy"}, headers={"Retry-After": "2"}) from None
-    if not ok:
-        raise HTTPException(status_code=429, detail={"code": "daily_cap"})
+    if not ok:  # the cap resets at midnight UTC: say how long that is, so the web can count down
+        now = state.now().astimezone(timezone.utc)
+        wait = max(1, math.ceil(((now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0) - now).total_seconds()))
+        raise HTTPException(status_code=429, detail={"code": "daily_cap", "retry_after_s": wait}, headers={"Retry-After": str(wait)})

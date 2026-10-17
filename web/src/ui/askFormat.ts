@@ -23,7 +23,9 @@ export function askErrorMessage(err: Pick<ApiError, 'status' | 'code' | 'retryAf
     case 'rate_limited':
       return 'Too many questions from this network. Try again in a few minutes.'
     case 'daily_cap':
-      return "Today's question limit has been reached. Try again tomorrow."
+      return "Today's free Gemini use is used up. Try again tomorrow."
+    case 'model_quota':
+      return "Gemini's usage limit is reached. Try again in a minute."
     case 'unknown_element':
       return 'This element is no longer in the model.'
     case 'network':

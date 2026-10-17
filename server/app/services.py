@@ -61,10 +61,11 @@ def make_checker(repo: ProjectRepo, client: Any) -> Checker:
     return check
 
 
+# Gemini's own quota refused the call (after every fallback model): a usage limit, shown with a countdown.
+MODEL_QUOTA_WAIT_S = 60
 _ERRORS = {
     "timeout": (503, "model_unavailable"),
     "unavailable": (503, "model_unavailable"),
-    "rate_limited": (503, "model_unavailable"),
     "bad_output": (502, "model_bad_output"),
     "blocked": (422, "model_blocked"),
     "bad_request": (500, "model_bad_request"),
@@ -72,6 +73,9 @@ _ERRORS = {
 
 
 def http_error_for(err: GeminiError) -> HTTPException:
+    if err.kind == "rate_limited":
+        wait = err.retry_after_s or MODEL_QUOTA_WAIT_S
+        return HTTPException(status_code=429, detail={"code": "model_quota", "retry_after_s": wait}, headers={"Retry-After": str(wait)})
     status, code = _ERRORS.get(err.kind, (503, "model_unavailable"))
     headers = {"Retry-After": "5"} if status == 503 else None
     return HTTPException(status_code=status, detail={"code": code}, headers=headers)

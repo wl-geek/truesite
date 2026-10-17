@@ -18,7 +18,9 @@ import copy
 import functools
 import json
 import logging
+import math
 import os
+import re
 import time
 from typing import Annotated, Any, Optional
 
@@ -76,10 +78,11 @@ _SUPPORTED_SCHEMA_KEYS = {
 class GeminiError(Exception):
     """Raised by this module. ``kind`` drives the HTTP status and UI message."""
 
-    def __init__(self, kind: str, message: str, *, status: Optional[int] = None):
+    def __init__(self, kind: str, message: str, *, status: Optional[int] = None, retry_after_s: Optional[int] = None):
         super().__init__(f"{kind}: {message}")
         self.kind = kind  # rate_limited | unavailable | timeout | bad_request | bad_output | blocked
         self.status = status
+        self.retry_after_s = retry_after_s  # Google's suggested wait for a quota refusal, when it gives one
 
 
 # --------------------------------------------------------------------------- client
@@ -435,10 +438,28 @@ def _parse_json(response: Any) -> dict:
     return value
 
 
+def _retry_delay_s(details: Any) -> Optional[int]:
+    """Google's suggested wait in a quota refusal (google.rpc.RetryInfo retryDelay, e.g. "37.5s"), rounded up."""
+    stack = [details]
+    while stack:
+        node = stack.pop()
+        if isinstance(node, dict):
+            delay = node.get("retryDelay")
+            m = re.fullmatch(r"(\d+(?:\.\d+)?)s", delay.strip()) if isinstance(delay, str) else None
+            if m:
+                return max(1, math.ceil(float(m.group(1))))
+            stack.extend(node.values())
+        elif isinstance(node, list):
+            stack.extend(node)
+    return None
+
+
 def _translate(exc: Exception) -> GeminiError:
     if isinstance(exc, genai_errors.ClientError):
-        kind = "rate_limited" if exc.code == 429 else "bad_request"
-        return GeminiError(kind, f"{exc.code} {exc.status}: {exc.message}", status=exc.code)
+        if exc.code == 429:
+            return GeminiError("rate_limited", f"{exc.code} {exc.status}: {exc.message}", status=429,
+                               retry_after_s=_retry_delay_s(exc.details))
+        return GeminiError("bad_request", f"{exc.code} {exc.status}: {exc.message}", status=exc.code)
     if isinstance(exc, genai_errors.ServerError):
         return GeminiError("unavailable", f"{exc.code} {exc.status}: {exc.message}", status=exc.code)
     if isinstance(exc, genai_errors.APIError):
