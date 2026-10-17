@@ -126,9 +126,10 @@ export function markCentres(marks: readonly MarkedElement[], visible: readonly V
   return out
 }
 
-/** Numbered circles at the mark centres (orange on white ring, readable on any render). */
-export function drawMarks(ctx: CanvasRenderingContext2D, centres: ReadonlyMap<number, [number, number]>, width: number, height: number): void {
-  const r = Math.max(12, Math.round(Math.min(width, height) * 0.022))
+/** Numbered circles at the mark centres (orange on white ring, readable on any render); `scale` < 1 for smaller ones. */
+export function drawMarks(ctx: CanvasRenderingContext2D, centres: ReadonlyMap<number, [number, number]>, width: number, height: number,
+  scale = 1): void {
+  const r = Math.max(Math.round(12 * scale), Math.round(Math.min(width, height) * 0.022 * scale))
   ctx.save()
   ctx.font = `bold ${Math.round(r * 1.1)}px system-ui, sans-serif`
   ctx.textAlign = 'center'

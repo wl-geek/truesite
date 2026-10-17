@@ -17,6 +17,7 @@ from app import gemini_client as gc
 
 PHOTO = b"\xff\xd8\xff\xe0fake-jpeg-bytes"
 RENDER = b"\x89PNG\r\n\x1a\nfake-png-bytes"
+OVERLAY = b"\xff\xd8\xff\xe0fake-outline-jpeg"
 CONTEXT = {
     "project_id": "room1", "anchor_id": "A1", "pose_quality": "good", "distance_m": 1.8,
     "visible": [
@@ -351,7 +352,7 @@ def test_wire_request_gemini_api():
     (req,) = sent
     assert str(req.url) == "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent"
     assert req.headers["x-goog-api-key"] == "TEST-KEY"
-    assert req.headers["x-server-timeout"] == "25"  # 25_000 ms -> 25 s
+    assert req.headers["x-server-timeout"] == "45"  # the check's own CHECK_TIMEOUT_MS, 45_000 ms -> 45 s
     body = json.loads(req.content)
     parts = body["contents"][0]["parts"]
     assert [("text" if "text" in p else p["inlineData"]["mime_type"]) for p in parts] == [
@@ -367,6 +368,24 @@ def test_wire_request_gemini_api():
     assert "labels" not in body and "systemInstruction" in body
     assert out["result"] == GOOD_CHECK  # response.parsed path
     assert out["usage"]["thought_tokens"] == 250 and out["response_id"] == "r1"
+
+
+def test_wire_request_with_the_outline_image():
+    sent = []
+    gc.check_asbuilt(PHOTO, RENDER, CONTEXT, overlay_jpeg=OVERLAY, client=mock_client(ok_handler(sent), api_key="K"))
+    (req,) = sent
+    parts = json.loads(req.content)["contents"][0]["parts"]
+    assert [("text" if "text" in p else p["inlineData"]["mime_type"]) for p in parts] == [
+        "text", "image/jpeg", "text", "image/png", "text", "image/jpeg", "text"]
+    assert parts[4]["text"].startswith("IMAGE 3") and base64.urlsafe_b64decode(parts[5]["inlineData"]["data"]) == OVERLAY
+    assert parts[6]["text"].startswith("Numbered elements to check")
+
+
+def test_asks_and_drafts_keep_the_short_timeout():
+    sent = []
+    client = mock_client(ok_handler(sent), api_key="K")
+    gc.generate_json(gc.build_ask_request({"ifc_class": "IfcWall", "name": "W", "props": {}}, "Height?"), client=client)
+    assert sent[0].headers["x-server-timeout"] == "25"
 
 
 def test_wire_request_agent_platform_global():

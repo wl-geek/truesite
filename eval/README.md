@@ -29,3 +29,26 @@ To measure on real photos instead:
    - The deploy allows 30 checks per IP per hour (`CHECKS_PER_IP_PER_HOUR`, set by `make deploy`). With more than 30 samples, the rest fail with "Too many checks from this network". The page lists the samples that did not run. Keep the page open and tap **Run all** again after the hour: it runs only those and downloads one `results.json` with everything.
 4. Run `python3 eval/summarise.py check eval/labels.json results.json` and paste the table into the README. Don't round anything up.
    - Samples with no result are counted as **Not run**, not as "can't judge", and are left out of the can't-judge share. The script then exits with code 1 and names them: run them again before you publish the table.
+
+## 3. Virtual demo with live Gemini (simulated as-built, 17 Oct 2026)
+
+**Simulated, not photos.** The virtual demo's *Check as-built* at each QR spot P1–P4 (1180 × 820 view, opening framing), on `gemini-3.8-flash` through Agent Platform. A planted defect counts as found when Gemini gives its element (or what moved with it) any deviation status. A false alarm is a deviation on an element we didn't change. In-view counts add up across spots: some defects show from two spots, 16 in all. One check costs about US$0.011 (about 5,600 input and 1,600–2,500 output tokens, from the logged usage).
+
+| Version | Found (of 16) | False alarms | Runs |
+|---|---|---|---|
+| Photo + design render (two images) | 8 | 5 | 1 |
+| + IMAGE 3 outlines, 1 px gap | 10 | 7 | 1 |
+| **+ IMAGE 3 outlines, 5 px gap (shipped)** | **12, 11** | **5, 8** | 2 |
+| + size cut-off and a "can't judge thin members" prompt (dropped) | 9, 9 | 4, 5 | 2 |
+| Closed outlines that cross neighbours (dropped) | 8 | 3 | 1 |
+
+**What works:**
+- elements not built: an uncast column with only its cage, open-bay beams, a missing guardrail
+- a column 60 cm off sideways, since IMAGE 3 shows it beside its outline
+
+**What doesn't:**
+- a 60 cm shift towards or away from the camera
+- thin far members: purlins and truss diagonals
+- a pad footing under a shifted column, which Gemini often says moved with it
+
+Runs vary by ±1–3 defects, so read single runs as rough.

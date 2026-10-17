@@ -23,10 +23,13 @@ def context(**overrides) -> str:
     return json.dumps(ctx)
 
 
-def post(client, session=None, photo=JPEG, render=PNG, ctx=None):
+def post(client, session=None, photo=JPEG, render=PNG, ctx=None, overlay=None):
+    files = {"photo": ("p.jpg", photo, "image/jpeg"), "render": ("r.png", render, "image/png")}
+    if overlay is not None:
+        files["overlay"] = ("o.jpg", overlay, "image/jpeg")
     return client.post(
         "/api/check",
-        files={"photo": ("p.jpg", photo, "image/jpeg"), "render": ("r.png", render, "image/png")},
+        files=files,
         data={"context": ctx or context()},
         headers={"X-Session-Id": session or new_session()},
     )
@@ -42,6 +45,21 @@ def test_fake_check_end_to_end(client):
     assert findings[2]["offset"] == {"direction": "right", "approx_cm": 30}
     assert body["saved"] is True and body["photo_url"] == f"/api/runs/{body['run_id']}/photo.jpg"
     assert body["result"]["model_version"] == "fake" and body["result"]["usage"]["total_tokens"] == 0
+
+
+def test_outline_image_is_optional_and_reaches_gemini(client, monkeypatch):
+    seen = []
+    real = services.gemini_client.check_asbuilt
+
+    def spy(photo, render, context, **kw):
+        seen.append(kw.get("overlay_jpeg"))
+        return real(photo, render, context, **kw)
+
+    monkeypatch.setattr(services.gemini_client, "check_asbuilt", spy)
+    assert post(client).status_code == 200
+    assert post(client, overlay=JPEG).status_code == 200
+    assert seen == [None, JPEG]
+    assert post(client, overlay=PNG).status_code == 415  # IMAGE 3 is a JPEG like the photo
 
 
 def test_run_images_are_session_scoped(client):

@@ -86,10 +86,12 @@ export function getProject(projectId: string): Promise<ProjectManifest> {
   return getJson(`/api/projects/${encodeURIComponent(projectId)}`)
 }
 
-export async function postCheck(photo: Blob, render: Blob, ctx: CheckContext): Promise<CheckResponse> {
+/** `overlay` (optional) is IMAGE 3: the photo with each marked element's design outline (check/outlines.ts). */
+export async function postCheck(photo: Blob, render: Blob, ctx: CheckContext, overlay?: Blob | null): Promise<CheckResponse> {
   const form = new FormData()
   form.append('photo', photo, 'photo.jpg')
   form.append('render', render, 'render.png')
+  if (overlay) form.append('overlay', overlay, 'overlay.jpg')
   form.append('context', JSON.stringify(ctx))
   return (await (await request('/api/check', { method: 'POST', body: form }, CHECK_TIMEOUT_MS)).json()) as CheckResponse
 }

@@ -69,9 +69,11 @@ async def check(
     store: StoreDep,
     repo: RepoDep,
     now: NowDep,
+    overlay: Annotated[UploadFile | None, File(description="JPEG photo with the design outlines (IMAGE 3), <= 4 MiB")] = None,
 ) -> CheckResponse:
     photo_bytes = await read_image(photo, field="photo", kind="jpeg", limit=settings.max_upload_bytes)
     render_bytes = await read_image(render, field="render", kind="png", limit=settings.max_upload_bytes)
+    overlay_bytes = await read_image(overlay, field="overlay", kind="jpeg", limit=settings.max_upload_bytes) if overlay else None
     ctx = parse_context(context)
     try:
         elements = repo.elements_by_guid(ctx.project_id)
@@ -84,7 +86,7 @@ async def check(
     try:
         checker = make_checker(repo, client_for(request))  # before the cap: a setup error uses no quota
         await run_in_threadpool(enforce_limits, request, "check_limiter", "", settings.daily_check_cap)
-        result = await run_in_threadpool(checker, photo_bytes, render_bytes, ctx)
+        result = await run_in_threadpool(checker, photo_bytes, render_bytes, ctx, overlay_bytes)
     except GeminiError as err:
         log.warning("check failed: %s", err)
         raise http_error_for(err) from err

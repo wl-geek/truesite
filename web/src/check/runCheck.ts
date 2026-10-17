@@ -1,9 +1,9 @@
 /**
  * The as-built check in the browser (spec 4.2 step 4, 7.3):
- * pose -> ID buffer (~640 px) -> numbered marks -> design render at the photo size with marks
- * -> POST /api/check. For sample photos, a failed check falls back to the sample's saved result.
+ * pose -> ID buffer (~640 px) -> numbered marks -> design render at the photo size with marks, and the photo with each
+ * marked element's outline (check/outlines.ts) -> POST /api/check. For sample photos, a failed check falls back to the sample's saved result.
  */
-import { PerspectiveCamera, Vector3, type Scene, type WebGLRenderer } from 'three'
+import { PerspectiveCamera, Vector3, type Plane, type Scene, type WebGLRenderer } from 'three'
 import { ApiError, getSavedResult, postCheck } from '../api/client'
 import type { Anchor, CheckContext, CheckResponse, CheckResult, Element, MarkedElement, PoseQuality } from '../api/types'
 import { modelMatrixIfc, projectionMatrixGL, type Intrinsics, type Pose } from '../pose'
@@ -15,7 +15,8 @@ import { KIND_COLOURS, paintOf } from '../scene/palette'
 import type { LoadedModel } from '../scene/loadModel'
 import { viewNote, type ConstructionLook } from '../scene/look'
 import { drawMarks, markCentres, selectMarks } from './marks'
-import { canvasToPng } from './snapshot'
+import { paintMask, ringMask, ringSize } from './outlines'
+import { canvasToJpeg, canvasToPng } from './snapshot'
 
 export const ID_BUFFER_WIDTH = 640
 
@@ -94,6 +95,7 @@ export async function runCheck(input: CheckInput): Promise<CheckOutcome> {
   if (pins) pins.visible = false
   let marks: MarkedElement[] = []
   let render: Blob
+  let overlay: Blob | null = null
   try {
     model.ifcRoot.matrix.fromArray(modelMatrixIfc(poseAnchor(input.anchor), input.pose))
     model.ifcRoot.visible = true
@@ -107,7 +109,8 @@ export async function runCheck(input: CheckInput): Promise<CheckOutcome> {
     if (!marks.length) {
       return { response: null, saved: null, error: new ApiError('nothing_visible', 0, 'nothing_visible'), marks, render: null, viewNote: note }
     }
-    const design = await renderDesignImage(renderer, scene, model, cameraFor(K, videoW, videoH, photoW, photoH), photoW, photoH,
+    const photoCamera = cameraFor(K, videoW, videoH, photoW, photoH)
+    const design = await renderDesignImage(renderer, scene, model, photoCamera, photoW, photoH,
       (guid) => designColour(input.elements.get(guid)), clip)
     const canvas = document.createElement('canvas')
     canvas.width = photoW
@@ -115,8 +118,14 @@ export async function runCheck(input: CheckInput): Promise<CheckOutcome> {
     const ctx = canvas.getContext('2d')
     if (!ctx) throw new Error('2D canvas is not available')
     ctx.putImageData(design, 0, 0)
-    drawMarks(ctx, markCentres(marks, visible, ids.indexToGuid, iw, ih), photoW, photoH)
+    const centres = markCentres(marks, visible, ids.indexToGuid, iw, ih)
+    drawMarks(ctx, centres, photoW, photoH)
     render = await canvasToPng(canvas)
+    try {
+      overlay = await outlineImage(renderer, scene, model, photoCamera, input.photo, photoW, photoH, marks, centres, clip)
+    } catch {
+      overlay = null // the check still runs on IMAGE 1 and 2
+    }
   } finally {
     model.ifcRoot.matrix.copy(prevMatrix)
     model.ifcRoot.visible = prevVisible
@@ -130,7 +139,7 @@ export async function runCheck(input: CheckInput): Promise<CheckOutcome> {
     distance_m: poseDistance(input.pose), visible: marks, sample_id: input.sampleId ?? null,
   }
   try {
-    return { response: await postCheck(input.photo, render, context), saved: null, error: null, marks, render, viewNote: note }
+    return { response: await postCheck(input.photo, render, context, overlay), saved: null, error: null, marks, render, viewNote: note }
   } catch (e) {
     const err = e instanceof ApiError ? e : new ApiError(e instanceof Error ? e.message : String(e), 0)
     if (shouldUseSaved(err, input.sampleId)) {
@@ -142,6 +151,32 @@ export async function runCheck(input: CheckInput): Promise<CheckOutcome> {
     }
     return { response: null, saved: null, error: err, marks, render, viewNote: note }
   }
+}
+
+/**
+ * IMAGE 3: the photo with a magenta ring just outside each marked element's design position and smaller mark numbers,
+ * from an ID buffer at the photo size (the same camera as the design render, so the rings sit where IMAGE 2 has them).
+ */
+async function outlineImage(renderer: WebGLRenderer, scene: Scene, model: LoadedModel, camera: PerspectiveCamera, photo: Blob,
+  w: number, h: number, marks: readonly MarkedElement[], centres: ReadonlyMap<number, [number, number]>,
+  clip: readonly Plane[]): Promise<Blob> {
+  const ids = await renderIdBuffer(renderer, scene, model, camera, w, h, clip)
+  const indexOf = new Map(ids.indexToGuid.map((g, i) => [g, i]))
+  const ringed = new Set(marks.map((m) => indexOf.get(m.guid)).filter((i): i is number => i !== undefined))
+  const canvas = document.createElement('canvas')
+  canvas.width = w
+  canvas.height = h
+  const ctx = canvas.getContext('2d')
+  if (!ctx) throw new Error('2D canvas is not available')
+  const bitmap = await createImageBitmap(photo)
+  ctx.drawImage(bitmap, 0, 0, w, h)
+  bitmap.close()
+  const img = ctx.getImageData(0, 0, w, h)
+  const { gap, line } = ringSize(w)
+  paintMask(img, ringMask(ids.buf, w, h, ringed, gap, line))
+  ctx.putImageData(img, 0, 0)
+  drawMarks(ctx, centres, w, h, 0.7)
+  return canvasToJpeg(canvas)
 }
 
 /** An element's colour in the design render: its palette type colour (the 3D viewer's key), else by IFC class. */

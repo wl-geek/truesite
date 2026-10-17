@@ -86,6 +86,10 @@ export async function captureSnapshot(video: HTMLVideoElement, qr?: QrWorkerClie
   return { photo, photoW: w, photoH: h, videoW, videoH, corners: detection?.corners ?? null, text: detection?.text ?? null }
 }
 
+export function canvasToJpeg(canvas: HTMLCanvasElement, quality = PHOTO_QUALITY): Promise<Blob> {
+  return toBlob(canvas, 'image/jpeg', quality)
+}
+
 export function canvasToPng(canvas: HTMLCanvasElement): Promise<Blob> {
   return toBlob(canvas, 'image/png')
 }

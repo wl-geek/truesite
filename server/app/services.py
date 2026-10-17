@@ -18,7 +18,7 @@ from .validate import clamp_confidence, repair_check, truncate_text
 
 log = logging.getLogger("truesite.gemini")
 
-Checker = Callable[[bytes, bytes, CheckContext], dict]
+Checker = Callable[..., dict]  # (photo_jpeg, render_png, ctx, overlay_jpeg=None)
 VISUAL_CHECK_LABEL = "Visual check, not a survey."  # spec 4.4: every drafted issue carries it
 
 
@@ -50,9 +50,10 @@ def log_usage(what: str, out: dict) -> None:
 
 
 def make_checker(repo: ProjectRepo, client: Any) -> Checker:
-    def check(photo_jpeg: bytes, render_png: bytes, ctx: CheckContext) -> dict:
+    def check(photo_jpeg: bytes, render_png: bytes, ctx: CheckContext, overlay_jpeg: bytes | None = None) -> dict:
         out = gemini_client.check_asbuilt(photo_jpeg, render_png, ctx.model_dump(mode="json"),
-                                          project_note=repo.check_note(ctx.project_id), client=client)
+                                          project_note=repo.check_note(ctx.project_id), overlay_jpeg=overlay_jpeg,
+                                          client=client)
         result = repair_check(out["result"], ctx, repo.elements_by_guid(ctx.project_id))
         result = result.model_copy(update={"usage": Usage(**out["usage"]), "model_version": out.get("model_version")})
         return result.model_dump(mode="json")

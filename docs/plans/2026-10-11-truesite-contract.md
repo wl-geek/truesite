@@ -146,7 +146,7 @@ Errors are FastAPI `HTTPException` with `detail = {"code": <code>, ...}`. Paths 
 | GET `/api/whoami` | — | `{"ip", "x_forwarded_for", "peer"}` (day-1 X-Forwarded-For check) | — |
 | GET `/api/projects/{project_id}` | — | `ProjectManifest` | 404 `unknown_project` |
 | GET `/api/projects/{project_id}/model.glb` | — | glb (`model/gltf-binary`, ETag; 304 on a matching `If-None-Match`) | 404 `unknown_project` |
-| POST `/api/check` | multipart: `photo` (JPEG ≤ 4 MiB), `render` (PNG ≤ 4 MiB), `context` (JSON string → `CheckContext`); header `X-Session-Id` | `CheckResponse` | 413 · 415 · 422 (loc `["body","context",…]`) · 404 `unknown_project` · 422 `unknown_element` (a mark's guid is not in the project; before any limit) · 429 `rate_limited` (+`retry_after_s`, `Retry-After`) · 429 `daily_cap` · 503 `busy` (cap check failed) · 503 `model_unavailable` (timeout / unavailable / rate_limited) · 502 `model_bad_output` · 422 `model_blocked` · 500 `model_bad_request` |
+| POST `/api/check` | multipart: `photo` (JPEG ≤ 4 MiB), `render` (PNG ≤ 4 MiB), optional `overlay` (JPEG ≤ 4 MiB: the photo with each mark's design outline, Gemini's IMAGE 3), `context` (JSON string → `CheckContext`); header `X-Session-Id` | `CheckResponse` | 413 · 415 · 422 (loc `["body","context",…]`) · 404 `unknown_project` · 422 `unknown_element` (a mark's guid is not in the project; before any limit) · 429 `rate_limited` (+`retry_after_s`, `Retry-After`) · 429 `daily_cap` · 503 `busy` (cap check failed) · 503 `model_unavailable` (timeout / unavailable / rate_limited) · 502 `model_bad_output` · 422 `model_blocked` · 500 `model_bad_request` |
 | GET `/api/runs/{run_id}/{photo.jpg\|render.png}` | header `X-Session-Id` | image bytes (owner session only) | 404 `unknown_run` (also another session's run) · 422 (`run_id` not `RUN_ID_PATTERN`, or another file name) |
 | GET `/api/saved-results/{sample_id}` | — | `CheckResult` with `saved_at` set | 404 `unknown_sample` · 422 (`sample_id` not `SAMPLE_ID_PATTERN`) |
 | POST `/api/ask` | `AskRequest`; header `X-Session-Id` | `AskAnswer` | 404 `unknown_project` / `unknown_element` · 429 · 503/502/422/500 as for check |
@@ -270,7 +270,7 @@ def create_app(settings: Settings | None = None, *, store: Store | None = None, 
 #   On startup, seeds each project's demo_issues.json into the store as session "demo" with ids "demo-<project>-<n>" (upsert, idempotent).
 #   Blocking work (Gemini, store) runs in the threadpool (plain def endpoints or run_in_threadpool).
 #   Middleware, outermost first: SecurityHeadersMiddleware (app/security_headers.py), BodySizeLimitMiddleware, GZip.
-#   Gemini timeouts: REQUEST_TIMEOUT_MS = 25_000 per attempt, one SDK retry; Cloud Run --timeout 120.
+#   Gemini timeouts: REQUEST_TIMEOUT_MS = 25_000 per attempt (CHECK_TIMEOUT_MS = 45_000 for the check), one SDK retry; Cloud Run --timeout 120.
 ```
 
 ## 7. Web modules
@@ -288,7 +288,7 @@ export function useRoute(): Route                        // React hook (popstate
 // src/api/client.ts
 export class ApiError extends Error { status: number; code?: string; retryAfterS?: number }
 export function getProject(projectId: string): Promise<ProjectManifest>
-export function postCheck(photo: Blob, render: Blob, ctx: CheckContext): Promise<CheckResponse>   // 120 s timeout
+export function postCheck(photo: Blob, render: Blob, ctx: CheckContext, overlay?: Blob | null): Promise<CheckResponse>   // 120 s timeout
 export function getSavedResult(sampleId: string): Promise<CheckResult>
 export function fetchRunImage(runId: string, name: 'photo.jpg' | 'render.png'): Promise<string>   // object URL
 export function ask(req: AskRequest): Promise<AskAnswer>
