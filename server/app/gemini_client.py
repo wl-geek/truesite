@@ -42,10 +42,10 @@ FALLBACK_MODEL_IDS = tuple(m.strip() for m in os.environ.get("GEMINI_FALLBACK_MO
                            .split(",") if m.strip())
 REQUEST_TIMEOUT_MS = 25_000  # HttpOptions.timeout is in MILLISECONDS
 # A 25-mark check writes about 2,000-2,600 tokens: 12-20 s, but now and then a request hangs (504 DEADLINE_EXCEEDED,
-# 17 Oct 2026). Each attempt gets 40 s and a hung one is tried once more on the same model (CHECK_DEADLINE_RETRIES):
-# 80 s at worst, inside Cloud Run's 120 s. The per-request HttpOptions replace the client's, so the SDK's own retry is
+# 17 Oct 2026; the busiest view, P3, hung twice at the 40 s first set here). Each attempt gets 50 s and a hung one is
+# tried once more on the same model (CHECK_DEADLINE_RETRIES): 100 s at worst, inside Cloud Run's 120 s. The per-request HttpOptions replace the client's, so the SDK's own retry is
 # off for the check (attempts=1) and that retry is the only one.
-CHECK_TIMEOUT_MS = 40_000
+CHECK_TIMEOUT_MS = 50_000
 CHECK_DEADLINE_RETRIES = 1
 MAX_OUTPUT_TOKENS = 8_192  # caps response + thinking tokens together (cost guard)
 ASK_MAX_OUTPUT_TOKENS = 2_048  # Ask (<= 600 chars) and Draft (<= 780 chars) plus LOW thinking

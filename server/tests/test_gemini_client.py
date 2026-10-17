@@ -364,7 +364,7 @@ def test_wire_request_gemini_api():
     (req,) = sent
     assert str(req.url) == "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent"
     assert req.headers["x-goog-api-key"] == "TEST-KEY"
-    assert req.headers["x-server-timeout"] == "40"  # the check's own CHECK_TIMEOUT_MS, 40_000 ms -> 40 s
+    assert req.headers["x-server-timeout"] == "50"  # the check's own CHECK_TIMEOUT_MS, 50_000 ms -> 50 s
     body = json.loads(req.content)
     parts = body["contents"][0]["parts"]
     assert [("text" if "text" in p else p["inlineData"]["mime_type"]) for p in parts] == [
@@ -407,8 +407,8 @@ def test_a_hung_check_is_tried_once_more_on_the_same_model():
 
 def test_the_check_sets_its_own_deadline_and_no_sdk_retry():
     cfg = gc.build_check_request(PHOTO, RENDER, CONTEXT)["config"]
-    assert cfg.http_options.timeout == gc.CHECK_TIMEOUT_MS == 40_000
-    assert cfg.http_options.retry_options.attempts == 1  # the retry above is the only one: 2 x 40 s at most
+    assert cfg.http_options.timeout == gc.CHECK_TIMEOUT_MS == 50_000
+    assert cfg.http_options.retry_options.attempts == 1  # the retry above is the only one: 2 x 50 s at most
 
 
 def test_asks_are_not_retried_on_a_deadline_here():

@@ -271,7 +271,7 @@ def create_app(settings: Settings | None = None, *, store: Store | None = None, 
 #   Blocking work (Gemini, store) runs in the threadpool (plain def endpoints or run_in_threadpool).
 #   Middleware, outermost first: SecurityHeadersMiddleware (app/security_headers.py), BodySizeLimitMiddleware, GZip.
 #   422s keep FastAPI's body and loc paths; NaN, Infinity or 1e999 echoed in `input` come back as "NaN"/"Infinity"/"-Infinity".
-#   Gemini timeouts: REQUEST_TIMEOUT_MS = 25_000 per attempt (CHECK_TIMEOUT_MS = 40_000 for the check, no SDK retry, one retry of a hung request on the same model), one SDK retry; Cloud Run --timeout 120.
+#   Gemini timeouts: REQUEST_TIMEOUT_MS = 25_000 per attempt (CHECK_TIMEOUT_MS = 50_000 for the check, no SDK retry, one retry of a hung request on the same model), one SDK retry; Cloud Run --timeout 120.
 ```
 
 ## 7. Web modules
