@@ -134,7 +134,7 @@ Rebuild the room model after replacing `bim/models/room1/model.ifc` with `make m
 | Suite | Command | Result (17 Oct) |
 |---|---|---|
 | BIM pipeline (pytest) | `cd bim && uv run pytest -q` | 143 passed |
-| Server (pytest, Gemini mocked) | `cd server && uv run pytest -q` | 476 passed, 9 skipped (they need the Firestore emulator) |
+| Server (pytest, Gemini mocked) | `cd server && uv run pytest -q` | 517 passed, 9 skipped (they need the Firestore emulator) |
 | Web (vitest) and types | `cd web && npx vitest run && npx tsc -b` | 436 passed in 72 files; `tsc -b` clean |
 | End to end (Playwright) | in `web/e2e`, below | 124 passed, 15 skipped |
 
