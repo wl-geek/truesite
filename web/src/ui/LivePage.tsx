@@ -79,10 +79,10 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   const [camStopped, setCamStopped] = useState(false)
   const [starting, setStarting] = useState(false)
   const [running, setRunning] = useState(false)
-  // Live AR is made for tablets and phones: on a laptop or PC, recommend switching once per visit.
+  // Live AR is made for tablets and phones: on a laptop or PC, the popup opens every time this page does.
   const handheld = useMemo(() => isHandheld(), [])
-  const [deviceTip, setDeviceTip] = useState(() => !handheld && !sessionFlag('truesite.deviceTip'))
-  const closeDeviceTip = useCallback(() => { setDeviceTip(false); sessionFlag('truesite.deviceTip', true) }, [])
+  const [deviceTip, setDeviceTip] = useState(() => !handheld)
+  const closeDeviceTip = useCallback(() => setDeviceTip(false), [])
   const [state, setState] = useState<OverlayState | null>(null)
   const [checking, setChecking] = useState(false)
   const [checkError, setCheckError] = useState<string | null>(null)
@@ -733,14 +733,4 @@ function startLabel(projectName: string, anchor: Anchor): string {
   const name = projectName.replace(/\s*\(1:1\)$/, '')
   const vp = anchor.project_id === 'site' ? SITE_VIEWPOINTS.find((v) => v.id === anchor.anchor_id) : undefined
   return `${name} · ${vp ? `${vp.id} ${vp.name}` : anchor.anchor_id}`
-}
-
-/** Read or set a once-per-visit flag (sessionStorage can throw in private modes: then the tip just shows again). */
-function sessionFlag(key: string, value?: boolean): boolean {
-  try {
-    if (value) sessionStorage.setItem(key, '1')
-    return sessionStorage.getItem(key) === '1'
-  } catch {
-    return false
-  }
 }
