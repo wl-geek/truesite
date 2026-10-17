@@ -24,11 +24,11 @@
     ],
     "t": [
       0,
-      2.072975822842094,
-      9.271611037889379
+      0.8255056779355382,
+      3.4027254334865438
     ]
   },
-  "captured_at": "2026-10-17T10:21:50.291Z",
+  "captured_at": "2026-10-17T12:52:41.433Z",
   "simulated": true,
   "staged": [
     "RC column C2: not cast yet: only its rebar cage stands",
