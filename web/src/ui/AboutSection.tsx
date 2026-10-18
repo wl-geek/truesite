@@ -86,17 +86,17 @@ export function AboutSection() {
           <div className="about-people">
             <figure>
               <img src="/media/team-wai.jpg" alt="" width="72" height="72" />
-              <figcaption><strong>Wai Lin</strong><span>Team lead: product and code</span></figcaption>
+              <figcaption><strong>Wai Lin (Leon)</strong><span>Team lead: product and code</span></figcaption>
             </figure>
             <figure>
               <img src="/media/team-michael.jpg" alt="" width="72" height="72" />
-              <figcaption><strong>Aung Nyein Chan (Michael)</strong><span>Architect: BIM model, field validation</span></figcaption>
+              <figcaption><strong>Aung Nyein Chan (Michael)</strong><span>Also Lin-Chiang Lee</span><span>Architect: BIM model, field validation</span></figcaption>
             </figure>
           </div>
           <p className="about-links">
             <a className="btn btn-accent btn-lg" href="/media/TrueSite-deck.pdf" download><LinkIcon d={DOWNLOAD} />Download the pitch deck</a>
-            <a className="btn btn-ghost btn-lg" href={DEMO_YOUTUBE_URL} target="_blank" rel="noopener noreferrer"><LinkIcon d={PLAY} />Watch the demo on YouTube</a>
             <a className="btn btn-ghost btn-lg" href="https://github.com/wl-geek/truesite" target="_blank" rel="noopener noreferrer"><LinkIcon d={CODE} />Read the code on GitHub</a>
+            <a className="btn btn-youtube btn-lg" href={DEMO_YOUTUBE_URL} target="_blank" rel="noopener noreferrer"><LinkIcon d={PLAY} />Watch the demo on YouTube</a>
           </p>
         </div>
       </div>
