@@ -73,7 +73,7 @@ export function HomePage() {
         </div>
         <video className="home-video" controls playsInline preload="none" poster="/media/truesite-demo-poster.jpg" width={1920} height={1080}>
           <source src="/media/truesite-demo.mp4" type="video/mp4" />
-          <track kind="captions" src="/media/truesite-demo.vtt" srcLang="en" label="English" default />
+          <track kind="captions" src="/media/truesite-demo.vtt" srcLang="en" label="English" />
         </video>
       </section>
 
