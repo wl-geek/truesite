@@ -46,7 +46,7 @@ Ask Gemini about any element: it answers only from that element’s own BIM data
 
 12
 00:01:29.900 --> 00:01:46.900
-The 3D model viewer: tap an element, ask Gemini about it, and see the last check’s findings and saved issues on the model.
+The 3D model viewer: orbit the whole model, zoom in to a column’s rebar cage, switch to plan view or X-ray, ask Gemini about any element, and tap a check finding to light it up on the model.
 
 13
 00:01:47.300 --> 00:01:52.300
