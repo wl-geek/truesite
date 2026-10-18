@@ -157,6 +157,28 @@ test.describe('start page', () => {
     }
   })
 
+  test('a shared link gets a preview: title, description and a 1200 x 630 image that is served', async ({ request }) => {
+    const html = await (await request.get('/')).text() // what a link preview reads: the page as served, no JavaScript
+    const meta = (key: string) => new RegExp(`<meta (?:property|name)="${key}" content="([^"]+)"`).exec(html)?.[1]
+    expect(meta('og:title')).toBe('TrueSite · AR × BIM × AI for construction')
+    expect(meta('og:description')).toMatch(/Gemini/)
+    expect(meta('twitter:card')).toBe('summary_large_image')
+    const image = new URL(meta('og:image') ?? '')
+    expect(image.protocol).toBe('https:') // previews need an absolute URL
+    const res = await request.get(image.pathname)
+    expect(res.status()).toBe(200)
+    expect(res.headers()['content-type']).toBe('image/jpeg')
+    const jpeg = await res.body()
+    expect(jpeg.length).toBeLessThan(300 * 1024) // WhatsApp leaves out bigger preview images
+    let size: number[] = []
+    for (let i = 2; i + 9 < jpeg.length && jpeg[i] === 0xff; i += 2 + jpeg.readUInt16BE(i + 2)) {
+      const m = jpeg[i + 1]
+      if (m >= 0xc0 && m <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(m)) { size = [jpeg.readUInt16BE(i + 7), jpeg.readUInt16BE(i + 5)]; break } // start of frame
+    }
+    expect(size).toEqual([1200, 630])
+    expect([meta('og:image:width'), meta('og:image:height')]).toEqual(['1200', '630'])
+  })
+
   test('the nav works from the other pages too: 3D model -> About', async ({ page }) => {
     await page.goto('/model')
     await expect(page.locator('.model-card')).toBeVisible()
