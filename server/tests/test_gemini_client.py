@@ -330,7 +330,7 @@ def test_a_quota_refusal_carries_googles_retry_delay():
     (auth_errors.RefreshError("metadata server busy", retryable=True), "unavailable", None),
 ])
 def test_errors_are_translated(exc, kind, status):
-    client = FakeClient(exc, exc, exc)  # a 429/503 also fails on both fallback models
+    client = FakeClient(exc, exc, exc, exc)  # a 429/503/504 also fails on both fallback models (a 504 twice on the last)
     with pytest.raises(gc.GeminiError) as info:
         gc.check_asbuilt(PHOTO, RENDER, CONTEXT, client=client)
     assert (info.value.kind, info.value.status) == (kind, status)
@@ -393,16 +393,54 @@ def test_wire_request_with_the_outline_image():
     assert parts[6]["text"].startswith("Numbered elements to check")
 
 
-def test_a_hung_check_is_tried_once_more_on_the_same_model():
-    # A 504 or a timeout is a hung request: one more try on the same model (most checks answer in 12-20 s).
+def test_a_hung_check_moves_on_to_the_next_model():
+    # A 504 or a timeout is a hung request. A hung model tends to stay hung (18 Oct: two checks in a row hung after
+    # about 22 s each), so the check tries the next model; the last one gets one more try of its own.
     hung = _api_error(genai_errors.ServerError, 504, "DEADLINE_EXCEEDED")
     client = FakeClient(hung, fake_response(GOOD_CHECK))
     out = gc.check_asbuilt(PHOTO, RENDER, CONTEXT, client=client)
-    assert out["result"] == GOOD_CHECK and [c["model"] for c in client.models.calls] == [gc.MODEL_ID, gc.MODEL_ID]
-    client = FakeClient(httpx.ReadTimeout("slow"), hung, fake_response(GOOD_CHECK))
-    with pytest.raises(gc.GeminiError) as info:  # two hung tries: give up, inside Cloud Run's 120 s
+    assert out["result"] == GOOD_CHECK
+    assert [c["model"] for c in client.models.calls] == [gc.MODEL_ID, *gc.FALLBACK_MODEL_IDS[:1]]
+    client = FakeClient(httpx.ReadTimeout("slow"), hung, hung, hung)
+    with pytest.raises(gc.GeminiError) as info:
         gc.check_asbuilt(PHOTO, RENDER, CONTEXT, client=client)
-    assert info.value.kind == "unavailable" and len(client.models.calls) == 2
+    assert info.value.kind == "unavailable"
+    assert [c["model"] for c in client.models.calls] == [gc.MODEL_ID, *gc.FALLBACK_MODEL_IDS, gc.FALLBACK_MODEL_IDS[-1]]
+
+
+def test_a_check_stays_inside_its_budget(monkeypatch):
+    # Every attempt hangs for its whole timeout: each gets what is left of the 105 s, none starts with under 15 s left.
+    now = [1000.0]
+    monkeypatch.setattr(gc.time, "monotonic", lambda: now[0])
+    hung = _api_error(genai_errors.ServerError, 504, "DEADLINE_EXCEEDED")
+    client = FakeClient(hung, hung, hung, hung)
+    real = client.models.generate_content
+
+    def slow(**kwargs):
+        now[0] += kwargs["config"].http_options.timeout / 1000
+        return real(**kwargs)
+    client.models.generate_content = slow
+    with pytest.raises(gc.GeminiError):
+        gc.check_asbuilt(PHOTO, RENDER, CONTEXT, client=client)
+    timeouts = [c["config"].http_options.timeout for c in client.models.calls]
+    assert timeouts == [50_000, 50_000]  # 100 s used; 5 s left is too little for a third
+    assert now[0] - 1000.0 <= gc.CHECK_BUDGET_S < 120
+
+
+def test_a_late_attempt_gets_only_the_time_left(monkeypatch):
+    now = [0.0]
+    monkeypatch.setattr(gc.time, "monotonic", lambda: now[0])
+    hung = _api_error(genai_errors.ServerError, 504, "DEADLINE_EXCEEDED")
+    client = FakeClient(hung, fake_response(GOOD_CHECK))
+    real = client.models.generate_content
+
+    def after_70s(**kwargs):
+        now[0] += 70.0
+        return real(**kwargs)
+    client.models.generate_content = after_70s
+    out = gc.check_asbuilt(PHOTO, RENDER, CONTEXT, client=client)
+    assert out["result"] == GOOD_CHECK
+    assert [c["config"].http_options.timeout for c in client.models.calls] == [50_000, 35_000]
 
 
 def test_the_check_sets_its_own_deadline_and_no_sdk_retry():
