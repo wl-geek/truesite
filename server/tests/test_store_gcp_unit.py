@@ -4,6 +4,8 @@ production store runs in `make test`. The shared behaviour is in test_store_cont
 only the Firestore store does: document ids, expire_at, and the routes that use it."""
 from __future__ import annotations
 
+import sys
+import types
 import uuid
 from datetime import datetime, timedelta, timezone
 
@@ -97,3 +99,49 @@ def test_check_draft_and_issue_routes_work_on_the_firestore_store(client, fake_d
     listed = client.get("/api/issues", headers={"X-Session-Id": session}).json()
     assert [i["title"] for i in listed["issues"]] == ["Door D-01 about 30 cm right"]
     assert set(fake_db.docs["usage"]) == {"2026-10-15", "2026-10-15-ask"}
+
+
+def _fake_firebase_admin(monkeypatch, client) -> dict:
+    """A stand-in firebase_admin package that records how the store sets it up."""
+    calls: dict = {"init": []}
+    apps: dict = {}
+    admin = types.ModuleType("firebase_admin")
+    admin_firestore = types.ModuleType("firebase_admin.firestore")
+
+    def get_app(name: str = "[DEFAULT]"):
+        if name not in apps:
+            raise ValueError("The default Firebase app does not exist.")
+        return apps[name]
+
+    def initialize_app(credential=None, options=None, name: str = "[DEFAULT]"):
+        calls["init"].append({"credential": credential, "options": options})
+        apps[name] = f"app:{name}"
+        return apps[name]
+
+    def firestore_client(app=None, database_id=None):
+        calls["client"] = (app, database_id)
+        return client
+
+    admin.get_app, admin.initialize_app = get_app, initialize_app
+    admin_firestore.client = firestore_client
+    admin.firestore = admin_firestore
+    monkeypatch.setitem(sys.modules, "firebase_admin", admin)
+    monkeypatch.setitem(sys.modules, "firebase_admin.firestore", admin_firestore)
+    return calls
+
+
+def test_without_a_client_the_store_reaches_firestore_through_the_firebase_admin_sdk(monkeypatch, fake_db) -> None:
+    calls = _fake_firebase_admin(monkeypatch, fake_db)
+    store = FirestoreGcsStore(bucket="b", project="truesite-p", database="(default)", storage_client=FakeStorage())
+    assert store.db is fake_db
+    # Application Default Credentials (credential=None): on Cloud Run, the service account.
+    assert calls["init"] == [{"credential": None, "options": {"projectId": "truesite-p"}}]
+    assert calls["client"] == ("app:[DEFAULT]", "(default)")
+
+
+def test_a_second_store_reuses_the_firebase_app(monkeypatch, fake_db) -> None:
+    calls = _fake_firebase_admin(monkeypatch, fake_db)
+    FirestoreGcsStore(bucket="b", project="truesite-p", storage_client=FakeStorage())
+    FirestoreGcsStore(bucket="b", project="truesite-p", database="other-db", storage_client=FakeStorage())
+    assert len(calls["init"]) == 1  # initialize_app twice would raise in the real SDK
+    assert calls["client"] == ("app:[DEFAULT]", "other-db")

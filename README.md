@@ -39,7 +39,7 @@ flowchart LR
   SNAP -->|photo + render + outlines + visible elements| RUN
   subgraph GCP["Google Cloud"]
     RUN["Cloud Run: FastAPI<br/>limits · validation · severity"] --> GEM["Gemini 3.8 Flash<br/>on Agent Platform (global)"]
-    RUN --> FS[(Firestore:<br/>runs · issues · daily cap)]
+    RUN --> FS[(Cloud Firestore via the<br/>Firebase Admin SDK:<br/>runs · issues · daily cap)]
     RUN --> GCS[(Cloud Storage:<br/>photos · renders, 30-day lifecycle)]
   end
   GEM -->|JSON findings| RUN
@@ -61,7 +61,7 @@ flowchart LR
 **Google Cloud:**
 - **Cloud Run** (`asia-southeast1`): API plus web app on one origin.
 - **Gemini 3.8 Flash on Gemini Enterprise Agent Platform** (`global`): structured JSON output, low thinking, high media resolution. When it is busy (429 or 503) or a check hangs (504 or a timeout), the server tries Gemini 3.5 Flash, then 3.5 Flash-Lite, inside a 105-second budget per check.
-- **Firestore**: check runs, issues, and an atomic daily cap counter.
+- **Cloud Firestore, through the Firebase Admin SDK**: check runs, issues, and an atomic daily cap counter.
 - **Cloud Storage**: photos and renders, with a 30-day lifecycle.
 - **Cloud Build / Artifact Registry**: source deploys.
 - **Secret Manager**: only for the API-key fallback.
@@ -135,7 +135,7 @@ Rebuild the site model from `bim/truesite_bim/site.py` with `make models`.
 | Suite | Command | Result (18 Oct) |
 |---|---|---|
 | BIM pipeline (pytest) | `cd bim && uv run pytest -q` | 88 passed |
-| Server (pytest, Gemini mocked) | `cd server && uv run pytest -q` | 522 passed, 9 skipped (they need the Firestore emulator) |
+| Server (pytest, Gemini mocked) | `cd server && uv run pytest -q` | 529 passed, 9 skipped (they need the Firestore emulator) |
 | Web (vitest) and types | `cd web && npx vitest run && npx tsc -b` | 549 passed; `tsc -b` clean |
 | End to end (Playwright) | in `web/e2e`, below | 164 passed, 4 skipped (desktop, iPad, iPhone, limits, live AR) |
 
@@ -174,7 +174,7 @@ On Google Cloud, in this order (see `infra/gcloud.sh`):
 | Path | What |
 |---|---|
 | `web/` | Vite + React + three.js app: pose maths (`src/pose`), QR worker, AR modes and sensor fusion (`src/scene`), check pipeline (`src/check`), virtual demo (`src/sim`), UI; the Playwright suite in `e2e/` |
-| `server/` | FastAPI on Cloud Run: Gemini client, validation, severity, limits, Firestore and Cloud Storage store |
+| `server/` | FastAPI on Cloud Run: Gemini client, validation, severity, limits, Firestore (through the Firebase Admin SDK) and Cloud Storage store |
 | `bim/` | Offline pipeline: IFC → glb with element GUIDs, `elements.json`, the site building (`bim/truesite_bim/site.py`) and its layout plan, printable QR sheets (ifcopenshell) |
 | `eval/` | Overlay-accuracy and check-quality measurements, and the script that turns them into tables |
 | `infra/` | `gcloud.sh`: setup, deploy and verify on Google Cloud |

@@ -22,6 +22,9 @@ then needs service_account_email + access_token and the IAM signBlob
 permission (roles/iam.serviceAccountTokenCreator on the SA itself). Not worth
 it for <= 4 MB images.
 
+Firestore is reached through the Firebase Admin SDK (`firebase_admin.firestore.client`),
+which hands back the same `google.cloud.firestore.Client`, so the code below is unchanged.
+
 Credentials: Application Default Credentials. On Cloud Run that is the
 service account given with --service-account; locally,
 `gcloud auth application-default login`, or the emulator via
@@ -51,6 +54,18 @@ SAVED = "saved_results"
 ISSUE_READ_LIMIT = 200
 
 
+def firebase_firestore(project: str | None, database: str) -> firestore.Client:
+    """Cloud Firestore through the Firebase Admin SDK, with Application Default Credentials."""
+    import firebase_admin  # here, so tests that pass their own client never load the SDK
+    from firebase_admin import firestore as admin_firestore
+
+    try:
+        app = firebase_admin.get_app()
+    except ValueError:  # the first store in this process sets up the default app
+        app = firebase_admin.initialize_app(credential=None, options={"projectId": project} if project else None)
+    return admin_firestore.client(app=app, database_id=database)
+
+
 class FirestoreGcsStore:
     def __init__(
         self,
@@ -61,7 +76,7 @@ class FirestoreGcsStore:
         firestore_client: firestore.Client | None = None,
         storage_client: storage.Client | None = None,
     ) -> None:
-        self.db = firestore_client or firestore.Client(project=project, database=database)
+        self.db = firestore_client or firebase_firestore(project, database)
         self._gcs = storage_client or storage.Client(project=project)
         self.bucket_name = bucket
         self._bucket = self._gcs.bucket(bucket)  # no API call

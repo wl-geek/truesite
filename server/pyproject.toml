@@ -12,6 +12,7 @@ dependencies = [
     "httpx==0.28.1",
     "google-cloud-firestore==2.34.1",
     "google-cloud-storage==3.17.0",
+    "firebase-admin==7.7.0",
 ]
 
 [dependency-groups]
