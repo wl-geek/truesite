@@ -1,0 +1,93 @@
+WEBVTT
+
+1
+00:00:00.000 --> 00:00:05.550
+This is TrueSite: the design, standing where you build it.
+
+2
+00:00:05.800 --> 00:00:09.883
+On site, crews build without the model in front of them.
+
+3
+00:00:09.933 --> 00:00:14.017
+In one industry survey, team members lost 14 hours a week to hunting for data, conflicts and rework.
+
+4
+00:00:14.067 --> 00:00:18.150
+Almost half of all rework came from miscommunication and poor project data.
+
+5
+00:00:18.400 --> 00:00:24.050
+TrueSite starts with a printed QR code at a surveyed spot.
+
+6
+00:00:24.100 --> 00:00:29.750
+Scan it with the phone’s camera and TrueSite opens in the browser. Nothing to install.
+
+7
+00:00:30.000 --> 00:00:35.150
+Ten seconds of tilting calibrates the camera.
+
+8
+00:00:35.200 --> 00:00:40.350
+The code’s corners give the pose; the motion sensors hold the model steady and level.
+
+9
+00:00:40.600 --> 00:00:47.750
+Now the building stands at life size, where it will be built.
+
+10
+00:00:47.800 --> 00:00:54.950
+Turn around, look up: it stays put over the real ground.
+
+11
+00:00:55.200 --> 00:01:06.550
+Tap any element to see what it is, its size and its material, straight from the BIM model.
+
+12
+00:01:06.800 --> 00:01:15.450
+The same building at 1:100 on a desk.
+
+13
+00:01:15.500 --> 00:01:24.150
+Ask Gemini about any element: it answers only from that element’s own model data, and shows the fields it used.
+
+14
+00:01:24.400 --> 00:01:32.246
+Our building isn’t built yet, so judges can step into a simulated as-built site with ten defects planted on purpose.
+
+15
+00:01:32.296 --> 00:01:40.142
+Tap Check as-built. Gemini compares three images: your view, the design render with numbered marks, and each element’s design outline.
+
+16
+00:01:40.192 --> 00:01:48.038
+Findings are pinned on the view and scored against what was planted: what Gemini caught and what it missed.
+
+17
+00:01:48.088 --> 00:01:55.934
+Severity and “Why it matters” come from fixed rules, not the model. Every finding is a visual check, not a survey.
+
+18
+00:01:55.984 --> 00:02:03.830
+Gemini drafts the issue in the crew’s language; a person edits and saves it.
+
+19
+00:02:04.080 --> 00:02:11.430
+In the office, the 3D model shows the same findings, saved issues and Ask Gemini.
+
+20
+00:02:11.680 --> 00:02:18.830
+Pose, sensor fusion and rendering run on the phone.
+
+21
+00:02:18.880 --> 00:02:26.030
+Cloud Run serves the app and the API; Gemini 3.8 Flash on Agent Platform does the judging; Firestore and Cloud Storage keep the records. A check costs about US$0.015.
+
+22
+00:02:26.280 --> 00:02:33.430
+TrueSite helps contractors catch mistakes before they’re poured in concrete: less rework, faster sign-off, safer sites.
+
+23
+00:02:33.480 --> 00:02:40.630
+Try it at truesite-1067044308557.asia-southeast1.run.app. The code is at github.com/wl-geek/truesite.

@@ -44,7 +44,7 @@ test.describe('start page', () => {
     await expect(page.getByRole('heading', { level: 1, name: 'See the design where you build. Check the build against it.' })).toBeVisible()
     for (const s of SECTIONS) await expect(page.locator(`section#${s.id}`).getByRole('heading', { name: s.heading, exact: true }).first()).toBeAttached()
     const order = await page.evaluate(() => [...document.querySelectorAll('main section[id]')].map((s) => s.id))
-    expect(order).toEqual(['how', 'live', 'virtual', 'about'])
+    expect(order).toEqual(['demo', 'how', 'live', 'virtual', 'about'])
     await expect(page.getByText('Visual check, not a survey: offsets are rough, in tens of centimetres.')).toBeVisible()
     await expect(page.locator('footer')).toContainText('Google Cloud AI Builder Cup 2026')
     await page.waitForLoadState('networkidle')
@@ -171,6 +171,26 @@ test.describe('start page', () => {
     const res = await request.get('/api/no-such-route')
     expect(res.status()).toBe(404)
     expect(res.headers()['content-type']).toContain('application/json')
+  })
+
+  test('the demo video: the hero link jumps to it; poster, captions and the video are served, the video in byte ranges', async ({ page, request }) => {
+    await page.goto('/')
+    await page.locator('.home-hero').getByRole('link', { name: /Watch the demo video/ }).click()
+    await expect(page).toHaveURL(/#demo$/)
+    const video = page.locator('section#demo video')
+    await expect(video).toBeInViewport()
+    await expect(video.locator('track[kind="captions"][srclang="en"]')).toHaveCount(1)
+    for (const [file, type] of [['/media/truesite-demo-poster.jpg', 'image/jpeg'], ['/media/truesite-demo.vtt', 'text/vtt']]) {
+      const r = await request.get(file)
+      expect(r.status(), file).toBe(200)
+      expect(r.headers()['content-type'], file).toContain(type)
+    }
+    expect((await request.get('/media/truesite-demo.vtt').then((r) => r.text())).startsWith('WEBVTT')).toBe(true)
+    // iPhone Safari plays a video only from a server that answers range requests.
+    const part = await request.get('/media/truesite-demo.mp4', { headers: { Range: 'bytes=0-1023' } })
+    expect(part.status()).toBe(206)
+    expect(part.headers()['content-type']).toContain('video/mp4')
+    expect((await part.body()).length).toBe(1024)
   })
 
   test('a missing sheet is a real 404, not the app saved as a PDF', async ({ request }) => {

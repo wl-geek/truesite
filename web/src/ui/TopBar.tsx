@@ -9,7 +9,8 @@ export const SECTIONS = [
   { id: 'virtual', label: 'Virtual demo', icon: 'M3 21h18M5 21V9l7-5 7 5v12M9 21v-6h6v6' },
   { id: 'about', label: 'About', icon: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 11v6M12 7.5v.01' },
 ] as const
-type SectionId = (typeof SECTIONS)[number]['id'] | 'top'
+/** `demo`: the demo video on the start page, linked from the hero but not listed in the nav. */
+type SectionId = (typeof SECTIONS)[number]['id'] | 'top' | 'demo'
 /** The 3D model viewer, part of the product: a page of its own, listed in the nav after Live AR. */
 export const MODEL_LINK = { path: '/model', label: '3D model', icon: 'M12 3 20 7.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12v9M12 12 4 7.5' }
 

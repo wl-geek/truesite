@@ -6,6 +6,8 @@ Google Cloud AI Builder Cup 2026 (JAPAC) · Theme: **Future of Work & Enterprise
 
 **Live demo:** [truesite-1067044308557.asia-southeast1.run.app](https://truesite-1067044308557.asia-southeast1.run.app) · nothing to install: it runs in the phone's browser.
 
+**Demo video (2:41):** [on the start page](https://truesite-1067044308557.asia-southeast1.run.app/#demo) ([MP4](web/public/media/truesite-demo.mp4)) · **Deck:** [TrueSite-deck.pdf](docs/TrueSite-deck.pdf)
+
 ---
 
 ## Try it in 60 seconds (no printer, no site)
@@ -58,7 +60,7 @@ flowchart LR
 
 **Google Cloud:**
 - **Cloud Run** (`asia-southeast1`): API plus web app on one origin.
-- **Gemini 3.8 Flash on Gemini Enterprise Agent Platform** (`global`): structured JSON output, low thinking, high media resolution. When it is busy (429 or 503), the server tries Gemini 3.5 Flash, then 3.5 Flash-Lite.
+- **Gemini 3.8 Flash on Gemini Enterprise Agent Platform** (`global`): structured JSON output, low thinking, high media resolution. When it is busy (429 or 503) or a check hangs (504 or a timeout), the server tries Gemini 3.5 Flash, then 3.5 Flash-Lite, inside a 105-second budget per check.
 - **Firestore**: check runs, issues, and an atomic daily cap counter.
 - **Cloud Storage**: photos and renders, with a 30-day lifecycle.
 - **Cloud Build / Artifact Registry**: source deploys.
