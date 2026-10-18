@@ -5,73 +5,73 @@ WEBVTT
 TrueSite: see the design where you build. Check the build against it.
 
 2
-00:00:05.900 --> 00:00:14.900
+00:00:05.900 --> 00:00:12.900
 The problem: crews build without the model in front of them. Team members lose 14+ hours a week to hunting for data and rework, and 48% of rework comes from miscommunication and poor project data.
 
 3
-00:00:15.300 --> 00:00:22.300
+00:00:13.300 --> 00:00:18.800
 Why now: BIM is becoming the rule, and AI makes it work on site. TrueSite brings AR, BIM and AI together.
 
 4
-00:00:22.700 --> 00:00:26.700
+00:00:19.200 --> 00:00:22.700
 One prototype, every part of it live: the start page, live AR, the desk sheet, the 3D model, the virtual demo and the Gemini check.
 
 5
-00:00:27.100 --> 00:00:35.100
+00:00:23.100 --> 00:00:32.600
 Live AR, step 1: scan the printed QR code with the phone’s camera. TrueSite opens in the browser, with nothing to install.
 
 6
-00:00:35.500 --> 00:00:42.500
+00:00:33.000 --> 00:00:42.000
 Step 2: ten seconds of tilting calibrates the camera, and the code’s corners give the camera’s exact pose.
 
 7
-00:00:42.900 --> 00:00:56.900
+00:00:42.400 --> 00:01:00.400
 Step 3: the building at life size, where it will stand, held steady by the motion sensors while you turn and look up.
 
 8
-00:00:57.300 --> 00:01:06.300
-Step 4: tap any element for its type, size and material, straight from the BIM model.
+00:01:00.800 --> 00:01:12.300
+Step 4: tap any element, a column or a guardrail, for its type, size and material, straight from the BIM model.
 
 9
-00:01:06.700 --> 00:01:11.700
+00:01:12.700 --> 00:01:16.700
 View controls keep it readable: transparency, a section cut, view distance and layers.
 
 10
-00:01:12.100 --> 00:01:19.100
+00:01:17.100 --> 00:01:22.100
 Desk mode: the whole building on a printed desk sheet, at 1:100.
 
 11
-00:01:19.500 --> 00:01:29.500
+00:01:22.500 --> 00:01:33.500
 Ask Gemini about any element: it answers only from that element’s own BIM data, and shows the fields it used.
 
 12
-00:01:29.900 --> 00:01:46.900
+00:01:33.900 --> 00:01:57.900
 The 3D model viewer: orbit the whole model, zoom in to a column’s rebar cage, switch to plan view or X-ray, ask Gemini about any element, and tap a check finding to light it up on the model.
 
 13
-00:01:47.300 --> 00:01:52.300
+00:01:58.300 --> 00:02:03.800
 No building yet, so we built a whole 3D virtual site with ten defects planted on purpose, for judges to test on.
 
 14
-00:01:52.700 --> 00:01:59.700
+00:02:04.200 --> 00:02:15.200
 Look around the simulated as-built site, and switch the BIM overlay off and on.
 
 15
-00:02:00.100 --> 00:02:20.100
+00:02:15.600 --> 00:02:39.600
 Check as-built with live Gemini: it compares your view, the design rendered from the same pose with numbered marks, and the design outlines. Results are scored against what was planted, with severity set by fixed rules.
 
 16
-00:02:20.500 --> 00:02:28.500
+00:02:40.000 --> 00:02:49.000
 Gemini drafts the issue in the crew’s language, and a person edits and saves it.
 
 17
-00:02:28.900 --> 00:02:38.900
-Under the hood: the phone does the vision. Cloud Run, Gemini 3.8 Flash, Firestore and Cloud Storage do the judging.
+00:02:49.400 --> 00:03:03.400
+Under the hood: the phone does the vision. Cloud Run, Gemini 3.8 Flash, Cloud Firestore through the Firebase Admin SDK, and Cloud Storage do the judging.
 
 18
-00:02:39.300 --> 00:02:46.300
+00:03:03.800 --> 00:03:09.300
 Free to view, priced per field seat, pennies to run. Less rework, faster sign-off, safer sites.
 
 19
-00:02:46.700 --> 00:02:53.000
+00:03:09.700 --> 00:03:14.800
 Built by Wai Lin and Aung Nyein Chan (Michael). Try it at truesite-1067044308557.asia-southeast1.run.app.
