@@ -42,7 +42,7 @@ export function HomePage() {
               <a href="/#live" className="btn btn-accent btn-lg" onClick={jumpTo('live')}>Start live AR</a>
               <div className="home-cta-stack">
                 <a href="/#virtual" className="btn btn-ghost btn-lg" onClick={jumpTo('virtual')}>Try the virtual demo</a>
-                <span className="home-cta-note">For judges to understand the concept&nbsp;· <span className="nowrap">no printing, no site visit</span></span>
+                <span className="home-cta-note">The quickest way to try it&nbsp;· <span className="nowrap">no printing, no site visit</span></span>
               </div>
             </div>
             <a href="/#demo" className="home-watch" onClick={jumpTo('demo')}><Icon name="play" />Watch the demo video (3:15)</a>
@@ -58,7 +58,7 @@ export function HomePage() {
 
       <div className="home-theme">
         <p className="home-wrap"><span className="home-theme-tag">Future of Work</span>
-          The future of construction work: the design in every hand, an AI check on every pour.</p>
+          Future of Work on site: the design on every crew phone, and a Gemini check before the pour.</p>
       </div>
 
       <section id="demo" className="home-section home-wrap" aria-labelledby="demo-title">
@@ -77,7 +77,7 @@ export function HomePage() {
         </video>
         <p className="home-deck">
           <a className="btn" href="/media/TrueSite-deck.pdf" download><Icon name="download" />Download the pitch deck</a>
-          <span>PDF · 19 slides: the problem, the product, the architecture and the business case</span>
+          <span>PDF · 15 slides: the problem, the product, the architecture and the business case</span>
         </p>
       </section>
 
@@ -86,8 +86,8 @@ export function HomePage() {
         <h2 id="how-title">How it works</h2>
         <ol className="home-steps">
           <Step n={1} tag="AR" icon="qr" title="Scan the code">
-            Each code is fixed at a known spot and knows exactly where it sits in the model, so the camera view lines up
-            with the design.
+            Each code is fixed at a surveyed spot, and TrueSite knows where it sits in the model, so the camera view
+            lines up with the design.
           </Step>
           <Step n={2} tag="BIM" icon="cube" title="See the design at true scale">
             The BIM model stands where it will be built, every element coloured by type and carrying its own data. Turn on
@@ -95,7 +95,7 @@ export function HomePage() {
           </Step>
           <Step n={3} tag="AI" icon="scan" title="Check as-built with Gemini">
             Gemini compares your photo with the design, pins what is off and drafts the issue, in the crew's language
-            if needed. At the end of the day it writes the site report. A person approves both.
+            if needed. At the end of the day it writes the site report. A person edits and saves each issue.
           </Step>
         </ol>
         <p className="home-fineprint">Visual check, not a survey: offsets are rough, in tens of centimetres.</p>
@@ -163,7 +163,7 @@ export function HomePage() {
                   <span className="vp-text">
                     <span className="vp-title"><span className="vp-id">{v.id}</span>{v.name}</span>
                     <span className="vp-shows">{v.shows}</span>
-                    <span className="vp-meta">Stand at ({fmt(v.stand)}) · facing {compass(v.look)}</span>
+                    <span className="vp-meta"><span className="nowrap">Stand at ({fmt(v.stand)}) m</span> · <span className="nowrap">facing {compass(v.look)}</span></span>
                   </span>
                   <span className="vp-go"><span className="vp-go-label">Open live AR</span><Icon name="arrow" /></span>
                 </Link>
@@ -173,7 +173,7 @@ export function HomePage() {
 
           <ol className="home-protocol" aria-label="At the sheet">
             <li>Tap <strong>Start camera</strong> and allow camera and motion access.</li>
-            <li><strong>Lock</strong> about 0.7 m from the code, a little to one side, until it says Alignment: Good.</li>
+            <li><strong>Lock</strong> about 0.7 m from the code, a little to one side, until it says <span className="nowrap">Alignment: Good</span>.</li>
             <li><strong>Step back</strong> to the X, then turn slowly on the spot. Don't walk.</li>
           </ol>
 
@@ -181,9 +181,9 @@ export function HomePage() {
             <summary>Print and set out the sheets</summary>
             <div className="home-details-body">
               <div className="home-downloads">
-                <a className="btn btn-primary" href="/sheets/site-layout.pdf" download><Icon name="download" />Layout plan (Letter)</a>
+                <a className="btn btn-primary" href="/sheets/site-layout.pdf" download><Icon name="download" />Download the layout plan</a>
                 {SITE_VIEWPOINTS.map((v) => (
-                  <a key={v.id} className="btn" href={`/sheets/site-${v.id}.pdf`} download><Icon name="download" />Sheet {v.id}</a>
+                  <a key={v.id} className="btn" href={`/sheets/site-${v.id}.pdf`} download><Icon name="download" />Download sheet {v.id}</a>
                 ))}
               </div>
               <ul className="home-checklist">
@@ -227,7 +227,7 @@ export function HomePage() {
           <ol className="sim-steps">
             <li><strong>Pick a QR spot.</strong> You stand on its X, where the sheet's code places you in the model.</li>
             <li><strong>Look around.</strong> Drag, or turn your phone. You stay on the spot, as you would on site.</li>
-            <li><strong>Check as-built.</strong> Gemini pins what's off on your view and drafts the issue.</li>
+            <li><strong>Check as-built.</strong> Gemini pins what's off on your view; Draft issue turns a finding into an issue.</li>
           </ol>
           <ul className="vp-grid">
             {SITE_VIEWPOINTS.map((v) => (
@@ -251,7 +251,7 @@ export function HomePage() {
       <footer className="home-footer">
         <div className="home-wrap home-footer-row">
           <span className="home-footer-brand"><img src="/favicon.svg" alt="" width="20" height="20" />TrueSite</span>
-          <span>Built by Wai Lin and Aung Nyein Chan for the Google Cloud AI Builder Cup 2026</span>
+          <span>Built by Wai Lin (team lead) and Aung Nyein Chan (Michael) for the Google Cloud AI Builder Cup 2026</span>
           <a href="https://github.com/wl-geek/truesite" target="_blank" rel="noopener noreferrer">Source on GitHub</a>
         </div>
       </footer>

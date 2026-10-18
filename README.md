@@ -6,24 +6,25 @@ Google Cloud AI Builder Cup 2026 (JAPAC) · Theme: **Future of Work & Enterprise
 
 **Live demo:** [truesite-1067044308557.asia-southeast1.run.app](https://truesite-1067044308557.asia-southeast1.run.app) · nothing to install: it runs in the phone's browser.
 
-**Demo video (3:15):** [on the start page](https://truesite-1067044308557.asia-southeast1.run.app/#demo) ([MP4](web/public/media/truesite-demo.mp4)) · **Deck:** [TrueSite-deck.pdf](docs/TrueSite-deck.pdf) (also a download on the start page)
+**Demo video (3:15):** [YouTube](https://youtu.be/M8zh02kMtk4) · also [on the start page](https://truesite-1067044308557.asia-southeast1.run.app/#demo) ([MP4](web/public/media/truesite-demo.mp4)) · **Deck:** [TrueSite-deck.pdf](docs/TrueSite-deck.pdf) (also a download on the start page)
 
 ---
 
-## Try it in 60 seconds (no printer, no site)
+## Try it in a few minutes (no printer, no site)
 
 1. Open the live demo. On the start page, tap **Try the virtual demo**, then pick a QR spot, P1 to P4 ("Step in at P1"). You stand on that spot inside a **simulated as-built site**: a realistic 3D model of the building as it was put up, with ten defects planted on purpose (`web/src/sim/asBuilt.ts`). Look around (drag, or turn your phone), then tap **Check as-built**. TrueSite takes your view as the site photo and sends Gemini three images: your view, the BIM design rendered from the same spot with numbered marks, and your view with each marked element's design outline. The result scores Gemini against what was planted in that view, so you can see what it caught and what it missed.
 2. Read the findings. Each one has an evidence box on the photo, a rough offset ("about 30 cm right"), a severity set by TrueSite from the element type, and a "Why it matters" note from fixed rules, not from the model.
 3. Tap **Draft issue** on a deviation. Gemini drafts it, in the crew's language if you pick one. You edit it and tap **Save issue**: it is saved with its check and finding, listed under the results, and **Copy issue** puts it on the clipboard for your issue tracker. After a check, **Write today's site report** has Gemini summarise this visit's checks, safety first.
-4. Back on the start page, tap **Open the 3D model**. The last check's findings are pinned on it. Tap any element and **Ask** a question ("What concrete grade is this beam?"). Answers come only from that element's model data, and the fields used are shown.
-5. *With a printer:* in Live AR, under **On your desk · 1:100**, tap **Download the desk sheet**, print it on US Letter at 100% and scan the code with your phone's camera. The building stands on the page as a 1:100 model. For life size on a car park, **Layout plan (Letter)** sets out the four sheets P1–P4 ([filming guide](docs/demo/ipad-ar-filming.md)). Opened on a laptop, a live AR page shows a popup with a QR code of the page for your phone, and the sheet to print.
+4. Back on the start page, tap **Open the 3D model**. The last check's findings are pinned on it. Tap any element and **Ask Gemini** a question ("What concrete grade is this beam?"). Answers come only from that element's model data, and the fields used are shown.
+
+*With a printer:* in Live AR, under **On your desk · 1:100**, tap **Download the desk sheet**, print it on US Letter at 100% and scan the code with your phone's camera. The building stands on the page as a 1:100 model. For life size on a car park, **Download the layout plan** sets out the four sheets P1–P4 ([filming guide](docs/demo/ipad-ar-filming.md)). Opened on a laptop, a live AR page shows a popup with a QR code of the page for your phone, and the sheet to print.
 
 
-> The site's defects are planted on purpose (`web/src/sim/asBuilt.ts`), so there is something real to find. The building doesn't exist yet, so every view of it is a simulated render of our own model, not a photo of a real site. That covers the virtual site and the four still photos at `/samples?photos` (`web/scripts/make-samples.mjs`, each labelled "Simulated photo"). Findings are labelled **"Visual check, not a survey."**
+> The site's defects are planted on purpose (`web/src/sim/asBuilt.ts`), so there is something to find. The building doesn't exist yet, so every view of it is a simulated render of our own model, not a photo of a real site. That covers the virtual site and the four still photos at `/samples?photos` (`web/scripts/make-samples.mjs`, each labelled "Simulated photo"). Findings are labelled **"Visual check, not a survey."**
 
 ## Why
 
-Field engineers make build decisions without the model in front of them, and mistakes surface as rework weeks later. In a survey of nearly 600 construction leaders, project team members spent more than 14 hours a week on hunting for project data, resolving conflicts and rework, and miscommunication and poor project data caused 48% of all rework on US jobsites ([FMI and PlanGrid, 2018](https://www.phcppros.com/articles/7960-research-identifies-factors-costing-construction-industry-177-billion-annually)). TrueSite puts the BIM model and a second pair of eyes where the work happens: open a link, scan a code, check.
+Field engineers make build decisions without the model in front of them, and mistakes surface as rework weeks later. In a survey of nearly 600 construction leaders, project team members lost more than 14 hours a week to hunting for project data, resolving conflicts and rework. Miscommunication and poor project data caused 48% of all rework on US jobsites ([FMI and PlanGrid, 2018](https://www.phcppros.com/articles/7960-research-identifies-factors-costing-construction-industry-177-billion-annually)). TrueSite puts the BIM model and a second pair of eyes where the work happens: scan a code, see the model, check the build.
 
 ## How it works
 
@@ -98,9 +99,9 @@ While the camera runs, the view is full screen with an Exit button. **Transparen
   - Unsure judgements are shown as "Can't judge from this photo".
   - Everything Gemini writes is a draft for a person.
 - **The photo is untrusted input.** Gemini has no tools and no write access. Its output is schema-checked, element references must match the request, and severity is computed by code. Text visible in the photo is treated as scenery.
-- **No accounts.** Each browser gets a random session id; checks, photos and issues are visible only to that session. Seeded examples are read-only.
+- **No accounts.** Each browser gets a random session id; checks, photos and issues are visible only to that session.
 - **Limits** on the deployed service:
-  - 30 checks per IP per hour (judges share office IPs) and 300 a day across all users
+  - 30 checks per IP per hour on each Cloud Run instance (judges share office IPs) and 300 a day across all users
   - questions, issue drafts and site reports share a daily budget of 300
   - 4 MB per uploaded image
   - at most 2 Cloud Run instances
@@ -110,8 +111,10 @@ While the camera runs, the view is full screen with an Exit button. **Transparen
 
 | What | Result |
 |---|---|
-| Pose, **simulation** (1280×720, 0.5 px corner noise, 23–25 cm code at 0.5–3 m) | median 3.6 mm translation, 0.66° rotation |
+| Pose, **simulation** (1280×720, 0.5 px corner noise, a 25 cm code at 0.5–3 m) | median 3.6 mm translation, 0.66° rotation |
 | Self-calibration, **simulation** (30 tilted views) | focal length within 1% |
+| Steadiness on a stand, **ray-traced test videos** (`web/e2e/tests/live-ar-stability.e2e.ts`) | under 0.6 px a frame with the motion sensors in every case (0.02–0.58 px measured), down from 1–44 px before the steadiness fixes of 17 Oct |
+| Virtual demo check at P1 on the deployed service (the run in the demo video) | found 2 of the 5 planted defects in view, no false alarms |
 | Overlay error on a real phone or tablet at 1, 2, 3 m | **Not measured on a device yet** (`eval/overlay.csv` has no rows) |
 | As-built check, **simulated**: the virtual demo's simulated as-built at P1–P4 with live Gemini 3.8 Flash, 16 planted defects in view across the four spots | Found 12, 11 and 7 of 16, with 5, 8 and 0 false alarms, in three runs (the third on the deployed service): about 10 found and 4 false alarms on average. It finds elements not built and a column 60 cm off sideways; it misses a 60 cm shift towards or away from the camera, and thin far members. Runs vary a lot. |
 
@@ -122,9 +125,10 @@ Simulation numbers are not field accuracy, and no real site photos have been sco
 Requirements: Node 20.19+, Python 3.13 with [uv](https://docs.astral.sh/uv/), Docker (optional).
 
 ```bash
-make dev-server   # API on :8000 with an offline Gemini stand-in and an in-memory store
-make dev-web      # web app on :5173 (proxies /api); phones: cd web && npm run dev:https
-make test         # BIM, server and web tests, plus the TypeScript build
+(cd web && npm ci)   # once: the web app's packages (make dev-web and make test need them)
+make dev-server      # terminal 1: API on :8000 with an offline Gemini stand-in and an in-memory store
+make dev-web         # terminal 2: web app on :5173 (proxies /api); phones: cd web && npm run dev:https
+make test            # BIM, server and web tests, plus the TypeScript build
 make sheets BASE_URL=https://<laptop-ip>:5173   # printable sheets for phone tests on the LAN
 ```
 
@@ -141,7 +145,7 @@ Rebuild the site model from `bim/truesite_bim/site.py` with `make models`.
 
 `make test` runs the first three. No suite calls live Gemini.
 
-**End to end.** The Playwright suite in `web/e2e/` has its own `package.json`, so it isn't part of `make test` or the image. It drives the built app on the real FastAPI server with the offline Gemini stand-in and an in-memory store, in Chromium as a laptop, an iPad Pro 11 and an iPhone 15. It covers the start page, the laptop popup, the virtual demo (the three images in the upload, every planted defect marked, a draft and a report in Thai), the ready-made views, the 3D viewer, real 429s from a server with tight limits, axe-core WCAG 2.2 A/AA checks, tap targets and CSP reports. A `live-ar` project plays ray-traced camera videos with exact ground truth into the live view: on 17 Oct, before the sensor fusion of #107, the overlay landed within 2 px of the truth at P1–P4 and D1. Twelve known bugs are kept as `test.fixme` tests that assert the fixed behaviour. It is Chromium, not Safari: Quick Look and the iOS motion prompt still need a device.
+**End to end.** The Playwright suite in `web/e2e/` has its own `package.json`, so it isn't part of `make test` or the image. It drives the built app on the real FastAPI server with the offline Gemini stand-in and an in-memory store, in Chromium as a laptop, an iPad Pro 11 and an iPhone 15. It covers the start page, the laptop popup, the virtual demo (the three images in the upload, every planted defect marked, a draft and a report in Thai), the ready-made views, the 3D viewer, real 429s from a server with tight limits, axe-core WCAG 2.2 A/AA checks, tap targets and CSP reports. A `live-ar` project plays ray-traced camera videos with exact ground truth into the live view: in the 18 Oct run the overlay sat 6–9 px from the truth at P1–P4 and 2 px at D1, on a 1194 × 772 px view (the test allows 10 px, about half a degree). Each of the 13 bugs the suite found has a test that asserts the fixed behaviour (`web/e2e/support/bugs.ts`): 12 are fixed, and one, Tab leaving the usage-limit popup, is still a `test.fixme`. It is Chromium, not Safari: Quick Look and the iOS motion prompt still need a device.
 
 ```bash
 (cd bim && uv run python -m truesite_bim.site --sheets-only --base-url https://127.0.0.1:8813 --sheets-dir ../web/public/sheets)
@@ -155,15 +159,15 @@ The live AR videos (about 1.7 GB, git-ignored) are made once with `web/e2e/scrip
 **Mutation, property and fuzz testing (17 Oct):**
 - **StrykerJS** on the web app's logic, with 117 new tests: four key modules (Why it matters, the scorecard, the live-view helpers and pose quality) went from a mutation score of 83.8% to 97.5%. The survivors left look equivalent.
 - **cosmic-ray** on `server/app/validate.py` and `server/app/severity.py`: no real mutant survives (30 did in `validate.py` before); the ones left are equivalent.
-- **Hypothesis:** 57 property tests on check repair, severity, the limits, uploads and the report schemas.
+- **Hypothesis:** 34 properties on check repair, severity, the limits, uploads and the report schemas.
 - **Schemathesis:** 4,162 generated API cases, with no 5xx and no response-schema violations.
-- **bandit, pip-audit and npm audit:** no known vulnerabilities; bandit notes one low-severity `assert`.
+- **bandit, pip-audit and npm audit:** no known vulnerabilities in the server's pinned packages or the web app's runtime packages (re-checked 18 Oct); bandit notes one low-severity `assert`. npm audit in `web/` lists 7 high advisories in puppeteer-core's browser-download helpers: a dev-only tool for `web/scripts/make-samples.mjs`, not in the image, with no non-breaking fix yet.
 
 The bugs these runs found are listed in the [17 Oct audit](docs/audit-2026-10-17.md): 41 findings, none high.
 
 ## Deploy
 
-On Google Cloud, in this order (see `infra/gcloud.sh`):
+On Google Cloud, in this order (see `infra/gcloud.sh`). Set `PROJECT_ID` to your project first (the script's default, `truesite-hack-2026`, is ours), plus `BILLING_ACCOUNT` if `make setup` should create the project and the budget alert: `PROJECT_ID=my-project make setup`.
 
 1. `make setup`, once: APIs, a least-privilege service account, Firestore, the upload bucket, and the budget alert. It is safe to run again.
 2. `make deploy`: renders every QR sheet for the service URL, refuses to deploy unless each sheet links to it, then builds the container on Cloud Build and deploys it to Cloud Run. `GEMINI_BACKEND=apikey make deploy` uses an AI Studio key from Secret Manager instead of Agent Platform.
@@ -179,8 +183,12 @@ On Google Cloud, in this order (see `infra/gcloud.sh`):
 | `eval/` | Overlay-accuracy and check-quality measurements, and the script that turns them into tables |
 | `infra/` | `gcloud.sh`: setup, deploy and verify on Google Cloud |
 | `DEVELOPMENT.md` | [How we work](DEVELOPMENT.md): conventions, commands, where things live, gotchas |
-| `docs/` | [Brief](docs/BRIEF.md), [design spec](docs/specs/2026-10-11-truesite-design.md), [interface contract](docs/plans/2026-10-11-truesite-contract.md), [research notes](docs/research/research-notes.md), [audits](docs/audit-2026-10-17.md), [submission checklist](docs/submission-checklist.md) |
+| `docs/` | [Brief](docs/BRIEF.md), [design spec](docs/specs/2026-10-11-truesite-design.md), [interface contract](docs/plans/2026-10-11-truesite-contract.md), [research notes](docs/research/research-notes.md), [audits](docs/audit-2026-10-17.md) |
 
 ## Freshness
 
-Built from scratch during the hackathon. The repository was started on 11 Oct 2026, and every commit is dated. It contains no code, assets, prompts or data from earlier projects. The demo model, the photos and the brand were all made during the event. The start page's hero image (`web/public/hero-site.jpg` and `.webp`, 1200 × 1000) is a render of our own `site` model, added on 16 Oct 2026 in #74. The sample photos are renders of the same model, reproducible with `web/scripts/make-samples.mjs`.
+Built from scratch during the hackathon. The repository was started on 11 Oct 2026, and every commit is dated. It contains no code, assets, prompts or data from earlier projects. The demo model, the photos and the brand were all made during the event. The start page's hero image (`web/public/hero-site.jpg` and `.webp`, 1200 × 1000) is a render of our own `site` model, added on 16 Oct 2026. The sample photos are renders of the same model, reproducible with `web/scripts/make-samples.mjs`.
+
+## License
+
+Copyright © 2026 Wai Lin and Aung Nyein Chan. All rights reserved. The source is public for the Google Cloud AI Builder Cup 2026 judging.

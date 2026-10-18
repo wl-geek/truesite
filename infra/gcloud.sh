@@ -210,6 +210,7 @@ deploy() {
     --allow-unauthenticated \
     --max-instances 2 \
     --cpu 1 \
+    --cpu-boost \
     --memory 1Gi \
     --concurrency 20 \
     --timeout 120 \

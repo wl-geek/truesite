@@ -9,6 +9,7 @@ import { checkErrorMessage, toCheckError } from '../check/messages'
 import { loadReportRuns, rememberReportRun, reportScope, type ReportRun } from '../check/reportRuns'
 import { runCheck, storedRunId } from '../check/runCheck'
 import { releaseRenderer, watchContextLoss } from '../scene/glContext'
+import { appleDeviceName, isAppleMobile } from '../scene/walkthrough'
 import { disposeModel, parseModel, type LoadedModel } from '../scene/loadModel'
 import { deviceRotation, requestMotionPermission } from '../scene/motion'
 import { paintOf } from '../scene/palette'
@@ -106,6 +107,7 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
   const outcomeRef = useRef<Outcome | null>(null)
   const offline = outcome?.result.model_version === 'fake' // the server runs the offline stand-in, not Gemini
   const touch = useMemo(() => typeof window !== 'undefined' && 'DeviceOrientationEvent' in window && navigator.maxTouchPoints > 0, [])
+  const handheld = useMemo(() => (isAppleMobile() ? appleDeviceName() : 'phone'), []) // an iPad is not told to turn its phone
 
   // Build the world once: the as-built model in the simulated site, the design for the overlay, and a third copy
   // off screen for the check's design render (each three.js object can only sit in one scene).
@@ -534,11 +536,11 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
           <p><strong>You're on the X at {vp.id}.</strong> The BIM design is laid over the simulated site, like live AR, and a
             few defects are planted in this view.</p>
           <ul>
-            <li>Turn on the spot: {touch ? 'drag, or tap Turn with device and turn your phone' : 'drag, or use the arrow keys'}.</li>
+            <li>Turn on the spot: {touch ? `drag, or tap Turn with device and turn your ${handheld}` : 'drag, or use the arrow keys'}.</li>
             <li>Tap an element for its details; switch the BIM overlay off to see the bare site.</li>
             <li>Aim at the work and tap <strong>Check as-built</strong>.</li>
           </ul>
-          <button type="button" className="vs-btn" onClick={() => { setCoach(false); canvasRef.current?.focus({ preventScroll: true, focusVisible: false }) }}>Got it</button>
+          <button type="button" className="vs-btn" onClick={() => { setCoach(false); canvasRef.current?.focus({ preventScroll: true, focusVisible: false }) }}>Start looking around</button>
         </div>
       )}
 

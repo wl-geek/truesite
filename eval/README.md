@@ -21,7 +21,7 @@ Otherwise every offset below includes the error in where the stand is placed.
 
 To measure on real photos instead:
 
-1. Capture samples with `/a/site/P1?dev=1` (or P2–P4) → **Save as sample** (issue #9). Each tap downloads `<sample_id>-photo.jpg` and `<sample_id>-meta.json`. Package each sample like this (contract section 8):
+1. Capture samples with `/a/site/P1?dev=1` (or P2–P4) → **Save as sample**. Each tap downloads `<sample_id>-photo.jpg` and `<sample_id>-meta.json`. Package each sample like this (contract section 8):
    - move the two files to `web/public/samples/<sample_id>/photo.jpg` and `web/public/samples/<sample_id>/meta.json`
    - add a row to `web/public/samples/index.json`: `{"sample_id": "<sample_id>", "label": "<what judges see>", "project_id": "site", "anchor_id": "P1"}` (the ids are in `meta.json`)
    - commit the folder and `index.json` together

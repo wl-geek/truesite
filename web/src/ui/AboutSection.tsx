@@ -54,7 +54,7 @@ export function AboutSection() {
           <h3 className="about-h3">Works with the BIM you already have</h3>
           <ol className="about-flow">
             <li><strong>IFC in</strong><span>The open BIM standard that Revit, Archicad, Tekla and most BIM tools export</span></li>
-            <li><strong>Prepared once</strong><span>A 3D model where every element keeps its IFC ID, its data, and the QR sheets</span></li>
+            <li><strong>Prepared once</strong><span>A 3D model where every element keeps its IFC ID and data, plus the QR sheets</span></li>
             <li><strong>Any phone or laptop</strong><span>Live AR, the 3D model and the virtual demo, in the browser</span></li>
             <li><strong>Back to the team</strong><span>Issues ready for any tracker, and the day’s site report</span></li>
           </ol>
@@ -66,7 +66,8 @@ export function AboutSection() {
             <ul>
               <li><strong>Cloud Run</strong> serves the web app and its API</li>
               <li><strong>Gemini 3.8 Flash</strong> checks the build, answers questions and drafts issues and reports</li>
-              <li><strong>Firestore and Cloud Storage</strong> keep runs, issues, photos and renders</li>
+              <li><strong>Cloud Firestore</strong>, through the Firebase Admin SDK, keeps check runs, issues and the daily cap</li>
+              <li><strong>Cloud Storage</strong> keeps the check photos and renders for 30 days</li>
             </ul>
           </div>
           <div className="about-panel">
@@ -83,20 +84,32 @@ export function AboutSection() {
           <h3 className="about-h3">The team</h3>
           <div className="about-people">
             <figure>
-              <img src="/media/team-wai.jpg" alt="" width="72" height="72" loading="lazy" />
-              <figcaption><strong>Wai Lin</strong><span>Product and code</span></figcaption>
+              <img src="/media/team-wai.jpg" alt="" width="72" height="72" />
+              <figcaption><strong>Wai Lin</strong><span>Team lead: product and code</span></figcaption>
             </figure>
             <figure>
-              <img src="/media/team-michael.jpg" alt="" width="72" height="72" loading="lazy" />
-              <figcaption><strong>Aung Nyein Chan (Michael)</strong><span>Architect: the BIM model and field validation</span></figcaption>
+              <img src="/media/team-michael.jpg" alt="" width="72" height="72" />
+              <figcaption><strong>Aung Nyein Chan (Michael)</strong><span>Architect: BIM model, field validation</span></figcaption>
             </figure>
           </div>
           <p className="about-links">
-            <a className="btn" href="/media/TrueSite-deck.pdf" download>Download the pitch deck</a>
-            <a className="btn" href="https://github.com/wl-geek/truesite" target="_blank" rel="noopener noreferrer">Read the code on GitHub</a>
+            <a className="btn btn-accent btn-lg" href="/media/TrueSite-deck.pdf" download><LinkIcon d={DOWNLOAD} />Download the pitch deck</a>
+            <a className="btn btn-ghost btn-lg" href="https://github.com/wl-geek/truesite" target="_blank" rel="noopener noreferrer"><LinkIcon d={CODE} />Read the code on GitHub</a>
           </p>
         </div>
       </div>
     </section>
+  )
+}
+
+const DOWNLOAD = 'M12 3v12M7 10l5 5 5-5M5 21h14'
+const CODE = 'M16 18l6-6-6-6M8 6l-6 6 6 6'
+
+function LinkIcon({ d }: { d: string }) {
+  return (
+    <svg className="icon" viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" focusable="false"
+      fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d={d} />
+    </svg>
   )
 }

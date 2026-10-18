@@ -46,9 +46,9 @@ def test_readme_code_paths_are_in_the_repo():
 
 
 def test_readme_quick_start_names_buttons_the_app_has():
-    # A judge follows "Try it in 60 seconds" step by step: every bold name in a step must be on screen somewhere.
+    # A judge follows "Try it in a few minutes" step by step: every bold name in a step must be on screen somewhere.
     readme = (ROOT / "README.md").read_text(encoding="utf-8")
-    section = readme.split("## Try it in 60 seconds", 1)[1].split("\n## ", 1)[0]
+    section = readme.split("## Try it in a few minutes", 1)[1].split("\n## ", 1)[0]
     steps = "\n".join(line for line in section.splitlines() if re.match(r"^\d+\. ", line))
     names = re.findall(r"\*\*([^*]+)\*\*", steps)
     assert names

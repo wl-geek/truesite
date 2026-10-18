@@ -858,5 +858,5 @@ function modelSize(project: ProjectManifest): { height: number; span: number } {
 function startLabel(projectName: string, anchor: Anchor): string {
   const name = projectName.replace(/\s*\(1:1\)$/, '')
   const vp = anchor.project_id === 'site' ? SITE_VIEWPOINTS.find((v) => v.id === anchor.anchor_id) : undefined
-  return `${name} · ${vp ? `${vp.id} ${vp.name}` : anchor.anchor_id}`
+  return `${name} · ${vp ? `${vp.id} ${vp.name}` : anchor.scale < 0.999 ? `${anchor.anchor_id} desk sheet` : anchor.anchor_id}`
 }

@@ -85,7 +85,7 @@ test.describe('virtual demo', () => {
   test('tap the BIM overlay for an element\'s details; after a check, its result, the planted truth and Draft issue @handheld', async ({ page, log }) => {
     await stubGeminiFindsPlanted(page)
     await enterVirtualSite(page, 'P1')
-    await page.getByRole('button', { name: 'Got it' }).click()
+    await page.getByRole('button', { name: 'Start looking around' }).click()
     const panel = page.locator('aside.element-panel')
     const box = (await page.locator('canvas.vs-canvas').boundingBox())!
     let tapped: [number, number] | null = null
@@ -320,7 +320,7 @@ test.describe('virtual demo', () => {
     await page.getByRole('button', { name: 'Exit' }).click()
     await expect(page).toHaveURL(/\/#virtual$/)
     await page.locator('#virtual .vp-card', { hasText: VIEWPOINTS[1].name }).click()
-    await expect(page.getByRole('button', { name: 'Got it' })).toBeVisible({ timeout: 60_000 })
+    await expect(page.getByRole('button', { name: 'Start looking around' })).toBeVisible({ timeout: 60_000 })
     await runVirtualCheck(page, 'P2')
     await expect(page.locator('.vs-report')).toContainText('writes the site report from your 2 checks at P1 and P2:')
     const sent = page.waitForRequest((r) => r.url().endsWith('/api/report'))
@@ -363,7 +363,7 @@ test.describe('virtual demo', () => {
   test('on a tablet the coach offers Turn with device @handheld', async ({ page, isMobile }) => {
     test.skip(!isMobile, 'touch devices only')
     await enterVirtualSite(page, 'P1')
-    await expect(page.getByRole('note')).toContainText('drag, or tap Turn with device and turn your phone.')
+    await expect(page.getByRole('note')).toContainText(/drag, or tap Turn with device and turn your (phone|iPad|iPhone)\./)
     await expect(page.getByRole('button', { name: 'Turn with device' })).toHaveAttribute('aria-pressed', 'false')
   })
 
@@ -375,7 +375,7 @@ test.describe('virtual demo', () => {
     for (let i = 0; i < 10; i++) {
       const v = VIEWPOINTS[i % VIEWPOINTS.length]
       await page.locator('#virtual .vp-card', { hasText: v.name }).click() // in-app navigation: one document throughout
-      await expect(page.getByRole('button', { name: 'Got it' })).toBeVisible({ timeout: 60_000 })
+      await expect(page.getByRole('button', { name: 'Start looking around' })).toBeVisible({ timeout: 60_000 })
       await page.getByRole('button', { name: 'Exit' }).click()
       await expect(page).toHaveURL(/\/#virtual$/)
     }
@@ -398,7 +398,7 @@ test.describe('virtual demo', () => {
     await expect(page).toHaveURL(/\/#virtual$/)
     expect(await page.evaluate(() => history.length)).toBe(start + 1) // /samples became /#virtual: no entry of its own
     await page.locator('#virtual .vp-card', { hasText: VIEWPOINTS[0].name }).click()
-    await expect(page.getByRole('button', { name: 'Got it' })).toBeVisible({ timeout: 60_000 })
+    await expect(page.getByRole('button', { name: 'Start looking around' })).toBeVisible({ timeout: 60_000 })
     await page.getByRole('button', { name: 'Exit' }).click()
     await expect(page).toHaveURL(/\/#virtual$/)
     expect(await page.evaluate(() => history.length)).toBe(start + 2) // the spot became /#virtual too

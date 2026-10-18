@@ -1,4 +1,6 @@
-# Submission checklist (target Sat 17 Oct 2026; official deadline Sun 18 Oct)
+# Submission checklist (planning document, 16–17 Oct 2026)
+
+> Status on 18 Oct: submitted with the deployed service, the 3:15 demo video (https://youtu.be/M8zh02kMtk4), the deck (`docs/TrueSite-deck.pdf`) and this repository. The boxes below are the plan as written before submission; the README has the current results.
 
 ## App
 - [ ] The deployed Cloud Run URL works while signed out on iPhone Safari, Android Chrome and desktop Chrome.
@@ -10,11 +12,11 @@
 
 ## Repository (public on submission day)
 - [ ] `make test` is green.
-- [ ] README has the live link in its "Live demo" line (still missing). The check's found, missed and false-alarm numbers on the simulated as-built are in; the overlay error at 1/2/3 m stays "not measured" until it is measured on a device.
+- [ ] README has the live link in its "Live demo" line. The check's found, missed and false-alarm numbers on the simulated as-built are in; the overlay error at 1/2/3 m stays "not measured" until it is measured on a device.
 - [ ] No secrets or personal data. Check `git log -p | grep -i -E 'api[_-]?key|secret|token|password'`. `.env` stays ignored.
 - [ ] Repository visibility switched to public.
 
-## Video (strictly under 3:00, target 2:45, English)
+## Video (3 to 4 minutes, English; ours is 3:15)
 1. The problem: field engineers build without the model in front of them.
 2. Scan P1–P4 on the car park with the iPad: the building at 1:1 in the camera overlay.
 3. In the virtual demo, *Check as-built* catches the planted defects. Say that the defects are planted and the views are simulated.

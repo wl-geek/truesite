@@ -23,4 +23,8 @@
 .sample-truth summary { min-height: 44px; align-content: center; font-weight: 600; cursor: pointer; }
 .sample-truth ul { margin: 6px 0 0; padding-left: 18px; }
 .sample-results { scroll-margin-top: calc(var(--topbar-h) + 8px); }
+.samples-page a:not(.btn) { color: var(--steel); font-weight: 600; text-underline-offset: 3px; } /* the app's links, not the browser's blue */
+/* Draft issue under its finding, so the finding text keeps the full width (as in the viewer and the virtual demo). */
+.sample-results .finding { flex-wrap: wrap; justify-content: flex-end; }
+.sample-results .finding-main { flex-basis: 100%; align-items: flex-start; }
 @media (prefers-reduced-motion: reduce) { .sample-card { transition: none; } .sample-card:hover:not(:disabled) { transform: none; } }
