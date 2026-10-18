@@ -51,6 +51,10 @@ CHECK_TIMEOUT_MS = 50_000
 CHECK_DEADLINE_RETRIES = 1
 CHECK_BUDGET_S = 105.0
 MIN_ATTEMPT_S = 15.0  # no new attempt with less than this left of the budget: it couldn't finish a check
+# Ask, Draft and the site report: the same move to the next model when one hangs (18 Oct: asks hung for 22 s, with a
+# 499 CANCELLED or a 504), each attempt up to REQUEST_TIMEOUT_MS, all inside the web client's 60 s.
+MODEL_BUDGET_S = 50.0
+MODEL_MIN_ATTEMPT_S = 8.0
 MAX_OUTPUT_TOKENS = 8_192  # caps response + thinking tokens together (cost guard)
 ASK_MAX_OUTPUT_TOKENS = 2_048  # Ask (<= 600 chars) and Draft (<= 780 chars) plus LOW thinking
 MAX_MARKS = 25
@@ -367,7 +371,8 @@ def build_report_request(facts: dict, language: str = "en") -> dict:
 
 def write_report(facts: dict, *, language: str = "en", client: Any = None) -> dict:
     """The day's site report from several checks; severity was set by code in each check."""
-    return generate_json(build_report_request(facts, language), client=client)
+    return generate_json(build_report_request(facts, language), client=client, budget_s=MODEL_BUDGET_S,
+                         min_attempt_s=MODEL_MIN_ATTEMPT_S)
 
 
 def build_issue_request(finding: dict, element: dict, language: str = "en") -> dict:
@@ -466,6 +471,8 @@ def _translate(exc: Exception) -> GeminiError:
         if exc.code == 429:
             return GeminiError("rate_limited", f"{exc.code} {exc.status}: {exc.message}", status=429,
                                retry_after_s=_retry_delay_s(exc.details))
+        if exc.code == 499:  # CANCELLED: the service gave up at the deadline; transient, not our request's fault
+            return GeminiError("unavailable", f"{exc.code} {exc.status}: {exc.message}", status=499)
         return GeminiError("bad_request", f"{exc.code} {exc.status}: {exc.message}", status=exc.code)
     if isinstance(exc, genai_errors.ServerError):
         return GeminiError("unavailable", f"{exc.code} {exc.status}: {exc.message}", status=exc.code)
@@ -483,27 +490,31 @@ def _translate(exc: Exception) -> GeminiError:
 
 
 def _is_deadline(err: GeminiError) -> bool:
-    """A hung request: Gemini's own deadline (504) or ours (the client timeout)."""
-    return err.kind == "timeout" or err.status == 504
+    """A hung request: Gemini's own deadline (504), a request it cancelled at that deadline (499), or our timeout."""
+    return err.kind == "timeout" or err.status in (504, 499)
 
 
-def _generate(client: Any, request: dict, deadline_retries: int = 0, end: Optional[float] = None) -> Any:
+def _generate(client: Any, request: dict, deadline_retries: int = 0, end: Optional[float] = None,
+              min_attempt_s: float = MIN_ATTEMPT_S) -> Any:
     """One call. A hung request is tried again on the same model up to `deadline_retries` times; while a model is
     overloaded or out of quota, the next of FALLBACK_MODEL_IDS.
 
-    With `end` (a time.monotonic() deadline: the check), a hung request moves on to the next model instead, every
-    attempt's timeout is cut to the time left, and no attempt starts with less than MIN_ATTEMPT_S left."""
+    With `end` (a time.monotonic() deadline), a hung request moves on to the next model instead, every attempt's
+    timeout is the request's own (or REQUEST_TIMEOUT_MS) cut to the time left, with no SDK retry, and no attempt
+    starts with less than `min_attempt_s` left."""
     models = [request["model"], *(m for m in FALLBACK_MODEL_IDS if m != request["model"])]
+    own = request["config"].http_options
+    cap_ms = own.timeout if own is not None and own.timeout else REQUEST_TIMEOUT_MS
     last: Optional[GeminiError] = None
     for i, model in enumerate(models):
         for attempt in range(deadline_retries + 1):
             call = {**request, "model": model}
             if end is not None:
                 left = end - time.monotonic()
-                if left < MIN_ATTEMPT_S:
+                if left < min_attempt_s:
                     raise last or GeminiError("timeout", "Gemini did not answer in time")
                 call["config"] = request["config"].model_copy(update={"http_options": types.HttpOptions(
-                    timeout=int(min(CHECK_TIMEOUT_MS, left * 1000)), retry_options=types.HttpRetryOptions(attempts=1))})
+                    timeout=int(min(cap_ms, left * 1000)), retry_options=types.HttpRetryOptions(attempts=1))})
             try:
                 return client.models.generate_content(**call)
             except Exception as exc:  # noqa: BLE001 - translated below
@@ -522,7 +533,7 @@ def _generate(client: Any, request: dict, deadline_retries: int = 0, end: Option
 
 
 def generate_json(request: dict, *, client: Any = None, parse_attempts: int = 2, deadline_retries: int = 0,
-                  budget_s: Optional[float] = None) -> dict:
+                  budget_s: Optional[float] = None, min_attempt_s: float = MIN_ATTEMPT_S) -> dict:
     """Run one structured request. HTTP-level retry is done by the SDK
     (RETRY_OPTIONS); a response that does not parse is retried once here, unless it
     was cut off at max_output_tokens (a retry would be cut off and billed again)."""
@@ -535,7 +546,7 @@ def generate_json(request: dict, *, client: Any = None, parse_attempts: int = 2,
     end = started + budget_s if budget_s is not None else None
     billed = {"prompt_tokens": 0, "output_tokens": 0, "thought_tokens": 0, "total_tokens": 0, "cost_usd_est": 0.0}
     for attempt in range(1, parse_attempts + 1):
-        response = _generate(client, request, deadline_retries, end)
+        response = _generate(client, request, deadline_retries, end, min_attempt_s)
         for key, val in usage_dict(response).items():  # every attempt is billed
             billed[key] = round(billed[key] + val, 6)
         try:
@@ -570,9 +581,11 @@ def check_asbuilt(photo_jpeg: bytes, render_png: bytes, context: dict, *, projec
 
 def ask_element(element: dict, question: str, *, client: Any = None) -> dict:
     """Grounded Q&A over one element's own data."""
-    return generate_json(build_ask_request(element, question), client=client)
+    return generate_json(build_ask_request(element, question), client=client, budget_s=MODEL_BUDGET_S,
+                         min_attempt_s=MODEL_MIN_ATTEMPT_S)
 
 
 def draft_issue(finding: dict, element: dict, *, language: str = "en", client: Any = None) -> dict:
     """Issue title/description/suggested action in the crew's language; severity is set by code elsewhere."""
-    return generate_json(build_issue_request(finding, element, language), client=client)
+    return generate_json(build_issue_request(finding, element, language), client=client, budget_s=MODEL_BUDGET_S,
+                         min_attempt_s=MODEL_MIN_ATTEMPT_S)
