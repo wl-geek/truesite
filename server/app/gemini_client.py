@@ -55,6 +55,17 @@ MIN_ATTEMPT_S = 15.0  # no new attempt with less than this left of the budget: i
 # 499 CANCELLED or a 504), each attempt up to REQUEST_TIMEOUT_MS, all inside the web client's 60 s.
 MODEL_BUDGET_S = 50.0
 MODEL_MIN_ATTEMPT_S = 8.0
+# A model that just hung or was refused is skipped for a while (per instance), so during an outage only the first
+# call waits for it (18 Oct: every gemini-3.8-flash call hung for 22 s while 3.5 Flash answered in 2 s).
+SICK_COOLDOWN_S = 300.0
+_sick: dict[str, float] = {}  # model -> time.monotonic() until which it is skipped
+
+
+def _model_order(first: str) -> list[str]:
+    """`first`, then FALLBACK_MODEL_IDS, without the models that are sick right now (all of them if every one is)."""
+    models = [first, *(m for m in FALLBACK_MODEL_IDS if m != first)]
+    now = time.monotonic()
+    return [m for m in models if _sick.get(m, 0.0) <= now] or models
 MAX_OUTPUT_TOKENS = 8_192  # caps response + thinking tokens together (cost guard)
 ASK_MAX_OUTPUT_TOKENS = 2_048  # Ask (<= 600 chars) and Draft (<= 780 chars) plus LOW thinking
 MAX_MARKS = 25
@@ -502,7 +513,7 @@ def _generate(client: Any, request: dict, deadline_retries: int = 0, end: Option
     With `end` (a time.monotonic() deadline), a hung request moves on to the next model instead, every attempt's
     timeout is the request's own (or REQUEST_TIMEOUT_MS) cut to the time left, with no SDK retry, and no attempt
     starts with less than `min_attempt_s` left."""
-    models = [request["model"], *(m for m in FALLBACK_MODEL_IDS if m != request["model"])]
+    models = _model_order(request["model"])
     own = request["config"].http_options
     cap_ms = own.timeout if own is not None and own.timeout else REQUEST_TIMEOUT_MS
     last: Optional[GeminiError] = None
@@ -516,11 +527,14 @@ def _generate(client: Any, request: dict, deadline_retries: int = 0, end: Option
                 call["config"] = request["config"].model_copy(update={"http_options": types.HttpOptions(
                     timeout=int(min(cap_ms, left * 1000)), retry_options=types.HttpRetryOptions(attempts=1))})
             try:
-                return client.models.generate_content(**call)
+                response = client.models.generate_content(**call)
+                _sick.pop(model, None)
+                return response
             except Exception as exc:  # noqa: BLE001 - translated below
                 err = last = _translate(exc)
                 if _is_deadline(err) and end is not None and i < len(models) - 1:
                     log.warning("gemini %s hung (%s): trying %s", model, err, models[i + 1])
+                    _sick[model] = time.monotonic() + SICK_COOLDOWN_S
                     break
                 if _is_deadline(err) and attempt < deadline_retries:
                     log.warning("gemini %s hung (%s): trying it again", model, err)
@@ -528,6 +542,8 @@ def _generate(client: Any, request: dict, deadline_retries: int = 0, end: Option
                 if err.status not in (429, 503) or i == len(models) - 1:
                     raise err from exc
                 log.warning("gemini %s unavailable (%s): trying %s", model, err, models[i + 1])
+                if end is not None:
+                    _sick[model] = time.monotonic() + SICK_COOLDOWN_S
                 break
     raise AssertionError("unreachable")
 

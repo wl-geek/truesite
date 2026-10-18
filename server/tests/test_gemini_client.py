@@ -402,6 +402,7 @@ def test_a_hung_check_moves_on_to_the_next_model():
     out = gc.check_asbuilt(PHOTO, RENDER, CONTEXT, client=client)
     assert out["result"] == GOOD_CHECK
     assert [c["model"] for c in client.models.calls] == [gc.MODEL_ID, *gc.FALLBACK_MODEL_IDS[:1]]
+    gc._sick.clear()  # a fresh instance: nothing marked sick yet
     client = FakeClient(httpx.ReadTimeout("slow"), hung, hung, hung)
     with pytest.raises(gc.GeminiError) as info:
         gc.check_asbuilt(PHOTO, RENDER, CONTEXT, client=client)
@@ -456,6 +457,7 @@ def test_a_hung_ask_moves_on_to_the_next_model():
     element = {"ifc_class": "IfcWall", "name": "W", "props": {}}
     for hang in (_api_error(genai_errors.ServerError, 504, "DEADLINE_EXCEEDED"), _api_error(genai_errors.ClientError, 499, "CANCELLED"),
                  httpx.ReadTimeout("slow")):
+        gc._sick.clear()  # each case on a fresh instance
         client = FakeClient(hang, fake_response({"answer": "a", "cited_properties": [], "confidence": 1}))
         out = gc.ask_element(element, "Height?", client=client)
         assert out["result"]["answer"] == "a"
@@ -480,6 +482,33 @@ def test_a_hung_ask_stays_inside_its_budget(monkeypatch):
     assert info.value.kind == "unavailable" and info.value.status == 504
     assert [c["config"].http_options.timeout for c in client.models.calls] == [25_000, 25_000]  # 50 s, then none left
     assert now[0] <= gc.MODEL_BUDGET_S < 60
+
+
+def test_a_model_that_hung_is_skipped_for_a_while(monkeypatch):
+    now = [100.0]
+    monkeypatch.setattr(gc.time, "monotonic", lambda: now[0])
+    element = {"ifc_class": "IfcWall", "name": "W", "props": {}}
+    answer = {"answer": "a", "cited_properties": [], "confidence": 1}
+    hung = _api_error(genai_errors.ClientError, 499, "CANCELLED")
+    client = FakeClient(hung, fake_response(answer), fake_response(answer), fake_response(GOOD_CHECK), fake_response(answer))
+    gc.ask_element(element, "Height?", client=client)  # 3.8 hangs, 3.5 answers
+    now[0] += 60
+    gc.ask_element(element, "Height?", client=client)  # 3.8 is skipped: 3.5 straight away
+    gc.check_asbuilt(PHOTO, RENDER, CONTEXT, client=client)  # the check skips it too
+    now[0] += gc.SICK_COOLDOWN_S
+    gc.ask_element(element, "Height?", client=client)  # after the cool-down, 3.8 again
+    assert [c["model"] for c in client.models.calls] == [gc.MODEL_ID, gc.FALLBACK_MODEL_IDS[0], gc.FALLBACK_MODEL_IDS[0],
+                                                         gc.FALLBACK_MODEL_IDS[0], gc.MODEL_ID]
+
+
+def test_when_every_model_is_sick_all_are_tried_again(monkeypatch):
+    monkeypatch.setattr(gc.time, "monotonic", lambda: 50.0)
+    for m in (gc.MODEL_ID, *gc.FALLBACK_MODEL_IDS):
+        gc._sick[m] = 1e9
+    client = FakeClient(fake_response({"answer": "a", "cited_properties": [], "confidence": 1}))
+    gc.ask_element({"ifc_class": "IfcWall", "name": "W", "props": {}}, "Height?", client=client)
+    assert [c["model"] for c in client.models.calls] == [gc.MODEL_ID]
+    assert gc.MODEL_ID not in gc._sick  # it answered: healthy again
 
 
 def test_a_plain_bad_request_is_not_retried_on_another_model():
