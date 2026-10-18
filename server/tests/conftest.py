@@ -54,6 +54,15 @@ def write_project(models: Path, project_id: str = "testproj", demo_issues: list 
     return d
 
 
+@pytest.fixture(autouse=True)
+def _no_sick_models():
+    """Every test starts with every Gemini model healthy (gemini_client skips a model that just hung)."""
+    from app import gemini_client
+    gemini_client._sick.clear()
+    yield
+    gemini_client._sick.clear()
+
+
 @pytest.fixture
 def models(tmp_path: Path) -> Path:
     m = tmp_path / "models"
