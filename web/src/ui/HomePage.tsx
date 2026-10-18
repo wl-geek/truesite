@@ -1,6 +1,7 @@
 import { useEffect, type MouseEvent, type ReactNode } from 'react'
 import { AboutSection } from './AboutSection'
 import { Link } from './Link'
+import { DEMO_YOUTUBE_URL } from './links'
 import { goToSection, SECTIONS } from './TopBar'
 import { CODE_HEIGHT_M, compass, SITE_VIEWPOINTS, STAND_OFF_M } from './siteViewpoints'
 import { ViewpointPlan } from './ViewpointPlan'
@@ -75,10 +76,12 @@ export function HomePage() {
           <source src="/media/truesite-demo.mp4" type="video/mp4" />
           <track kind="captions" src="/media/truesite-demo.vtt" srcLang="en" label="English" />
         </video>
-        <p className="home-deck">
+        <div className="home-deck">
           <a className="btn" href="/media/TrueSite-deck.pdf" download><Icon name="download" />Download the pitch deck</a>
           <span>PDF · 15 slides: the problem, the product, the architecture and the business case</span>
-        </p>
+          <a className="btn" href={DEMO_YOUTUBE_URL} target="_blank" rel="noopener noreferrer"><Icon name="play" />Watch the demo on YouTube</a>
+          <span>The same 3:15 video, public on YouTube</span>
+        </div>
       </section>
 
       <section id="how" className="home-section home-wrap" aria-labelledby="how-title">
@@ -108,8 +111,8 @@ export function HomePage() {
               <p className="home-kicker">Live AR</p>
               <h2 id="live-title">See the BIM model live, through your camera</h2>
               <p className="home-sub">
-                Scan a TrueSite code and the model appears where it belongs: on a desk sheet as a scale model, or around you
-                at 1:1 on site. The desk sheet is the quickest way to try it.
+                Scan a TrueSite code and the model appears where it belongs: around you at 1:1 on site, or on a desk sheet as
+                a 1:100 scale model.
               </p>
             </div>
           </div>
@@ -117,8 +120,82 @@ export function HomePage() {
             <span><strong>Made for smartphones.</strong> Use your phone for the best experience; a tablet works too.</span>
           </p>
 
-          <ul className="home-cards live-easy">
-            <li className="home-card home-card-feature">
+          <div className="live-onsite">
+            <div className="live-onsite-top">
+              <div className="live-onsite-copy">
+                <span className="home-card-tag">Main feature · field-tested on iPhone</span>
+                <h3 className="live-onsite-title">Life size 1:1 on site</h3>
+                <p className="live-onsite-lead">
+                  Stand at a code on site and the design stands around you at full size, lined up with where it will be
+                  built. Turn on the spot to look around and up, and tap any element for its data.
+                </p>
+                <p className="home-sub">
+                  Our demo building is a two-storey frame under construction: concrete columns with their rebar showing, a
+                  cast slab with an open bay, a steel upper storey and roof trusses. Set the four Letter sheets out on a car
+                  park, stand at one and open its live view.
+                </p>
+                <ul className="home-specs" aria-label="Model size">
+                  <li><strong>18 × 12 m</strong>footprint</li>
+                  <li><strong>3.9 m</strong>clear inside</li>
+                  <li><strong>10.5 m</strong>to the ridge</li>
+                </ul>
+              </div>
+              <figure className="live-onsite-shots">
+                <img src="/media/field-life-size.jpg" width={400} height={868} loading="lazy"
+                  alt="Live AR on a field at life size: the design's concrete columns and slab stand around a person." />
+                <img src="/media/field-tap-column.jpg" width={400} height={868} loading="lazy"
+                  alt="A tapped column on site shows its data: RC column B1, 450 × 450 mm, concrete C30/37." />
+                <figcaption>Our iPhone field test, 17 Oct 2026</figcaption>
+              </figure>
+            </div>
+
+            <ul className="vp-grid">
+              {SITE_VIEWPOINTS.map((v) => (
+                <li key={v.id}>
+                  <Link to={`/a/site/${v.id}`} className="vp-card">
+                    <ViewpointPlan active={v} />
+                    <span className="vp-text">
+                      <span className="vp-title"><span className="vp-id">{v.id}</span>{v.name}</span>
+                      <span className="vp-shows">{v.shows}</span>
+                      <span className="vp-meta"><span className="nowrap">Stand at ({fmt(v.stand)}) m</span> · <span className="nowrap">facing {compass(v.look)}</span></span>
+                    </span>
+                    <span className="vp-go"><span className="vp-go-label">Open live AR</span><Icon name="arrow" /></span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+
+            <ol className="home-protocol" aria-label="At the sheet">
+              <li>Tap <strong>Start camera</strong> and allow camera and motion access.</li>
+              <li><strong>Lock</strong> about 0.7 m from the code, a little to one side, until it says <span className="nowrap">Alignment: Good</span>.</li>
+              <li><strong>Step back</strong> to the X, then turn slowly on the spot. Don't walk.</li>
+            </ol>
+
+            <details className="home-details">
+              <summary>Print and set out the sheets</summary>
+              <div className="home-details-body">
+                <div className="home-downloads">
+                  <a className="btn btn-primary" href="/sheets/site-layout.pdf" download><Icon name="download" />Download the layout plan</a>
+                  {SITE_VIEWPOINTS.map((v) => (
+                    <a key={v.id} className="btn" href={`/sheets/site-${v.id}.pdf`} download><Icon name="download" />Download sheet {v.id}</a>
+                  ))}
+                </div>
+                <ul className="home-checklist">
+                  <li>Print on US Letter at <strong>100%</strong> (not "Fit") and measure the check bar: it must read 10.0 cm.</li>
+                  <li>Mount each sheet flat on a board, code centre <strong>{CODE_HEIGHT_M.toFixed(2)} m</strong> above the ground, board vertical.</li>
+                  <li>Set out from point O with the layout plan. Square each board to its grid line: 1° off swings the far end about 20 cm.</li>
+                  <li>Mark the X <strong>{STAND_OFF_M} m</strong> in front of each code. Calibrate your phone once in <strong>Setup</strong>.</li>
+                </ul>
+              </div>
+            </details>
+          </div>
+
+          <div className="live-alt-head">
+            <h3 className="live-alt-title">No site? Two quicker ways in</h3>
+            <p className="home-sub">The desk sheet takes one Letter print, and the 3D model needs none.</p>
+          </div>
+          <ul className="home-cards">
+            <li className="home-card">
               <span className="home-card-tag">Quickest · one Letter print</span>
               <Icon name="desk" />
               <h3>On your desk · 1:100</h3>
@@ -138,62 +215,6 @@ export function HomePage() {
               </div>
             </li>
           </ul>
-
-          <div className="home-section-head live-onsite-head">
-            <div>
-              <h3 className="live-onsite-title">Life size 1:1 on site</h3>
-              <p className="home-sub">
-                A two-storey building under construction: concrete columns with their rebar showing, a cast slab with an
-                open bay, a steel upper storey and roof trusses. Set the four Letter sheets out on a car park, stand at one and
-                open its live view.
-              </p>
-            </div>
-            <ul className="home-specs" aria-label="Model size">
-              <li><strong>18 × 12 m</strong>footprint</li>
-              <li><strong>3.9 m</strong>clear inside</li>
-              <li><strong>10.5 m</strong>to the ridge</li>
-            </ul>
-          </div>
-
-          <ul className="vp-grid">
-            {SITE_VIEWPOINTS.map((v) => (
-              <li key={v.id}>
-                <Link to={`/a/site/${v.id}`} className="vp-card">
-                  <ViewpointPlan active={v} />
-                  <span className="vp-text">
-                    <span className="vp-title"><span className="vp-id">{v.id}</span>{v.name}</span>
-                    <span className="vp-shows">{v.shows}</span>
-                    <span className="vp-meta"><span className="nowrap">Stand at ({fmt(v.stand)}) m</span> · <span className="nowrap">facing {compass(v.look)}</span></span>
-                  </span>
-                  <span className="vp-go"><span className="vp-go-label">Open live AR</span><Icon name="arrow" /></span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-
-          <ol className="home-protocol" aria-label="At the sheet">
-            <li>Tap <strong>Start camera</strong> and allow camera and motion access.</li>
-            <li><strong>Lock</strong> about 0.7 m from the code, a little to one side, until it says <span className="nowrap">Alignment: Good</span>.</li>
-            <li><strong>Step back</strong> to the X, then turn slowly on the spot. Don't walk.</li>
-          </ol>
-
-          <details className="home-details">
-            <summary>Print and set out the sheets</summary>
-            <div className="home-details-body">
-              <div className="home-downloads">
-                <a className="btn btn-primary" href="/sheets/site-layout.pdf" download><Icon name="download" />Download the layout plan</a>
-                {SITE_VIEWPOINTS.map((v) => (
-                  <a key={v.id} className="btn" href={`/sheets/site-${v.id}.pdf`} download><Icon name="download" />Download sheet {v.id}</a>
-                ))}
-              </div>
-              <ul className="home-checklist">
-                <li>Print on US Letter at <strong>100%</strong> (not "Fit") and measure the check bar: it must read 10.0 cm.</li>
-                <li>Mount each sheet flat on a board, code centre <strong>{CODE_HEIGHT_M.toFixed(2)} m</strong> above the ground, board vertical.</li>
-                <li>Set out from point O with the layout plan. Square each board to its grid line: 1° off swings the far end about 20 cm.</li>
-                <li>Mark the X <strong>{STAND_OFF_M} m</strong> in front of each code. Calibrate your phone once in <strong>Setup</strong>.</li>
-              </ul>
-            </div>
-          </details>
 
         </div>
       </section>

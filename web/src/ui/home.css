@@ -40,8 +40,14 @@
 /* The demo video: a link under the hero's buttons, and the player in its own section after the theme line. */
 .home-watch { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 10px; color: var(--white); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
 .home-watch .icon { width: 22px; height: 22px; color: var(--orange); }
-.home-deck { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 16px 0 0; }
-.home-deck span { color: var(--muted); font-size: 14px; }
+.home-deck { display: grid; gap: 6px; margin: 16px 0 0; }
+.home-deck .btn { justify-self: start; }
+.home-deck span { margin-bottom: 8px; color: var(--muted); font-size: 14px; }
+@media (min-width: 720px) {
+  .home-deck { grid-template-columns: auto 1fr; align-items: center; gap: 10px 14px; }
+  .home-deck .btn { justify-self: stretch; justify-content: flex-start; }
+  .home-deck span { margin-bottom: 0; }
+}
 .home-video { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; border-radius: var(--radius); background: var(--ink); box-shadow: 0 12px 36px rgba(11, 31, 51, 0.18); }
 .home-proof { display: flex; flex-wrap: wrap; gap: 6px 18px; margin: 18px 0 0; padding: 0; list-style: none; color: var(--home-ink-soft); font-size: 14px; }
 .home-proof li { display: inline-flex; align-items: center; gap: 6px; }
@@ -87,7 +93,7 @@
 .home-section-head h2 { margin-bottom: 8px; }
 .home-specs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 0; padding: 0; list-style: none; }
 .home-specs li { display: grid; padding: 10px 12px; border-radius: 12px; background: var(--paper); color: var(--muted); font-size: 13px; line-height: 1.3; }
-.home-specs strong { color: var(--ink); font-size: 18px; }
+.home-specs strong { color: var(--ink); font-size: 18px; white-space: nowrap; }
 
 .vp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); gap: 12px; margin: 0; padding: 0; list-style: none; }
 .vp-card {
@@ -181,13 +187,41 @@
 .sim-steps li { position: relative; padding: 10px 12px 10px 46px; border-radius: 12px; background: #eaf0f6; counter-increment: sim; }
 .sim-steps li::before { content: counter(sim); position: absolute; left: 12px; top: 9px; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; background: var(--steel); color: var(--white); font-size: 13px; font-weight: 800; }
 
-/* Live AR section: the two easy ways in (desk sheet, 3D model) above the life-size site. */
-.live-easy { margin-bottom: 36px; }
-.home-card-feature { border-color: rgba(255, 106, 19, 0.55); box-shadow: 0 10px 30px rgba(255, 106, 19, 0.12); }
+/* Live AR section: life size on site is the main feature, so it leads in its own panel; the two quicker ways in
+   (desk sheet, 3D model) follow it. */
+.live-onsite {
+  display: grid; gap: 20px; padding: 22px 16px 16px; border: 1px solid rgba(255, 106, 19, 0.55); border-radius: 20px;
+  background: var(--white); box-shadow: 0 14px 40px rgba(255, 106, 19, 0.12);
+}
+.live-onsite-top { display: grid; gap: 20px; }
+.live-onsite-copy { display: grid; gap: 12px; align-content: start; }
+.live-onsite-copy .home-card-tag { justify-self: start; }
+.home .live-onsite-title { margin: 0; font-size: 26px; line-height: 1.15; letter-spacing: -0.01em; } /* .home h3 would win over one class */
+.live-onsite-lead { margin: 0; color: var(--ink); font-size: 17px; line-height: 1.5; }
+.live-onsite-copy .home-sub { font-size: 15px; }
+.live-onsite-copy .home-specs { margin-top: 4px; }
+.live-onsite-shots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin: 0; align-content: start; }
+.live-onsite-shots img { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 18px; background: var(--ink); box-shadow: 0 10px 26px rgba(11, 31, 51, 0.18); }
+.live-onsite-shots figcaption { grid-column: 1 / -1; color: var(--muted); font-size: 13px; text-align: center; }
+.live-onsite .home-protocol, .live-onsite .home-details { margin-top: 0; }
+.live-alt-head { margin: 40px 0 16px; }
+.home .live-alt-title { margin: 0 0 6px; font-size: 22px; text-wrap: balance; }
+@media (max-width: 719.98px) {
+  /* Phones: a slimmer panel edge and plan, so the viewpoint cards keep their titles on one line. */
+  .live-onsite { padding: 20px 12px 12px; }
+  .live-onsite .vp-card { grid-template-columns: 96px 1fr 36px; }
+  .live-onsite-copy .home-specs li { padding: 10px; }
+  .live-onsite-copy .home-specs strong { font-size: 16px; }
+}
+@media (min-width: 720px) {
+  .live-onsite { gap: 24px; padding: 32px; }
+  .home .live-onsite-title { font-size: 34px; }
+}
+@media (min-width: 960px) {
+  .live-onsite-top { grid-template-columns: 1fr 340px; gap: 40px; align-items: start; }
+}
 .home-card-tag { align-self: flex-start; padding: 3px 9px; border-radius: 999px; background: rgba(255, 106, 19, 0.14); color: #b4470a; font-size: 12px; font-weight: 800; letter-spacing: 0.02em; }
 .home-card-tag-quiet { background: #e8f0f8; color: var(--steel); }
-.live-onsite-head { margin-top: 8px; padding-top: 28px; border-top: 1px solid var(--line); }
-.live-onsite-title { margin: 0 0 8px; font-size: 20px; }
 
 /* Live AR: the device recommendation under the section heading. */
 .home-device { display: flex; align-items: flex-start; gap: 10px; margin: -4px 0 20px; padding: 12px 14px; border-radius: 12px; background: #eaf0f6; color: var(--ink); font-size: 15px; }

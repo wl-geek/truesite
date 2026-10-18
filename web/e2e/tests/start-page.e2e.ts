@@ -157,6 +157,15 @@ test.describe('start page', () => {
     }
   })
 
+  test('the demo video is on YouTube too: linked under the player and in the team section', async ({ page }) => {
+    await page.goto('/')
+    for (const where of ['#demo', '#about']) {
+      const link = page.locator(where).getByRole('link', { name: 'Watch the demo on YouTube' })
+      await expect(link).toHaveAttribute('href', 'https://youtu.be/M8zh02kMtk4')
+      await expect(link).toHaveAttribute('target', '_blank')
+    }
+  })
+
   test('a shared link gets a preview: title, description and a 1200 x 630 image that is served', async ({ request }) => {
     const html = await (await request.get('/')).text() // what a link preview reads: the page as served, no JavaScript
     const meta = (key: string) => new RegExp(`<meta (?:property|name)="${key}" content="([^"]+)"`).exec(html)?.[1]
