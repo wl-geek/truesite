@@ -11,7 +11,7 @@ Sized for people about 1.8 m (6 ft) tall: 6 m bays and a ground storey with 3.9 
 - Upper storey, steel: UC columns on lines 1 and 3 from level 1 to the eaves (8.5 m), edge beams, four duo-pitch
   trusses T1-T4 spanning 12 m (ridge about 10.4 m), purlins, and X-bracing in the end bays.
 - Pad footings with only their top 20 mm modelled, so nothing is below Z 0 and the model sits on the ground in AR.
-- Anchors P1-P4: upright US Letter sheets (16 cm code), code centre 1.4 m above the ground (an iPad held upright at chest height by a
+- Anchors P1-P4: upright US Letter sheets (16 cm code), code centre 1.4 m above the ground (a phone held upright at chest height by a
   1.70 m adult), each facing a standing spot 1.5 m in front of it. Scan from the spot, then turn on the spot.
   D1: the whole building at 1:100 on a Letter desk sheet. The layout plan (site-layout.pdf) gives the tape
   measurements for setting the four sheets out on a car park.
@@ -62,7 +62,7 @@ REBAR = ("Rebar B500B", "steel", (0.75, 0.18, 0.10))
 RAIL = ("Scaffold tube", "steel", (0.85, 0.65, 0.1))
 
 # --- viewpoints --------------------------------------------------------------------------------------------
-CODE_Z = 1.4  # code centre above the ground: camera height of an iPad held upright at chest height (1.70 m adult)
+CODE_Z = 1.4  # code centre above the ground: camera height of a phone held upright at chest height (1.70 m adult)
 STAND_OFF = 1.5  # the standing spot is this far in front of the code
 QR_M = LIFE_QR_MM / 1000  # the largest code a Letter page holds with its full quiet zone
 VIEWPOINTS = [  # id, standing spot (x, y), looking direction (unit, along a grid axis), name
@@ -363,7 +363,7 @@ def view_sheet(anchor: dict) -> Sheet:
             f"{vid} {name}. Code centre at x {x:g} m, y {y:g} m from point O (see site-layout.pdf), facing "
             f"{COMPASS[(-look[0], -look[1])]}.",
             f"Mount UPRIGHT on a rigid board and stand: code centre {CODE_Z:.2f} m above the ground, sheet vertical, still.",
-            f"Stand on the X {STAND_OFF:g} m in front ({stand[0]:g}, {stand[1]:g}). Hold the iPad upright at chest height.",
+            f"Stand on the X {STAND_OFF:g} m in front ({stand[0]:g}, {stand[1]:g}). Hold your phone upright at chest height.",
             "Scan, tap Start camera. Lock 0.7 m from the code, a little to one side, until 'Alignment: Good'.",
             "Step back to the X, then turn slowly on the spot and look up. Don't walk. Re-align on the code every minute.",
             "Print on US Letter at 100%. If the check bar is not 10.0 cm, enter its measured length in the app.",

@@ -363,7 +363,7 @@ test.describe('virtual demo', () => {
   test('on a tablet the coach offers Turn with device @handheld', async ({ page, isMobile }) => {
     test.skip(!isMobile, 'touch devices only')
     await enterVirtualSite(page, 'P1')
-    await expect(page.getByRole('note')).toContainText('drag, or tap Turn with device and turn the iPad.')
+    await expect(page.getByRole('note')).toContainText('drag, or tap Turn with device and turn your phone.')
     await expect(page.getByRole('button', { name: 'Turn with device' })).toHaveAttribute('aria-pressed', 'false')
   })
 

@@ -34,7 +34,7 @@ export function HomePage() {
             <p className="home-eyebrow">AR × BIM × AI for construction</p>
             <h1 id="home-title">See the design where you build. Check the build against it.</h1>
             <p className="home-lede">
-              Scan a QR code and the BIM model appears on site at true scale, through your phone or iPad camera. Tap{' '}
+              Scan a QR code and the BIM model appears on site at true scale, through your phone's camera. Tap{' '}
               <strong>Check as-built</strong> and Gemini compares what is built with the design, pins the differences and
               drafts the issue.
             </p>
@@ -47,7 +47,7 @@ export function HomePage() {
             </div>
             <ul className="home-proof" aria-label="Highlights">
               <li><Icon name="check" />No app to install</li>
-              <li><Icon name="check" />Made for tablets and smartphones</li>
+              <li><Icon name="check" />Made for smartphones</li>
               <li><Icon name="check" />Gemini on Google Cloud</li>
             </ul>
           </div>
@@ -92,8 +92,8 @@ export function HomePage() {
               </p>
             </div>
           </div>
-          <p className="home-device"><Icon name="tablet" />
-            <span><strong>Made for tablets and smartphones.</strong> A tablet gives the best view; a phone works well too.</span>
+          <p className="home-device"><Icon name="phone" />
+            <span><strong>Made for smartphones.</strong> Use your phone for the best experience; a tablet works too.</span>
           </p>
 
           <ul className="home-cards live-easy">
@@ -169,7 +169,7 @@ export function HomePage() {
                 <li>Print on US Letter at <strong>100%</strong> (not "Fit") and measure the check bar: it must read 10.0 cm.</li>
                 <li>Mount each sheet flat on a board, code centre <strong>{CODE_HEIGHT_M.toFixed(2)} m</strong> above the ground, board vertical.</li>
                 <li>Set out from point O with the layout plan. Square each board to its grid line: 1° off swings the far end about 20 cm.</li>
-                <li>Mark the X <strong>{STAND_OFF_M} m</strong> in front of each code. Calibrate the iPad once in <strong>Setup</strong>, in landscape.</li>
+                <li>Mark the X <strong>{STAND_OFF_M} m</strong> in front of each code. Calibrate your phone once in <strong>Setup</strong>.</li>
               </ul>
             </div>
           </details>
@@ -200,12 +200,12 @@ export function HomePage() {
             <p>
               When you tap <strong>Check as-built</strong>, TrueSite takes your view as the site photo, renders the BIM
               design from exactly the same spot, and Gemini compares the two: model against model. In the product the
-              photo comes from the iPad's camera on the real site; everything else is the same.
+              photo comes from the phone's camera on the real site; everything else is the same.
             </p>
           </div>
           <ol className="sim-steps">
             <li><strong>Pick a QR spot.</strong> You stand on its X, where the sheet's code places you in the model.</li>
-            <li><strong>Look around.</strong> Drag, or turn your iPad. You stay on the spot, as you would on site.</li>
+            <li><strong>Look around.</strong> Drag, or turn your phone. You stay on the spot, as you would on site.</li>
             <li><strong>Check as-built.</strong> Gemini pins what's off on your view and drafts the issue.</li>
           </ol>
           <ul className="vp-grid">
@@ -275,7 +275,7 @@ function HeroVisual() {
   )
 }
 
-type IconName = 'check' | 'down' | 'arrow' | 'qr' | 'cube' | 'scan' | 'download' | 'photo' | 'desk' | 'tablet'
+type IconName = 'check' | 'down' | 'arrow' | 'qr' | 'cube' | 'scan' | 'download' | 'photo' | 'desk' | 'phone'
 
 const ICONS: Record<IconName, string> = {
   check: 'M20 6 9 17l-5-5',
@@ -287,7 +287,7 @@ const ICONS: Record<IconName, string> = {
   download: 'M12 3v12M7 10l5 5 5-5M5 21h14',
   photo: 'M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM3 16l5-5 4 4 3-3 6 6M15.5 9.5h.01',
   desk: 'M3 10h18M5 10v9M19 10v9M8 10l2-5h4l2 5',
-  tablet: 'M6 2h12a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM11 18h2',
+  phone: 'M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM11 18h2',
 }
 
 function Icon({ name }: { name: IconName }) {

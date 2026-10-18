@@ -8,7 +8,7 @@ import { sheetInfo } from './sheet'
 import './deviceTip.css'
 
 type Props = {
-  /** This page's address, shown as a QR code so a tablet or phone can pick it up. */
+  /** This page's address, shown as a QR code so a phone can pick it up. */
   url: string
   /** The sheet this live view is for (null while the project loads, and when the link is broken). */
   anchor: Anchor | null
@@ -20,7 +20,7 @@ type Props = {
 
 /**
  * Shown every time live AR is opened on a laptop or PC, and it stays: live AR needs a tablet's or phone's camera and
- * motion sensors, so a computer can't use it. Step 1 hands this page over to a tablet or phone by QR; step 2 gives the
+ * motion sensors, so a computer can't use it. Step 1 hands this page over to a phone by QR; step 2 gives the
  * matching sheet to print and scan. "Back to home" (or Escape) leaves for the start page; nothing opens the live view.
  * It waits for the sheet to load, so it never covers a broken link and hands that to a phone (audit C-29), and it
  * renders on <body>, above the top bar, as a modal that keeps focus (C-28).
@@ -43,12 +43,12 @@ export function DeviceTip({ url, anchor, virtualHref, onLeave }: Props) {
         <p className="dt-step" aria-live="polite">Step {step} of 2</p>
         {step === 1 ? (
           <>
-            <h2 id="dt-title">Open live AR on your tablet or phone</h2>
-            <p>Live AR needs a tablet's or phone's camera and motion sensors, so it doesn't run on a laptop or PC. A tablet gives
-              the best view; a phone works well too.</p>
+            <h2 id="dt-title">Open live AR on your smartphone</h2>
+            <p>Live AR needs a phone's camera and motion sensors, so it doesn't run on a laptop or PC. Use your smartphone for
+              the best experience; a tablet works too.</p>
             <div className="dt-handoff">
               <img src={qr} width="132" height="132" alt="QR code for this live view" />
-              <p><strong>Scan this code with your tablet or phone.</strong> This live view opens there.</p>
+              <p><strong>Scan this code with your smartphone.</strong> This live view opens there.</p>
             </div>
             <div className="dt-actions">
               <button type="button" className="btn btn-accent" ref={primary as RefObject<HTMLButtonElement>} onClick={() => setStep(2)}>
@@ -72,7 +72,7 @@ export function DeviceTip({ url, anchor, virtualHref, onLeave }: Props) {
             <ol className="dt-list">
               <li>{sheet.print}</li>
               <li>{sheet.place}</li>
-              <li>On the tablet or phone, tap <strong>Start camera</strong> and point it at the code.</li>
+              <li>On your phone, tap <strong>Start camera</strong> and point it at the code.</li>
             </ol>
             {layoutPlan && (
               <p className="dt-note">Setting out all four site sheets: <a href="/sheets/site-layout.pdf" download>download the layout plan</a>.</p>
@@ -84,7 +84,7 @@ export function DeviceTip({ url, anchor, virtualHref, onLeave }: Props) {
           </>
         )}
         <p className="dt-note dt-virtual">
-          Without a tablet or a printer, the virtual demo runs on this computer. <Link to={virtualHref}>Try the virtual demo</Link>
+          Without a phone or a printer, the virtual demo runs on this computer. <Link to={virtualHref}>Try the virtual demo</Link>
         </p>
       </div>
     </div>,
