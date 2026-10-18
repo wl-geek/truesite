@@ -6,7 +6,7 @@ TrueSite: see the design where you build. Check the build against it.
 
 2
 00:00:05.900 --> 00:00:12.900
-The problem: crews build without the model in front of them. Team members lose 14+ hours a week to hunting for data and rework, and 48% of rework comes from miscommunication and poor project data.
+The problem: crews build without the model in front of them. Team members lose 14+ hours a week to hunting for data, resolving conflicts and rework, and 48% of rework on US jobsites comes from miscommunication and poor project data.
 
 3
 00:00:13.300 --> 00:00:18.800
@@ -22,7 +22,7 @@ Live AR, step 1: scan the printed QR code with the phone’s camera. TrueSite op
 
 6
 00:00:33.000 --> 00:00:42.000
-Step 2: ten seconds of tilting calibrates the camera, and the code’s corners give the camera’s exact pose.
+Step 2: ten seconds of tilting calibrates the camera, and the code’s four corners give the camera’s pose.
 
 7
 00:00:42.400 --> 00:01:00.400
@@ -66,7 +66,7 @@ Gemini drafts the issue in the crew’s language, and a person edits and saves i
 
 17
 00:02:49.400 --> 00:03:03.400
-Under the hood: the phone does the vision. Cloud Run, Gemini 3.8 Flash, Cloud Firestore through the Firebase Admin SDK, and Cloud Storage do the judging.
+Under the hood: the phone does the vision; Gemini 3.8 Flash does the judging. Cloud Run runs the API, Cloud Firestore (through the Firebase Admin SDK) keeps check runs and issues, and Cloud Storage keeps the photos.
 
 18
 00:03:03.800 --> 00:03:09.300

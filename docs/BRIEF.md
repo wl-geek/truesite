@@ -7,7 +7,7 @@ Read this first, then `DEVELOPMENT.md` (how to work), the [design spec](specs/20
 **Event:** Google Cloud AI Builder Cup 2026 (JAPAC, run by Hack2skill).
 - **Theme:** *Future of Work & Enterprise Productivity*. It asks for solutions that "transform how individuals and organizations access knowledge, collaborate, make decisions, and complete everyday work".
 - **Team:** Wai and Michael (Aung Nyein Chan, an architect).
-- **Deadline:** we submit **Sat 17 Oct 2026**; the official deadline is Sun 18 Oct.
+- **Deadline:** the portal closes **19 Oct 2026, 01:29 IST**.
 
 **Scoring.** The Terms prevail over the website:
 
@@ -20,12 +20,12 @@ Read this first, then `DEVELOPMENT.md` (how to work), the [design spec](specs/20
 
 **Deliverables:**
 - a working URL **deployed on Google Cloud** (Cloud Run)
-- a video **strictly under 3:00**
+- a demo video of **3 to 4 minutes** (ours is 3:15: https://youtu.be/M8zh02kMtk4)
 - a **public GitHub repo**
 - a **deck PDF covering the solution architecture and the business case**
 
 **Rules that bite:**
-- Only **fresh code and assets made during the event** count. No NexusBIM (Wai's earlier product) or any pre-existing code, prompts or data.
+- Only **fresh code and assets made during the event** count: no code, prompts or data from any earlier project.
 - The organiser gets a 6-month right of first refusal on *exclusive* licences of what we submit.
 
 ## 2. The product
@@ -87,42 +87,15 @@ The start page shows one project, `site`: a two-storey building under constructi
    - on a laptop or PC, a live AR page opens a popup every time: a QR code of the page for a tablet or phone, then that page's sheet to download, with how to print and place it
 4. **Also in the video:** Ask on an element, a drafted issue and the site report, the measured numbers (labelled simulated), and the Google Cloud architecture.
 
-## 5. Prototype scope (what "done" means by Sat 17 Oct)
+## 5. Prototype scope (what "done" meant for submission)
 
 | Must work | Nice | Out |
 |---|---|---|
 | Deployed Cloud Run URL. The as-built check in the virtual demo with live Gemini (off on the site sheets), with the ready-made views as the fallback. Live AR camera overlay on iPad, iPhone and Android: P1–P4 at 1:1, D1 at 1:100. Ask. Issues drafted from a finding, in the crew's language, and saved (there has been no Issues page since #75). The site report. The iPad P1–P4 shoot. README, deck and video. | Android Start AR and Walk inside (Quick Look) verified on a device; both stay behind `?xr=1`. Overlay accuracy measured on a device. Labelled real photos (#9). Voice question. BCF export. | Native apps, VR, user IFC upload, logins, offline mode, survey-grade accuracy claims |
 
-## 6. Current state (17 Oct)
+## 6. Current state (18 Oct)
 
-- **Built and merged** (PRs #71–#111, on top of the spec's core):
-  - the `site` building with four iPad viewpoints P1–P4 and the D1 desk sheet at 1:100
-  - a one-page start page (`#how`, `#live`, `#virtual`, `#about`); the top bar's links scroll to each section
-  - the virtual demo with ten planted defects, the scorecard, "Why it matters" and design ghosts in 3D, and the ready-made views as its fallback
-  - the check's third image, IMAGE 3: the photo with each mark's design outline (#104)
-  - issues drafted in eight crew languages (#88), and the day's site report (`POST /api/report`, #90)
-  - the Gemini fallback chain (#86, #93)
-  - a steadier live overlay fused with the motion sensors, a full-screen camera view, and the laptop popup with the page's QR code and its sheet (#107, #111)
-- **Audits:**
-  - 15 Oct (`docs/audit-2026-10-15.md`): every high and medium finding is fixed.
-  - 16 Oct (`docs/audit-2026-10-16.md`): both highs and all mediums are fixed (#95–#101), and B-22 since (#103).
-  - 17 Oct (`docs/audit-2026-10-17.md`): 41 open findings, none high (13 medium, 28 low).
-- **Tests:** all green: BIM 143; server 521 passed, 9 skipped (they need the Firestore emulator); web 486; `tsc -b` clean. The Playwright suite in `web/e2e` (not in `make test`) has 143 passed and 4 skipped. The mutation, property and fuzz pass is in the README's Testing section (#108–#110).
-- **Deployed:** Cloud Run in `asia-southeast1`, with live Gemini, Firestore and Cloud Storage. `eval/README.md` §3 records a run on the deployed service (#105). The service URL isn't in the repo yet: add it to the README's "Live demo" line, and close #1.
-- **Gemini:**
-  - `gemini-3.8-flash` on Agent Platform (`global`) with three images and LOW thinking (MEDIUM took about 65 s a check and was dropped). On 429 or 503 the server tries `gemini-3.5-flash`, then `gemini-3.5-flash-lite`.
-  - Each check try waits 50 s, and a hung try is tried once more on the same model (100 s at worst); Ask, Draft and Report wait 25 s per try. When a Gemini limit is hit, a popup says it is a usage limit, not an error, with a countdown (#117).
-  - Results (`eval/README.md` §3, simulated as-built): about 10 of 16 planted defects found and 4 false alarms on average over three runs. A check costs about US$0.015.
-  - The site has its own `check_note` (#95). (The rooftop frame and its setting-out note were removed on 17 Oct.)
-- **Google Cloud:** project `truesite-hack-2026`, owned by Wai's Gmail. `make deploy` sets daily caps of 300 checks and 300 asks (30 checks per IP per hour), renders the QR sheets for the service URL and refuses to deploy without them; `make verify` ends with `SMOKE OK`.
-- **Phone-tested on Android over the LAN (15 Oct):** desk sheet overlay ✓, live *Check as-built* call ✓, QR scan ✓.
-- **Not yet confirmed on a device:** the iPad overlay at P1–P4, the sensor axes of the fusion on iPad and iPhone (#107), look-around on iPhone, the iOS motion prompt, and the `?xr=1` modes (Android Start AR, Quick Look). In Chromium with synthetic camera videos, the overlay landed within 2 px of the truth at P1–P4 and D1 (Playwright, before #107).
-- **Open work:** see GitHub Issues and the 17 Oct audit. Human-only items:
-  - the live URL in the README (#1)
-  - the iPad shoot and device runs (#33, #35)
-  - real photos (#9)
-  - measurements (#13)
-  - video and deck (#15)
+Submitted: the deployed service (https://truesite-1067044308557.asia-southeast1.run.app), the 3:15 demo video (https://youtu.be/M8zh02kMtk4), the deck (`docs/TrueSite-deck.pdf`) and this repository. The README has the current device status, accuracy and test results.
 
 ## 7. How we work
 
@@ -132,4 +105,4 @@ The start page shows one project, `site`: a two-storey building under constructi
   - `make dev-server` (fake Gemini) and `cd web && npm run dev:https`
   - open `https://<lan-ip>:5173` on the phone and accept the certificate warning
   - `make sheets BASE_URL=https://<lan-ip>:5173` makes printable sheets for that address
-- **Speed over ceremony:** Wai wants decisions made and work done without routine permission questions. Still never commit secrets, never use pre-existing code, and never claim accuracy we haven't measured.
+- **Ground rules:** never commit secrets, never use pre-existing code, and never claim accuracy we haven't measured.

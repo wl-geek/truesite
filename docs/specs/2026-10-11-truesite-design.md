@@ -346,7 +346,7 @@ The prompt also names the printed QR code (the anchor; `distance_m` is the camer
 | **Tue 13 Oct** | <ul><li>As-built check end to end: render, marks, Gemini, validation, severity</li><li>Findings pinned in 3D</li><li>Sample-photo mode</li><li>Aung Nyein Chan's IFC integrated (the fallback model stays if it's late)</li></ul> |
 | **Wed 14 Oct** | <ul><li>Element Q&A</li><li>Issue drafting and saving</li><li>Sessions</li><li>UI pass</li><li>Physical model ready</li><li>Evaluation photos shot and labelled</li></ul> |
 | **Thu 15 Oct** | <ul><li>Limits, cap and saved results</li><li>QR sheets</li><li>Evaluation run</li><li>Bug bash</li><li>**Core freeze at end of day**</li></ul> |
-| **Fri 16 Oct** | <ul><li>Video shot and edited (under 3:00; target 2:45)</li><li>Deck</li><li>README</li></ul> |
+| **Fri 16 Oct** | <ul><li>Video shot and edited (3 to 4 minutes)</li><li>Deck</li><li>README</li></ul> |
 | **Sat 17 Oct** | <ul><li>Every link checked while signed out</li><li>**Submit**</li></ul> |
 
 **Cut order if behind**, first cut first:
@@ -401,4 +401,4 @@ Never cut the live overlay, the as-built check, sample-photo mode or desk mode.
 - This repository is created on 11 Oct 2026, inside the official hackathon timeline (registration opened 1 Sept), with dated commits from day one.
 - No code, assets, prompts or data come from any earlier project, including team members' own products.
 - The BIM model, physical model, photos and brand are created during the event. Source files keep their timestamps; no school or portfolio models are used.
-- Everything is submitted in English: deck PDF, video under 3 minutes, public repo, deployed URL.
+- Everything is submitted in English: deck PDF, a demo video of 3 to 4 minutes, public repo, deployed URL.

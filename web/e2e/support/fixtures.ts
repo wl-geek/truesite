@@ -121,7 +121,7 @@ export async function recordCheckUploads(page: Page): Promise<() => Promise<Uplo
 export async function enterVirtualSite(page: Page, id: string): Promise<void> {
   await page.goto(`/samples?at=${id}`)
   await expect(page.getByRole('application', { name: new RegExp(`Virtual demo at ${id}`) })).toBeVisible()
-  await expect(page.getByRole('button', { name: 'Got it' })).toBeVisible({ timeout: 60_000 })
+  await expect(page.getByRole('button', { name: 'Start looking around' })).toBeVisible({ timeout: 60_000 })
 }
 
 /** Tap Check as-built and wait for the results panel. */
