@@ -6,7 +6,7 @@ import { CODE_HEIGHT_M, compass, SITE_VIEWPOINTS, STAND_OFF_M } from './siteView
 import { ViewpointPlan } from './ViewpointPlan'
 import './home.css'
 
-type SectionId = (typeof SECTIONS)[number]['id']
+type SectionId = (typeof SECTIONS)[number]['id'] | 'demo'
 
 /** In-page link: scroll to the section instead of leaving the page (new-tab clicks still work). */
 function jumpTo(id: SectionId) {
@@ -24,7 +24,7 @@ function jumpTo(id: SectionId) {
 export function HomePage() {
   useEffect(() => { // /#about and friends: land on that section
     const id = window.location.hash.slice(1)
-    if (SECTIONS.some((s) => s.id === id)) goToSection(id as SectionId)
+    if (SECTIONS.some((s) => s.id === id) || id === 'demo') goToSection(id as SectionId)
   }, [])
   return (
     <main className="home">
@@ -45,6 +45,7 @@ export function HomePage() {
                 <span className="home-cta-note">For judges to understand the concept&nbsp;· <span className="nowrap">no printing, no site visit</span></span>
               </div>
             </div>
+            <a href="/#demo" className="home-watch" onClick={jumpTo('demo')}><Icon name="play" />Watch the demo video (2:41)</a>
             <ul className="home-proof" aria-label="Highlights">
               <li><Icon name="check" />No app to install</li>
               <li><Icon name="check" />Made for smartphones</li>
@@ -59,6 +60,22 @@ export function HomePage() {
         <p className="home-wrap"><span className="home-theme-tag">Future of Work</span>
           The future of construction work: the design in every hand, an AI check on every pour.</p>
       </div>
+
+      <section id="demo" className="home-section home-wrap" aria-labelledby="demo-title">
+        <div className="home-section-head">
+          <div>
+            <p className="home-kicker">Demo video · 2:41</p>
+            <h2 id="demo-title">TrueSite in under three minutes</h2>
+            <p className="home-sub">
+              Real footage from our iPhone field test on 17 October, then a live Gemini check in the virtual demo.
+            </p>
+          </div>
+        </div>
+        <video className="home-video" controls playsInline preload="none" poster="/media/truesite-demo-poster.jpg" width={1920} height={1080}>
+          <source src="/media/truesite-demo.mp4" type="video/mp4" />
+          <track kind="captions" src="/media/truesite-demo.vtt" srcLang="en" label="English" default />
+        </video>
+      </section>
 
       <section id="how" className="home-section home-wrap" aria-labelledby="how-title">
         <p className="home-kicker">Three steps on site</p>
@@ -275,7 +292,7 @@ function HeroVisual() {
   )
 }
 
-type IconName = 'check' | 'down' | 'arrow' | 'qr' | 'cube' | 'scan' | 'download' | 'photo' | 'desk' | 'phone'
+type IconName = 'check' | 'down' | 'arrow' | 'qr' | 'cube' | 'scan' | 'download' | 'photo' | 'desk' | 'phone' | 'play'
 
 const ICONS: Record<IconName, string> = {
   check: 'M20 6 9 17l-5-5',
@@ -288,6 +305,7 @@ const ICONS: Record<IconName, string> = {
   photo: 'M4 5h16a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM3 16l5-5 4 4 3-3 6 6M15.5 9.5h.01',
   desk: 'M3 10h18M5 10v9M19 10v9M8 10l2-5h4l2 5',
   phone: 'M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM11 18h2',
+  play: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM10 8.5v7l6-3.5z',
 }
 
 function Icon({ name }: { name: IconName }) {

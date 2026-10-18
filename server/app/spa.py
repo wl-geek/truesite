@@ -30,6 +30,7 @@ mimetypes.add_type("model/gltf-binary", ".glb")
 mimetypes.add_type("model/gltf+json", ".gltf")
 mimetypes.add_type("font/woff2", ".woff2")
 mimetypes.add_type("model/vnd.usdz+zip", ".usdz")  # AR Quick Look needs the right type
+mimetypes.add_type("text/vtt", ".vtt")  # the demo video's captions
 
 IMMUTABLE = "public, max-age=31536000, immutable"
 REVALIDATE = "no-cache"  # browser may store it, but must revalidate (ETag) each time
