@@ -1,39 +1,59 @@
-/* About section at the bottom of the start page (AboutSection.tsx). */
-.about { padding: 56px 0 24px; background: var(--ink); color: #d5e1ec; }
-.about h2 { margin: 0 0 12px; color: var(--white); font-size: clamp(24px, 3.6vw, 32px); line-height: 1.15; letter-spacing: -0.01em; }
-.about h3 { margin: 0 0 8px; color: var(--white); font-size: 17px; }
-.about-kicker { margin: 0 0 8px; color: #ffb27f; font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
-.about-lede { max-width: 44em; margin: 0 0 28px; font-size: 17px; }
+/* About section at the bottom of the start page (AboutSection.tsx): a few calm bands, mobile first. */
+.about { padding: 64px 0 40px; background: var(--ink); color: #d5e1ec; }
+.about h2 { margin: 0 0 14px; color: var(--white); font-size: clamp(26px, 4vw, 38px); line-height: 1.12; letter-spacing: -0.015em; }
+.about h3 { margin: 0 0 8px; color: var(--white); font-size: 18px; line-height: 1.25; }
 .about strong { color: var(--white); }
-.about a { color: #9cc7f2; }
+.about a:not(.btn) { color: #9cc7f2; }
+.about-kicker { margin: 0 0 10px; color: #ffb27f; font-size: 13px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; }
+.about-head { max-width: 46em; margin-bottom: 36px; }
+.about-lede { margin: 0; font-size: 18px; line-height: 1.55; color: #c9d6e4; }
+.about-h3 { margin-bottom: 16px; font-size: 20px; }
 
-.about-grid { display: grid; gap: 12px; }
-.about-card { padding: 18px; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 14px; background: rgba(255, 255, 255, 0.04); }
-.about-card p, .about-card ol, .about-card ul { margin: 0; font-size: 15px; }
-.about-card ol, .about-card ul { display: grid; gap: 6px; padding-left: 18px; }
+/* AR × BIM × AI: three pillars */
+.about-pillars { display: grid; gap: 14px; margin: 0 0 48px; padding: 0; list-style: none; }
+.about-pillars li { padding: 22px 22px 24px; border-radius: 16px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); }
+.about-pillars p { margin: 0; font-size: 15.5px; line-height: 1.5; color: #c9d6e4; }
+.about-tag { display: inline-block; margin-bottom: 14px; padding: 4px 10px; border-radius: 8px; font-size: 13px; font-weight: 800; letter-spacing: 0.08em; color: var(--ink); }
+.about-tag-ar { background: #ff8a4c; }
+.about-tag-bim { background: #8fbcea; }
+.about-tag-ai { background: #6fd3c1; }
 
-.about-why { display: grid; gap: 12px; margin: 28px 0; }
-.about-stat { display: grid; gap: 4px; padding: 18px; border-radius: 14px; background: rgba(255, 106, 19, 0.12); border: 1px solid rgba(255, 106, 19, 0.35); }
-.about-stat strong { color: #ffb27f; font-size: 34px; line-height: 1; letter-spacing: -0.02em; }
-.about-stat span { font-size: 15px; }
-.about-why-text { margin: 0; font-size: 15px; }
-.about-source { display: block; margin-top: 8px; color: #9fb3c8; font-size: 13px; }
+/* Why it matters: three numbers */
+.about-band { margin: 0 0 48px; }
+.about-stats { display: grid; gap: 14px; margin: 0; }
+.about-stats p { display: grid; gap: 6px; margin: 0; padding: 20px 22px; border-radius: 16px; background: rgba(255, 106, 19, 0.1); border: 1px solid rgba(255, 106, 19, 0.3); }
+.about-stats strong { color: #ffb27f; font-size: 36px; line-height: 1; letter-spacing: -0.02em; }
+.about-stats span { font-size: 15px; line-height: 1.45; color: #d5e1ec; }
+.about-source { margin: 12px 0 0; color: #9fb3c8; font-size: 13px; }
 
-.about-arch { margin: 0 0 28px; }
-.arch-flow { display: grid; gap: 10px; margin: 12px 0; padding: 0; list-style: none; counter-reset: arch; }
-.arch-flow li { position: relative; display: grid; gap: 2px; padding: 12px 14px; border-radius: 12px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); }
-.arch-node { color: var(--white); font-weight: 700; }
-.arch-gemini { color: #ffb27f; }
-.arch-note { color: #9fb3c8; font-size: 14px; }
-.about-note { max-width: 46em; margin: 0; font-size: 15px; }
+/* Works with your BIM: four steps */
+.about-flow { display: grid; gap: 12px; margin: 0; padding: 0; list-style: none; counter-reset: flow; }
+.about-flow li { position: relative; display: grid; gap: 4px; padding: 18px 20px 18px 56px; border-radius: 14px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); counter-increment: flow; }
+.about-flow li::before { content: counter(flow); position: absolute; left: 18px; top: 18px; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--orange); color: var(--ink); font-size: 14px; font-weight: 800; }
+.about-flow span { font-size: 15px; line-height: 1.45; color: #c9d6e4; }
 
-.about-rules ul { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
-.about-rules li { padding-left: 16px; border-left: 3px solid var(--orange); font-size: 15px; }
+/* Google Cloud and the rules, side by side on wide screens */
+.about-pair { display: grid; gap: 14px; margin: 0 0 48px; }
+.about-panel h3 { margin-bottom: 14px; }
+.about-panel { padding: 22px 24px; border-radius: 16px; background: rgba(255, 255, 255, 0.04); border: 1px solid rgba(255, 255, 255, 0.1); }
+.about-panel ul { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.about-panel li { padding-left: 14px; border-left: 3px solid var(--orange); font-size: 15px; line-height: 1.45; color: #c9d6e4; }
+
+/* The team */
+.about-team { padding-top: 32px; border-top: 1px solid rgba(255, 255, 255, 0.1); }
+.about-people { display: grid; gap: 16px; margin-bottom: 20px; }
+.about-people figure { display: flex; align-items: center; gap: 14px; margin: 0; }
+.about-people img { flex: none; width: 72px; height: 72px; border-radius: 50%; object-fit: cover; border: 3px solid var(--orange); }
+.about-people figcaption { display: grid; gap: 2px; }
+.about-people figcaption span { color: #9fb3c8; font-size: 14.5px; }
+.about-links { display: flex; flex-wrap: wrap; gap: 10px; margin: 0; }
 
 @media (min-width: 760px) {
-  .about-grid { grid-template-columns: repeat(3, 1fr); }
-  .about-why { grid-template-columns: 1fr 1fr 2fr; align-items: stretch; }
-  .about-why-text { align-self: center; padding-left: 8px; }
-  .arch-flow { grid-template-columns: repeat(4, 1fr); }
-  .arch-flow li:not(:last-child)::after { content: '→'; position: absolute; right: -10px; top: 50%; transform: translateY(-50%); color: var(--orange); font-weight: 800; }
+  .about-pillars, .about-stats { grid-template-columns: repeat(3, 1fr); }
+  .about-flow { grid-template-columns: repeat(4, 1fr); }
+  .about-flow li { padding: 54px 18px 20px; }
+  .about-flow li::before { left: 18px; top: 18px; }
+  .about-flow li:not(:last-child)::after { content: ''; position: absolute; right: -9px; top: 30px; width: 6px; height: 6px; border-top: 2px solid var(--orange); border-right: 2px solid var(--orange); transform: rotate(45deg); }
+  .about-pair { grid-template-columns: 1fr 1fr; }
+  .about-people { grid-template-columns: repeat(2, max-content); column-gap: 40px; }
 }
