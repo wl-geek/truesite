@@ -81,6 +81,12 @@ type CtxOpts = {
   userAgent?: string
   /** Stub WebXR: immersive-ar "supported", requestSession rejects with this DOMException name. */
   xrStub?: string
+  /**
+   * iPadOS Safari's screen angles: WebKit gives an iPad a natural orientation of landscape, so in landscape-primary
+   * screen.orientation.angle is 0, while window.orientation (measured from portrait, like the deviceorientation
+   * angles) is 90. Chromium's iPad emulation reports 90 for both.
+   */
+  webkitIpad?: boolean
 }
 
 async function ipad(browser: Browser, o: CtxOpts = {}): Promise<BrowserContext> {
@@ -100,6 +106,12 @@ async function ipad(browser: Browser, o: CtxOpts = {}): Promise<BrowserContext> 
         return Promise.resolve(x.iosMotion!)
       }
     }
+    if (x.webkitIpad) {
+      const proto = Object.getPrototypeOf(screen.orientation) as object
+      Object.defineProperty(proto, 'angle', { configurable: true, get: () => 0 })
+      Object.defineProperty(proto, 'type', { configurable: true, get: () => 'landscape-primary' })
+      Object.defineProperty(window, 'orientation', { configurable: true, get: () => 90 })
+    }
     if (x.xrStub) {
       const err = x.xrStub
       Object.defineProperty(navigator, 'xr', {
@@ -111,7 +123,7 @@ async function ipad(browser: Browser, o: CtxOpts = {}): Promise<BrowserContext> 
         },
       })
     }
-  }, { calibrated: !!o.calibrated, K: manifest.K, w: manifest.width, h: manifest.height, iosMotion: o.iosMotion ?? null, xrStub: o.xrStub ?? null })
+  }, { calibrated: !!o.calibrated, K: manifest.K, w: manifest.width, h: manifest.height, iosMotion: o.iosMotion ?? null, xrStub: o.xrStub ?? null, webkitIpad: !!o.webkitIpad })
   return ctx
 }
 
@@ -289,13 +301,14 @@ test('P1 gravity levelling: a board leaning back 4 degrees, without and with mot
  * Lock on the code, then turn on the spot with motion events that match each frame: after the turn the model must
  * be held where the building is (look-around). Returns the page for further checks.
  */
-async function lookAround(video: string, name: string): Promise<{ page: Page; errors: string[]; lastSeenFrame: number; fit: H.Fit }> {
+async function lookAround(video: string, name: string, o: { webkitIpad?: boolean } = {}): Promise<{ page: Page; errors: string[]; lastSeenFrame: number; fit: H.Fit }> {
   browser = await launch(video)
-  const page = await (await ipad(browser, { calibrated: true, iosMotion: 'granted' })).newPage()
+  const page = await (await ipad(browser, { calibrated: true, iosMotion: 'granted', webkitIpad: o.webkitIpad })).newPage()
   const errors = watchConsole(page)
   await openLive(page, 'P1')
   const v = manifest.videos[video]
-  const angle = await screenAngle(page)
+  // The sensors' angles are in the portrait frame: on iPad Safari that is window.orientation's 90, not the screen angle.
+  const angle = o.webkitIpad ? 90 : await screenAngle(page)
   await H.motion.sync(page, v.cams.map((c) => H.orientationFor(c.R, angle)))
   await startCamera(page)
   expect(await page.evaluate(() => (window as unknown as { __motionAsks: boolean[] }).__motionAsks), 'motion permission asked once, inside the tap').toEqual([true])
@@ -325,6 +338,35 @@ async function lookAround(video: string, name: string): Promise<{ page: Page; er
 test('P1 look-around maths: the code is covered, then a quick turn; the model stays where it belongs', async () => {
   const { fit, errors } = await lookAround('p1-turn-covered', 'p1-turn-covered-held')
   expectAligned(fit, 'look-around with a lock taken while still')
+  expect(errors, errors.join('\n')).toEqual([])
+})
+
+// iPad field test (17 Oct): steady while still, swinging while turning. iPadOS Safari measures screen.orientation.angle
+// from landscape, so the sensor rotation was mapped onto the screen 90 degrees off (motion.ts screenAngleDeg).
+test('iPad Safari (screen angle from landscape): look-around holds the model after a quick turn', async () => {
+  const { fit, errors } = await lookAround('p1-turn-covered', 'p1-turn-covered-webkit-ipad', { webkitIpad: true })
+  expectAligned(fit, 'look-around on iPad Safari')
+  expect(errors, errors.join('\n')).toEqual([])
+})
+
+test('iPad Safari (screen angle from landscape): a board leaning back 4 degrees is levelled by gravity', async () => {
+  browser = await launch('p1-lean4')
+  const page = await (await ipad(browser, { calibrated: true, iosMotion: 'granted', webkitIpad: true })).newPage()
+  const errors = watchConsole(page)
+  await openLive(page, 'P1')
+  expect(await page.evaluate(() => [screen.orientation.angle, (window as unknown as { orientation: number }).orientation])).toEqual([0, 90])
+  const v = manifest.videos['p1-lean4']
+  await H.motion.constant(page, H.orientationFor(v.cams[0].R, 90)) // the portrait frame, as CoreMotion gives them
+  await startCamera(page)
+  await waitBadge(page, /^Alignment: (Good|Fair) · /)
+  await page.waitForTimeout(1500)
+  const a = anchor('P1')
+  const levUp = await overlayFit(page, 'p1-lean4', 0, truth(a), 'p1-lean4-webkit-ipad-vs-upright')
+  const levLean = await overlayFit(page, 'p1-lean4', 0, H.modelToWorld(a, v.sheet), 'p1-lean4-webkit-ipad-vs-leaning')
+  console.log('lean, iPad Safari angles', JSON.stringify({ vsUpright: levUp, vsLeaning: levLean }))
+  expectAligned(levUp, 'levelled by gravity on iPad Safari')
+  expect(levUp.iouAtZero).toBeGreaterThan(levLean.iouAtZero)
+  await H.motion.stop(page)
   expect(errors, errors.join('\n')).toEqual([])
 })
 

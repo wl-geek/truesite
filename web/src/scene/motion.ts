@@ -27,6 +27,23 @@ export function deviceRotation(alpha: number, beta: number, gamma: number, scree
   return mat3Mul(mat3Mul(mat3Mul(Rz, Rx), Ry), Rs)
 }
 
+/** What `screen.orientation` reports: its type and angle (degrees). */
+export type ScreenOrientationLike = { type: string; angle: number }
+
+/**
+ * The screen's rotation (degrees) from the device's portrait frame, the frame DeviceOrientationEvent's angles are in.
+ * That is screen.orientation.angle everywhere except iPadOS Safari: WebKit gives an iPad a natural orientation of
+ * landscape (landscape-primary 0, portrait-primary 90) while the event's angles stay in the portrait hardware frame,
+ * so the angle is 90 degrees off in every orientation. There window.orientation, measured from portrait, is used.
+ * The gate is iOS's motion permission API plus a landscape natural orientation (a landscape type at 0 or 180, or a
+ * portrait type at 90 or 270): an iPhone (natural portrait) and Android (no requestPermission) never pass it.
+ */
+export function screenAngleDeg(so: ScreenOrientationLike | undefined, windowOrientation: unknown, iosMotionApi: boolean): number {
+  const angle = so?.angle ?? 0
+  const naturalLandscape = so !== undefined && so.type.startsWith('landscape') === (angle % 180 === 0)
+  return iosMotionApi && naturalLandscape && typeof windowOrientation === 'number' ? windowOrientation : angle
+}
+
 export type MotionLock = { R0: Mat3; t0: Vec3; D0: Mat3; tSec: number }
 
 /** Marker -> camera pose now, from the pose and device rotation at lock time and the device rotation now. */

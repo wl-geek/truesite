@@ -25,7 +25,7 @@ import { PoseFusion } from './fusion'
 import { applyConstructionLook, type ConstructionLook } from './look'
 import { type Paint } from './palette'
 import { levelModelMatrix, upInGlCamera } from './level'
-import { deviceRotation, deviceStill, lookAroundPose, LOOK_AROUND_MAX_S, nextLock, type MotionLock, type MotionSample } from './motion'
+import { deviceRotation, deviceStill, lookAroundPose, LOOK_AROUND_MAX_S, nextLock, screenAngleDeg, type MotionLock, type MotionSample } from './motion'
 import { CornerStabilizer } from './cornerFilter'
 import { followRegion, fullFrame, regionToVideo, type Region } from './roi'
 import { RotationSmoother, StillRotation } from './rotationFilter'
@@ -178,10 +178,13 @@ export function createOverlay(o: OverlayOptions): Overlay {
   // and averaged over the whole spell while the code shows that the camera is still.
   const rotation = new RotationSmoother()
   const stillRotation = new StillRotation()
+  // iOS Safari (it asks for motion permission): an iPad's screen.orientation.angle is measured from landscape (screenAngleDeg).
+  const iosMotionApi = typeof (window.DeviceOrientationEvent as unknown as { requestPermission?: unknown } | undefined)?.requestPermission === 'function'
   const onOrientation = (e: DeviceOrientationEvent) => {
     if (e.alpha === null || e.beta === null || e.gamma === null) return
     const tMs = performance.now()
-    deviceR = rotation.filter(deviceRotation(e.alpha, e.beta, e.gamma, screen.orientation?.angle ?? 0), tMs)
+    const angle = screenAngleDeg(screen.orientation, (window as unknown as { orientation?: unknown }).orientation, iosMotionApi)
+    deviceR = rotation.filter(deviceRotation(e.alpha, e.beta, e.gamma, angle), tMs)
     fusion?.addOrientation(deviceR, tMs)
     recent.push({ tMs, D: deviceR })
     while (recent.length > 2 && recent[1].tMs < tMs - 1000) recent.shift()
