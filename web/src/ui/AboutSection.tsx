@@ -1,4 +1,5 @@
 import './about.css'
+import { DEMO_YOUTUBE_URL } from './links'
 
 /**
  * The product story for readers who scroll past the prototype, in the pitch deck's order: the idea (AR × BIM × AI),
@@ -94,6 +95,7 @@ export function AboutSection() {
           </div>
           <p className="about-links">
             <a className="btn btn-accent btn-lg" href="/media/TrueSite-deck.pdf" download><LinkIcon d={DOWNLOAD} />Download the pitch deck</a>
+            <a className="btn btn-ghost btn-lg" href={DEMO_YOUTUBE_URL} target="_blank" rel="noopener noreferrer"><LinkIcon d={PLAY} />Watch the demo on YouTube</a>
             <a className="btn btn-ghost btn-lg" href="https://github.com/wl-geek/truesite" target="_blank" rel="noopener noreferrer"><LinkIcon d={CODE} />Read the code on GitHub</a>
           </p>
         </div>
@@ -104,6 +106,7 @@ export function AboutSection() {
 
 const DOWNLOAD = 'M12 3v12M7 10l5 5 5-5M5 21h14'
 const CODE = 'M16 18l6-6-6-6M8 6l-6 6 6 6'
+const PLAY = 'M7 4.5v15l12-7.5z'
 
 function LinkIcon({ d }: { d: string }) {
   return (
