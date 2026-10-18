@@ -90,7 +90,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
   const [running, setRunning] = useState(false)
   // Motion & Orientation refused (iOS asks on Start camera): no levelling and no look-around, so say so (audit C-15).
   const [motionOff, setMotionOff] = useState(false)
-  // Live AR needs a tablet or phone: on a laptop or PC the popup opens every time and stays; its way out is the start
+  // Live AR needs a phone or tablet: on a laptop or PC the popup opens every time and stays; its way out is the start
   // page's Live AR section, where the sheets are.
   const handheld = useMemo(() => isHandheld(), [])
   const leaveLive = useCallback(() => goToSection('live'), [])
@@ -769,7 +769,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
               </p>
             )}
             {!handheld && loaded && (
-              <p className="live-device-note">Made for tablets and smartphones: open this page on one for the best experience.</p>
+              <p className="live-device-note">Made for smartphones: open this page on your phone for the best experience.</p>
             )}
             {camError && <p className="status status-error" role="alert">{CAMERA_ERRORS[camError]}</p>}
             {(camError || error) && (

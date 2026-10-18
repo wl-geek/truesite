@@ -10,7 +10,7 @@ Otherwise every offset below includes the error in where the stand is placed.
 **Status (17 Oct):** not measured on a device yet; `overlay.csv` has only its header. The Playwright `live-ar` tests in `web/e2e` compare the overlay with synthetic camera videos, which checks the code, not a real phone.
 
 1. Tape the points listed in `web/public/eval/points.json` on the ground (§0). Each point is in IFC metres.
-2. On the tablet or phone, open `/a/site/P1?eval=1` (HTTPS) and start the camera. Green crosses appear at the points.
+2. On the phone, open `/a/site/P1?eval=1` (HTTPS) and start the camera. Green crosses appear at the points.
 3. At 1, 2 and 3 m from the code, measure the on-screen offset between each cross and its tape mark, converted to millimetres on the ground (lay a ruler at the mark). Do 3 tries per distance.
 4. Add one row per measurement to `overlay.csv`: `distance_m,point_id,offset_mm,try`.
 5. Run `python3 eval/summarise.py overlay eval/overlay.csv` and paste the table into the README.

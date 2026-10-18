@@ -3,16 +3,16 @@ import { BUG } from '../support/bugs'
 import { expectClean, expect, presentAsTablet, test, VIEWPOINTS } from '../support/fixtures'
 
 /**
- * The laptop popup (#107): step 1 hands this page to a tablet or phone by QR, step 2 gives the sheet to print. On a
+ * The laptop popup (#107): step 1 hands this page to a phone by QR, step 2 gives the sheet to print. On a
  * laptop or PC it is the whole page: nothing opens the live view, and Back to home (or Escape) leaves for the start page.
  */
-const TIP = 'Open live AR on your tablet or phone'
+const TIP = 'Open live AR on your smartphone'
 const SHEET_STEP = 'Print the sheet and scan its code'
 
 test.describe('live AR on a laptop', () => {
   test.skip(({ isMobile, hasTouch }) => isMobile || hasTouch, 'laptop only')
 
-  test('a popup asks for a tablet or phone, with a QR code of this page, every time the page opens', async ({ page, log }) => {
+  test('a popup asks for a smartphone, with a QR code of this page, every time the page opens', async ({ page, log }) => {
     await page.goto('/a/site/P1')
     const tip = page.getByRole('dialog', { name: TIP })
     await expect(tip).toBeVisible()
@@ -60,7 +60,7 @@ test.describe('live AR on a laptop', () => {
     await expect(sheet.locator('.dt-list li')).toHaveText([
       'Print it on US Letter at 100%, not "Fit to page". Its check bar must measure 10.0 cm.',
       'Fix it upright, with the centre of the code 1.4 m above the ground.',
-      'On the tablet or phone, tap Start camera and point it at the code.',
+      'On your phone, tap Start camera and point it at the code.',
     ])
     await expect(sheet.getByRole('link', { name: 'download the layout plan' })).toHaveAttribute('href', '/sheets/site-layout.pdf')
     await sheet.getByRole('button', { name: 'Back to the QR code' }).click()

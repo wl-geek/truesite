@@ -32,7 +32,7 @@ test.describe('layout on phones and tablets', () => {
   test('live AR start panel, or the popup on a laptop @handheld', async ({ page, isMobile }) => {
     await page.goto('/a/site/P1')
     if (!isMobile) {
-      await expect(page.getByRole('dialog', { name: 'Open live AR on your tablet or phone' })).toBeVisible()
+      await expect(page.getByRole('dialog', { name: 'Open live AR on your smartphone' })).toBeVisible()
       return expectFits(page, 'live popup')
     }
     await expect(page.getByRole('button', { name: 'Start camera' })).toBeVisible()

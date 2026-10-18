@@ -534,7 +534,7 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
           <p><strong>You're on the X at {vp.id}.</strong> The BIM design is laid over the simulated site, like live AR, and a
             few defects are planted in this view.</p>
           <ul>
-            <li>Turn on the spot: {touch ? 'drag, or tap Turn with device and turn the iPad' : 'drag, or use the arrow keys'}.</li>
+            <li>Turn on the spot: {touch ? 'drag, or tap Turn with device and turn your phone' : 'drag, or use the arrow keys'}.</li>
             <li>Tap an element for its details; switch the BIM overlay off to see the bare site.</li>
             <li>Aim at the work and tap <strong>Check as-built</strong>.</li>
           </ul>

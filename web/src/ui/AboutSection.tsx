@@ -14,14 +14,14 @@ export function AboutSection() {
         <p className="about-lede">
           Field crews build from drawings and memory while the BIM model sits in the site office. Mistakes surface weeks
           later, as rework. TrueSite brings the model on site in AR at true scale, then lets Gemini check the build
-          against it. All it needs is a printed QR code and the phone or iPad the crew already carries.
+          against it. All it needs is a printed QR code and the smartphone the crew already carries.
         </p>
 
         <div className="about-grid">
           <article className="about-card">
             <h3>What it is</h3>
             <p>
-              A web app for tablets and smartphones: no install, no headset. Scan a code fixed at a surveyed spot and the model appears over the real
+              A web app for smartphones (tablets work too): no install, no headset. Scan a code fixed at a surveyed spot and the model appears over the real
               place at 1:1, colour-coded by element type. Tap <strong>Check as-built</strong>: Gemini compares the photo
               with the design, pins what is off and drafts the issue.
             </p>
@@ -69,7 +69,7 @@ export function AboutSection() {
         <div className="about-arch">
           <h3>Built on Google Cloud</h3>
           <ol className="arch-flow" aria-label="How a check flows">
-            <li><span className="arch-node">Phone or iPad</span><span className="arch-note">QR pose on device, 3D model at 1:1</span></li>
+            <li><span className="arch-node">Smartphone</span><span className="arch-note">QR pose on device, 3D model at 1:1</span></li>
             <li><span className="arch-node">Cloud Run</span><span className="arch-note">the web app and its API</span></li>
             <li><span className="arch-node arch-gemini">Gemini 3.8 Flash</span><span className="arch-note">compares photo and design, drafts issues and the site report, answers questions</span></li>
             <li><span className="arch-node">Firestore + Cloud Storage</span><span className="arch-note">runs, issues, photos and renders</span></li>
