@@ -191,6 +191,9 @@ test.describe('start page', () => {
     expect(part.status()).toBe(206)
     expect(part.headers()['content-type']).toContain('video/mp4')
     expect((await part.body()).length).toBe(1024)
+    // Chrome asks for the whole file at once (bytes=0-), and Cloud Run refuses any response over 32 MiB.
+    const size = Number(part.headers()['content-range']?.split('/')[1])
+    expect(size).toBeLessThan(30 * 1024 * 1024)
   })
 
   test('a missing sheet is a real 404, not the app saved as a PDF', async ({ request }) => {
