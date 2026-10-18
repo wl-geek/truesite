@@ -1,92 +1,100 @@
 import './about.css'
 
 /**
- * The product story for readers who scroll past the prototype: what TrueSite is, how and where it's used, why it
- * matters, how it's built, and the rules it keeps. Kept at the bottom of the start page on purpose: the prototype
- * comes first.
+ * The product story for readers who scroll past the prototype, in the pitch deck's order: the idea (AR × BIM × AI),
+ * why it matters, how it fits the BIM a team already has, what it runs on and the rules it keeps, then the team.
+ * Kept at the bottom of the start page on purpose: the prototype comes first.
  */
 export function AboutSection() {
   return (
     <section id="about" className="about" aria-labelledby="about-title">
       <div className="home-wrap">
-        <p className="about-kicker">About TrueSite</p>
-        <h2 id="about-title">AR × BIM × AI, where the work happens</h2>
-        <p className="about-lede">
-          Field crews build from drawings and memory while the BIM model sits in the site office. Mistakes surface weeks
-          later, as rework. TrueSite brings the model on site in AR at true scale, then lets Gemini check the build
-          against it. All it needs is a printed QR code and the smartphone the crew already carries.
-        </p>
+        <header className="about-head">
+          <p className="about-kicker">About TrueSite</p>
+          <h2 id="about-title">AR × BIM × AI, where the work happens</h2>
+          <p className="about-lede">
+            The BIM model exists, but it stays in the office while crews build from drawings and memory. TrueSite puts
+            it on site at true scale, and lets Gemini check the build against it.
+          </p>
+        </header>
 
-        <div className="about-grid">
-          <article className="about-card">
-            <h3>What it is</h3>
-            <p>
-              A web app for smartphones (tablets work too): no install, no headset. Scan a code fixed at a surveyed spot and the model appears over the real
-              place at 1:1, colour-coded by element type. Tap <strong>Check as-built</strong>: Gemini compares the photo
-              with the design, pins what is off and drafts the issue.
-            </p>
-          </article>
-          <article className="about-card">
-            <h3>How it's used</h3>
-            <ol>
-              <li><strong>Set up once:</strong> load the IFC model, print its QR codes and fix each at a known spot.</li>
-              <li><strong>On site:</strong> scan, see the design where it will stand, and look around.</li>
-              <li><strong>Check:</strong> aim at the work and tap. Approve the drafted issue, in the crew's language, and send the day's site report.</li>
-            </ol>
-          </article>
-          <article className="about-card">
-            <h3>Where it's used</h3>
-            <ul>
-              <li>Structure: columns, beams and rebar before a pour</li>
-              <li>Steel erection, bracing and edge protection</li>
-              <li>Fit-out and services: sleeves, openings, setting out</li>
-              <li>Inspections, handovers and client walk-throughs</li>
-            </ul>
-          </article>
-        </div>
+        <ul className="about-pillars" aria-label="What TrueSite brings together">
+          <li>
+            <span className="about-tag about-tag-ar">AR</span>
+            <h3>See it in place</h3>
+            <p>The design at 1:1 over the real site, from a printed QR code and a phone’s browser. No app, no headset.</p>
+          </li>
+          <li>
+            <span className="about-tag about-tag-bim">BIM</span>
+            <h3>Know every element</h3>
+            <p>Tap any part for its type, size, material and properties, straight from the model.</p>
+          </li>
+          <li>
+            <span className="about-tag about-tag-ai">AI</span>
+            <h3>Check and write</h3>
+            <p>Gemini compares what is built with the design, pins what is off and drafts the issue.</p>
+          </li>
+        </ul>
 
-        <div className="about-why">
-          <div className="about-stat">
-            <strong>48%</strong>
-            <span>of rework on US job sites is caused by miscommunication and poor project data</span>
+        <div className="about-band">
+          <h3 className="about-h3">Why it matters</h3>
+          <div className="about-stats">
+            <p><strong>14+ h</strong><span>a week per project team member lost to hunting for data, conflicts and rework</span></p>
+            <p><strong>48%</strong><span>of rework on US jobsites comes from miscommunication and poor project data</span></p>
+            <p><strong>5,000 m²</strong><span>Singapore already requires BIM submissions above this floor area: the model is there</span></p>
           </div>
-          <div className="about-stat">
-            <strong>US$31B+</strong>
-            <span>of rework a year in the US alone, from the same causes</span>
-          </div>
-          <p className="about-why-text">
-            <strong>From rework found weeks later to issues caught on the spot.</strong> Every field engineer gets a second
-            pair of eyes that knows the model.
-            A first visual check takes seconds instead of waiting for the next inspection, and the issue is written
-            while the crew is still there.
-            <span className="about-source">
-              Figures: FMI and PlanGrid, <a href="https://www.autodesk.com/blogs/construction/construction-disconnected-fmi-report/"
-                target="_blank" rel="noopener noreferrer">Construction Disconnected</a> (2018).
-            </span>
+          <p className="about-source">
+            FMI and PlanGrid, <a href="https://www.autodesk.com/blogs/construction/construction-disconnected-fmi-report/"
+              target="_blank" rel="noopener noreferrer">Construction Disconnected</a> (2018) · Building and Construction
+            Authority, Singapore
           </p>
         </div>
 
-        <div className="about-arch">
-          <h3>Built on Google Cloud</h3>
-          <ol className="arch-flow" aria-label="How a check flows">
-            <li><span className="arch-node">Smartphone</span><span className="arch-note">QR pose on device, 3D model at 1:1</span></li>
-            <li><span className="arch-node">Cloud Run</span><span className="arch-note">the web app and its API</span></li>
-            <li><span className="arch-node arch-gemini">Gemini 3.8 Flash</span><span className="arch-note">compares photo and design, drafts issues and the site report, answers questions</span></li>
-            <li><span className="arch-node">Firestore + Cloud Storage</span><span className="arch-note">runs, issues, photos and renders</span></li>
+        <div className="about-band">
+          <h3 className="about-h3">Works with the BIM you already have</h3>
+          <ol className="about-flow">
+            <li><strong>IFC in</strong><span>The open BIM standard that Revit, Archicad, Tekla and most BIM tools export</span></li>
+            <li><strong>Prepared once</strong><span>A 3D model where every element keeps its IFC ID, its data, and the QR sheets</span></li>
+            <li><strong>Any phone or laptop</strong><span>Live AR, the 3D model and the virtual demo, in the browser</span></li>
+            <li><strong>Back to the team</strong><span>Issues ready for any tracker, and the day’s site report</span></li>
           </ol>
-          <p className="about-note">
-            The model comes from IFC, the open BIM standard. It is converted to glTF and every element keeps its IFC ID,
-            so a finding, a pin and an issue all point at the same column.
-          </p>
         </div>
 
-        <div className="about-rules">
-          <h3>Honest by design</h3>
-          <ul>
-            <li><strong>Visual check, not a survey.</strong> Offsets are rough, in tens of centimetres.</li>
-            <li><strong>A person decides.</strong> Gemini drafts; severity comes from fixed rules, never from the model.</li>
-            <li><strong>No guessing.</strong> When a photo can't show it, the finding says "can't judge".</li>
-          </ul>
+        <div className="about-pair">
+          <div className="about-panel">
+            <h3>Built on Google Cloud</h3>
+            <ul>
+              <li><strong>Cloud Run</strong> serves the web app and its API</li>
+              <li><strong>Gemini 3.8 Flash</strong> checks the build, answers questions and drafts issues and reports</li>
+              <li><strong>Firestore and Cloud Storage</strong> keep runs, issues, photos and renders</li>
+            </ul>
+          </div>
+          <div className="about-panel">
+            <h3>Honest by design</h3>
+            <ul>
+              <li><strong>Visual check, not a survey.</strong> Offsets are rough, in tens of centimetres.</li>
+              <li><strong>A person decides.</strong> Gemini drafts; fixed rules set the severity, never the model.</li>
+              <li><strong>No guessing.</strong> When a photo can’t show it, the finding says “Can’t judge”.</li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="about-team">
+          <h3 className="about-h3">The team</h3>
+          <div className="about-people">
+            <figure>
+              <img src="/media/team-wai.jpg" alt="" width="72" height="72" loading="lazy" />
+              <figcaption><strong>Wai Lin</strong><span>Product and code</span></figcaption>
+            </figure>
+            <figure>
+              <img src="/media/team-michael.jpg" alt="" width="72" height="72" loading="lazy" />
+              <figcaption><strong>Aung Nyein Chan (Michael)</strong><span>Architect: the BIM model and field validation</span></figcaption>
+            </figure>
+          </div>
+          <p className="about-links">
+            <a className="btn" href="/media/TrueSite-deck.pdf" download>Download the pitch deck</a>
+            <a className="btn" href="https://github.com/wl-geek/truesite" target="_blank" rel="noopener noreferrer">Read the code on GitHub</a>
+          </p>
         </div>
       </div>
     </section>
