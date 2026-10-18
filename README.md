@@ -4,7 +4,7 @@
 
 Google Cloud AI Builder Cup 2026 (JAPAC) · Theme: **Future of Work & Enterprise Productivity** · Team: Wai Lin and Aung Nyein Chan (Michael)
 
-**Live demo:** _link added at deployment_ · nothing to install: it runs in the phone's browser.
+**Live demo:** [truesite-1067044308557.asia-southeast1.run.app](https://truesite-1067044308557.asia-southeast1.run.app) · nothing to install: it runs in the phone's browser.
 
 ---
 
@@ -12,7 +12,7 @@ Google Cloud AI Builder Cup 2026 (JAPAC) · Theme: **Future of Work & Enterprise
 
 1. Open the live demo. On the start page, tap **Try the virtual demo**, then pick a QR spot, P1 to P4 ("Step in at P1"). You stand on that spot inside a **simulated as-built site**: a realistic 3D model of the building as it was put up, with ten defects planted on purpose (`web/src/sim/asBuilt.ts`). Look around (drag, or turn your phone), then tap **Check as-built**. TrueSite takes your view as the site photo and sends Gemini three images: your view, the BIM design rendered from the same spot with numbered marks, and your view with each marked element's design outline. The result scores Gemini against what was planted in that view, so you can see what it caught and what it missed.
 2. Read the findings. Each one has an evidence box on the photo, a rough offset ("about 30 cm right"), a severity set by TrueSite from the element type, and a "Why it matters" note from fixed rules, not from the model.
-3. Tap **Draft issue** on a deviation. Gemini drafts it, in the crew's language if you pick one. You edit it and tap **Save issue**: it is saved with its check and finding (there is no separate issues list). After a check, **Write today's site report** has Gemini summarise this visit's checks, safety first.
+3. Tap **Draft issue** on a deviation. Gemini drafts it, in the crew's language if you pick one. You edit it and tap **Save issue**: it is saved with its check and finding, listed under the results, and **Copy issue** puts it on the clipboard for your issue tracker. After a check, **Write today's site report** has Gemini summarise this visit's checks, safety first.
 4. Back on the start page, tap **Open the 3D model**. The last check's findings are pinned on it. Tap any element and **Ask** a question ("What concrete grade is this beam?"). Answers come only from that element's model data, and the fields used are shown.
 5. *With a printer:* in Live AR, under **On your desk · 1:100**, tap **Download the desk sheet**, print it on US Letter at 100% and scan the code with your phone's camera. The building stands on the page as a 1:100 model. For life size on a car park, **Layout plan (Letter)** sets out the four sheets P1–P4 ([filming guide](docs/demo/ipad-ar-filming.md)). Opened on a laptop, a live AR page shows a popup with a QR code of the page for your phone, and the sheet to print.
 
@@ -21,7 +21,7 @@ Google Cloud AI Builder Cup 2026 (JAPAC) · Theme: **Future of Work & Enterprise
 
 ## Why
 
-Field engineers make build decisions without the model in front of them, and mistakes surface as rework weeks later. TrueSite puts the BIM model and a second pair of eyes where the work happens: open a link, scan a code, check.
+Field engineers make build decisions without the model in front of them, and mistakes surface as rework weeks later. In a survey of nearly 600 construction leaders, project team members spent more than 14 hours a week on hunting for project data, resolving conflicts and rework, and miscommunication and poor project data caused 48% of all rework on US jobsites ([FMI and PlanGrid, 2018](https://www.phcppros.com/articles/7960-research-identifies-factors-costing-construction-industry-177-billion-annually)). TrueSite puts the BIM model and a second pair of eyes where the work happens: open a link, scan a code, check.
 
 ## How it works
 
@@ -77,9 +77,9 @@ Scanning a code opens its live view. The demo has one mode on every phone and ta
 
 While the camera runs, the view is full screen with an Exit button. **Transparency**, **Cut above** (a section height), **View distance** and **Layers** (structure, rebar, doors/windows/services, other) keep the model readable over a real place. Elements are **colour-coded by type** in the viewer, every AR mode and Quick Look: columns blue, beams cyan, truss members green, purlins yellow, bracing purple, concrete see-through grey, rebar orange-red. On the site sheets *Check as-built* is off, because nothing is built there yet; the live view points to the virtual demo instead.
 
-**iPad building site (project `site`).** Set the four upright US Letter sheets P1–P4 out on a car park with `site-layout.pdf`, stand on each X, lock close to the code, step back and turn on the spot. The camera overlay levels the model with the motion sensors. The full filming checklist is in [docs/demo/ipad-ar-filming.md](docs/demo/ipad-ar-filming.md). Walk inside (Quick Look / WebXR) and Android Start AR are hidden for the demo; add `?xr=1` to the page URL to bring them back.
+**Building site (project `site`).** Set the four upright US Letter sheets P1–P4 out on a car park with `site-layout.pdf`, stand on each X, lock close to the code, step back and turn on the spot. The camera overlay levels the model with the motion sensors. The full filming checklist is in [docs/demo/ipad-ar-filming.md](docs/demo/ipad-ar-filming.md). Walk inside (Quick Look / WebXR) and Android Start AR are hidden for the demo; add `?xr=1` to the page URL to bring them back.
 
-**Device status (17 Oct):** On Android over the LAN (15 Oct) we tested the desk overlay, the QR scan and a live *Check as-built*. Live Gemini checks have run in the virtual demo, the last one on the deployed service. Not yet confirmed on a device: the iPad overlay at P1–P4, the sensor fusion and look-around on iPad and iPhone, and the two `?xr=1` modes.
+**Device status (18 Oct):** On 17 Oct we field-tested live AR on an iPhone against the deployed service: the building at life size on a field, with the site sheets on posts, and at 1:100 on the desk sheet D1. Scanning with the camera app, calibration, the lock, looking around and up on the motion sensors, tapping elements for their details and Ask Gemini all worked. An iPad in the same test held the model less steadily while moving. On Android over the LAN (15 Oct) we tested the desk overlay, the QR scan and a live *Check as-built*. Live Gemini checks run in the virtual demo on the deployed service. Not yet tested on a device: the two `?xr=1` modes.
 
 ## Projects and sheets
 
@@ -176,6 +176,7 @@ On Google Cloud, in this order (see `infra/gcloud.sh`):
 | `bim/` | Offline pipeline: IFC → glb with element GUIDs, `elements.json`, the site building (`bim/truesite_bim/site.py`) and its layout plan, printable QR sheets (ifcopenshell) |
 | `eval/` | Overlay-accuracy and check-quality measurements, and the script that turns them into tables |
 | `infra/` | `gcloud.sh`: setup, deploy and verify on Google Cloud |
+| `DEVELOPMENT.md` | [How we work](DEVELOPMENT.md): conventions, commands, where things live, gotchas |
 | `docs/` | [Brief](docs/BRIEF.md), [design spec](docs/specs/2026-10-11-truesite-design.md), [interface contract](docs/plans/2026-10-11-truesite-contract.md), [research notes](docs/research/research-notes.md), [audits](docs/audit-2026-10-17.md), [submission checklist](docs/submission-checklist.md) |
 
 ## Freshness
