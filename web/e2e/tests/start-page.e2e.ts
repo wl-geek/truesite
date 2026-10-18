@@ -118,16 +118,16 @@ test.describe('start page', () => {
     await expect.poll(() => sectionOffset(page, 'live')).toBeLessThanOrEqual(4)
   })
 
-  test('every /sheets and /models file the page links to is a real file, and every app link opens a page', async ({ page, request }) => {
+  test('every /sheets, /models and /media file the page links to is a real file, and every app link opens a page', async ({ page, request }) => {
     await page.goto('/')
     await page.locator('details.home-details summary').click() // the download list folds away
     const hrefs = [...new Set(await page.locator('a[href]').evaluateAll((as) => as.map((a) => a.getAttribute('href')!)))]
-    const files = hrefs.filter((h) => /^\/(sheets|models)\//.test(h))
-    expect(files.sort()).toEqual(['/sheets/site-D1.pdf', '/sheets/site-P1.pdf', '/sheets/site-P2.pdf', '/sheets/site-P3.pdf',
+    const files = hrefs.filter((h) => /^\/(sheets|models|media)\//.test(h))
+    expect(files.sort()).toEqual(['/media/TrueSite-deck.pdf', '/sheets/site-D1.pdf', '/sheets/site-P1.pdf', '/sheets/site-P2.pdf', '/sheets/site-P3.pdf',
       '/sheets/site-P4.pdf', '/sheets/site-layout.pdf'])
     for (const href of files) {
       const res = await request.get(href)
-      expect(res.status(), `${href} (generate the sheets: see README.md)`).toBe(200)
+      expect(res.status(), `${href} (sheets: generate them, see README.md)`).toBe(200)
       expect(res.headers()['content-type'], href).toBe('application/pdf')
       const body = await res.body()
       expect(body.subarray(0, 5).toString(), href).toBe('%PDF-')
