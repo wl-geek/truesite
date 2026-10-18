@@ -1,7 +1,7 @@
 # TrueSite — Design Spec
 
 **Date:** Sun 11 Oct 2026 · **Event:** Google Cloud AI Builder Cup 2026 (JAPAC) · **Theme:** Future of Work & Enterprise Productivity
-**Team:** Wai (product, code) · Aung Nyein Chan, "Michael" (architect: BIM model, field validation, visuals)
+**Team:** Wai Lin, "Leon" (team lead: product, code) · Aung Nyein Chan, also Lin-Chiang Lee, "Michael" (architect: BIM model, field validation, visuals)
 **Deadlines:** core freeze **Thu 15 Oct** (end of day) · submit **Sat 17 Oct** · official deadline Sun 18 Oct
 **Status:** draft for team review
 

@@ -79,7 +79,7 @@ export function HomePage() {
         <div className="home-deck">
           <a className="btn" href="/media/TrueSite-deck.pdf" download><Icon name="download" />Download the pitch deck</a>
           <span>PDF · 15 slides: the problem, the product, the architecture and the business case</span>
-          <a className="btn" href={DEMO_YOUTUBE_URL} target="_blank" rel="noopener noreferrer"><Icon name="play" />Watch the demo on YouTube</a>
+          <a className="btn btn-youtube" href={DEMO_YOUTUBE_URL} target="_blank" rel="noopener noreferrer"><Icon name="play" />Watch the demo on YouTube</a>
           <span>The same 3:15 video, public on YouTube</span>
         </div>
       </section>
@@ -191,17 +191,26 @@ export function HomePage() {
           </div>
 
           <div className="live-alt-head">
-            <h3 className="live-alt-title">No site? Two quicker ways in</h3>
-            <p className="home-sub">The desk sheet takes one Letter print, and the 3D model needs none.</p>
+            <h3 className="live-alt-title">No site? Three quicker ways in</h3>
+            <p className="home-sub">Only the desk sheet needs a print, and just one Letter page.</p>
           </div>
-          <ul className="home-cards">
+          <ul className="home-cards live-alt-cards">
+            <li className="home-card home-card-feature">
+              <span className="home-card-tag">Start here · no print, no site</span>
+              <Icon name="screen" />
+              <h3>The virtual demo</h3>
+              <p>Step into a simulated site on any screen: stand at a QR spot, look around, and tap <strong className="nowrap">Check as-built</strong>. Gemini compares what is built with the design and pins what is off.</p>
+              <div className="home-card-actions">
+                <a href="/#virtual" className="btn btn-accent" onClick={jumpTo('virtual')}>Try the virtual demo</a>
+              </div>
+            </li>
             <li className="home-card">
-              <span className="home-card-tag">Quickest · one Letter print</span>
+              <span className="home-card-tag home-card-tag-quiet">Live AR · one Letter print</span>
               <Icon name="desk" />
               <h3>On your desk · 1:100</h3>
               <p>Print the desk sheet on US Letter at 100%, lay it on a table and scan it. The building stands on the page as a 1:100 scale model you can walk around and inspect.</p>
               <div className="home-card-actions">
-                <Link to="/a/site/D1" className="btn btn-accent">Open live AR</Link>
+                <Link to="/a/site/D1" className="btn btn-primary">Open live AR</Link>
                 <a className="btn" href="/sheets/site-D1.pdf" download><Icon name="download" />Download the desk sheet</a>
               </div>
             </li>
@@ -272,7 +281,7 @@ export function HomePage() {
       <footer className="home-footer">
         <div className="home-wrap home-footer-row">
           <span className="home-footer-brand"><img src="/favicon.svg" alt="" width="20" height="20" />TrueSite</span>
-          <span>Built by Wai Lin (team lead) and Aung Nyein Chan (Michael) for the Google Cloud AI Builder Cup 2026</span>
+          <span>Built by Wai Lin (Leon, team lead) and Aung Nyein Chan (Lin-Chiang Lee, Michael) for the Google Cloud AI Builder Cup 2026</span>
           <a href="https://github.com/wl-geek/truesite" target="_blank" rel="noopener noreferrer">Source on GitHub</a>
         </div>
       </footer>
@@ -317,7 +326,7 @@ function HeroVisual() {
   )
 }
 
-type IconName = 'check' | 'down' | 'arrow' | 'qr' | 'cube' | 'scan' | 'download' | 'photo' | 'desk' | 'phone' | 'play'
+type IconName = 'check' | 'down' | 'arrow' | 'qr' | 'cube' | 'scan' | 'download' | 'photo' | 'desk' | 'phone' | 'play' | 'screen'
 
 const ICONS: Record<IconName, string> = {
   check: 'M20 6 9 17l-5-5',
@@ -331,6 +340,7 @@ const ICONS: Record<IconName, string> = {
   desk: 'M3 10h18M5 10v9M19 10v9M8 10l2-5h4l2 5',
   phone: 'M8 2h8a2 2 0 0 1 2 2v16a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2zM11 18h2',
   play: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM10 8.5v7l6-3.5z',
+  screen: 'M4 4h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1zM8 20h8M12 16v4',
 }
 
 function Icon({ name }: { name: IconName }) {

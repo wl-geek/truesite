@@ -19,7 +19,10 @@
 .home .btn-lg { min-height: 52px; padding: 0 22px; font-size: 16px; border-radius: 12px; }
 .home .btn-accent:hover { background: #ff7f33; border-color: #ff7f33; }
 .home .btn-primary:hover { background: #24496f; }
-.home .btn:not(.btn-primary):not(.btn-accent):not(.btn-ghost):hover { background: #eef3f8; }
+.home .btn:not(.btn-primary):not(.btn-accent):not(.btn-ghost):not(.btn-youtube):hover { background: #eef3f8; }
+/* YouTube red, a shade deeper than #FF0000 so the white text passes AA (5.0:1). */
+.home .btn-youtube { border-color: #e00000; background: #e00000; color: var(--white); }
+.home .btn-youtube:hover { border-color: #c00000; background: #c00000; }
 .home .btn-ghost { background: transparent; border-color: rgba(255, 255, 255, 0.45); color: var(--white); }
 .home .btn-ghost:hover { background: rgba(255, 255, 255, 0.1); border-color: var(--white); }
 
@@ -205,6 +208,12 @@
 .live-onsite-shots figcaption { grid-column: 1 / -1; color: var(--muted); font-size: 13px; text-align: center; }
 .live-onsite .home-protocol, .live-onsite .home-details { margin-top: 0; }
 .live-alt-head { margin: 40px 0 16px; }
+/* The three quicker ways in: one column, then all three in a row; the virtual demo leads and is featured. */
+.live-alt-cards { grid-template-columns: 1fr; }
+@media (min-width: 860px) { .live-alt-cards { grid-template-columns: repeat(3, 1fr); } }
+.home-card-feature { border-color: rgba(255, 106, 19, 0.55); background: linear-gradient(180deg, #fff6ef, var(--white) 60%); box-shadow: 0 14px 40px rgba(255, 106, 19, 0.14); }
+.home-card-feature > .icon { color: #b4470a; }
+.home .home-card-feature h3 { font-size: 20px; }
 .home .live-alt-title { margin: 0 0 6px; font-size: 22px; text-wrap: balance; }
 @media (max-width: 719.98px) {
   /* Phones: a slimmer panel edge and plan, so the viewpoint cards keep their titles on one line. */

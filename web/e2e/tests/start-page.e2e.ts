@@ -112,6 +112,11 @@ test.describe('start page', () => {
     await page.locator('.home-ctas').getByRole('link', { name: 'Try the virtual demo' }).click()
     await expect(page).toHaveURL(/\/#virtual$/)
     await expect.poll(() => sectionOffset(page, 'virtual')).toBeLessThanOrEqual(4)
+    // The first of the three quicker ways in, under live AR, goes to the same section.
+    await page.evaluate(() => window.scrollTo(0, 0))
+    await page.locator('.live-alt-cards').getByRole('link', { name: 'Try the virtual demo' }).click()
+    await expect(page).toHaveURL(/\/#virtual$/)
+    await expect.poll(() => sectionOffset(page, 'virtual')).toBeLessThanOrEqual(4)
     await page.evaluate(() => window.scrollTo(0, 0))
     await page.locator('.topbar').getByRole('link', { name: 'Start live AR' }).click()
     await expect(page).toHaveURL(/\/#live$/)

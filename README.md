@@ -2,7 +2,7 @@
 
 **Point a phone at a QR code on site and the BIM model appears over the real site at true scale. Tap *Check as-built*: Gemini compares the photo with the design, the deviations are pinned on the model, and the issue is drafted.**
 
-Google Cloud AI Builder Cup 2026 (JAPAC) · Theme: **Future of Work & Enterprise Productivity** · Team: Wai Lin and Aung Nyein Chan (Michael)
+Google Cloud AI Builder Cup 2026 (JAPAC) · Theme: **Future of Work & Enterprise Productivity** · Team: Wai Lin (Leon, team lead) and Aung Nyein Chan (Lin-Chiang Lee, Michael)
 
 **Live demo:** [truesite-1067044308557.asia-southeast1.run.app](https://truesite-1067044308557.asia-southeast1.run.app) · nothing to install: it runs in the phone's browser.
 
@@ -191,4 +191,4 @@ Built from scratch during the hackathon. The repository was started on 11 Oct 20
 
 ## License
 
-Copyright © 2026 Wai Lin and Aung Nyein Chan. All rights reserved. The source is public for the Google Cloud AI Builder Cup 2026 judging.
+Copyright © 2026 Wai Lin (Leon) and Aung Nyein Chan (Lin-Chiang Lee, Michael). All rights reserved. The source is public for the Google Cloud AI Builder Cup 2026 judging.
