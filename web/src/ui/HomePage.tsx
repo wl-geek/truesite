@@ -75,6 +75,10 @@ export function HomePage() {
           <source src="/media/truesite-demo.mp4" type="video/mp4" />
           <track kind="captions" src="/media/truesite-demo.vtt" srcLang="en" label="English" />
         </video>
+        <p className="home-deck">
+          <a className="btn" href="/media/TrueSite-deck.pdf" download><Icon name="download" />Download the pitch deck</a>
+          <span>PDF · 19 slides: the problem, the product, the architecture and the business case</span>
+        </p>
       </section>
 
       <section id="how" className="home-section home-wrap" aria-labelledby="how-title">

@@ -6,7 +6,7 @@ Google Cloud AI Builder Cup 2026 (JAPAC) · Theme: **Future of Work & Enterprise
 
 **Live demo:** [truesite-1067044308557.asia-southeast1.run.app](https://truesite-1067044308557.asia-southeast1.run.app) · nothing to install: it runs in the phone's browser.
 
-**Demo video (2:41):** [on the start page](https://truesite-1067044308557.asia-southeast1.run.app/#demo) ([MP4](web/public/media/truesite-demo.mp4)) · **Deck:** [TrueSite-deck.pdf](docs/TrueSite-deck.pdf)
+**Demo video (2:41):** [on the start page](https://truesite-1067044308557.asia-southeast1.run.app/#demo) ([MP4](web/public/media/truesite-demo.mp4)) · **Deck:** [TrueSite-deck.pdf](docs/TrueSite-deck.pdf) (also a download on the start page)
 
 ---
 
