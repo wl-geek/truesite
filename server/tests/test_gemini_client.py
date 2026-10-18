@@ -322,6 +322,7 @@ def test_a_quota_refusal_carries_googles_retry_delay():
     (_api_error(genai_errors.ClientError, 404, "NOT_FOUND"), "bad_request", 404),
     (_api_error(genai_errors.ServerError, 503, "UNAVAILABLE"), "unavailable", 503),
     (_api_error(genai_errors.ServerError, 504, "DEADLINE_EXCEEDED"), "unavailable", 504),
+    (_api_error(genai_errors.ClientError, 499, "CANCELLED"), "unavailable", 499),  # the service gave up: transient
     (httpx.ReadTimeout("timed out"), "timeout", None),
     (httpx.ConnectError("refused"), "unavailable", None),
     # Credentials fail at the first request on Agent Platform (ADC is read lazily): a setup error.
@@ -449,12 +450,44 @@ def test_the_check_sets_its_own_deadline_and_no_sdk_retry():
     assert cfg.http_options.retry_options.attempts == 1  # the retry above is the only one: 2 x 50 s at most
 
 
-def test_asks_are_not_retried_on_a_deadline_here():
+def test_a_hung_ask_moves_on_to_the_next_model():
+    # 18 Oct: asks hung for 22 s on gemini-3.8-flash (499 CANCELLED, then 504). Ask, Draft and the report now try the
+    # next model, each attempt up to 25 s with no SDK retry, inside the web client's 60 s.
+    element = {"ifc_class": "IfcWall", "name": "W", "props": {}}
+    for hang in (_api_error(genai_errors.ServerError, 504, "DEADLINE_EXCEEDED"), _api_error(genai_errors.ClientError, 499, "CANCELLED"),
+                 httpx.ReadTimeout("slow")):
+        client = FakeClient(hang, fake_response({"answer": "a", "cited_properties": [], "confidence": 1}))
+        out = gc.ask_element(element, "Height?", client=client)
+        assert out["result"]["answer"] == "a"
+        assert [c["model"] for c in client.models.calls] == [gc.MODEL_ID, gc.FALLBACK_MODEL_IDS[0]]
+        assert all(c["config"].http_options.timeout == gc.REQUEST_TIMEOUT_MS for c in client.models.calls)
+        assert all(c["config"].http_options.retry_options.attempts == 1 for c in client.models.calls)
+
+
+def test_a_hung_ask_stays_inside_its_budget(monkeypatch):
+    now = [0.0]
+    monkeypatch.setattr(gc.time, "monotonic", lambda: now[0])
     hung = _api_error(genai_errors.ServerError, 504, "DEADLINE_EXCEEDED")
-    client = FakeClient(hung, fake_response({"answer": "a", "cited_properties": [], "confidence": 1}))
-    with pytest.raises(gc.GeminiError):  # the SDK's own retry (25 s attempts) covers Ask, inside its 60 s
-        gc.generate_json(gc.build_ask_request({"ifc_class": "IfcWall", "name": "W", "props": {}}, "Height?"), client=client)
-    assert len(client.models.calls) == 1
+    client = FakeClient(hung, hung, hung, hung)
+    real = client.models.generate_content
+
+    def slow(**kwargs):
+        now[0] += kwargs["config"].http_options.timeout / 1000
+        return real(**kwargs)
+    client.models.generate_content = slow
+    with pytest.raises(gc.GeminiError) as info:
+        gc.ask_element({"ifc_class": "IfcWall", "name": "W", "props": {}}, "Height?", client=client)
+    assert info.value.kind == "unavailable" and info.value.status == 504
+    assert [c["config"].http_options.timeout for c in client.models.calls] == [25_000, 25_000]  # 50 s, then none left
+    assert now[0] <= gc.MODEL_BUDGET_S < 60
+
+
+def test_a_plain_bad_request_is_not_retried_on_another_model():
+    bad = _api_error(genai_errors.ClientError, 400, "INVALID_ARGUMENT")
+    client = FakeClient(bad)
+    with pytest.raises(gc.GeminiError) as info:
+        gc.ask_element({"ifc_class": "IfcWall", "name": "W", "props": {}}, "Height?", client=client)
+    assert info.value.kind == "bad_request" and len(client.models.calls) == 1
 
 
 def test_asks_and_drafts_keep_the_short_timeout():
