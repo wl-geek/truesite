@@ -81,7 +81,7 @@ While the camera runs, the view is full screen with an Exit button. **Transparen
 
 **Building site (project `site`).** Set the four upright US Letter sheets P1–P4 out on a car park with `site-layout.pdf`, stand on each X, lock close to the code, step back and turn on the spot. The camera overlay levels the model with the motion sensors. The full filming checklist is in [docs/demo/ipad-ar-filming.md](docs/demo/ipad-ar-filming.md). Walk inside (Quick Look / WebXR) and Android Start AR are hidden for the demo; add `?xr=1` to the page URL to bring them back.
 
-**Device status (18 Oct):** On 17 Oct we field-tested live AR on an iPhone against the deployed service: the building at life size on a field, with the site sheets on posts, and at 1:100 on the desk sheet D1. Scanning with the camera app, calibration, the lock, looking around and up on the motion sensors, tapping elements for their details and Ask Gemini all worked. An iPad in the same test held the model less steadily while moving. On Android over the LAN (15 Oct) we tested the desk overlay, the QR scan and a live *Check as-built*. Live Gemini checks run in the virtual demo on the deployed service. Not yet tested on a device: the two `?xr=1` modes.
+**Device status (18 Oct):** On 17 Oct we field-tested live AR on an iPhone against the deployed service: the building at life size on a field, with the site sheets on posts, and at 1:100 on the desk sheet D1. Scanning with the camera app, calibration, the lock, looking around and up on the motion sensors, tapping elements for their details and Ask Gemini all worked. An iPad in the same test held the model less steadily while turning: iPadOS Safari measures the screen angle from landscape while the motion sensors report in portrait, so the sensor rotation was mapped 90° off. That was fixed on 18 Oct (#1), and the end-to-end suite now replays iPad Safari's angles; the fix is not yet re-tested on the iPad itself. On Android over the LAN (15 Oct) we tested the desk overlay, the QR scan and a live *Check as-built*. Live Gemini checks run in the virtual demo on the deployed service. Not yet tested on a device: the two `?xr=1` modes.
 
 ## Projects and sheets
 
@@ -132,12 +132,12 @@ Rebuild the site model from `bim/truesite_bim/site.py` with `make models`.
 
 ## Testing
 
-| Suite | Command | Result (17 Oct) |
+| Suite | Command | Result (18 Oct) |
 |---|---|---|
-| BIM pipeline (pytest) | `cd bim && uv run pytest -q` | 143 passed |
-| Server (pytest, Gemini mocked) | `cd server && uv run pytest -q` | 521 passed, 9 skipped (they need the Firestore emulator) |
-| Web (vitest) and types | `cd web && npx vitest run && npx tsc -b` | 486 passed; `tsc -b` clean |
-| End to end (Playwright) | in `web/e2e`, below | 143 passed, 4 skipped (desktop, iPad, iPhone, limits, live AR) |
+| BIM pipeline (pytest) | `cd bim && uv run pytest -q` | 88 passed |
+| Server (pytest, Gemini mocked) | `cd server && uv run pytest -q` | 522 passed, 9 skipped (they need the Firestore emulator) |
+| Web (vitest) and types | `cd web && npx vitest run && npx tsc -b` | 549 passed; `tsc -b` clean |
+| End to end (Playwright) | in `web/e2e`, below | 164 passed, 4 skipped (desktop, iPad, iPhone, limits, live AR) |
 
 `make test` runs the first three. No suite calls live Gemini.
 
