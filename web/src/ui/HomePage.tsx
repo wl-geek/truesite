@@ -45,7 +45,7 @@ export function HomePage() {
                 <span className="home-cta-note">For judges to understand the concept&nbsp;· <span className="nowrap">no printing, no site visit</span></span>
               </div>
             </div>
-            <a href="/#demo" className="home-watch" onClick={jumpTo('demo')}><Icon name="play" />Watch the demo video (2:53)</a>
+            <a href="/#demo" className="home-watch" onClick={jumpTo('demo')}><Icon name="play" />Watch the demo video (3:15)</a>
             <ul className="home-proof" aria-label="Highlights">
               <li><Icon name="check" />No app to install</li>
               <li><Icon name="check" />Made for smartphones</li>
@@ -64,8 +64,8 @@ export function HomePage() {
       <section id="demo" className="home-section home-wrap" aria-labelledby="demo-title">
         <div className="home-section-head">
           <div>
-            <p className="home-kicker">Demo video · 2:53</p>
-            <h2 id="demo-title">TrueSite in under three minutes</h2>
+            <p className="home-kicker">Demo video · 3:15</p>
+            <h2 id="demo-title">TrueSite, end to end</h2>
             <p className="home-sub">
               Real footage from our iPhone field test on 17 October, then a live Gemini check in the virtual demo.
             </p>
