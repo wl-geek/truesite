@@ -79,6 +79,9 @@ class Settings:
     # the UI loads an unpinned script from jsDelivr on the app's own origin.
     api_docs: bool = False
 
+    # A second, close-up look at the marks most likely to be wrong (app/verify.py). Off unless CHECK_VERIFY=1.
+    check_verify: bool = False
+
     @classmethod
     def from_env(cls) -> "Settings":
         return cls(
@@ -100,4 +103,5 @@ class Settings:
             firestore_database=os.environ.get("FIRESTORE_DATABASE") or "(default)",
             gemini_mode=_choice("GEMINI_MODE", "fake", GEMINI_MODES),
             api_docs=_flag("API_DOCS"),
+            check_verify=_flag("CHECK_VERIFY"),
         )

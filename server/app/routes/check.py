@@ -84,7 +84,7 @@ async def check(
     ctx = with_project_identity(ctx, elements)  # names and classes from the project, not the client
 
     try:
-        checker = make_checker(repo, client_for(request))  # before the cap: a setup error uses no quota
+        checker = make_checker(repo, client_for(request), verify=settings.check_verify)  # before the cap: a setup error uses no quota
         await run_in_threadpool(enforce_limits, request, "check_limiter", "", settings.daily_check_cap)
         result = await run_in_threadpool(checker, photo_bytes, render_bytes, ctx, overlay_bytes)
     except GeminiError as err:

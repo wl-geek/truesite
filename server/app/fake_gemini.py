@@ -15,6 +15,7 @@ from types import SimpleNamespace
 from typing import Any
 
 from . import gemini_client
+from .verify import VERIFY_SYSTEM
 
 
 def _texts(contents: list[Any]) -> list[str]:
@@ -47,6 +48,13 @@ def _check(contents: list[Any]) -> dict:
     deviations = sum(f["status"] != "present_ok" for f in findings)
     return {"image_quality": "good", "findings": findings, "unexpected": [],
             "summary": f"Offline check: {len(findings)} elements compared, {deviations} possible deviations."}
+
+
+def _verify(contents: list[Any]) -> dict:
+    """The close-up second look agrees with the first pass, so offline results don't change with CHECK_VERIFY=1."""
+    task = _json_after(_texts(contents)[-1], "(JSON):\n")
+    return {"status": task.get("first_look", "cannot_judge"), "confidence": 0.9,
+            "offset": {"direction": "none", "approx_cm": 0}, "explanation": "Offline second look."}
 
 
 def _ask(contents: list[Any]) -> dict:
@@ -86,12 +94,14 @@ def _report(contents: list[Any]) -> dict:
 class _Models:
     def generate_content(self, *, model: str, contents: list[Any], config: Any) -> SimpleNamespace:
         system = getattr(config, "system_instruction", "")
-        if system == gemini_client.CHECK_SYSTEM:
+        if system.startswith(gemini_client.CHECK_SYSTEM):
             payload = _check(contents)
         elif system == gemini_client.ASK_SYSTEM:
             payload = _ask(contents)
         elif system == gemini_client.REPORT_SYSTEM:
             payload = _report(contents)
+        elif system == VERIFY_SYSTEM:
+            payload = _verify(contents)
         else:
             payload = _issue(contents)
         usage = SimpleNamespace(prompt_token_count=0, candidates_token_count=0, thoughts_token_count=0,
