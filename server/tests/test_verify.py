@@ -64,6 +64,9 @@ def test_quiet_candidates_are_thin_or_small_marks_smallest_first() -> None:
     ("missing", ("present_ok", 0.9), "both", "present_ok"),  # a false alarm removed
     ("missing", ("present_ok", 0.5), "both", "missing"),  # not sure enough to remove it
     ("missing", ("cannot_judge", 0.9), "both", "missing"),
+    ("missing", ("misplaced", 0.9), "both", "cannot_judge"),  # the looks disagree on what is wrong
+    ("misplaced", ("misplaced", 0.9), "both", "misplaced"),
+    ("different_from_design", ("missing", 0.9), "both", "different_from_design"),
     ("missing", ("present_ok", 0.9), "upgrade", "missing"),
     ("present_ok", ("missing", 0.9), "both", "missing"),  # a thin member the first pass missed
     ("present_ok", ("missing", 0.7), "both", "present_ok"),
@@ -76,7 +79,7 @@ def test_merge(first: str, verdict: tuple[str, float], mode: str, status: str) -
                                                      "offset": {"direction": "left", "approx_cm": 30}, "explanation": "x"}, mode)
     assert (changed or finding(1, first))["status"] == status
     assert note.startswith(first)
-    if changed and status == "present_ok":
+    if changed and status in ("present_ok", "cannot_judge"):
         assert changed["offset"] == {"direction": "none", "approx_cm": 0}
 
 

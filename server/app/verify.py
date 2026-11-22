@@ -6,11 +6,14 @@ same three images around its own box (IMAGE 2's box, the same viewpoint as the p
 resolution, and one narrow question: is THIS element built at its own outline?
 
 Which marks: the thin or small ones (braces, purlins, truss members, guardrails, far elements), whose close-ups start
-alongside the first pass because they don't depend on it, then every mark the first pass flagged. Each look is one call
-on the main model with its own short timeout (VERIFY_TIMEOUT_MS), so the stage adds a few seconds to the first pass;
-a look that fails or runs out of time leaves its mark as the first pass said. How a verdict changes a mark is in
-`merge`: a flag is removed when the close-up is sure the element fits its outline, and a passed mark becomes missing
-when the close-up is sure its outline is empty. Off unless CHECK_VERIFY=1 (config.Settings.check_verify).
+alongside the first pass because they don't depend on it, then the marks the first pass flagged or could not judge.
+Each look is one call on the main model with its own timeout (VERIFY_TIMEOUT_MS) and no fallback model, so the stage
+adds a few seconds to the first pass; a look that fails or runs out of time leaves its mark as the first pass said.
+How a verdict changes a mark is in `merge`:
+- a flag is removed when the close-up is sure the element fits its outline;
+- a flag becomes "can't judge" when the close-up sees a different problem (moved against missing, say);
+- a passed or unjudged mark becomes missing when the close-up is sure its outline is empty.
+Off unless CHECK_VERIFY=1 (config.Settings.check_verify).
 """
 from __future__ import annotations
 
@@ -18,8 +21,9 @@ import io
 import json
 import logging
 import os
-from concurrent.futures import ThreadPoolExecutor, wait
+import time
 from collections.abc import Callable
+from concurrent.futures import ThreadPoolExecutor, wait
 from typing import Any, Optional
 
 from google.genai import types
@@ -27,16 +31,18 @@ from PIL import Image
 from pydantic import BaseModel, Field
 
 from . import gemini_client
-from .gemini_client import Offset, gemini_json_schema
+from .gemini_client import GeminiError, Offset, gemini_json_schema
 from .schemas import CheckContext, Status
 from .validate import clamp_confidence
 
 log = logging.getLogger("truesite.verify")
 
 DEVIATIONS = {"missing", "misplaced", "different_from_design"}
-VERIFY_TIMEOUT_MS = 12_000  # each close-up; the stage adds at most about this to the first pass
-MAX_QUIET = 10  # thin or small marks looked at again, smallest first
-MAX_FLAGGED = 8  # marks the first pass flagged, looked at again
+VERIFY_TIMEOUT_MS = 14_000  # each close-up; the stage adds at most about this to the first pass
+MAX_QUIET = 16  # thin or small marks looked at again, smallest first
+MAX_LATE = 10  # marks the first pass flagged or could not judge, looked at again
+RETRY_IF_FAILED_WITHIN_S = 6.0  # a close-up refused this fast (503, 429) is tried once more ...
+RETRY_DELAY_S = 0.8  # ... after this pause
 THIN_CLASSES = {"IfcMember", "IfcRailing"}  # braces, purlins, truss members, guardrails
 SMALL_BOX = 0.004  # a mark whose box covers under 0.4% of the frame is "small"
 CROP_LONG_SIDE = 768
@@ -132,7 +138,7 @@ def build_verify_request(mark: int, task: dict, render_crop: bytes, overlay_crop
         system_instruction=VERIFY_SYSTEM,
         response_mime_type="application/json",
         response_json_schema=gemini_json_schema(VerifyWire),
-        thinking_config=types.ThinkingConfig(thinking_level=types.ThinkingLevel.LOW),
+        thinking_config=types.ThinkingConfig(thinking_level=types.ThinkingLevel.LOW),  # 3.8 Flash has no MINIMAL
         max_output_tokens=gemini_client.ASK_MAX_OUTPUT_TOKENS,
         http_options=types.HttpOptions(timeout=VERIFY_TIMEOUT_MS, retry_options=types.HttpRetryOptions(attempts=1)),
     )
@@ -147,11 +153,20 @@ def merge(first: dict, verdict: dict, mode: str) -> tuple[Optional[dict], str]:
         if mode != "upgrade" and after == "present_ok" and conf >= DOWNGRADE_CONFIDENCE:
             return {**first, "status": "present_ok", "confidence": conf, "offset": {"direction": "none", "approx_cm": 0},
                     "explanation": verdict.get("explanation") or "Fits its outline on a closer look."}, f"{before} -> present_ok"
+        if mode != "upgrade" and after in DEVIATIONS and not _same_problem(before, after):
+            # The two looks disagree on what is wrong (missing against moved, say): neither is shown as a finding.
+            return {**first, "status": "cannot_judge", "confidence": 0.5, "offset": {"direction": "none", "approx_cm": 0},
+                    "explanation": "A closer look disagrees on what is wrong here."}, f"{before} -> cannot_judge ({after} {conf:.2f})"
         return None, f"{before} kept ({after} {conf:.2f})"
     if mode != "downgrade" and after == "missing" and conf >= UPGRADE_CONFIDENCE:
         return {**first, "status": after, "confidence": conf, "offset": verdict.get("offset") or {"direction": "none", "approx_cm": 0},
                 "explanation": verdict.get("explanation") or "", "evidence_box": first.get("evidence_box", [0, 0, 0, 0])}, f"{before} -> {after}"
     return None, f"{before} kept ({after} {conf:.2f})"
+
+
+def _same_problem(a: str, b: str) -> bool:
+    """Missing and different-from-design both say "not what the design shows here"; moved is its own claim."""
+    return a == b or {a, b} <= {"missing", "different_from_design"}
 
 
 def _ask(client: Any, request: dict) -> dict:
@@ -190,16 +205,28 @@ def checked(first_pass: Callable[[], dict], photo_jpeg: bytes, render_png: bytes
         task = {"mark": mark, "ifc_class": v.ifc_class, "name": v.name, "key_dims": v.key_dims, "distance_m": ctx.distance_m}
         request = build_verify_request(mark, task, crop_jpeg(render_png, v.box),
                                        crop_jpeg(overlay_jpeg, v.box) if overlay_jpeg else None, crop_jpeg(photo_jpeg, v.box))
-        return _ask(client, request)
+        started = time.monotonic()
+        try:
+            return _ask(client, request)
+        except GeminiError as err:
+            # Overloaded or out of quota right now (a burst of close-ups can hit it): one more try if there is time.
+            if err.kind not in ("unavailable", "rate_limited") or time.monotonic() - started > RETRY_IF_FAILED_WITHIN_S:
+                log.warning("verify mark %d failed after %.1f s: %s", mark, time.monotonic() - started, err)
+                raise
+            log.info("verify mark %d: %s; trying once more", mark, err)
+            time.sleep(RETRY_DELAY_S)
+            return _ask(client, request)
 
-    pool = ThreadPoolExecutor(max_workers=16, thread_name_prefix="verify")
+    pool = ThreadPoolExecutor(max_workers=24, thread_name_prefix="verify")
     try:
         futures = {m: pool.submit(one, m) for m in (quiet_candidates(ctx) if mode != "downgrade" else [])}
         out = first_pass()
         raw_findings = _raw_findings(out["result"])
-        if mode != "upgrade":
-            for m in [m for m in visible if _status(raw_findings.get(m)) in DEVIATIONS and m not in futures][:MAX_FLAGGED]:
-                futures[m] = pool.submit(one, m)
+        # Flagged marks (to confirm or clear), then marks the first pass could not judge (a close-up may see them).
+        late = [m for m in visible if _status(raw_findings.get(m)) in DEVIATIONS] if mode != "upgrade" else []
+        late += [m for m in visible if _status(raw_findings.get(m)) == "cannot_judge"] if mode != "downgrade" else []
+        for m in [m for m in late if m not in futures][:MAX_LATE]:
+            futures[m] = pool.submit(one, m)
         wait(list(futures.values()), timeout=VERIFY_TIMEOUT_MS / 1000 + 1)
         notes: list[str] = []
         findings = dict(raw_findings)
