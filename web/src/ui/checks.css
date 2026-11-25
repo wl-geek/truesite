@@ -114,7 +114,7 @@
 .checks-images .evidence-frame img { background: #dfe6ee; }
 .evidence-dimmed { opacity: 0.35; border-style: dashed; }
 
-.checks-detail-grid { display: grid; gap: 16px; align-items: start; }
+.checks-detail-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
 .checks-main { min-width: 0; }
 .checks-findings-sec { margin-top: 20px; }
 @media (min-width: 1100px) { .checks-detail-grid { grid-template-columns: minmax(0, 1fr) 360px; } }
@@ -165,16 +165,17 @@
 .fcard-error { flex-basis: 100%; margin: 0; color: var(--sev-high); font-size: 13.5px; font-weight: 600; }
 
 /* The side column: Gemini's summary, the photo and alignment, and the audit trail. */
-.checks-aside { display: grid; gap: 12px; }
+.checks-aside { display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; min-width: 0; }
 @media (min-width: 1100px) { .checks-aside { position: sticky; top: calc(var(--topbar-h) + 12px); max-height: calc(100dvh - var(--topbar-h) - 24px); overflow-y: auto; overscroll-behavior: contain; } }
-.checks-box { padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--white); }
+.checks-box { min-width: 0; padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--white); }
 .checks-box h2 { margin-bottom: 8px; font-size: 15.5px; }
 .checks-box > p { margin: 0; }
 .checks-box .facts { margin: 8px 0 0; font-size: 13.5px; }
 .checks-box .note { margin: 0 0 4px; }
 .checks-audit code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; }
 .checks-hash { overflow-wrap: anywhere; }
-.checks-log { display: grid; gap: 4px; margin: 0; padding-left: 18px; color: #33475c; font-size: 13px; }
+.checks-log { display: grid; gap: 4px; margin: 0; padding-left: 18px; color: #33475c; font-size: 13px; overflow-wrap: anywhere; }
+.checks-aside dd { min-width: 0; overflow-wrap: anywhere; }
 .checks-audit .checks-h3 { margin: 14px 0 6px; font-size: 13.5px; }
 
 .checks-nowrap { white-space: nowrap; }
