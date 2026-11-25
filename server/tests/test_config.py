@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from app.config import DEFAULT_MODELS_DIR, DEFAULT_STATIC_DIR, MiB, REPO_ROOT, Settings
+from app.config import DEFAULT_MODELS_DIR, DEFAULT_STATIC_DIR, MiB, REPO_ROOT, Settings, VerifySettings
 
 ENV_VARS = [
     "STATIC_DIR", "MODELS_DIR", "MAX_UPLOAD_BYTES", "MAX_BODY_BYTES", "CHECKS_PER_IP_PER_HOUR",
@@ -117,3 +117,4 @@ def test_env_example_holds_the_defaults_and_no_key(monkeypatch: pytest.MonkeyPat
     for name, value in example.items():
         monkeypatch.setenv(name, value)
     assert Settings.from_env() == Settings(gcp_project="your-project-id")
+    assert VerifySettings.from_env() == VerifySettings()

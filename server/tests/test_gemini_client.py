@@ -689,3 +689,10 @@ def test_report_request_carries_the_checks_and_the_language_without_array_bounds
     assert texts[0].startswith("Checks (JSON):") and any("in Japanese" in t for t in texts)
     assert req["config"].system_instruction == gc.REPORT_SYSTEM
     assert "maxItems" not in json.dumps(req["config"].response_json_schema)  # Gemini rejects array bounds (#77)
+
+
+def test_costs_follow_the_model_that_answered():
+    lite = fake_response(GOOD_CHECK).model_copy(update={"model_version": "gemini-3.5-flash-lite-001"})
+    assert gc.usage_dict(lite)["cost_usd_est"] == round((4500 * 0.30 + (1500 + 300) * 2.50) / 1e6, 6)
+    assert gc.usage_dict(fake_response(GOOD_CHECK))["cost_usd_est"] == round(gc.estimate_cost_usd(4500, 1500, 300), 6)
+    assert gc.prices_per_m("some-new-model") == (gc.PRICE_IN_PER_M, gc.PRICE_OUT_PER_M)
