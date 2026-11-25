@@ -1,9 +1,9 @@
 import { expectClean, expect, test } from '../support/fixtures'
 
 const SAMPLES = [
-  'P1 · South side from the car park',
-  'P2 · Under the level 1 slab',
-  'P3 · Looking up through the open bay',
+  'P1 · South approach',
+  'P2 · Under the slab',
+  'P3 · Under the open bay',
   'P4 · East gable',
 ]
 
