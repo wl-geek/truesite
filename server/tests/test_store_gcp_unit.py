@@ -68,6 +68,60 @@ def test_listing_issues_reads_at_most_200_documents(store, fake_db) -> None:
     assert fake_db.query_limits and max(fake_db.query_limits) <= 200  # was 500 per GET (A-24)
 
 
+def _raw_run(run_id: str, session: str = "s1", minutes: int = 0) -> dict:
+    """A check_runs document as stored before the Checks page: no overlay_key, duration_ms, provenance or review."""
+    return {"run_id": run_id, "session_id": session, "project_id": "room1", "anchor_id": "A1",
+            "created_at": T0 + timedelta(minutes=minutes), "context": {"visible": []},
+            "result": {"findings": [{"mark": 1, "status": "missing", "confidence": 0.7, "severity": "high"}]},
+            "photo_key": f"uploads/{session}/{run_id}/photo.jpg", "render_key": f"uploads/{session}/{run_id}/render.png",
+            "expire_at": T0 + timedelta(days=30)}
+
+
+def test_runs_stored_before_the_checks_page_still_load_and_list(store, fake_db) -> None:
+    fake_db.docs["check_runs"] = {"old-run-0000000000": _raw_run("old-run-0000000000")}
+    got = store.get_check_run("old-run-0000000000", "s1")
+    assert got is not None and got.review == {} and got.provenance is None and got.overlay_key is None
+    assert [r.run_id for r in store.list_check_runs("s1")] == ["old-run-0000000000"]
+
+
+def test_listing_runs_reads_at_most_200_documents_and_skips_a_broken_one(store, fake_db) -> None:
+    fake_db.docs["check_runs"] = {
+        "run-a-000000000000": _raw_run("run-a-000000000000", minutes=1),
+        "run-b-000000000000": _raw_run("run-b-000000000000", minutes=2),
+        "broken-0000000000": {"session_id": "s1", "created_at": "not a time"},
+    }
+    assert [r.run_id for r in store.list_check_runs("s1")] == ["run-b-000000000000", "run-a-000000000000"]
+    assert fake_db.query_limits and max(fake_db.query_limits) <= 200
+
+
+def test_a_review_is_one_update_of_one_map_entry(store, fake_db) -> None:
+    fake_db.docs["check_runs"] = {"old-run-0000000000": _raw_run("old-run-0000000000")}
+    writes = fake_db.writes
+    assert store.set_review("old-run-0000000000", "s1", 12, "dismissed", T0) is True
+    doc = fake_db.docs["check_runs"]["old-run-0000000000"]
+    assert doc["review"] == {"12": {"decision": "dismissed", "at": T0}} and fake_db.writes == writes + 1
+    assert doc["result"] == _raw_run("old-run-0000000000")["result"]  # the rest of the document is untouched
+    assert store.set_review("old-run-0000000000", "s1", 12, None, T0) is True
+    assert fake_db.docs["check_runs"]["old-run-0000000000"]["review"] == {}
+    assert store.set_review("old-run-0000000000", "s2", 12, "confirmed", T0) is False
+    assert fake_db.writes == writes + 2
+
+
+def test_a_run_that_expires_before_the_review_is_written_is_not_recreated(store, fake_db, monkeypatch) -> None:
+    from .fake_gcp import _DocRef
+
+    fake_db.docs["check_runs"] = {"old-run-0000000000": _raw_run("old-run-0000000000")}
+    real_update = _DocRef.update
+
+    def expire_first(self, field_updates):
+        fake_db.docs["check_runs"].pop(self.id, None)  # the TTL policy deletes it between the read and the write
+        return real_update(self, field_updates)
+
+    monkeypatch.setattr(_DocRef, "update", expire_first)
+    assert store.set_review("old-run-0000000000", "s1", 1, "confirmed", T0) is False
+    assert fake_db.docs["check_runs"] == {}
+
+
 def test_a_run_id_with_a_slash_is_a_422_not_a_firestore_500(client) -> None:
     body = {"project_id": "testproj", "guid": GUID_WALL, "title": "t", "run_id": "a/b" * 6}
     assert client.post("/api/issues", json=body, headers={"X-Session-Id": new_session()}).status_code == 422
