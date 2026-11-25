@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { CheckResult, Finding } from '../api/types'
-import { boxToCss, groupFindings, imageQualityMessage, offsetText, savedLabel, statusText, summaryCounts } from './findingFormat'
+import { boxToCss, groupFindings, imageQualityMessage, offsetText, savedLabel, severityLabel, statusText, summaryCounts } from './findingFormat'
 
 const f = (mark: number, status: Finding['status'], severity: Finding['severity'], offset: Finding['offset'] = null): Finding =>
   ({ mark, guid: `g${mark}`, name: `E${mark}`, ifc_class: 'IfcWall', status, confidence: 0.9, evidence_box: null, offset, explanation: '', severity })
@@ -70,5 +70,11 @@ describe('findingFormat (mutation-tested)', () => {
   it('counts plural deviations', () => {
     const r = { findings: [f(1, 'missing', 'high'), f(2, 'misplaced', 'low'), f(3, 'cannot_judge', null)] } as CheckResult
     expect(summaryCounts(r)).toBe("2 possible deviations · 0 match · 1 can't judge")
+  })
+})
+
+describe('severityLabel', () => {
+  it('capitalises the chip, as the Checks page does', () => {
+    expect((['high', 'medium', 'low'] as const).map(severityLabel)).toEqual(['High', 'Medium', 'Low'])
   })
 })

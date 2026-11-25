@@ -3,7 +3,7 @@ import { whyItMatters } from '../check/risk'
 import { KIND_COLOURS } from '../scene/palette'
 import { AskBox } from './AskBox'
 import { askSuggestions, summarise } from './elementFacts'
-import { NOT_A_SURVEY, statusText } from './findingFormat'
+import { NOT_A_SURVEY, severityLabel, statusText } from './findingFormat'
 import { CopyIssueButton } from './SavedIssues'
 import { savedWhen } from './issueList'
 import './elementPanel.css'
@@ -139,7 +139,7 @@ function CheckSection({ finding: f, onDraftIssue }: { finding: Finding; onDraftI
     <section className={`ep-check${deviation ? ` ep-check-${f.severity}` : ''}`} aria-label="As-built check result">
       <div className="ep-check-head">
         <h3>As-built check · mark {f.mark}</h3>
-        {f.severity && <span className={`badge badge-${f.severity}`}>{f.severity}</span>}
+        {f.severity && <span className={`badge badge-${f.severity}`}>{severityLabel(f.severity)}</span>}
       </div>
       <p className="ep-check-status">{statusText(f)}</p>
       {f.explanation && <p className="ep-check-why"><span className="finding-src">Gemini:</span> {f.explanation}</p>}

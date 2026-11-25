@@ -67,3 +67,10 @@ export function summaryCounts(result: CheckResult): string {
   const { deviations, unsure, ok } = groupFindings(result.findings)
   return `${deviations.length} possible deviation${deviations.length === 1 ? '' : 's'} · ${ok.length} match · ${unsure.length} can't judge`
 }
+
+const SEVERITY_SHORT: Record<Severity, string> = { high: 'High', medium: 'Medium', low: 'Low' }
+
+/** The severity chip's text: "High", as the Checks page says "High severity". */
+export function severityLabel(severity: Severity): string {
+  return SEVERITY_SHORT[severity]
+}
