@@ -32,7 +32,8 @@ function server(port: number, env: Record<string, string>, reuse: boolean): Serv
     timeout: 180_000,
     stdout: 'ignore',
     stderr: 'pipe',
-    env: { STATIC_DIR, MODELS_DIR, GEMINI_MODE: 'fake', STORE_BACKEND: 'memory', ...env },
+    // SAVE_SAMPLE_RESULTS: the first check of a ready-made photo stores its saved result, as the deployed store holds one.
+    env: { STATIC_DIR, MODELS_DIR, GEMINI_MODE: 'fake', STORE_BACKEND: 'memory', SAVE_SAMPLE_RESULTS: '1', ...env },
   }
 }
 
