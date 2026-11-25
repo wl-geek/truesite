@@ -15,6 +15,7 @@ import { deviceRotation, requestMotionPermission } from '../scene/motion'
 import { paintOf } from '../scene/palette'
 import { disposePins, makePins } from '../scene/pins'
 import { applyTypeColours, type Inset, insetView, NO_INSET } from '../scene/viewer'
+import { checksPathFor } from '../router'
 import { describeDeviation, plantedNote, SITE_AS_BUILT } from '../sim/asBuilt'
 import { deviceLook, dragLook, forwardOf, type LookAngles, lookToward, turnBetween, yawOf } from '../sim/lookAngles'
 import { overlayHighlighter } from '../sim/overlayPick'
@@ -614,6 +615,10 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
                 from {reportScope(reportRuns, vp.id)}: safety first, then structure, then progress.</p>
               <button type="button" className="btn btn-accent" onClick={() => setReportOpen(true)}>Write today's site report</button>
             </div>
+          )}
+          {outcome.runId && (
+            <p className="vs-model-link">Confirm or dismiss each finding, and see how sure Gemini was and the audit trail.{' '}
+              <Link to={checksPathFor(outcome.runId)} className="btn btn-small">Open in Checks</Link></p>
           )}
           <p className="vs-model-link">The 3D model shows this check and your saved issues too.{' '}
             <Link to="/model" className="btn btn-small">Open the 3D model</Link></p>

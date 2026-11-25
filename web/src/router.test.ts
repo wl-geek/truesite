@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { navigate, parseRoute, viewerPathFor } from './router'
+import { checksPathFor, navigate, parseRoute, viewerPathFor } from './router'
 
 describe('parseRoute', () => {
   it('maps the client routes', () => {
@@ -23,6 +23,17 @@ describe('parseRoute', () => {
     expect(viewerPathFor('rooftop')).toBe('/model?project=rooftop')
     expect(viewerPathFor('room 1')).toBe('/model?project=room%201')
     expect(parseRoute('/model', viewerPathFor('rooftop').slice('/model'.length))).toEqual({ name: 'viewer', projectId: 'rooftop' })
+  })
+
+  it('opens the Checks page, or one check on it by run id', () => {
+    expect(parseRoute('/checks')).toEqual({ name: 'checks' })
+    expect(parseRoute('/checks/')).toEqual({ name: 'checks' })
+    expect(parseRoute('/checks', '?run=AbC_d-1234567890xyz')).toEqual({ name: 'checks', runId: 'AbC_d-1234567890xyz' })
+    expect(parseRoute('/checks', '?run=')).toEqual({ name: 'checks' })
+    expect(checksPathFor()).toBe('/checks')
+    expect(checksPathFor('AbC_d-1234567890xyz')).toBe('/checks?run=AbC_d-1234567890xyz')
+    expect(checksPathFor('a b')).toBe('/checks?run=a%20b')
+    expect(parseRoute('/checks', checksPathFor('a b').slice('/checks'.length))).toEqual({ name: 'checks', runId: 'a b' })
   })
 
   it('decodes percent-encoded ids and leaves validation to the live page', () => {

@@ -6,13 +6,15 @@ export type Route =
   | { name: 'viewer'; projectId?: string }
   | { name: 'live'; projectId: string; anchorId: string }
   | { name: 'samples' }
+  | { name: 'checks'; runId?: string }
 
 const LIVE_RE = /^\/a\/([^/]+)\/([^/]+)\/?$/
 const NAV_EVENT = 'truesite:navigate'
 
 /**
  * Unknown paths go to the start page. Live ids are only decoded here; LivePage checks they exist.
- * The viewer takes its project from `?project=` (ViewerPage's DEFAULT_PROJECT_ID, `site`, when absent).
+ * The viewer takes its project from `?project=` (ViewerPage's DEFAULT_PROJECT_ID, `site`, when absent), and the
+ * Checks page one check from `?run=` (ChecksPage checks it exists).
  */
 export function parseRoute(pathname: string, search = ''): Route {
   const live = LIVE_RE.exec(pathname)
@@ -24,6 +26,10 @@ export function parseRoute(pathname: string, search = ''): Route {
     }
   }
   if (pathname === '/samples' || pathname === '/samples/') return { name: 'samples' }
+  if (pathname === '/checks' || pathname === '/checks/') {
+    const runId = new URLSearchParams(search).get('run')
+    return runId ? { name: 'checks', runId } : { name: 'checks' }
+  }
   if (pathname === '/model' || pathname === '/model/') {
     const projectId = new URLSearchParams(search).get('project')
     return projectId ? { name: 'viewer', projectId } : { name: 'viewer' }
@@ -34,6 +40,11 @@ export function parseRoute(pathname: string, search = ''): Route {
 /** The model viewer for one project, so links from Live and Samples keep the project. */
 export function viewerPathFor(projectId: string): string {
   return `/model?project=${encodeURIComponent(projectId)}`
+}
+
+/** The Checks page, or one check on it (a link that can be shared within the browser that ran it). */
+export function checksPathFor(runId?: string): string {
+  return runId ? `/checks?run=${encodeURIComponent(runId)}` : '/checks'
 }
 
 export function navigate(path: string): void {

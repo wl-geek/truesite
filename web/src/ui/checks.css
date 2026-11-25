@@ -1,0 +1,172 @@
+/* The Checks page (ChecksPage.tsx): the list of a browser's checks and one check in full. Mobile first; the list is
+   a table from 860 px (useMedia in ChecksPage), the photo and the design sit side by side from 700 px, and one check
+   puts its findings next to the audit trail from 1100 px. Tokens come from styles.css. */
+.checks-page { max-width: 1240px; padding-top: 16px; padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+.checks-page h1 { margin: 2px 0 6px; font-size: clamp(26px, 4vw, 34px); line-height: 1.1; letter-spacing: -0.01em; }
+.checks-page h2 { margin: 0; font-size: 17px; line-height: 1.3; }
+.checks-page a:not(.btn) { color: var(--steel); }
+.checks-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.checks-muted { color: var(--muted); font-size: 13px; }
+.checks-sub { display: block; color: var(--muted); font-size: 13px; }
+.checks-count { display: inline-grid; place-items: center; min-width: 24px; height: 22px; margin-left: 4px; padding: 0 7px; border-radius: 999px;
+  background: #e3eaf2; color: var(--steel); font-size: 12.5px; font-weight: 800; vertical-align: 2px; }
+.checks-status { margin: 24px 0; color: var(--muted); }
+.checks-problem { display: grid; gap: 10px; justify-items: start; margin: 20px 0; padding: 14px 16px; border: 1px solid #f1c7a8; border-radius: var(--radius); background: #fff6ef; }
+.checks-problem p { margin: 0; }
+.checks-none { margin: 8px 0; padding: 14px 16px; border: 1px dashed var(--line); border-radius: var(--radius); background: var(--white); color: var(--muted); }
+.checks-foot { margin: 14px 0 0; }
+.checks-offline { margin: 0 0 14px; padding: 10px 14px; border-radius: var(--radius); background: var(--ink); color: #dbe6f1; font-size: 14px; }
+.checks-offline strong { color: var(--white); }
+.checks-notice { margin: 12px 0 0; padding: 8px 12px; border-radius: 10px; background: #e7f3e8; color: #1f5a24; font-size: 14px; font-weight: 600; width: fit-content; }
+
+/* ---- the list --------------------------------------------------------------------------------------------------- */
+.checks-head { margin-bottom: 16px; }
+.checks-lede { max-width: 44em; margin: 0; color: #33475c; font-size: 16px; }
+
+.checks-tiles { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin: 0 0 16px; }
+.tile { position: relative; display: grid; align-content: start; gap: 2px; min-height: 104px; padding: 14px 16px; border: 1px solid var(--line);
+  border-radius: 14px; background: var(--white); overflow: hidden; }
+.tile::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--line); }
+.tile dt { color: var(--muted); font-size: 13px; font-weight: 700; }
+.tile dd { margin: 0; }
+.tile-num { color: var(--ink); font-size: 32px; font-weight: 800; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.tile-note { color: var(--muted); font-size: 12.5px; line-height: 1.35; }
+.tile-todo::before { background: var(--orange); }
+.tile-todo .tile-num { color: #b4470a; }
+.tile-high::before { background: var(--sev-high); }
+.tile-high .tile-num { color: var(--sev-high); }
+@media (min-width: 760px) { .checks-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+.checks-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin: 0 0 10px; }
+.checks-label { margin: 0; }
+/* A two- or three-way choice: aria-pressed buttons in one rounded track. */
+.seg { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 12px; background: var(--white); }
+.seg button { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border: 0; border-radius: 9px; background: transparent;
+  color: var(--steel); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+.seg button:hover:not(:disabled):not([aria-pressed='true']) { background: var(--paper); }
+.seg button[aria-pressed='true'] { background: var(--steel); color: var(--white); }
+.seg button:disabled { opacity: 0.45; cursor: default; }
+.seg-count { display: inline-grid; place-items: center; min-width: 22px; height: 20px; padding: 0 6px; border-radius: 999px; background: rgba(28, 59, 94, 0.1); font-size: 12px; }
+.seg button[aria-pressed='true'] .seg-count { background: rgba(255, 255, 255, 0.2); }
+
+.checks-chips { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.badge-unsure { background: #e3e8ee; color: #33475c; }
+.badge-unexpected { background: transparent; border: 1.5px dashed var(--ink); padding: 1px 7px; }
+.badge-retake { background: #fff0dc; color: #8a4b00; }
+.review-pill { display: inline-flex; align-items: center; min-height: 28px; padding: 0 10px; border-radius: 999px; font-size: 13px; font-weight: 800; white-space: nowrap; }
+.review-todo { background: #fff0e4; color: #9a3d06; box-shadow: inset 0 0 0 1.5px rgba(255, 106, 19, 0.55); }
+.review-done { background: #e7f3e8; color: #1f5a24; }
+.review-none { background: var(--paper); color: var(--muted); font-weight: 700; }
+
+/* Table (wide screens): one row per check; a tap anywhere on the row opens it, the link is the keyboard way in. */
+.checks-table-wrap { border: 1px solid var(--line); border-radius: 14px; background: var(--white); overflow: hidden; }
+.checks-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.checks-table th { padding: 10px 14px; border-bottom: 1px solid var(--line); background: #f8fafc; color: var(--muted); font-size: 12px; font-weight: 800;
+  letter-spacing: 0.04em; text-align: left; text-transform: uppercase; white-space: nowrap; }
+.checks-table td { padding: 12px 14px; border-top: 1px solid #e8eef4; vertical-align: middle; }
+.checks-table tbody tr:first-child td { border-top: 0; }
+.checks-table .num { text-align: right; white-space: nowrap; }
+.checks-row { cursor: pointer; transition: background-color 0.15s; }
+.checks-row:hover { background: #f6f9fc; }
+.checks-row-todo td:first-child { box-shadow: inset 3px 0 0 var(--orange); }
+.checks-when { white-space: nowrap; font-weight: 600; }
+.checks-open { display: inline-flex; align-items: center; min-height: 32px; font-weight: 800; text-decoration: none; }
+.checks-open:hover { text-decoration: underline; text-underline-offset: 3px; }
+
+/* Cards (phones and narrow tablets). */
+.checks-cards { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+@media (min-width: 600px) { .checks-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.checks-card { display: grid; gap: 8px; height: 100%; padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--white);
+  color: var(--ink); text-decoration: none; transition: border-color 0.15s, box-shadow 0.15s; }
+.checks-page a.checks-card { color: var(--ink); }
+.checks-card:hover { border-color: var(--sky); box-shadow: 0 8px 22px rgba(11, 31, 51, 0.1); }
+.checks-card-todo { box-shadow: inset 4px 0 0 var(--orange); }
+.checks-card-top { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; font-size: 16px; }
+.checks-card-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; }
+.checks-card-conf { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 13px; }
+
+.checks-empty { display: grid; justify-items: start; gap: 10px; max-width: 560px; margin: 12px 0; padding: 22px 22px 24px; border: 1px solid var(--line);
+  border-radius: 16px; background: var(--white); }
+.checks-empty h1, .checks-empty h2 { margin: 0; font-size: 22px; }
+.checks-empty p { margin: 0; color: #33475c; }
+
+/* ---- one check -------------------------------------------------------------------------------------------------- */
+.checks-back { margin: 0 0 8px; }
+.checks-back-link { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; font-weight: 700; text-decoration: none; }
+.checks-back-link:hover { text-decoration: underline; text-underline-offset: 3px; }
+.checks-detail-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 20px; margin-bottom: 10px; }
+.checks-detail-state { display: grid; justify-items: end; gap: 4px; }
+@media (max-width: 599px) { .checks-detail-state { justify-items: start; } }
+.checks-label-row { margin: 0 0 12px; }
+.checks-label-chip { display: inline-flex; padding: 3px 10px; border-radius: 6px; background: #e3eaf2; color: var(--steel); font-size: 13px; font-weight: 800; }
+
+.checks-section-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; margin-bottom: 10px; }
+.checks-images { padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: var(--white); }
+.checks-figs { display: grid; gap: 12px; }
+@media (min-width: 700px) { .checks-figs { grid-template-columns: 1fr 1fr; align-items: start; } }
+.checks-figs figure { margin: 0; min-width: 0; }
+.checks-figs figcaption { margin: 0 0 6px; color: var(--muted); font-size: 12.5px; font-weight: 600; }
+.checks-img { display: block; width: 100%; height: auto; border-radius: var(--radius); background: #dfe6ee; }
+.checks-img-slot { display: grid; place-items: center; aspect-ratio: 4 / 3; margin: 0; border-radius: var(--radius); background: #e8eef4; color: var(--muted); font-size: 14px; }
+.checks-images .evidence-frame img { background: #dfe6ee; }
+.checks-images .evidence-box { min-width: 24px; min-height: 24px; }
+.evidence-dimmed { opacity: 0.35; border-style: dashed; }
+
+.checks-detail-grid { display: grid; gap: 16px; margin-top: 16px; align-items: start; }
+@media (min-width: 1100px) { .checks-detail-grid { grid-template-columns: minmax(0, 1fr) 360px; } }
+.checks-tip { margin: -4px 0 10px; color: var(--muted); font-size: 13.5px; }
+.checks-h3 { margin: 20px 0 8px; font-size: 15px; }
+.checks-greyed .fcard-main { opacity: 0.6; }
+.checks-ok { margin-top: 18px; }
+.checks-ok summary { display: flex; align-items: center; min-height: 44px; color: var(--steel); font-weight: 700; cursor: pointer; }
+.checks-ok .fcards { margin-top: 6px; }
+
+/* A finding: the photo around its box, what Gemini said, how sure, why it matters, and the decision. */
+.fcards { display: grid; gap: 10px; margin: 0; padding: 0; list-style: none; }
+.fcard { display: grid; border: 1px solid var(--line); border-radius: 14px; background: var(--white); overflow: hidden; scroll-margin-top: calc(var(--topbar-h) + 12px);
+  transition: border-color 0.15s, box-shadow 0.15s; }
+.fcard-high { box-shadow: inset 4px 0 0 var(--sev-high); }
+.fcard-medium, .fcard-unexpected { box-shadow: inset 4px 0 0 var(--sev-medium); }
+.fcard-low { box-shadow: inset 4px 0 0 var(--sev-low); }
+.fcard-selected { border-color: var(--orange); box-shadow: inset 4px 0 0 var(--orange), 0 0 0 3px rgba(255, 106, 19, 0.22); }
+.fcard-main { display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 12px; width: 100%; padding: 12px 14px 12px 16px; border: 0; background: transparent;
+  color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.fcard-static { cursor: default; }
+@media (min-width: 700px) { .fcard-main { grid-template-columns: 156px minmax(0, 1fr); gap: 16px; } }
+.fcard-crop { position: relative; display: block; align-self: start; aspect-ratio: 4 / 3; border-radius: 8px; background: #dfe6ee; overflow: hidden; }
+.fcard-crop img { position: absolute; max-width: none; }
+.fcard-crop-box { position: absolute; border: 2px solid var(--orange); border-radius: 3px; box-shadow: 0 0 0 1px rgba(11, 31, 51, 0.45); }
+.fcard-crop-none { display: grid; place-items: center; color: var(--muted); font-size: 12px; font-weight: 700; }
+.fcard-body { display: grid; align-content: start; gap: 6px; min-width: 0; }
+.fcard-title { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: 16px; line-height: 1.25; }
+.fcard-kind { color: var(--muted); font-size: 13px; font-weight: 600; }
+.fcard-status { font-size: 15px; font-weight: 700; }
+.fcard-badges { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.fcard-badges .badge { text-transform: capitalize; }
+.fcard-why { color: #33475c; font-size: 14px; overflow-wrap: anywhere; }
+.fcard .finding-risk { width: fit-content; max-width: 100%; }
+.fcard-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 10px 14px 12px 16px; border-top: 1px solid #e8eef4; background: #fafcfd; }
+@media (min-width: 700px) { .fcard-actions { padding-left: calc(16px + 156px + 16px); } }
+.fcard-actions .btn { min-height: 44px; }
+.btn-quiet { border-color: var(--line); }
+.fcard-decision { display: inline-flex; align-items: center; min-height: 44px; margin: 0; padding: 0 12px; border-radius: 10px; font-size: 14px; font-weight: 800; }
+.fcard-decision-confirmed { background: #e7f3e8; color: #1f5a24; }
+.fcard-decision-dismissed { background: #eef1f4; color: #46586b; }
+.fcard-dismissed .fcard-main { opacity: 0.6; }
+.fcard-dismissed .fcard-status { text-decoration: line-through; text-decoration-thickness: 1.5px; }
+.fcard-error { flex-basis: 100%; margin: 0; color: var(--sev-high); font-size: 13.5px; font-weight: 600; }
+
+/* The side column: Gemini's summary, the photo and alignment, and the audit trail. */
+.checks-aside { display: grid; gap: 12px; }
+@media (min-width: 1100px) { .checks-aside { position: sticky; top: calc(var(--topbar-h) + 12px); max-height: calc(100dvh - var(--topbar-h) - 24px); overflow-y: auto; overscroll-behavior: contain; } }
+.checks-box { padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--white); }
+.checks-box h2 { margin-bottom: 8px; font-size: 15.5px; }
+.checks-box > p { margin: 0; }
+.checks-box .facts { margin: 8px 0 0; font-size: 13.5px; }
+.checks-box .note { margin: 0 0 4px; }
+.checks-audit code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; }
+.checks-hash { overflow-wrap: anywhere; }
+.checks-log { display: grid; gap: 4px; margin: 0; padding-left: 18px; color: #33475c; font-size: 13px; }
+.checks-audit .checks-h3 { margin: 14px 0 6px; font-size: 13.5px; }
+
+@media (prefers-reduced-motion: reduce) { .checks-row, .checks-card, .fcard { transition: none; } }
