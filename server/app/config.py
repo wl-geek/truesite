@@ -59,6 +59,8 @@ class Settings:
     # total instead (each GET /api/issues reads the session's issues).
     issues_per_ip_per_hour: int = 30
     issues_per_session: int = 100
+    # A person's review decisions on findings (the Checks page): no Gemini call, a per-IP write limit only.
+    reviews_per_ip_per_hour: int = 300
 
     # How many proxies append to X-Forwarded-For in front of us:
     # 1 = Cloud Run's own front end (direct *.run.app URL); 2 = an external HTTPS load balancer too.
@@ -82,6 +84,9 @@ class Settings:
     # A second, close-up look at the marks most likely to be wrong (app/verify.py). Off unless CHECK_VERIFY=1.
     check_verify: bool = False
 
+    # Recorded in each check's provenance (the audit trail). `make deploy` sets the commit it deploys.
+    app_version: str = "dev"
+
     @classmethod
     def from_env(cls) -> "Settings":
         return cls(
@@ -95,6 +100,7 @@ class Settings:
             daily_ask_cap=_int("DAILY_ASK_CAP", 1000),
             issues_per_ip_per_hour=_int("ISSUES_PER_IP_PER_HOUR", 30),
             issues_per_session=_int("ISSUES_PER_SESSION", 100),
+            reviews_per_ip_per_hour=_int("REVIEWS_PER_IP_PER_HOUR", 300),
             trusted_proxy_hops=_int("TRUSTED_PROXY_HOPS", 1),
             store_backend=_choice("STORE_BACKEND", "memory", STORE_BACKENDS),
             # Cloud Run does not set GOOGLE_CLOUD_PROJECT; infra/gcloud.sh passes it explicitly.
@@ -104,4 +110,5 @@ class Settings:
             gemini_mode=_choice("GEMINI_MODE", "fake", GEMINI_MODES),
             api_docs=_flag("API_DOCS"),
             check_verify=_flag("CHECK_VERIFY"),
+            app_version=(os.environ.get("APP_VERSION") or "dev").strip()[:64] or "dev",
         )

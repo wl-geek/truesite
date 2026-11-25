@@ -3,6 +3,10 @@
 Flow: validate uploads and context -> project and every mark's element exist -> per-IP limit +
 daily cap -> Gemini (in the threadpool) -> repair + severity -> best-effort persistence ->
 CheckResponse.
+
+The stored run keeps the outline image when one was sent, the time the Gemini call took, and a provenance
+block (the images' SHA-256, the server's receive time, its APP_VERSION and what the client said about the
+check), so the Checks page can show an audit trail.
 """
 from __future__ import annotations
 
@@ -10,6 +14,7 @@ import hashlib
 import json
 import logging
 import secrets
+import time
 from pathlib import Path as FsPath
 from typing import Annotated, Literal
 
@@ -21,7 +26,7 @@ from pydantic import ValidationError
 from ..deps import NowDep, RepoDep, SessionId, SettingsDep, StoreDep, enforce_limits
 from ..gemini_client import GeminiError
 from ..projects import UnknownProject
-from ..schemas import RUN_ID_PATTERN, SAMPLE_ID_PATTERN, CheckContext, CheckResponse, CheckRun
+from ..schemas import RUN_ID_PATTERN, SAMPLE_ID_PATTERN, CheckContext, CheckResponse, CheckRun, Provenance
 from ..services import client_for, http_error_for, make_checker
 from ..store import blob_key, content_type_for
 from ..uploads import read_image
@@ -50,6 +55,10 @@ def is_shipped_sample(static_dir: FsPath, ctx: CheckContext, photo: bytes) -> bo
             and hashlib.sha256(shipped).digest() == hashlib.sha256(photo).digest())
 
 
+def sha256_hex(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
 def parse_context(raw: str) -> CheckContext:
     try:
         return CheckContext.model_validate_json(raw)
@@ -71,6 +80,7 @@ async def check(
     now: NowDep,
     overlay: Annotated[UploadFile | None, File(description="JPEG photo with the design outlines (IMAGE 3), <= 4 MiB")] = None,
 ) -> CheckResponse:
+    received_at = now()
     photo_bytes = await read_image(photo, field="photo", kind="jpeg", limit=settings.max_upload_bytes)
     render_bytes = await read_image(render, field="render", kind="png", limit=settings.max_upload_bytes)
     overlay_bytes = await read_image(overlay, field="overlay", kind="jpeg", limit=settings.max_upload_bytes) if overlay else None
@@ -86,7 +96,9 @@ async def check(
     try:
         checker = make_checker(repo, client_for(request), verify=settings.check_verify)  # before the cap: a setup error uses no quota
         await run_in_threadpool(enforce_limits, request, "check_limiter", "", settings.daily_check_cap)
+        started = time.perf_counter()
         result = await run_in_threadpool(checker, photo_bytes, render_bytes, ctx, overlay_bytes)
+        duration_ms = round((time.perf_counter() - started) * 1000)
     except GeminiError as err:
         log.warning("check failed: %s", err)
         raise http_error_for(err) from err
@@ -95,13 +107,22 @@ async def check(
     run_id = secrets.token_urlsafe(16)
     photo_key = blob_key(session_id, run_id, "photo.jpg")
     render_key = blob_key(session_id, run_id, "render.png")
+    overlay_key = blob_key(session_id, run_id, "overlay.jpg") if overlay_bytes else None
+    provenance = Provenance(
+        photo_sha256=sha256_hex(photo_bytes), render_sha256=sha256_hex(render_bytes),
+        overlay_sha256=sha256_hex(overlay_bytes) if overlay_bytes else None, received_at=received_at,
+        app_version=settings.app_version, source=ctx.source, pose_quality=ctx.pose_quality, distance_m=ctx.distance_m,
+    )
     saved = True
     try:
         await run_in_threadpool(store.put_blob, photo_key, photo_bytes, "image/jpeg")
         await run_in_threadpool(store.put_blob, render_key, render_bytes, "image/png")
+        if overlay_key and overlay_bytes:
+            await run_in_threadpool(store.put_blob, overlay_key, overlay_bytes, "image/jpeg")
         run = CheckRun(run_id=run_id, session_id=session_id, project_id=ctx.project_id, anchor_id=ctx.anchor_id,
                        created_at=now(), context=ctx.model_dump(mode="json"), result=result,
-                       photo_key=photo_key, render_key=render_key)
+                       photo_key=photo_key, render_key=render_key, overlay_key=overlay_key,
+                       duration_ms=duration_ms, provenance=provenance)
         await run_in_threadpool(store.save_check_run, run)
     except Exception:  # noqa: BLE001 - log and carry on
         log.exception("saving check run %s failed", run_id)
@@ -121,7 +142,7 @@ async def check(
 @router.get("/api/runs/{run_id}/{name}")
 def run_image(
     run_id: Annotated[str, Path(pattern=RUN_ID_PATTERN)],
-    name: Literal["photo.jpg", "render.png"],
+    name: Literal["photo.jpg", "render.png", "overlay.jpg"],
     session_id: SessionId,
     store: StoreDep,
 ) -> Response:

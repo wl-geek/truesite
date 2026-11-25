@@ -199,3 +199,19 @@ def test_a_second_store_reuses_the_firebase_app(monkeypatch, fake_db) -> None:
     FirestoreGcsStore(bucket="b", project="truesite-p", database="other-db", storage_client=FakeStorage())
     assert len(calls["init"]) == 1  # initialize_app twice would raise in the real SDK
     assert calls["client"] == ("app:[DEFAULT]", "other-db")
+
+
+def test_the_checks_page_routes_work_on_the_firestore_store(client, fake_db) -> None:
+    from .test_check_route import post as post_check
+
+    session = new_session()
+    hdr = {"X-Session-Id": session}
+    run_id = post_check(client, session, overlay=b"\xff\xd8\xff" + b"\x02" * 32).json()["run_id"]
+    doc = fake_db.docs["check_runs"][run_id]
+    assert isinstance(doc["provenance"]["received_at"], datetime) and doc["overlay_key"].endswith("/overlay.jpg")
+    assert [r["run_id"] for r in client.get("/api/runs", headers=hdr).json()["runs"]] == [run_id]
+    assert client.put(f"/api/runs/{run_id}/review/2", json={"decision": "confirmed"}, headers=hdr).status_code == 200
+    detail = client.get(f"/api/runs/{run_id}", headers=hdr).json()
+    assert detail["review"]["2"]["decision"] == "confirmed" and detail["images"]["overlay"] == f"/api/runs/{run_id}/overlay.jpg"
+    assert client.get(f"/api/runs/{run_id}/overlay.jpg", headers=hdr).status_code == 200
+    assert client.get("/api/runs", headers=hdr).json()["runs"][0]["confirmed"] == 1
