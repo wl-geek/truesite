@@ -143,11 +143,14 @@ def make_reporter(client: Any) -> Callable[..., SiteReport]:
     def report(runs: list[CheckRun], language: str = "en") -> SiteReport:
         checks = []
         for run in runs:
+            # A finding a person dismissed as a false alarm on the Checks page is not reported as a deviation.
+            dismissed = {mark for mark, r in run.review.items() if r.decision == "dismissed"}
             findings = [f for f in run.result.get("findings", []) if isinstance(f, dict)]
+            flagged = [f for f in findings if f.get("status") in _DEVIATIONS]
             checks.append({
                 "spot": run.anchor_id, "time": run.created_at,
                 "deviations": [{k: f.get(k) for k in ("name", "ifc_class", "status", "severity", "offset", "explanation")}
-                               for f in findings if f.get("status") in _DEVIATIONS],
+                               for f in flagged if str(f.get("mark")) not in dismissed],
                 "matched": sum(f.get("status") == "present_ok" for f in findings),
                 "could_not_judge": sum(f.get("status") == "cannot_judge" for f in findings),
             })
