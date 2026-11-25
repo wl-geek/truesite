@@ -456,7 +456,7 @@ function CheckDetail({ runId }: { runId: string }) {
             <div className="checks-section-head">
               <h2 id="findings-h">Findings to review <span className="checks-count">{flagged.length}</span></h2>
             </div>
-            <p className="checks-tip">Highest severity first and, within it, the least sure first. Tap a finding to see it on the photo.</p>
+            <p className="checks-tip">Highest severity first, guardrails first within it, then the least sure. Tap a finding to see it on the photo.</p>
             {flagged.length === 0
               ? <p className="checks-none">{offline ? 'The stand-in' : 'Gemini'} flagged no deviation in this view.</p>
               : <ol className="fcards">{flagged.map((f) => <FindingCard key={f.mark} {...cardProps(f)} />)}</ol>}

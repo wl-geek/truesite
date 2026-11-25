@@ -23,6 +23,12 @@ describe('review first', () => {
     expect(reviewFirst(findings).map((x) => x.mark)).toEqual([5, 3, 7, 6, 2, 4, 9, 8, 1])
   })
 
+  it('puts a flagged guardrail before other findings of the same severity', () => {
+    const rail = { ...f(4, 'missing', 0.97, 'high'), ifc_class: 'IfcRailing' }
+    const findings = [f(1, 'missing', 0.55, 'high'), f(2, 'missing', 0.6, 'medium'), rail, { ...f(3, 'present_ok', 0.5, null), ifc_class: 'IfcRailing' }]
+    expect(reviewFirst(findings).map((x) => x.mark)).toEqual([4, 1, 2, 3])
+  })
+
   it('leaves the input alone', () => {
     const findings = [f(2, 'missing', 0.9, 'low'), f(1, 'missing', 0.9, 'high')]
     reviewFirst(findings)
