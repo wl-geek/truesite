@@ -189,8 +189,14 @@ deploy() {
   local url env secrets=""
   env="STORE_BACKEND=gcp,GCS_BUCKET=$BUCKET,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,GEMINI_MODE=live"
   env="$env,DAILY_CHECK_CAP=300,DAILY_ASK_CAP=300,CHECKS_PER_IP_PER_HOUR=30,TRUSTED_PROXY_HOPS=1"  # judges share office IPs
-  # The close-up second look (server/app/verify.py): about US$0.06 a check with it, US$0.013 without. CHECK_VERIFY=0 turns it off.
+  # The close-up second look (server/app/verify.py): about US$0.05 a check with it, US$0.013 without. CHECK_VERIFY=0 turns it off.
   env="$env,CHECK_VERIFY=${CHECK_VERIFY:-1}"
+  # Its settings (config.VerifySettings; the code's defaults otherwise), passed on when set: VERIFY_GRACE_MS=8000 make deploy.
+  local name
+  for name in VERIFY_MODEL VERIFY_TIMEOUT_MS VERIFY_GRACE_MS VERIFY_MAX_QUIET VERIFY_MAX_LATE VERIFY_WORKERS \
+              VERIFY_PHOTO_RESOLUTION; do
+    [ -z "${!name:-}" ] || env="$env,$name=${!name}"
+  done
   case "$GEMINI_BACKEND" in
     enterprise) env="$env,GOOGLE_GENAI_USE_ENTERPRISE=true,GOOGLE_CLOUD_LOCATION=$GEMINI_LOCATION" ;;
     # The SDK ignores GEMINI_API_KEY while GOOGLE_GENAI_USE_ENTERPRISE=true, so the flag goes with the key.
@@ -204,8 +210,9 @@ deploy() {
   make_sheets "$url"
 
   # First run asks to create the Artifact Registry repo "cloud-run-source-deploy";
-  # --quiet answers yes. One warm instance keeps the first check fast (about US$0.5 a day idle);
-  # MIN_INSTANCES=0 scales to zero.
+  # --quiet answers yes. One warm instance keeps the first check fast (about US$0.60 a day idle at 1 vCPU and
+  # 1 GiB in asia-southeast1); MIN_INSTANCES=0 scales to zero. CPU=2 or MEMORY=2Gi add about US$0.30 a day each
+  # idle; a check uses well under a second of CPU, so neither makes one faster.
   gcloud run deploy "$SERVICE" \
     --source . \
     --region "$REGION" \
@@ -213,9 +220,9 @@ deploy() {
     --allow-unauthenticated \
     --min-instances "${MIN_INSTANCES:-1}" \
     --max-instances 2 \
-    --cpu 1 \
+    --cpu "${CPU:-1}" \
     --cpu-boost \
-    --memory 1Gi \
+    --memory "${MEMORY:-1Gi}" \
     --concurrency 20 \
     --timeout 120 \
     --set-env-vars "$env" \
