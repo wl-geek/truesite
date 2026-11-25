@@ -118,6 +118,31 @@ test.describe('Checks page', () => {
     expectClean(log, { http: /404 GET .*\/api\/runs\/|404 PUT / })
   })
 
+  test('a long unbroken server note wraps, and the second look shows as one line @handheld', async ({ page, log }) => {
+    // A live check stored a one-line timing note with no spaces; it pushed the page past the right edge (V-01).
+    const unbroken = 'x'.repeat(300)
+    await page.route(/\/api\/runs\/[A-Za-z0-9_-]+$/, async (route) => {
+      const response = await route.fetch()
+      const body = await response.json()
+      body.result.warnings = [unbroken, 'verify: mark 1 Partition: missing -> present_ok', 'verify: mark 2 ran out of time',
+        'verify: timing {"model":"gemini-3.8-flash","decode_s":0.062,"unfinished":1,"total_s":27.29}']
+      await route.fulfill({ response, json: body })
+    })
+    await checkAndOpen(page)
+    const audit = page.getByRole('region', { name: 'Audit trail' })
+    await expect(audit).toContainText('Second look2 marks looked at again close up: 1 changed, 0 unchanged, 1 not back in time')
+    await expect(audit).toContainText(unbroken)
+    await expect(audit).not.toContainText('verify:')
+    await fits(page)
+    const aside = page.locator('.checks-aside')
+    expect(await aside.evaluate((el) => el.scrollWidth <= el.clientWidth)).toBe(true)
+    for (const size of [{ width: 1024, height: 1366 }, { width: 390, height: 844 }]) { // iPad and phone portrait
+      await page.setViewportSize(size)
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true)
+    }
+    expectClean(log)
+  })
+
   test('a link to a check this browser did not run says so', async ({ page, log }) => {
     await page.goto('/checks?run=NotThisBrowsersRun01')
     await expect(page.getByRole('heading', { name: 'Check not found' })).toBeVisible()

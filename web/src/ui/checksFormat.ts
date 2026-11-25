@@ -135,3 +135,29 @@ export function reviewErrorMessage(err: { status: number; code?: string }): stri
   if (err.status === 0) return 'No connection. Your decision was not saved: try again.'
   return "Couldn't save your decision. Try again."
 }
+
+/** The server's "verify: ..." notes on the close-up second look (server/app/verify.py) as one line, or null when the
+ * check had no second look. The raw notes stay in the server logs. */
+export function secondLookSummary(warnings: readonly string[]): string | null {
+  const notes = warnings.filter((w) => w.startsWith('verify: mark '))
+  if (warnings.some((w) => w.startsWith('verify: skipped'))) return 'Skipped: an image could not be read'
+  if (notes.length === 0) return null
+  let changed = 0, kept = 0, late = 0, failed = 0
+  for (const n of notes) {
+    if (/^verify: mark \d+ ran out of time$/.test(n)) late++
+    else if (/^verify: mark \d+ failed \(/.test(n)) failed++
+    else if (n.includes(' -> ')) changed++
+    else kept++
+  }
+  const marks = (n: number) => `${n} mark${n === 1 ? '' : 's'}`
+  const parts = [`${changed} changed`, `${kept} unchanged`]
+  if (late) parts.push(`${late} not back in time`)
+  if (failed) parts.push(`${failed} could not be checked`)
+  const left = late + failed ? ' (left as the first look said)' : ''
+  return `${marks(notes.length)} looked at again close up: ${parts.join(', ')}${left}`
+}
+
+/** The server notes worth showing a person: everything but the second look's own notes (see secondLookSummary). */
+export function serverNotes(warnings: readonly string[]): string[] {
+  return warnings.filter((w) => !w.startsWith('verify:'))
+}
