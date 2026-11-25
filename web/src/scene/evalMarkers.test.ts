@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { makeEvalMarkers, parseEvalPoints } from './evalMarkers'
+import { evalPointsUrl, makeEvalMarkers, parseEvalPoints } from './evalMarkers'
 import { EDGE_LAYER } from './overlay'
 
 describe('eval markers', () => {
@@ -13,5 +13,11 @@ describe('eval markers', () => {
     expect(g.children).toHaveLength(1)
     expect(g.children[0].layers.isEnabled(EDGE_LAYER)).toBe(true)
     expect(g.children[0].layers.isEnabled(0)).toBe(false)
+  })
+  it('picks the point set from ?eval=', () => {
+    expect(evalPointsUrl('')).toBeNull()
+    expect(evalPointsUrl('?eval=1')).toBe('/eval/points.json')
+    expect(evalPointsUrl('?eval=room')).toBe('/eval/room-points.json')
+    expect(evalPointsUrl('?arlag=50&eval=room')).toBe('/eval/room-points.json')
   })
 })

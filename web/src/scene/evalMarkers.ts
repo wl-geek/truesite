@@ -6,6 +6,16 @@ import { EDGE_LAYER } from './overlay'
 
 export type EvalPoint = { id: string; label: string; position_m: [number, number, number] }
 
+/**
+ * Which point set `?eval=` asks for: `?eval=room` is the room-size set around P1 taped on a wall
+ * (web/public/eval/room-points.json, eval/README.md section 1b); any other value is the site set.
+ */
+export function evalPointsUrl(search: string): string | null {
+  const params = new URLSearchParams(search)
+  if (!params.has('eval')) return null
+  return params.get('eval') === 'room' ? '/eval/room-points.json' : '/eval/points.json'
+}
+
 export function parseEvalPoints(json: unknown): EvalPoint[] {
   if (!Array.isArray(json)) return []
   return json.filter((p): p is EvalPoint =>
