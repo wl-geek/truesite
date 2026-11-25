@@ -7,14 +7,19 @@ files to disk -- which on Cloud Run is RAM:
 1. BodySizeLimitMiddleware caps the whole request body. It rejects early on
    Content-Length and, for chunked bodies with no Content-Length, counts bytes
    as they arrive and aborts with 413.
-2. read_image() caps each file part (4 MiB by default) and checks magic bytes.
+2. read_image() caps each file part (4 MiB by default), checks magic bytes and, given
+   `max_pixels`, the width x height in the image header (a small file can declare a huge image).
 """
 
 from __future__ import annotations
 
+import io
 import json
+import sys
+import warnings
 
 from fastapi import HTTPException, UploadFile
+from PIL import Image
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
 JPEG_MAGIC = b"\xff\xd8\xff"
@@ -88,8 +93,23 @@ async def _send_json(send: Send, status: int, body: dict) -> None:
     await send({"type": "http.response.body", "body": payload})
 
 
-async def read_image(upload: UploadFile, *, field: str, kind: str, limit: int) -> bytes:
-    """Read one uploaded image part; 413 if over `limit`, 415 if not `kind`."""
+def image_pixels(data: bytes) -> int | None:
+    """Width x height from the JPEG or PNG header, without decoding the pixels. None when Pillow cannot read the
+    header (the magic bytes were right, so the bytes go on as before); a decompression bomb counts as too many."""
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", Image.DecompressionBombWarning)
+            with Image.open(io.BytesIO(data), formats=("JPEG", "PNG")) as img:
+                width, height = img.size
+    except Image.DecompressionBombError:
+        return sys.maxsize
+    except Exception:  # noqa: BLE001 - an unreadable header is not this check's to judge
+        return None
+    return width * height
+
+
+async def read_image(upload: UploadFile, *, field: str, kind: str, limit: int, max_pixels: int | None = None) -> bytes:
+    """Read one uploaded image part; 413 if over `limit` bytes or `max_pixels`, 415 if not `kind`."""
     if upload.size is not None and upload.size > limit:
         raise HTTPException(status_code=413, detail=f"{field} is larger than {limit} bytes")
     data = await upload.read(limit + 1)
@@ -98,4 +118,6 @@ async def read_image(upload: UploadFile, *, field: str, kind: str, limit: int) -
     magic = JPEG_MAGIC if kind == "jpeg" else PNG_MAGIC
     if not data.startswith(magic):
         raise HTTPException(status_code=415, detail=f"{field} must be a {kind.upper()} image")
+    if max_pixels is not None and (pixels := image_pixels(data)) is not None and pixels > max_pixels:
+        raise HTTPException(status_code=413, detail=f"{field} is larger than {max_pixels} pixels")
     return data

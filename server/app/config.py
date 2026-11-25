@@ -46,6 +46,10 @@ class Settings:
 
     # Upload limits (spec section 6: photo and render at most 4 MB each).
     max_upload_bytes: int = 4 * MiB
+    # Pixels per image (width x height, read from the header before any decoding). The web app sends at most
+    # 1600 px a side (2.56 MP); a few MB of JPEG can declare far more, and every close-up of the second look
+    # (app/verify.py) decodes the whole image again.
+    max_image_pixels: int = 4_000_000
     # Whole-request cap, enforced while the body streams in: three files (photo, render, outline overlay)
     # + context + multipart overhead.
     max_body_bytes: int = 13 * MiB
@@ -88,6 +92,7 @@ class Settings:
             static_dir=Path(os.environ.get("STATIC_DIR") or DEFAULT_STATIC_DIR),
             models_dir=Path(os.environ.get("MODELS_DIR") or DEFAULT_MODELS_DIR),
             max_upload_bytes=_int("MAX_UPLOAD_BYTES", 4 * MiB),
+            max_image_pixels=_int("MAX_IMAGE_PIXELS", 4_000_000),
             max_body_bytes=_int("MAX_BODY_BYTES", 13 * MiB),
             checks_per_ip_per_hour=_int("CHECKS_PER_IP_PER_HOUR", 10),
             asks_per_ip_per_hour=_int("ASKS_PER_IP_PER_HOUR", 30),

@@ -80,6 +80,21 @@ def test_upload_errors(make_client):
     assert post(client, ctx=context(project_id="nope")).status_code == 404
 
 
+def test_an_image_over_the_pixel_cap_is_413_before_any_model_call(make_client, monkeypatch):
+    from app.routes import check as check_route
+
+    from .test_uploads import real_image
+
+    def no_model_call(*args, **kwargs):
+        raise AssertionError("the pixel cap must answer before any model call")
+
+    monkeypatch.setattr(check_route, "make_checker", no_model_call)
+    client = make_client(max_image_pixels=1000 * 1000)
+    r = post(client, photo=real_image("JPEG", (1001, 1000)))
+    assert r.status_code == 413 and r.json()["detail"] == "photo is larger than 1000000 pixels"
+    assert post(client, overlay=real_image("JPEG", (2000, 600))).status_code == 413
+
+
 def test_missing_session_is_rejected(client):
     r = client.post("/api/check", files={"photo": ("p.jpg", JPEG), "render": ("r.png", PNG)}, data={"context": context()})
     assert r.status_code == 422
