@@ -116,3 +116,42 @@ class Settings:
             check_verify=_flag("CHECK_VERIFY"),
             save_sample_results=_flag("SAVE_SAMPLE_RESULTS"),
         )
+
+
+VERIFY_RESOLUTIONS = ("high", "medium")
+
+
+@dataclass(frozen=True)
+class VerifySettings:
+    """How the close-up second look runs (app/verify.py), read at each check from VERIFY_* variables. Switched on by
+    CHECK_VERIFY=1 (Settings.check_verify). The defaults are the ones measured on 26 Nov 2026."""
+
+    # Model for the close-ups; "" = the check's own model (gemini_client.MODEL_ID). Flash-Lite answered a close-up
+    # in under 2 s but cleared 6 of 16 real defects (3.8 Flash: 2), so the default stays the check's own model.
+    model: str = ""
+    # Each close-up's own limit; Gemini answers 504 DEADLINE_EXCEEDED about 3 s before it.
+    timeout_ms: int = 14_000
+    # The most the second look waits once the first pass has answered: a close-up not back by then leaves its mark as
+    # the first pass said (it may still finish, and be billed, in the background). One close-up in seven runs into
+    # Gemini's deadline and used to hold the whole check for about 11 s.
+    grace_ms: int = 6_000
+    # Thin or small marks looked at again (started with the first pass), and flagged or unjudged marks after it.
+    max_quiet: int = 16
+    max_late: int = 10
+    # Close-ups running at once for one check.
+    workers: int = 16
+    # Media resolution of the photo crops ("high" or "medium"); the render crop is always medium.
+    photo_resolution: str = "high"
+
+    @classmethod
+    def from_env(cls) -> "VerifySettings":
+        d = cls()
+        return cls(
+            model=(os.environ.get("VERIFY_MODEL") or "").strip(),
+            timeout_ms=_int("VERIFY_TIMEOUT_MS", d.timeout_ms),
+            grace_ms=max(0, _int("VERIFY_GRACE_MS", d.grace_ms)),
+            max_quiet=_int("VERIFY_MAX_QUIET", d.max_quiet),
+            max_late=_int("VERIFY_MAX_LATE", d.max_late),
+            workers=max(1, _int("VERIFY_WORKERS", d.workers)),
+            photo_resolution=_choice("VERIFY_PHOTO_RESOLUTION", d.photo_resolution, VERIFY_RESOLUTIONS),
+        )

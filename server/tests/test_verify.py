@@ -12,6 +12,7 @@ import pytest
 from PIL import Image
 
 from app import verify
+from app.config import VerifySettings
 from app.fake_gemini import FakeGeminiClient
 from app.gemini_client import CHECK_SYSTEM
 from app.projects import ProjectRepo
@@ -101,7 +102,7 @@ class Scripted:
                 payload = {"image_quality": "good", "findings": first, "unexpected": [], "summary": "s"}
             else:
                 with lock:
-                    self.verify_calls.append({"contents": contents, "config": config})
+                    self.verify_calls.append({"model": model, "contents": contents, "config": config})
                     self.at_once += 1
                     self.most_at_once = max(self.most_at_once, self.at_once)
                 time.sleep(delay_s)
@@ -175,9 +176,75 @@ def test_each_image_is_decoded_once_per_check_however_many_close_ups(models: Pat
     assert len(opened) == 3
 
 
-def test_close_ups_at_once_never_exceed_the_pool(models: Path, monkeypatch: pytest.MonkeyPatch) -> None:
-    monkeypatch.setattr(verify, "MAX_WORKERS", 2)
+def test_close_ups_at_once_never_exceed_the_workers(models: Path) -> None:
     first = [finding(m, "missing") for m in (1, 2, 3, 4)]
     client = Scripted(first, {m: verdict("missing") for m in (1, 2, 3, 4)}, delay_s=0.05)
-    make_checker(ProjectRepo(models), client, verify=True)(JPEG, PNG, CTX, JPEG)
+    verify.checked(lambda: first_pass(client), JPEG, PNG, JPEG, CTX, client=client, settings=VerifySettings(workers=2))
     assert len(client.verify_calls) == 4 and client.most_at_once == 2
+
+
+def first_pass(client: "Scripted") -> dict:
+    from app import gemini_client
+    return gemini_client.check_asbuilt(JPEG, PNG, CTX.model_dump(mode="json"), overlay_jpeg=JPEG, client=client)
+
+
+def test_settings_choose_the_close_up_model_timeout_and_photo_resolution() -> None:
+    first = [finding(1, "present_ok"), finding(2, "misplaced"), finding(3, "present_ok"), finding(4, "present_ok")]
+    verdicts = {2: verdict("misplaced"), 3: verdict("present_ok"), 4: verdict("present_ok")}
+    client = Scripted(first, verdicts)
+    verify.checked(lambda: first_pass(client), JPEG, PNG, JPEG, CTX, client=client,
+                   settings=VerifySettings(model="gemini-3.6-flash", photo_resolution="medium", timeout_ms=9000))
+    assert {c["model"] for c in client.verify_calls} == {"gemini-3.6-flash"}
+    assert {c["config"].http_options.timeout for c in client.verify_calls} == {9000}
+    images = [p for p in client.verify_calls[0]["contents"] if getattr(p, "inline_data", None)]
+    assert [p.media_resolution for p in images] == [verify.RENDER_RESOLUTION] * 3
+    client = Scripted(first, verdicts)
+    verify.checked(lambda: first_pass(client), JPEG, PNG, JPEG, CTX, client=client, settings=VerifySettings())
+    assert {c["model"] for c in client.verify_calls} == {verify.gemini_client.MODEL_ID}
+
+
+def test_the_last_note_says_where_the_time_went(models: Path) -> None:
+    first = [finding(1, "present_ok"), finding(2, "misplaced"), finding(3, "present_ok"), finding(4, "present_ok")]
+    client = Scripted(first, {2: verdict("present_ok"), 3: verdict("missing"), 4: ValueError("boom")})
+    result = make_checker(ProjectRepo(models), client, verify=True)(JPEG, PNG, CTX, JPEG)
+    note = result["warnings"][-1]
+    assert note.startswith("verify: timing ")
+    timing = json.loads(note.removeprefix("verify: timing "))
+    assert (timing["quiet"], timing["late"], timing["failed"], timing["unfinished"]) == (2, 1, 1, 0)
+    assert {"model", "first_pass_s", "tail_s", "slowest_call_s", "crop_cpu_s", "cpu_s", "total_s"} <= set(timing)
+
+
+def test_once_the_first_pass_answers_the_second_look_waits_only_its_grace(models: Path) -> None:
+    # One close-up in seven ran into Gemini's own deadline (about 11 s) and held the whole check for it. Now a close-up
+    # not back within the grace leaves its mark as the first pass said, and the check answers.
+    first = [finding(1, "present_ok"), finding(2, "misplaced"), finding(3, "present_ok"), finding(4, "present_ok")]
+    client = Scripted(first, {2: verdict("present_ok"), 3: verdict("present_ok"), 4: verdict("present_ok")})
+    real = client.models.generate_content
+
+    def mark_2_hangs(*, model, contents, config):
+        if not config.system_instruction.startswith(CHECK_SYSTEM) and '"mark": 2' in contents[-1].text:
+            time.sleep(1.0)
+        return real(model=model, contents=contents, config=config)
+    client.models.generate_content = mark_2_hangs
+    started = time.monotonic()
+    out, _usage, notes = verify.checked(lambda: first_pass(client), JPEG, PNG, JPEG, CTX, client=client,
+                                        settings=VerifySettings(grace_ms=200))
+    assert time.monotonic() - started < 0.8
+    assert {f["mark"]: f["status"] for f in out["result"]["findings"]}[2] == "misplaced"  # as the first pass said
+    assert "verify: mark 2 ran out of time" in notes
+    assert json.loads(notes[-1].removeprefix("verify: timing "))["unfinished"] == 1
+
+
+def test_verify_settings_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
+    names = ("VERIFY_MODEL", "VERIFY_TIMEOUT_MS", "VERIFY_GRACE_MS", "VERIFY_MAX_QUIET", "VERIFY_MAX_LATE", "VERIFY_WORKERS",
+             "VERIFY_PHOTO_RESOLUTION")
+    for name in names:
+        monkeypatch.delenv(name, raising=False)
+    assert VerifySettings.from_env() == VerifySettings()
+    for name, value in zip(names, ("gemini-3.6-flash", "9000", "-1", "8", "6", "0", "medium")):
+        monkeypatch.setenv(name, value)
+    assert VerifySettings.from_env() == VerifySettings(model="gemini-3.6-flash", timeout_ms=9000, grace_ms=0, max_quiet=8,
+                                                       max_late=6, workers=1, photo_resolution="medium")
+    monkeypatch.setenv("VERIFY_PHOTO_RESOLUTION", "ultra")
+    with pytest.raises(ValueError):
+        VerifySettings.from_env()

@@ -7,13 +7,15 @@ resolution, and one narrow question: is THIS element built at its own outline?
 
 Which marks: the thin or small ones (braces, purlins, truss members, guardrails, far elements), whose close-ups start
 alongside the first pass because they don't depend on it, then the marks the first pass flagged or could not judge.
-Each look is one call on the main model with its own timeout (VERIFY_TIMEOUT_MS) and no fallback model, so the stage
-adds a few seconds to the first pass; a look that fails or runs out of time leaves its mark as the first pass said.
+Each look is one call on VerifySettings.model (the main model by default) with its own timeout and no fallback model.
+Once the first pass has answered, the stage waits at most VerifySettings.grace_ms for the close-ups still out; a look
+that fails or is not back by then leaves its mark as the first pass said. The images are decoded once per check, and
+each check logs where its time went ("verify timing", also the last of its warnings).
 How a verdict changes a mark is in `merge`:
 - a flag is removed when the close-up is sure the element fits its outline;
 - a flag becomes "can't judge" when the close-up sees a different problem (moved against missing, say);
 - a passed or unjudged mark becomes missing when the close-up is sure its outline is empty.
-Off unless CHECK_VERIFY=1 (config.Settings.check_verify).
+Off unless CHECK_VERIFY=1 (config.Settings.check_verify); tuned by config.VerifySettings (VERIFY_* variables).
 """
 from __future__ import annotations
 
@@ -31,6 +33,7 @@ from PIL import Image
 from pydantic import BaseModel, Field
 
 from . import gemini_client
+from .config import VerifySettings
 from .gemini_client import GeminiError, Offset, gemini_json_schema
 from .schemas import CheckContext, Status
 from .validate import clamp_confidence
@@ -38,17 +41,17 @@ from .validate import clamp_confidence
 log = logging.getLogger("truesite.verify")
 
 DEVIATIONS = {"missing", "misplaced", "different_from_design"}
-VERIFY_TIMEOUT_MS = 14_000  # each close-up; the stage adds at most about this to the first pass
-MAX_QUIET = 16  # thin or small marks looked at again, smallest first
-MAX_LATE = 10  # marks the first pass flagged or could not judge, looked at again
+VERIFY_TIMEOUT_MS = VerifySettings.timeout_ms  # each close-up's own limit
+MAX_QUIET = VerifySettings.max_quiet  # thin or small marks looked at again, smallest first
+MAX_LATE = VerifySettings.max_late  # marks the first pass flagged or could not judge, looked at again
 RETRY_IF_FAILED_WITHIN_S = 6.0  # a close-up refused this fast (503, 429) is tried once more ...
 RETRY_DELAY_S = 0.8  # ... after this pause
 THIN_CLASSES = {"IfcMember", "IfcRailing"}  # braces, purlins, truss members, guardrails
 SMALL_BOX = 0.004  # a mark whose box covers under 0.4% of the frame is "small"
 CROP_LONG_SIDE = 768
-MAX_WORKERS = 16  # close-ups at once for one check; each holds only its own crops
 RESOLUTION = types.PartMediaResolution(level=types.PartMediaResolutionLevel.MEDIA_RESOLUTION_HIGH)  # photo crops
 RENDER_RESOLUTION = types.PartMediaResolution(level=types.PartMediaResolutionLevel.MEDIA_RESOLUTION_MEDIUM)  # finding the mark
+PHOTO_RESOLUTIONS = {"high": RESOLUTION, "medium": RENDER_RESOLUTION}
 # How sure a verdict must be to change the first pass: removing a flag (downgrade) or adding one (upgrade).
 DOWNGRADE_CONFIDENCE = 0.6
 UPGRADE_CONFIDENCE = 0.75
@@ -123,16 +126,18 @@ def _status(item: Any) -> str:
     return status if isinstance(status, str) else "cannot_judge"
 
 
-def quiet_candidates(ctx: CheckContext) -> list[int]:
+def quiet_candidates(ctx: CheckContext, limit: int = MAX_QUIET) -> list[int]:
     """Thin or small marks, smallest first: the ones a full-frame look most often passes by mistake. They don't depend
     on the first pass, so their close-ups start with it."""
     marks = sorted((_box_area(v.box), v.mark) for v in ctx.visible
                    if v.ifc_class in THIN_CLASSES or _box_area(v.box) < SMALL_BOX)
-    return [m for _, m in marks][:MAX_QUIET]
+    return [m for _, m in marks][:limit]
 
 
-def build_verify_request(mark: int, task: dict, render_crop: bytes, overlay_crop: Optional[bytes], photo_crop: bytes) -> dict:
-    def image(data: bytes, resolution: types.PartMediaResolution = RESOLUTION) -> types.Part:
+def build_verify_request(mark: int, task: dict, render_crop: bytes, overlay_crop: Optional[bytes], photo_crop: bytes, *,
+                         model: str = "", timeout_ms: int = VERIFY_TIMEOUT_MS,
+                         photo_resolution: types.PartMediaResolution = RESOLUTION) -> dict:
+    def image(data: bytes, resolution: types.PartMediaResolution = photo_resolution) -> types.Part:
         return types.Part.from_bytes(data=data, mime_type="image/jpeg").model_copy(update={"media_resolution": resolution})
 
     contents = [
@@ -150,9 +155,9 @@ def build_verify_request(mark: int, task: dict, render_crop: bytes, overlay_crop
         response_json_schema=gemini_json_schema(VerifyWire),
         thinking_config=types.ThinkingConfig(thinking_level=types.ThinkingLevel.LOW),  # 3.8 Flash has no MINIMAL
         max_output_tokens=gemini_client.ASK_MAX_OUTPUT_TOKENS,
-        http_options=types.HttpOptions(timeout=VERIFY_TIMEOUT_MS, retry_options=types.HttpRetryOptions(attempts=1)),
+        http_options=types.HttpOptions(timeout=timeout_ms, retry_options=types.HttpRetryOptions(attempts=1)),
     )
-    return {"model": gemini_client.MODEL_ID, "contents": contents, "config": config}
+    return {"model": model or gemini_client.MODEL_ID, "contents": contents, "config": config}
 
 
 def merge(first: dict, verdict: dict, mode: str) -> tuple[Optional[dict], str]:
@@ -180,7 +185,7 @@ def _same_problem(a: str, b: str) -> bool:
 
 
 def _ask(client: Any, request: dict) -> dict:
-    """One second-look call on the main model only, with its own short timeout: no fallback model and no "sick" mark,
+    """One second-look call on its own model only, with its own short timeout: no fallback model and no "sick" mark,
     so a hung close-up never moves the first pass of the next check to the fallback model."""
     config = request["config"]
     if getattr(client, "vertexai", False):
@@ -202,45 +207,67 @@ def _raw_findings(raw: Any) -> dict[int, dict]:
 
 
 def checked(first_pass: Callable[[], dict], photo_jpeg: bytes, render_png: bytes, overlay_jpeg: Optional[bytes],
-            ctx: CheckContext, *, client: Any) -> tuple[dict, dict, list[str]]:
+            ctx: CheckContext, *, client: Any, settings: Optional[VerifySettings] = None) -> tuple[dict, dict, list[str]]:
     """Run `first_pass()` (gemini_client.check_asbuilt's output) while the thin and small marks get their close-up
     look, then look again at the marks it flagged. Returns the first pass's output with its raw result changed by the
-    verdicts (see `merge`), the second looks' summed usage, and one note per look for the warnings."""
+    verdicts (see `merge`), the second looks' summed usage, and one note per look, then one on timing, for the
+    warnings."""
+    cfg = settings or VerifySettings.from_env()
     mode = policy()
+    model = cfg.model or gemini_client.MODEL_ID
+    resolution = PHOTO_RESOLUTIONS.get(cfg.photo_resolution, RESOLUTION)
     visible = {v.mark: v for v in ctx.visible}
     usage = {"prompt_tokens": 0, "output_tokens": 0, "thought_tokens": 0, "total_tokens": 0, "cost_usd_est": 0.0}
+    t0, cpu0 = time.monotonic(), time.process_time()  # process CPU: every thread of this check (and any other at once)
     # Decoded once here, not once per close-up: 24 close-ups each decoding three 4 MP images needed about 440 MB.
     render, photo = decode(render_png), decode(photo_jpeg)
     overlay = decode(overlay_jpeg) if overlay_jpeg else None
+    timing: dict[str, Any] = {"model": model, "decode_s": round(time.monotonic() - t0, 3)}
+    calls: dict[int, dict] = {}  # mark -> when it started, how long its crops and its call took (worker threads write)
 
     def one(mark: int) -> dict:
         v = visible[mark]
+        call = calls[mark] = {"start_s": round(time.monotonic() - t0, 2)}
+        cpu = time.thread_time()
         task = {"mark": mark, "ifc_class": v.ifc_class, "name": v.name, "key_dims": v.key_dims, "distance_m": ctx.distance_m}
-        request = build_verify_request(mark, task, crop_image(render, v.box),
-                                       crop_image(overlay, v.box) if overlay else None, crop_image(photo, v.box))
+        request = build_verify_request(mark, task, crop_image(render, v.box), crop_image(overlay, v.box) if overlay else None,
+                                       crop_image(photo, v.box), model=model, timeout_ms=cfg.timeout_ms,
+                                       photo_resolution=resolution)
+        call["crop_s"] = round(time.thread_time() - cpu, 3)
         started = time.monotonic()
         try:
-            return _ask(client, request)
-        except GeminiError as err:
-            # Overloaded or out of quota right now (a burst of close-ups can hit it): one more try if there is time.
-            if err.kind not in ("unavailable", "rate_limited") or time.monotonic() - started > RETRY_IF_FAILED_WITHIN_S:
-                log.warning("verify mark %d failed after %.1f s: %s", mark, time.monotonic() - started, err)
-                raise
-            log.info("verify mark %d: %s; trying once more", mark, err)
-            time.sleep(RETRY_DELAY_S)
-            return _ask(client, request)
+            try:
+                return _ask(client, request)
+            except GeminiError as err:
+                # Overloaded or out of quota right now (a burst of close-ups can hit it): one more try if there is time.
+                if err.kind not in ("unavailable", "rate_limited") or time.monotonic() - started > RETRY_IF_FAILED_WITHIN_S:
+                    log.warning("verify mark %d failed after %.1f s: %s", mark, time.monotonic() - started, err)
+                    raise
+                log.info("verify mark %d: %s; trying once more", mark, err)
+                time.sleep(RETRY_DELAY_S)
+                call["retried"] = True
+                return _ask(client, request)
+        except Exception as err:
+            call["error"] = str(getattr(err, "status", None) or getattr(err, "kind", None) or type(err).__name__)
+            raise
+        finally:
+            call["call_s"] = round(time.monotonic() - started, 2)
+            call["end_s"] = round(time.monotonic() - t0, 2)
 
-    pool = ThreadPoolExecutor(max_workers=MAX_WORKERS, thread_name_prefix="verify")
+    pool = ThreadPoolExecutor(max_workers=cfg.workers, thread_name_prefix="verify")
     try:
-        futures = {m: pool.submit(one, m) for m in (quiet_candidates(ctx) if mode != "downgrade" else [])}
+        quiet = quiet_candidates(ctx, cfg.max_quiet) if mode != "downgrade" else []
+        futures = {m: pool.submit(one, m) for m in quiet}
         out = first_pass()
+        timing["first_pass_s"] = round(time.monotonic() - t0, 2)
         raw_findings = _raw_findings(out["result"])
         # Flagged marks (to confirm or clear), then marks the first pass could not judge (a close-up may see them).
         late = [m for m in visible if _status(raw_findings.get(m)) in DEVIATIONS] if mode != "upgrade" else []
         late += [m for m in visible if _status(raw_findings.get(m)) == "cannot_judge"] if mode != "downgrade" else []
-        for m in [m for m in late if m not in futures][:MAX_LATE]:
+        late = [m for m in late if m not in futures][:cfg.max_late]
+        for m in late:
             futures[m] = pool.submit(one, m)
-        wait(list(futures.values()), timeout=VERIFY_TIMEOUT_MS / 1000 + 1)
+        wait(list(futures.values()), timeout=min(cfg.timeout_ms / 1000 + 1, cfg.grace_ms / 1000))
         notes: list[str] = []
         findings = dict(raw_findings)
         for mark in sorted(futures):
@@ -264,5 +291,15 @@ def checked(first_pass: Callable[[], dict], photo_jpeg: bytes, render_png: bytes
                 findings[mark] = changed
     finally:
         pool.shutdown(wait=False, cancel_futures=True)
+    done = [c for c in calls.values() if "end_s" in c]
+    timing.update({
+        "quiet": len(quiet), "late": len(late), "failed": len([c for c in done if "error" in c]),
+        "unfinished": len(futures) - len(done), "crop_cpu_s": round(sum(c.get("crop_s", 0) for c in calls.values()), 3),
+        "slowest_call_s": max((c["call_s"] for c in done), default=0),
+        "tail_s": round(max(0.0, max((c["end_s"] for c in done), default=0) - timing["first_pass_s"]), 2),
+        "total_s": round(time.monotonic() - t0, 2), "cpu_s": round(time.process_time() - cpu0, 2),
+    })
+    log.info("verify timing %s calls %s", json.dumps(timing), json.dumps({m: calls[m] for m in sorted(calls)}))
+    notes.append("verify: timing " + json.dumps(timing, separators=(",", ":")))
     raw = out["result"] if isinstance(out["result"], dict) else {}
     return {**out, "result": {**raw, "findings": [findings[m] for m in sorted(findings)]}}, usage, notes
