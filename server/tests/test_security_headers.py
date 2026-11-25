@@ -31,15 +31,33 @@ def test_permissions_policy_keeps_camera_motion_and_xr_for_this_origin(client: T
     assert policy["microphone"] == "()" and policy["geolocation"] == "()"
 
 
+def directives(policy: str) -> dict[str, list[str]]:
+    return {d.split()[0]: d.split()[1:] for d in policy.split(";") if d.strip()}
+
+
 def test_csp_is_report_only_and_allows_what_the_app_uses(client: TestClient) -> None:
     h = client.get("/").headers
-    assert "Content-Security-Policy" not in h  # observe first, enforce in a later change
-    csp = {d.split()[0]: d.split()[1:] for d in h["Content-Security-Policy-Report-Only"].split(";") if d.strip()}
+    csp = directives(h["Content-Security-Policy-Report-Only"])  # observe first, enforce in a later change
     assert csp["default-src"] == ["'self'"]
     assert "'wasm-unsafe-eval'" in csp["script-src"]  # zxing-wasm in the QR worker
     assert set(csp["worker-src"]) >= {"'self'", "blob:"}
     assert set(csp["img-src"]) >= {"'self'", "blob:", "data:"}  # URL.createObjectURL photos, glb textures
     assert csp["frame-ancestors"] == ["'none'"] and csp["object-src"] == ["'none'"]
+
+
+@pytest.mark.parametrize("path", PATHS)
+def test_an_enforced_baseline_csp_blocks_only_what_the_app_never_uses(client: TestClient, path: str) -> None:
+    enforced = directives(get(client, path).headers["Content-Security-Policy"])
+    assert enforced == {"object-src": ["'none'"], "base-uri": ["'self'"], "form-action": ["'self'"],
+                        "frame-ancestors": ["'none'"]}  # no script, style, img, connect or worker limits yet
+
+
+def test_hsts_only_over_https(client: TestClient) -> None:
+    assert "Strict-Transport-Security" not in client.get("/").headers  # plain-HTTP local run: never pin localhost
+    for proto in ("https", "http,https"):  # Cloud Run's front end; the right-most entry is the last hop
+        h = client.get("/api/health", headers={"X-Forwarded-Proto": proto}).headers
+        assert h["Strict-Transport-Security"] == "max-age=31536000"
+    assert "Strict-Transport-Security" not in client.get("/", headers={"X-Forwarded-Proto": "http"}).headers
 
 
 @pytest.mark.parametrize("path", ["/api/health", "/api/issues", "/api/projects/testproj", "/api/nope"])

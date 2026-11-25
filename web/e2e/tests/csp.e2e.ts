@@ -2,13 +2,15 @@ import { enterVirtualSite, expect, presentAsTablet, runVirtualCheck, test } from
 
 /**
  * The server sends Content-Security-Policy-Report-Only (server/app/security_headers.py): browsers report what the
- * policy would block without blocking it. Before it can be enforced, the main flows must report nothing.
+ * policy would block without blocking it. Before it can be enforced, the main flows must report nothing. A small
+ * baseline is enforced already (no plugins, no <base>, forms post only here, no framing); a violation of it fires the
+ * same securitypolicyviolation event, so these flows check both.
  */
 test.describe('Content-Security-Policy-Report-Only', () => {
-  test('is sent with the page', async ({ request }) => {
+  test('is sent with the page, beside the enforced baseline', async ({ request }) => {
     const res = await request.get('/')
     expect(res.headers()['content-security-policy-report-only']).toContain("default-src 'self'")
-    expect(res.headers()['content-security-policy']).toBeUndefined()
+    expect(res.headers()['content-security-policy']).toBe("object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'")
   })
 
   test('start page, live AR with the camera and the QR worker, 3D model with Ask: no reports', async ({ page, log }) => {
