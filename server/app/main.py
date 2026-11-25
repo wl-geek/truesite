@@ -3,7 +3,8 @@
 Run locally (from server/):  GEMINI_MODE=fake uv run uvicorn --factory app.main:create_app --reload --port 8000
 Cloud Run:                   see the root Dockerfile (listens on $PORT, 0.0.0.0)
 
-create_app() fills app.state (settings, store, repo, client, now, check_limiter, ask_limiter, issue_limiter);
+create_app() fills app.state (settings, store, repo, client, now, check_limiter, ask_limiter, issue_limiter,
+review_limiter);
 routers read it through app/deps.py and never import this module.
 """
 from __future__ import annotations
@@ -23,7 +24,7 @@ from starlette.middleware.gzip import GZipMiddleware
 from .config import Settings
 from .limits import SlidingWindowLimiter, client_ip
 from .projects import ProjectRepo
-from .routes import ask, check, issues, projects
+from .routes import ask, check, issues, projects, runs
 from .schemas import DEMO_SESSION, Issue, IssueIn
 from .security_headers import SecurityHeadersMiddleware
 from .spa import SPAStaticFiles
@@ -123,6 +124,7 @@ def create_app(
     app.state.check_limiter = SlidingWindowLimiter(settings.checks_per_ip_per_hour, 3600, **limiter_kwargs)
     app.state.ask_limiter = SlidingWindowLimiter(settings.asks_per_ip_per_hour, 3600, **limiter_kwargs)
     app.state.issue_limiter = SlidingWindowLimiter(settings.issues_per_ip_per_hour, 3600, **limiter_kwargs)
+    app.state.review_limiter = SlidingWindowLimiter(settings.reviews_per_ip_per_hour, 3600, **limiter_kwargs)
 
     # Last added = outermost. The body-size cap must see the raw body first; the security
     # headers wrap everything, so its early 413 gets them too.
@@ -147,6 +149,7 @@ def create_app(
     app.include_router(check.router)
     app.include_router(ask.router)
     app.include_router(issues.router)
+    app.include_router(runs.router)
 
     try:
         seeded = seed_demo_issues(app.state.store, app.state.repo, now)

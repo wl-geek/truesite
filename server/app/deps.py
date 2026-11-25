@@ -1,7 +1,7 @@
 """FastAPI dependencies shared by every router (contract section 10).
 
 Routers never import main.py: everything they need hangs off request.app.state, which
-create_app() fills in (settings, store, repo, client, now, check_limiter, ask_limiter, issue_limiter).
+create_app() fills in (settings, store, repo, client, now, check_limiter, ask_limiter, issue_limiter, review_limiter).
 """
 from __future__ import annotations
 
@@ -53,7 +53,7 @@ NowDep = Annotated[Callable[[], datetime], Depends(get_now)]
 
 def enforce_rate_limit(request: Request, limiter_name: str) -> None:
     """Per-IP sliding window only: 429 rate_limited (+ Retry-After). For writes that make no
-    Gemini call (POST /api/issues), so they never touch the daily caps."""
+    Gemini call (POST /api/issues, PUT /api/runs/{run_id}/review/{mark}), so they never touch the daily caps."""
     state = request.app.state
     ip = client_ip(request, state.settings.trusted_proxy_hops)
     allowed, retry_after = getattr(state, limiter_name).hit(rate_key(ip))

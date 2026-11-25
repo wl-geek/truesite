@@ -5,6 +5,8 @@ emulator or a network.
 They model the behaviour the store relies on, not Firestore in general:
 - DocumentReference.set(data, merge=...) with Increment and SERVER_TIMESTAMP transforms;
   the WriteResult's transform_results holds each transform's post-write value, in order.
+- DocumentReference.update({field path: value}) with nested paths ("review.`3`") and DELETE_FIELD;
+  NotFound when the document does not exist. get(field_paths=[...]) returns only those top-level fields.
 - Document ids may not contain "/" (the real client then builds a collection path and
   raises ValueError), and arrays may not directly contain arrays (Firestore rejects them).
 - Equality-only where() filters, limit() (recorded in `query_limits`), stream().
@@ -20,6 +22,7 @@ from typing import Any
 
 from google.api_core.exceptions import NotFound
 from google.cloud import firestore
+from google.cloud.firestore_v1.field_path import FieldPath
 
 
 def _check_storable(value: Any, in_array: bool = False) -> None:
@@ -68,9 +71,34 @@ class _DocRef:
             self._db.writes += 1
             return SimpleNamespace(transform_results=transforms, update_time=datetime.now(timezone.utc))
 
-    def get(self) -> _Snapshot:
+    def update(self, field_updates: dict[str, Any]) -> SimpleNamespace:
         with self._db.lock:
-            return _Snapshot(self.id, copy.deepcopy(self._db.docs.get(self._collection, {}).get(self.id)))
+            docs = self._db.docs.setdefault(self._collection, {})
+            if self.id not in docs:
+                raise NotFound(f"No document to update: {self._collection}/{self.id}")
+            doc = copy.deepcopy(docs[self.id])
+            for key, value in field_updates.items():
+                *parents, leaf = FieldPath.from_string(key).parts
+                target = doc
+                for part in parents:
+                    if not isinstance(target.get(part), dict):
+                        target[part] = {}
+                    target = target[part]
+                if value is firestore.DELETE_FIELD:
+                    target.pop(leaf, None)
+                else:
+                    _check_storable(value)
+                    target[leaf] = copy.deepcopy(value)
+            docs[self.id] = doc
+            self._db.writes += 1
+            return SimpleNamespace(update_time=datetime.now(timezone.utc))
+
+    def get(self, field_paths: list[str] | None = None) -> _Snapshot:
+        with self._db.lock:
+            data = copy.deepcopy(self._db.docs.get(self._collection, {}).get(self.id))
+        if data is not None and field_paths is not None:
+            data = {k: v for k, v in data.items() if k in field_paths}
+        return _Snapshot(self.id, data)
 
 
 class _Query:

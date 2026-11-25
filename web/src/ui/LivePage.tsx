@@ -259,7 +259,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
       const res = await runCheck({
         photo: snap.photo, photoW: snap.photoW, photoH: snap.photoH, videoW: snap.videoW, videoH: snap.videoH, K, pose,
         anchor: loaded.anchor, poseQuality: quality, model: loaded.model, scene: overlay.scene, renderer: overlay.renderer, elements,
-        look: overlay.look,
+        look: overlay.look, source: 'live',
       })
       if (!res.response) throw res.error ?? new ApiError('check failed', 0)
       const result = res.response.result

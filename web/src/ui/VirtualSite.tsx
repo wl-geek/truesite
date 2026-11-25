@@ -15,6 +15,7 @@ import { deviceRotation, requestMotionPermission } from '../scene/motion'
 import { paintOf } from '../scene/palette'
 import { disposePins, makePins } from '../scene/pins'
 import { applyTypeColours, type Inset, insetView, NO_INSET } from '../scene/viewer'
+import { checksPathFor } from '../router'
 import { describeDeviation, plantedNote, SITE_AS_BUILT } from '../sim/asBuilt'
 import { deviceLook, dragLook, forwardOf, type LookAngles, lookToward, turnBetween, yawOf } from '../sim/lookAngles'
 import { overlayHighlighter } from '../sim/overlayPick'
@@ -481,6 +482,7 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
       const res = await runCheck({
         photo: shot.photo, photoW: shot.sw, photoH: shot.sh, videoW: shot.sw, videoH: shot.sh, K: shot.K, pose: shot.pose,
         anchor: w.anchor, poseQuality: 'good', model: w.check.model, scene: w.check.scene, renderer: w.check.renderer, elements: w.elements,
+        source: 'virtual',
       })
       const result = res.response?.result
       if (!result) throw res.error ?? new ApiError('check failed', 0)
@@ -587,6 +589,10 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
           <p className="vs-tip">Pick a finding to turn to it and see its details.</p>
           <FindingsPanel result={outcome.result} selectedMark={selectedMark} onSelect={(f) => selectFinding(f, true)} onDraftIssue={setDraftFor}
             savedGuids={savedGuids} footer={w && <SavedIssues issues={issues} elements={w.elements} onSelect={selectIssue} />} />
+          {outcome.runId && (
+            <p className="vs-model-link">Confirm or dismiss each finding, with its confidence and an audit trail.{' '}
+              <Link to={checksPathFor(outcome.runId)} className="btn btn-small">Open in Checks</Link></p>
+          )}
           <div className="vs-compare">
             <figure>
               <figcaption>Your view: the site photo</figcaption>

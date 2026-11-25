@@ -12,9 +12,10 @@ the caller's session header -- no metadata lookup, no signed URLs.
 from __future__ import annotations
 
 import threading
+from datetime import datetime
 from typing import Any, Protocol, runtime_checkable
 
-from .schemas import CheckRun, Issue
+from .schemas import CheckRun, FindingReview, Issue, ReviewDecision
 
 CONTENT_TYPES = {".jpg": "image/jpeg", ".jpeg": "image/jpeg", ".png": "image/png"}
 
@@ -42,6 +43,16 @@ class Store(Protocol):
 
     def get_check_run(self, run_id: str, session_id: str) -> CheckRun | None:
         """None if missing *or* owned by another session."""
+        ...
+
+    def list_check_runs(self, session_id: str, project_id: str | None = None, limit: int = 50) -> list[CheckRun]:
+        """Runs of exactly this session, newest first."""
+        ...
+
+    def set_review(self, run_id: str, session_id: str, mark: int, decision: ReviewDecision | None, at: datetime) -> bool:
+        """Record a person's decision on one finding of this session's run (None takes it back), stamped `at`.
+        Touches only that finding's review entry. False, and nothing written, if the run is missing or another
+        session's."""
         ...
 
     # --- issues ------------------------------------------------------------
@@ -90,6 +101,27 @@ class InMemoryStore:
         if run is None or run.session_id != session_id:
             return None
         return run.model_copy(deep=True)
+
+    def list_check_runs(self, session_id: str, project_id: str | None = None, limit: int = 50) -> list[CheckRun]:
+        with self._lock:
+            rows = [
+                r.model_copy(deep=True)
+                for r in self.runs.values()
+                if r.session_id == session_id and (project_id is None or r.project_id == project_id)
+            ]
+        rows.sort(key=lambda r: r.created_at, reverse=True)
+        return rows[:limit]
+
+    def set_review(self, run_id: str, session_id: str, mark: int, decision: ReviewDecision | None, at: datetime) -> bool:
+        with self._lock:
+            run = self.runs.get(run_id)
+            if run is None or run.session_id != session_id:
+                return False
+            if decision is None:
+                run.review.pop(str(mark), None)
+            else:
+                run.review[str(mark)] = FindingReview(decision=decision, at=at)
+            return True
 
     def save_issue(self, issue: Issue) -> None:
         with self._lock:

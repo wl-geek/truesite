@@ -16,7 +16,7 @@ export function sampleCheckInput(meta: SampleMeta, photo: Blob, size: { width: n
   return {
     photo, photoW: size.width, photoH: size.height, videoW: meta.video_w, videoH: meta.video_h, K: meta.K, pose: meta.pose,
     anchor, poseQuality: 'good', model: loaded.model, scene: loaded.scene, renderer: loaded.renderer,
-    elements: new Map(loaded.project.elements.map((e) => [e.guid, e])), sampleId: meta.sample_id,
+    elements: new Map(loaded.project.elements.map((e) => [e.guid, e])), sampleId: meta.sample_id, source: 'sample',
   }
 }
 

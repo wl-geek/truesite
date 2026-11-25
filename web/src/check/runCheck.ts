@@ -5,7 +5,7 @@
  */
 import { PerspectiveCamera, Vector3, type Plane, type Scene, type WebGLRenderer } from 'three'
 import { ApiError, getSavedResult, postCheck } from '../api/client'
-import type { Anchor, CheckContext, CheckResponse, CheckResult, Element, MarkedElement, PoseQuality } from '../api/types'
+import type { Anchor, CheckContext, CheckResponse, CheckResult, CheckSource, Element, MarkedElement, PoseQuality } from '../api/types'
 import { modelMatrixIfc, projectionMatrixGL, type Intrinsics, type Pose } from '../pose'
 import { applyProjection } from '../scene/arCamera'
 import { poseAnchor } from '../scene/arMath'
@@ -35,6 +35,8 @@ export type CheckInput = {
   renderer: WebGLRenderer
   elements: ReadonlyMap<string, Element>
   sampleId?: string
+  /** Where the check is run from (virtual demo, sample photos, live camera): kept in the run's audit trail. */
+  source?: CheckSource
   /**
    * The view controls in use (live AR). The check judges what is shown: hidden layers stay out, and the cut
    * and view distance are applied at the snapshot pose. Without it (sample photos) the whole model is used.
@@ -67,6 +69,15 @@ export function storedRunId(response: Pick<CheckResponse, 'run_id' | 'saved'> | 
 
 export function idBufferSize(videoW: number, videoH: number, width = ID_BUFFER_WIDTH): { w: number; h: number } {
   return { w: width, h: Math.max(1, Math.round((videoH / videoW) * width)) }
+}
+
+/** The `context` part of POST /api/check. */
+export function checkContext(input: Pick<CheckInput, 'anchor' | 'poseQuality' | 'pose' | 'sampleId' | 'source'>,
+  marks: MarkedElement[]): CheckContext {
+  return {
+    project_id: input.anchor.project_id, anchor_id: input.anchor.anchor_id, pose_quality: input.poseQuality,
+    distance_m: poseDistance(input.pose), visible: marks, sample_id: input.sampleId ?? null, source: input.source ?? null,
+  }
 }
 
 /** Camera-to-code distance in metres, clamped to the API's 0..50 range. */
@@ -134,10 +145,7 @@ export async function runCheck(input: CheckInput): Promise<CheckOutcome> {
     look?.update(CAMERA_AT) // back to the live pose
   }
 
-  const context: CheckContext = {
-    project_id: input.anchor.project_id, anchor_id: input.anchor.anchor_id, pose_quality: input.poseQuality,
-    distance_m: poseDistance(input.pose), visible: marks, sample_id: input.sampleId ?? null,
-  }
+  const context = checkContext(input, marks)
   try {
     return { response: await postCheck(input.photo, render, context, overlay), saved: null, error: null, marks, render, viewNote: note }
   } catch (e) {

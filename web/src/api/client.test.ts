@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
-  ApiError, ask, createIssue, draftIssue, fetchRunImage, getProject, getSavedResult, listIssues, postCheck, writeReport,
+  ApiError, ask, createIssue, draftIssue, fetchRunImage, getProject, getRun, getSavedResult, listIssues, listRuns, postCheck,
+  reviewFinding, writeReport,
 } from './client'
 import type { CheckContext } from './types'
 
@@ -210,5 +211,45 @@ describe('api client (mutation-tested)', () => {
     await timesOutAfter(() => writeReport({ run_ids: ['r1'] }), 60_000)
     await timesOutAfter(() => createIssue({ project_id: 'site', guid: 'g', title: 't' }), 30_000)
     await timesOutAfter(() => getProject('site'), 30_000)
+  })
+})
+
+describe('Checks page calls', () => {
+  afterEach(() => vi.unstubAllGlobals())
+
+  it('lists the session\'s runs, optionally for one project', async () => {
+    mockFetch(() => jsonResponse(200, { runs: [] }))
+    expect(await listRuns()).toEqual({ runs: [] })
+    await listRuns('site')
+    expect(calls.map((c) => c.url)).toEqual(['/api/runs', '/api/runs?project_id=site'])
+    expect(new Headers(calls[0].init.headers).get('X-Session-Id')).toMatch(UUID_V4)
+  })
+
+  it('gets one run by id', async () => {
+    mockFetch(() => jsonResponse(200, { run_id: 'abc_DEF-1234567890' }))
+    expect((await getRun('abc_DEF-1234567890')).run_id).toBe('abc_DEF-1234567890')
+    expect(calls[0].url).toBe('/api/runs/abc_DEF-1234567890')
+    mockFetch(() => jsonResponse(404, { detail: { code: 'unknown_run' } }))
+    const err = await caught(getRun('gone_gone_gone_gone'))
+    expect([err.status, err.code]).toEqual([404, 'unknown_run'])
+  })
+
+  it('puts a review decision, or null to take it back', async () => {
+    mockFetch(() => jsonResponse(200, { run_id: 'r', mark: 3, decision: 'confirmed', at: '2026-11-25T09:00:00Z' }))
+    expect((await reviewFinding('r1', 3, 'confirmed')).decision).toBe('confirmed')
+    await reviewFinding('r1', 3, null)
+    expect(calls.map((c) => [c.url, c.init.method, c.init.body])).toEqual([
+      ['/api/runs/r1/review/3', 'PUT', '{"decision":"confirmed"}'],
+      ['/api/runs/r1/review/3', 'PUT', '{"decision":null}'],
+    ])
+    expect(new Headers(calls[0].init.headers).get('Content-Type')).toBe('application/json')
+  })
+
+  it('fetches the outline image like the photo', async () => {
+    mockFetch(() => new Response(new Blob(['jpeg']), { status: 200, headers: { 'Content-Type': 'image/jpeg' } }))
+    const url = await fetchRunImage('r1', 'overlay.jpg')
+    expect(url).toMatch(/^blob:/)
+    expect(calls[0].url).toBe('/api/runs/r1/overlay.jpg')
+    URL.revokeObjectURL(url)
   })
 })

@@ -44,4 +44,16 @@ describe('FindingsPanel', () => {
     expect(renderToStaticMarkup(createElement(FindingsPanel, { result: { ...result, findings: [finding] }, selectedMark: null, onSelect: () => undefined })))
       .not.toContain('Issue saved')
   })
+
+  it('shows each finding\'s confidence band, as the Checks page does, except where it can\'t judge', () => {
+    const finding = { mark: 1, guid: 'g'.repeat(22), name: 'Column', ifc_class: 'IfcColumn', status: 'missing', confidence: 0.55,
+      evidence_box: null, offset: null, explanation: '', severity: 'high' } as const
+    const unsure = { ...finding, mark: 2, status: 'cannot_judge', confidence: 0.3, severity: null } as const
+    const html = renderToStaticMarkup(createElement(FindingsPanel, {
+      result: { ...result, findings: [finding, unsure] }, selectedMark: null, onSelect: () => undefined,
+    }))
+    expect(html).toContain('class="conf conf-low"')
+    expect(html.replace(/<[^>]+>/g, '')).toContain('Confidence Low · 0.55— take a closer look')
+    expect(html.match(/class="conf /g)).toHaveLength(1)
+  })
 })

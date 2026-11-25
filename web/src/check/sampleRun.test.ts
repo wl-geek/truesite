@@ -17,7 +17,7 @@ describe('sample checks', () => {
     const input = sampleCheckInput(META, photo, { width: 1600, height: 900 }, ANCHOR, loaded)
     expect(input.sampleId).toBe('room1-door')
     expect(input).toMatchObject({ photo, photoW: 1600, photoH: 900, videoW: 1920, videoH: 1080, K: META.K, pose: META.pose,
-      anchor: ANCHOR, poseQuality: 'good' })
+      anchor: ANCHOR, poseQuality: 'good', source: 'sample' })
     expect(input.elements.get('g1')).toBe(WALL)
   })
 

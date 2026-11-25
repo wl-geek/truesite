@@ -1,18 +1,25 @@
 import type { CheckResult } from '../api/types'
 import { boxToCss } from './findingFormat'
 
-export type EvidenceViewProps = { imageUrl: string; result: CheckResult; selectedMark: number | null; onSelect: (mark: number) => void }
+export type EvidenceViewProps = {
+  imageUrl: string
+  result: CheckResult
+  selectedMark: number | null
+  onSelect: (mark: number) => void
+  /** Marks a person dismissed as false alarms (the Checks page): their boxes stay, faded. */
+  dimmedMarks?: ReadonlySet<number>
+}
 
 /** The checked photo with the model's evidence boxes; the selected finding is highlighted. */
-export function EvidenceView({ imageUrl, result, selectedMark, onSelect }: EvidenceViewProps) {
+export function EvidenceView({ imageUrl, result, selectedMark, onSelect, dimmedMarks }: EvidenceViewProps) {
   return (
     <figure className="evidence">
       <div className="evidence-frame">
         <img src={imageUrl} alt="Photo used for the as-built check" />
         {result.findings.filter((f) => f.evidence_box && f.status !== 'present_ok').map((f) => (
           <button key={f.mark} type="button" style={boxToCss(f.evidence_box!)} onClick={() => onSelect(f.mark)}
-            className={`evidence-box sev-${f.severity ?? 'none'}${f.mark === selectedMark ? ' evidence-selected' : ''}`}
-            aria-label={`Mark ${f.mark}: ${f.name}`}>
+            className={`evidence-box sev-${f.severity ?? 'none'}${f.mark === selectedMark ? ' evidence-selected' : ''}${dimmedMarks?.has(f.mark) ? ' evidence-dimmed' : ''}`}
+            aria-label={`Mark ${f.mark}: ${f.name}`} aria-pressed={f.mark === selectedMark}>
             <span>{f.mark}</span>
           </button>
         ))}

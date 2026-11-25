@@ -13,6 +13,11 @@ export const SECTIONS = [
 type SectionId = (typeof SECTIONS)[number]['id'] | 'top' | 'demo'
 /** The 3D model viewer, part of the product: a page of its own, listed in the nav after Live AR. */
 export const MODEL_LINK = { path: '/model', label: '3D model', icon: 'M12 3 20 7.5v9L12 21l-8-4.5v-9zM12 12l8-4.5M12 12v9M12 12 4 7.5' }
+/** Every check run from this browser, to review in one place: a page of its own, listed after the virtual demo. */
+export const CHECKS_LINK = {
+  path: '/checks', label: 'Checks',
+  icon: 'M9 3h6v4H9zM9 5H6a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-3M9 14l2 2 4-4',
+}
 
 /**
  * Scroll to a section of the start page, from any page (the tools navigate back to it first). The address shows
@@ -89,7 +94,10 @@ function useScrollProgress(bar: React.RefObject<HTMLElement | null>): void {
   }, [bar])
 }
 
-/** The app's top bar: brand, the start page's sections and the 3D model, and one call to action. On phones the links fold into a menu. */
+/**
+ * The app's top bar: brand, the start page's sections, the 3D model and the Checks page, and one call to action. On
+ * phones the links fold into a menu.
+ */
 export function TopBar({ route }: { route: Route }) {
   const [open, setOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -121,6 +129,13 @@ export function TopBar({ route }: { route: Route }) {
     setOpen(false)
     if (route.name !== 'viewer') { navigate(MODEL_LINK.path); window.scrollTo(0, 0) }
   }
+  const openChecks = (e: React.MouseEvent) => {
+    if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return // let new-tab clicks through
+    e.preventDefault()
+    setOpen(false)
+    // From one check, the link goes back to the list.
+    if (route.name !== 'checks' || route.runId) { navigate(CHECKS_LINK.path); window.scrollTo(0, 0) }
+  }
   const icon = (d: string) => (
     <svg className="tb-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor"
       strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg>
@@ -131,11 +146,17 @@ export function TopBar({ route }: { route: Route }) {
         {icon(s.icon)}<span>{s.label}</span>
       </a>
     )
-    return s.id !== 'live' ? [link] : [link, (
+    if (s.id === 'live') return [link, (
       <a key="model" href={MODEL_LINK.path} className="tb-link" aria-current={route.name === 'viewer' ? 'page' : undefined} onClick={openModel}>
         {icon(MODEL_LINK.icon)}<span>{MODEL_LINK.label}</span>
       </a>
     )]
+    if (s.id === 'virtual') return [link, (
+      <a key="checks" href={CHECKS_LINK.path} className="tb-link" aria-current={route.name === 'checks' ? 'page' : undefined} onClick={openChecks}>
+        {icon(CHECKS_LINK.icon)}<span>{CHECKS_LINK.label}</span>
+      </a>
+    )]
+    return [link]
   })
 
   return (
