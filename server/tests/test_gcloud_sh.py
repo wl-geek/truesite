@@ -203,7 +203,8 @@ def test_setup_can_be_run_twice(stub) -> None:
 
 UPLOADED = ["Dockerfile", "server/app/main.py", "bim/models/site/model.glb", "web/public/sheets/site-D1.pdf"]
 NOT_UPLOADED = ["capture/site-walk.mp4", ".playwright-mcp/page.png", "infra/sa.pem", "infra/truesite-key.json",
-                "service-account-truesite.json", "server/debug.log", ".cache/worktrees/x/Dockerfile", ".env"]
+                "service-account-truesite.json", "server/debug.log", ".cache/worktrees/x/Dockerfile", ".env",
+                ".env.local", "NOTES.md", "docs/BRIEF.md"]
 
 
 @pytest.mark.skipif(shutil.which("git") is None, reason="needs git")

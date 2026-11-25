@@ -8,7 +8,7 @@ import pytest
 
 ROOT = Path(__file__).resolve().parents[2]
 # Every doc, so a new one (like docs/BRIEF.md) is checked without anyone remembering to list it.
-DOCS = [ROOT / "README.md", ROOT / "DEVELOPMENT.md", *sorted((ROOT / "docs").rglob("*.md"))]
+DOCS = [ROOT / "README.md", ROOT / "DEVELOPMENT.md", ROOT / "SECURITY.md", *sorted((ROOT / "docs").rglob("*.md"))]
 LINK = re.compile(r"\]\(([^)\s]+)\)|src=\"([^\"]+)\"")
 
 
