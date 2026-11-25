@@ -10,7 +10,7 @@ import { getSessionId } from '../session'
 import { reportUsageLimit, usageLimitOf } from './limits'
 import type {
   AskAnswer, AskRequest, CheckContext, CheckResponse, CheckResult, Issue, IssueDraft, IssueDraftRequest, IssueIn,
-  IssueList, ProjectManifest, ReportRequest, SiteReport,
+  IssueList, ProjectManifest, ReportRequest, ReviewDecision, ReviewOut, RunDetail, RunList, SiteReport,
 } from './types'
 
 export const DEFAULT_TIMEOUT_MS = 30_000
@@ -107,7 +107,7 @@ export function getSavedResult(sampleId: string): Promise<CheckResult> {
 }
 
 /** <img src> cannot send X-Session-Id, so fetch the bytes and hand back an object URL (revoke it when done). */
-export async function fetchRunImage(runId: string, name: 'photo.jpg' | 'render.png'): Promise<string> {
+export async function fetchRunImage(runId: string, name: 'photo.jpg' | 'render.png' | 'overlay.jpg'): Promise<string> {
   const res = await request(`/api/runs/${encodeURIComponent(runId)}/${name}`)
   return URL.createObjectURL(await res.blob())
 }
@@ -131,4 +131,20 @@ export function createIssue(req: IssueIn): Promise<Issue> {
 /** This session's issues plus the demo issues; every project when projectId is omitted. */
 export function listIssues(projectId?: string): Promise<IssueList> {
   return getJson(projectId === undefined ? '/api/issues' : `/api/issues?project_id=${encodeURIComponent(projectId)}`)
+}
+
+/** This session's stored checks, newest first, with counts and review state (the Checks page). */
+export function listRuns(projectId?: string): Promise<RunList> {
+  return getJson(projectId === undefined ? '/api/runs' : `/api/runs?project_id=${encodeURIComponent(projectId)}`)
+}
+
+/** One of this session's checks in full: context, result, review decisions, provenance and image paths. */
+export function getRun(runId: string): Promise<RunDetail> {
+  return getJson(`/api/runs/${encodeURIComponent(runId)}`)
+}
+
+/** A person's decision on one finding; null takes it back. */
+export async function reviewFinding(runId: string, mark: number, decision: ReviewDecision | null): Promise<ReviewOut> {
+  const init = { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ decision }) }
+  return (await (await request(`/api/runs/${encodeURIComponent(runId)}/review/${mark}`, init)).json()) as ReviewOut
 }

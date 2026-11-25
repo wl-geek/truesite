@@ -1,13 +1,13 @@
 import { BoxGeometry, Group, Matrix4, Mesh, MeshBasicMaterial, Scene, Vector3 } from 'three'
 import { describe, expect, it } from 'vitest'
 import { ApiError } from '../api/client'
-import type { Anchor } from '../api/types'
+import type { Anchor, MarkedElement } from '../api/types'
 import { modelMatrixIfc, type Pose } from '../pose'
 import { poseAnchor } from '../scene/arMath'
 import { buildLoadedModel } from '../scene/loadModel'
 import { applyConstructionLook } from '../scene/look'
 import { stubRenderer } from '../test-support/stubRenderer'
-import { idBufferSize, poseDistance, runCheck, shouldUseSaved, storedRunId } from './runCheck'
+import { checkContext, idBufferSize, poseDistance, runCheck, shouldUseSaved, storedRunId } from './runCheck'
 import { photoSize } from './snapshot'
 
 describe('runCheck helpers', () => {
@@ -33,6 +33,16 @@ describe('runCheck helpers', () => {
     expect(photoSize(1920, 1080)).toEqual({ w: 1600, h: 900 })
     expect(photoSize(1280, 720)).toEqual({ w: 1280, h: 720 })
     expect(photoSize(1080, 1920)).toEqual({ w: 900, h: 1600 })
+  })
+
+  it('builds the check context with the sample id and where the check came from', () => {
+    const anchor = { anchor_id: 'P1', project_id: 'site' } as Anchor
+    const pose: Pose = { R: [1, 0, 0, 0, 1, 0, 0, 0, 1], t: [0, 3, 4] }
+    const marks = [{ mark: 1, guid: 'g', ifc_class: 'IfcColumn', name: 'C1', box: [0, 0, 1, 1], key_dims: '' }] as MarkedElement[]
+    expect(checkContext({ anchor, pose, poseQuality: 'fair', source: 'virtual' }, marks)).toEqual({
+      project_id: 'site', anchor_id: 'P1', pose_quality: 'fair', distance_m: 5, visible: marks, sample_id: null, source: 'virtual',
+    })
+    expect(checkContext({ anchor, pose, poseQuality: 'good', sampleId: 'site-p1' }, marks)).toMatchObject({ sample_id: 'site-p1', source: null })
   })
 
   it('reports the camera-to-code distance, clamped for the API', () => {

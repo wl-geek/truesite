@@ -481,6 +481,7 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
       const res = await runCheck({
         photo: shot.photo, photoW: shot.sw, photoH: shot.sh, videoW: shot.sw, videoH: shot.sh, K: shot.K, pose: shot.pose,
         anchor: w.anchor, poseQuality: 'good', model: w.check.model, scene: w.check.scene, renderer: w.check.renderer, elements: w.elements,
+        source: 'virtual',
       })
       const result = res.response?.result
       if (!result) throw res.error ?? new ApiError('check failed', 0)
