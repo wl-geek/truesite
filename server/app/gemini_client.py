@@ -74,6 +74,14 @@ MAX_MARKS = 25
 # Agent Platform "global"). Agent Platform us/eu multi-region: 0.825 / 4.125.
 PRICE_IN_PER_M = 0.75
 PRICE_OUT_PER_M = 3.75  # output price includes thinking tokens
+# Other models the app may call (the fallback chain, the second look's VERIFY_MODEL), USD per 1M tokens in and out,
+# from the Gemini API price list (25 Nov 2026). A model not listed is costed at the 3.8 Flash prices above.
+PRICES_PER_M = {
+    "gemini-3.8-flash": (PRICE_IN_PER_M, PRICE_OUT_PER_M),
+    "gemini-3.6-flash": (0.75, 3.75),
+    "gemini-3.5-flash-lite": (0.30, 2.50),
+    "gemini-3.1-flash-lite": (0.25, 1.50),
+}
 
 # One retry with backoff (spec section 8). The SDK does NOT retry generate_content
 # unless retry_options is set. Retries cover these HTTP codes plus httpx
@@ -427,17 +435,27 @@ def usage_dict(response: Any) -> dict:
     prompt = getattr(um, "prompt_token_count", None) or 0
     out = getattr(um, "candidates_token_count", None) or 0
     thoughts = getattr(um, "thoughts_token_count", None) or 0
+    model = getattr(response, "model_version", None)
     return {
         "prompt_tokens": prompt,
         "output_tokens": out,
         "thought_tokens": thoughts,
         "total_tokens": getattr(um, "total_token_count", None) or (prompt + out + thoughts),
-        "cost_usd_est": round(estimate_cost_usd(prompt, out, thoughts), 6),
+        "cost_usd_est": round(estimate_cost_usd(prompt, out, thoughts, model if isinstance(model, str) else None), 6),
     }
 
 
-def estimate_cost_usd(prompt_tokens: int, output_tokens: int, thought_tokens: int) -> float:
-    return (prompt_tokens * PRICE_IN_PER_M + (output_tokens + thought_tokens) * PRICE_OUT_PER_M) / 1e6
+def prices_per_m(model: Optional[str]) -> tuple[float, float]:
+    """(input, output) USD per 1M tokens for `model` or a version of it ("gemini-3.5-flash-lite-001")."""
+    for name in sorted(PRICES_PER_M, key=len, reverse=True):
+        if model and model.startswith(name):
+            return PRICES_PER_M[name]
+    return PRICE_IN_PER_M, PRICE_OUT_PER_M
+
+
+def estimate_cost_usd(prompt_tokens: int, output_tokens: int, thought_tokens: int, model: Optional[str] = None) -> float:
+    price_in, price_out = prices_per_m(model)
+    return (prompt_tokens * price_in + (output_tokens + thought_tokens) * price_out) / 1e6
 
 
 # A candidate stopped by one of these filters is reported as "blocked", not retried.
