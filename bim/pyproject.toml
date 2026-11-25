@@ -12,7 +12,7 @@ dependencies = [
 [dependency-groups]
 dev = [
     "pytest==9.1.1",
-    "pymupdf==1.28.2",  # tests only (AGPL): reads PDF vector coordinates, renders pages
+    "pymupdf==2.1",  # tests only (AGPL): reads PDF vector coordinates, renders pages
     "zxing-cpp==3.1.1",  # tests only: decodes the rendered QR codes
 ]
 
