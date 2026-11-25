@@ -15,6 +15,19 @@ Otherwise every offset below includes the error in where the stand is placed.
 4. Add one row per measurement to `overlay.csv`: `distance_m,point_id,offset_mm,try`.
 5. Run `python3 eval/summarise.py overlay eval/overlay.csv` and paste the table into the README.
 
+### 1b. Room-size version (one wall, a tape measure, about 30 minutes)
+
+For when a site-size set-out isn't possible. It measures the same thing, the overlay against taped points, at 1 to 3 m from the code.
+
+1. Print `site-P1` at 100% and tape it flat on a wall, code centre **1.40 m** above the floor, the sheet level. The room needs about 4 m of floor in front of the wall and 2 m either side.
+2. Tape a small cross on the floor at each point in `web/public/eval/room-points.json`, measured from the point on the floor straight below the code centre (R0): R1 and R2 are 1 m and 2 m out from the wall; R3 and R4 are 1 m left and right along the wall; R5 and R6 are on the wall, 1.5 m left and right of the code centre at the same height. "Left" is as you face the wall.
+3. Open `/a/site/P1?eval=room`, start the camera, and lock on the code at about 0.7 m until the alignment reads Good. Turn the model's transparency up so the green crosses are easy to see.
+4. Step back to **1 m, 2 m and 3 m** from the wall, keeping the code in view. At each distance take 3 screenshots that show the code, the green crosses and the taped crosses. Lay the tape measure on the floor through R1 and R2 for scale.
+5. For each cross, read the offset between the green cross and its taped cross in millimetres, using the tape measure or the 1 m spacing between taped crosses in the same screenshot, and add a row to `overlay.csv` with `distance_m` as your distance from the wall.
+6. Run `python3 eval/summarise.py overlay eval/overlay.csv`.
+
+Points R0 to R6 sit between 1.4 m and 4.7 m from the code centre. The error grows with distance from the code, so quote the result with the distance it was measured at, and say it was one iPad in one room.
+
 ## 2. Check quality on labelled photos
 
 **The shipped samples are simulated.** The four committed samples (`site-p1-south`, `site-p2-slab`, `site-p3-openbay`, `site-p4-gable`) are renders of the site model's simulated as-built, made with `web/scripts/make-samples.mjs` and marked `"simulated": true`. They are not photos. Label them from `SITE_AS_BUILT` in `web/src/sim/asBuilt.ts`: a `missing` deviation becomes `missing`, and a `shifted` one becomes `misplaced`, together with the elements in its `alsoMoves` (Column cage B2, Column cage C1), which moved with it. Otherwise a correct finding on a moved cage would count as a false alarm, while §3's scorecard counts it as found. Everything else in view is `present_ok`. Any table made from them must be headed "simulated photos", in this README and in the main README, and kept apart from numbers measured on real photos.

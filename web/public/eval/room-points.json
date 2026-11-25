@@ -1,0 +1,9 @@
+[
+  { "id": "R0", "label": "Floor at the wall, straight below the code centre", "position_m": [9.0, -2.5, 0.0] },
+  { "id": "R1", "label": "Floor 1 m out from the wall, below the code", "position_m": [9.0, -3.5, 0.0] },
+  { "id": "R2", "label": "Floor 2 m out from the wall, below the code", "position_m": [9.0, -4.5, 0.0] },
+  { "id": "R3", "label": "Floor at the wall, 1 m left of the code", "position_m": [8.0, -2.5, 0.0] },
+  { "id": "R4", "label": "Floor at the wall, 1 m right of the code", "position_m": [10.0, -2.5, 0.0] },
+  { "id": "R5", "label": "Wall, 1.5 m left of the code centre, same height", "position_m": [7.5, -2.5, 1.4] },
+  { "id": "R6", "label": "Wall, 1.5 m right of the code centre, same height", "position_m": [10.5, -2.5, 1.4] }
+]
