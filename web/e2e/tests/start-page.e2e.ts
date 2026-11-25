@@ -193,6 +193,13 @@ test.describe('start page', () => {
     expect([meta('og:image:width'), meta('og:image:height')]).toEqual(['1200', '630'])
   })
 
+  test('How it works points to Checks, where a person confirms or dismisses each finding', async ({ page }) => {
+    await page.goto('/')
+    await page.locator('#how').getByRole('link', { name: 'Checks' }).click()
+    await expect(page).toHaveURL(/\/checks$/)
+    await expect(page.getByRole('heading', { name: 'No checks yet.' })).toBeVisible()
+  })
+
   test('the nav works from the other pages too: 3D model -> About', async ({ page }) => {
     await page.goto('/model')
     await expect(page.locator('.model-card')).toBeVisible()
