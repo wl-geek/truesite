@@ -1,0 +1,4 @@
+# Reviewed false positives (gitleaks fingerprints). Add a line only after checking the match is not a secret.
+# web/src/session.test.ts: a made-up UUID used as a stored browser session id in a unit test.
+42a26c1a6c305c9fde5ba5523fec848f5b7211f8:web/src/session.test.ts:generic-api-key:37
+web/src/session.test.ts:generic-api-key:37

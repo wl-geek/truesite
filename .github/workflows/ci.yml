@@ -1,0 +1,71 @@
+# The same checks as `make test` (BIM pipeline, server, web and types), plus a secret scan.
+# The Playwright suite (web/e2e) is not run here: it needs browsers and 1.7 GB of camera videos.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: make test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      UV_LOCKED: "1" # fail if a uv.lock is out of step with its pyproject.toml
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.13"
+          enable-cache: true
+          cache-dependency-glob: "**/uv.lock"
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "20.20"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+
+      - name: Install the web app's packages
+        run: npm ci --no-audit --no-fund
+        working-directory: web
+
+      - name: BIM pipeline (pytest)
+        run: make test-bim
+
+      - name: Server (pytest)
+        run: make test-server
+
+      - name: Web (vitest) and types (tsc -b)
+        run: make test-web
+
+  secret-scan:
+    name: Secret scan (gitleaks)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      pull-requests: read # to list a pull request's commits
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # the whole history, not just the last commit
+          persist-credentials: false
+
+      - uses: gitleaks/gitleaks-action@v3
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_ENABLE_COMMENTS: "false"

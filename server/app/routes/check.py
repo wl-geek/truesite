@@ -81,9 +81,10 @@ async def check(
     overlay: Annotated[UploadFile | None, File(description="JPEG photo with the design outlines (IMAGE 3), <= 4 MiB")] = None,
 ) -> CheckResponse:
     received_at = now()
-    photo_bytes = await read_image(photo, field="photo", kind="jpeg", limit=settings.max_upload_bytes)
-    render_bytes = await read_image(render, field="render", kind="png", limit=settings.max_upload_bytes)
-    overlay_bytes = await read_image(overlay, field="overlay", kind="jpeg", limit=settings.max_upload_bytes) if overlay else None
+    caps = {"limit": settings.max_upload_bytes, "max_pixels": settings.max_image_pixels}
+    photo_bytes = await read_image(photo, field="photo", kind="jpeg", **caps)
+    render_bytes = await read_image(render, field="render", kind="png", **caps)
+    overlay_bytes = await read_image(overlay, field="overlay", kind="jpeg", **caps) if overlay else None
     ctx = parse_context(context)
     try:
         elements = repo.elements_by_guid(ctx.project_id)
@@ -129,7 +130,7 @@ async def check(
         saved = False
 
     # Separate from the run, so `saved` says only whether the run (photo, issues) was stored.
-    if await run_in_threadpool(is_shipped_sample, settings.static_dir, ctx, photo_bytes):
+    if settings.save_sample_results and await run_in_threadpool(is_shipped_sample, settings.static_dir, ctx, photo_bytes):
         try:
             await run_in_threadpool(store.put_saved_result, ctx.sample_id, {**result, "saved_at": now().isoformat()})
         except Exception:  # noqa: BLE001 - the fallback copy is a nice-to-have

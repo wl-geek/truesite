@@ -18,6 +18,8 @@ brand/
 *.pem
 *-key.json
 service-account*.json
+# The build needs no Markdown, and local notes must not leave the laptop.
+*.md
 *.log
 capture/
 .playwright-mcp/

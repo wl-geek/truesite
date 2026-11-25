@@ -163,7 +163,7 @@ The live AR videos (about 1.7 GB, git-ignored) are made once with `web/e2e/scrip
 - **cosmic-ray** on `server/app/validate.py` and `server/app/severity.py`: no real mutant survives (30 did in `validate.py` before); the ones left are equivalent.
 - **Hypothesis:** 34 properties on check repair, severity, the limits, uploads and the report schemas.
 - **Schemathesis:** 4,162 generated API cases, with no 5xx and no response-schema violations.
-- **bandit, pip-audit and npm audit:** no known vulnerabilities in the server's pinned packages or the web app's runtime packages (re-checked 18 Oct); bandit notes one low-severity `assert`. npm audit in `web/` lists 7 high advisories in puppeteer-core's browser-download helpers: a dev-only tool for `web/scripts/make-samples.mjs`, not in the image, with no non-breaking fix yet.
+- **bandit, pip-audit and npm audit:** no known vulnerabilities in the server's pinned packages (Pillow 13.0.0 and the rest, re-checked 25 Nov) or the web app's runtime packages; bandit notes one low-severity `assert`. npm audit in `web/` lists 9 high advisories in puppeteer-core's browser-download helpers: a dev-only tool for `web/scripts/make-samples.mjs`, not in the image, fixed only in a major version that Dependabot will propose.
 
 The bugs these runs found are listed in the [17 Oct audit](docs/audit-2026-10-17.md): 41 findings, none high.
 
@@ -175,6 +175,15 @@ On Google Cloud, in this order (see `infra/gcloud.sh`). Set `PROJECT_ID` to your
 2. `make deploy`: renders every QR sheet for the service URL, refuses to deploy unless each sheet links to it, then builds the container on Cloud Build and deploys it to Cloud Run. `GEMINI_BACKEND=apikey make deploy` uses an AI Studio key from Secret Manager instead of Agent Platform.
 3. `make verify`: fails unless `/api/health` reports `"gemini_mode": "live"` and `"store_backend": "gcp"`, the sheets are served as PDFs that link to the URL, the site layout plan, `site.usdz` and the sample photos are served, and one Ask round trip works.
 
+## Security
+
+- **No keys.** The Cloud Run service reaches Gemini, Firestore and Cloud Storage as its own least-privilege service account (Application Default Credentials). There is no API key in the code, the image or the environment; the optional AI Studio key route keeps its key in Secret Manager.
+- **Settings come from the environment**, each one documented in [.env.example](.env.example).
+- **Checked on every pull request:** the tests and a gitleaks secret scan ([CI](.github/workflows/ci.yml)), and Dependabot proposes updates weekly. The whole history was scanned on 25 Nov 2026: no secrets.
+- **Data:** photos and checks are stored in Singapore (`asia-southeast1`) and deleted after 30 days.
+
+[SECURITY.md](SECURITY.md) has the details, and how to report a vulnerability privately.
+
 ## Repository
 
 | Path | What |
@@ -184,6 +193,7 @@ On Google Cloud, in this order (see `infra/gcloud.sh`). Set `PROJECT_ID` to your
 | `bim/` | Offline pipeline: IFC → glb with element GUIDs, `elements.json`, the site building (`bim/truesite_bim/site.py`) and its layout plan, printable QR sheets (ifcopenshell) |
 | `eval/` | Overlay-accuracy and check-quality measurements, and the script that turns them into tables |
 | `infra/` | `gcloud.sh`: setup, deploy and verify on Google Cloud |
+| `SECURITY.md` | [How credentials, data and abuse are handled](SECURITY.md), and how to report a vulnerability |
 | `DEVELOPMENT.md` | [How we work](DEVELOPMENT.md): conventions, commands, where things live, gotchas |
 | `docs/` | [Brief](docs/BRIEF.md), [design spec](docs/specs/2026-10-11-truesite-design.md), [interface contract](docs/plans/2026-10-11-truesite-contract.md), [research notes](docs/research/research-notes.md), [audits](docs/audit-2026-10-17.md) |
 

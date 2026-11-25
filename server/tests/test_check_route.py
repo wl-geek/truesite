@@ -80,6 +80,21 @@ def test_upload_errors(make_client):
     assert post(client, ctx=context(project_id="nope")).status_code == 404
 
 
+def test_an_image_over_the_pixel_cap_is_413_before_any_model_call(make_client, monkeypatch):
+    from app.routes import check as check_route
+
+    from .test_uploads import real_image
+
+    def no_model_call(*args, **kwargs):
+        raise AssertionError("the pixel cap must answer before any model call")
+
+    monkeypatch.setattr(check_route, "make_checker", no_model_call)
+    client = make_client(max_image_pixels=1000 * 1000)
+    r = post(client, photo=real_image("JPEG", (1001, 1000)))
+    assert r.status_code == 413 and r.json()["detail"] == "photo is larger than 1000000 pixels"
+    assert post(client, overlay=real_image("JPEG", (2000, 600))).status_code == 413
+
+
 def test_missing_session_is_rejected(client):
     r = client.post("/api/check", files={"photo": ("p.jpg", JPEG), "render": ("r.png", PNG)}, data={"context": context()})
     assert r.status_code == 422
@@ -169,7 +184,15 @@ def ship_sample(dist, sample_id="room1-door", photo=JPEG, project_id="testproj",
     (d / "meta.json").write_text(json.dumps({"sample_id": sample_id, "project_id": project_id, "anchor_id": anchor_id}))
 
 
-def test_sample_result_is_saved_and_served(client, dist):
+def test_a_shipped_sample_check_saves_nothing_unless_enabled(client, dist):
+    # The deployed default: the sample photos are public, so a check of one must not replace the fallback.
+    ship_sample(dist)
+    assert post(client, ctx=context(sample_id="room1-door")).status_code == 200
+    assert client.get("/api/saved-results/room1-door").status_code == 404
+
+
+def test_sample_result_is_saved_and_served(make_client, dist):
+    client = make_client(save_sample_results=True)
     ship_sample(dist)
     assert client.get("/api/saved-results/room1-door").status_code == 404
     assert post(client, ctx=context(sample_id="room1-door")).status_code == 200
@@ -177,7 +200,8 @@ def test_sample_result_is_saved_and_served(client, dist):
     assert saved["saved_at"] and len(saved["findings"]) == 2
 
 
-def test_only_the_shipped_sample_photo_saves_a_result(client, dist):
+def test_only_the_shipped_sample_photo_saves_a_result(make_client, dist):
+    client = make_client(save_sample_results=True)
     ship_sample(dist)
     ship_sample(dist, "room1-other-project", project_id="room1")
     ship_sample(dist, "room1-other-anchor", anchor_id="D1")
@@ -189,7 +213,8 @@ def test_only_the_shipped_sample_photo_saves_a_result(client, dist):
         assert client.get(f"/api/saved-results/{sample_id}").status_code == 404, sample_id
 
 
-def test_a_forged_check_does_not_replace_a_saved_result(client, dist):
+def test_a_forged_check_does_not_replace_a_saved_result(make_client, dist):
+    client = make_client(save_sample_results=True)
     ship_sample(dist)
     assert post(client, ctx=context(sample_id="room1-door")).status_code == 200
     before = client.get("/api/saved-results/room1-door").json()
@@ -199,7 +224,8 @@ def test_a_forged_check_does_not_replace_a_saved_result(client, dist):
     assert client.get("/api/saved-results/room1-door").json() == before
 
 
-def test_a_failed_sample_save_does_not_mark_the_run_unsaved(client, dist, store, monkeypatch):
+def test_a_failed_sample_save_does_not_mark_the_run_unsaved(make_client, dist, store, monkeypatch):
+    client = make_client(save_sample_results=True)
     ship_sample(dist)
 
     def boom(*_a):
