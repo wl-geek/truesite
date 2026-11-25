@@ -40,7 +40,9 @@
 
 .checks-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; margin: 0 0 10px; }
 .checks-label { margin: 0; }
-/* A two- or three-way choice: aria-pressed buttons in one rounded track. */
+/* A two- or three-way choice: aria-pressed buttons in one rounded track, after a short label ("Show", "Compare with"). */
+.seg-wrap { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.seg-label { color: var(--muted); font-size: 13px; font-weight: 700; }
 .seg { display: inline-flex; flex-wrap: wrap; gap: 2px; padding: 3px; border: 1px solid var(--line); border-radius: 12px; background: var(--white); }
 .seg button { display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border: 0; border-radius: 9px; background: transparent;
   color: var(--steel); font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }

@@ -61,6 +61,11 @@ describe('ChecksPage', () => {
     expect(text(card({ onDraft: undefined }))).not.toContain('Draft issue')
   })
 
+  it('names the offline stand-in as the author of its explanations, never Gemini', () => {
+    expect(text(card({ by: 'Stand-in' }))).toContain('Stand-in: Nothing visible where the design shows it.')
+    expect(text(card({ by: 'Stand-in' }))).not.toContain('Gemini:')
+  })
+
   it('renders model text as text, never as HTML', () => {
     const html = card({ f: finding({ explanation: '<img src=x onerror=alert(1)>' }) })
     expect(html).not.toContain('<img src=x')

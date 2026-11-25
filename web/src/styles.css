@@ -355,7 +355,7 @@ body {
    The bands themselves are set in src/check/confidence.ts. */
 .conf { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 2px 6px; width: fit-content; max-width: 100%; padding: 2px 9px;
   border-radius: 999px; background: #e8eef5; color: var(--steel); font-size: 12px; font-weight: 600; line-height: 1.5; }
-.conf strong { font-weight: 800; }
+.conf-band { font-weight: 800; }
 .conf-bars { display: inline-flex; align-items: flex-end; gap: 2px; height: 11px; }
 .conf-bars i { display: block; width: 3px; border-radius: 1px; background: currentColor; opacity: 0.22; }
 .conf-bars i:nth-child(1) { height: 5px; }

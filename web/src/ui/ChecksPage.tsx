@@ -102,13 +102,16 @@ function CheckList() {
           <Tiles sum={sum} />
           {offline && <OfflineNote list />}
           <div className="checks-toolbar">
-            <div className="seg" role="group" aria-label="Show">
-              <button type="button" aria-pressed={filter === 'all'} onClick={() => setFilter('all')}>
-                All checks <span className="seg-count">{runs.length}</span>
-              </button>
-              <button type="button" aria-pressed={filter === 'review'} onClick={() => setFilter('review')}>
-                Needs review <span className="seg-count">{sum.checksToReview}</span>
-              </button>
+            <div className="seg-wrap">
+              <span className="seg-label" id="show-label">Show</span>
+              <div className="seg" role="group" aria-labelledby="show-label">
+                <button type="button" aria-pressed={filter === 'all'} onClick={() => setFilter('all')}>
+                  All checks <span className="seg-count">{runs.length}</span>
+                </button>
+                <button type="button" aria-pressed={filter === 'review'} onClick={() => setFilter('review')}>
+                  Needs review <span className="seg-count">{sum.checksToReview}</span>
+                </button>
+              </div>
             </div>
             <p className="checks-muted checks-label">{NOT_A_SURVEY}</p>
           </div>
@@ -353,6 +356,7 @@ function CheckDetail({ runId }: { runId: string }) {
 
   const result = run.result
   const offline = result.model_version === OFFLINE_MODEL
+  const judge = offline ? 'the stand-in' : 'Gemini' // who judged this check: the offline stand-in is never called Gemini
   const quality = imageQualityMessage(result.image_quality)
   const flagged = findings.filter(isFlagged)
   const unsure = findings.filter((f) => f.status === 'cannot_judge')
@@ -392,7 +396,7 @@ function CheckDetail({ runId }: { runId: string }) {
     selected: selected === f.mark, onSelect: () => select(f.mark, false),
     review: run.review[String(f.mark)] ?? null, busy: pending.has(f.mark), error: errors[f.mark] ?? null,
     onDecide: (d: ReviewDecision | null) => void decide(f, d),
-    onDraft: quality === null ? () => setDraftFor(f) : undefined, issueSaved: savedMarks.has(f.mark),
+    onDraft: quality === null ? () => setDraftFor(f) : undefined, issueSaved: savedMarks.has(f.mark), by: offline ? 'Stand-in' : 'Gemini',
   })
 
   return (
@@ -420,11 +424,14 @@ function CheckDetail({ runId }: { runId: string }) {
         <div className="checks-main">
           <section className="checks-images" aria-labelledby="images-h">
             <div className="checks-section-head">
-              <h2 id="images-h">What Gemini compared</h2>
-              <div className="seg" role="group" aria-label="Compare the photo with">
-                <button type="button" aria-pressed={compare === 'render'} onClick={() => setCompare('render')}>Design render</button>
-                <button type="button" aria-pressed={compare === 'overlay'} onClick={() => setCompare('overlay')} disabled={!run.images.overlay}
-                  title={run.images.overlay ? undefined : 'This check was sent without the outline image'}>Outlines on photo</button>
+              <h2 id="images-h">What {judge} compared</h2>
+              <div className="seg-wrap">
+                <span className="seg-label" id="compare-label">Compare with</span>
+                <div className="seg" role="group" aria-labelledby="compare-label">
+                  <button type="button" aria-pressed={compare === 'render'} onClick={() => setCompare('render')}>Design render</button>
+                  <button type="button" aria-pressed={compare === 'overlay'} onClick={() => setCompare('overlay')} disabled={!run.images.overlay}
+                    title={run.images.overlay ? undefined : 'This check was sent without the outline image'}>Outlines on photo</button>
+                </div>
               </div>
             </div>
             <div className="checks-figs">
@@ -435,7 +442,7 @@ function CheckDetail({ runId }: { runId: string }) {
                   : <ImageSlot state={images.photo} what="the photo" />}
               </figure>
               <figure>
-                <figcaption>{compare === 'render' ? 'The BIM design from the same spot, as Gemini saw it' : 'The photo with the design outlines, as Gemini saw it'}</figcaption>
+                <figcaption>{compare === 'render' ? `The BIM design from the same spot, as ${judge} saw it` : `The photo with the design outlines, as ${judge} saw it`}</figcaption>
                 {compare === 'render'
                   ? (images.render ? <img className="checks-img" src={images.render} alt="The BIM design render with numbered marks, from the same camera pose" /> : <ImageSlot state={images.render} what="the design render" />)
                   : (images.overlay ? <img className="checks-img" src={images.overlay} alt="The site photo with each marked element's design outline" /> : <ImageSlot state={images.overlay} what="the outline image" />)}
@@ -451,7 +458,7 @@ function CheckDetail({ runId }: { runId: string }) {
             </div>
             <p className="checks-tip">Highest severity first and, within it, the least sure first. Tap a finding to see it on the photo.</p>
             {flagged.length === 0
-              ? <p className="checks-none">Gemini flagged no deviation in this view.</p>
+              ? <p className="checks-none">{offline ? 'The stand-in' : 'Gemini'} flagged no deviation in this view.</p>
               : <ol className="fcards">{flagged.map((f) => <FindingCard key={f.mark} {...cardProps(f)} />)}</ol>}
             {result.unexpected.length > 0 && (
               <>
@@ -462,7 +469,7 @@ function CheckDetail({ runId }: { runId: string }) {
             {unsure.length > 0 && (
               <>
                 <h3 className="checks-h3">Can't judge from this photo <span className="checks-count">{unsure.length}</span></h3>
-                <p className="checks-tip">Gemini couldn't tell from this photo. A person should look on site, or check again from closer.</p>
+                <p className="checks-tip">{offline ? 'The stand-in' : 'Gemini'} couldn't tell from this photo. A person should look on site, or check again from closer.</p>
                 <ol className="fcards">{unsure.map((f) => <FindingCard key={f.mark} {...cardProps(f)} />)}</ol>
               </>
             )}
@@ -478,7 +485,7 @@ function CheckDetail({ runId }: { runId: string }) {
         <aside className="checks-aside" aria-label="About this check">
           {result.summary && (
             <section className="checks-box">
-              <h2>Gemini's summary</h2>
+              <h2>{offline ? "The stand-in's summary" : "Gemini's summary"}</h2>
               <p>{result.summary}</p>
             </section>
           )}
@@ -489,7 +496,7 @@ function CheckDetail({ runId }: { runId: string }) {
               <dt>Alignment</dt><dd>{POSE[result.pose_quality]}</dd>
             </dl>
           </section>
-          <AuditTrail run={run} findings={findings} />
+          <AuditTrail run={run} findings={findings} judge={judge} />
         </aside>
       </div>
 
@@ -521,9 +528,11 @@ type FindingCardProps = {
   f: Finding; runId: string; element: Element | null; photoUrl: string | null; aspect: number | null; selected: boolean
   onSelect: () => void; review: { decision: ReviewDecision; at: string } | null; busy: boolean; error: string | null
   onDecide: (d: ReviewDecision | null) => void; onDraft?: () => void; issueSaved: boolean
+  /** Who wrote the explanation: "Gemini", or "Stand-in" for the offline stand-in. */
+  by?: string
 }
 
-export function FindingCard({ f, element, photoUrl, aspect, selected, onSelect, review, busy, error, onDecide, onDraft, issueSaved }: FindingCardProps) {
+export function FindingCard({ f, element, photoUrl, aspect, selected, onSelect, review, busy, error, onDecide, onDraft, issueSaved, by = 'Gemini' }: FindingCardProps) {
   const flagged = isFlagged(f)
   const why = whyItMatters(f)
   const kind = element ? typeLabel(element) : f.ifc_class.replace(/^Ifc/, '')
@@ -545,7 +554,7 @@ export function FindingCard({ f, element, photoUrl, aspect, selected, onSelect, 
             {f.severity && <span className={`badge badge-${f.severity}`}>{SEVERITY_LABEL[f.severity]}</span>}
             {f.status !== 'cannot_judge' && <ConfidenceBadge value={f.confidence} />}
           </span>
-          {f.explanation && <span className="fcard-why"><span className="finding-src">Gemini:</span> {f.explanation}</span>}
+          {f.explanation && <span className="fcard-why"><span className="finding-src">{by}:</span> {f.explanation}</span>}
           {why && <span className="finding-risk"><span className="finding-src">Why it matters:</span> {why}</span>}
         </span>
       </button>
@@ -597,7 +606,7 @@ function UnexpectedCard({ u, photoUrl, aspect }: { u: UnexpectedItem; photoUrl: 
   )
 }
 
-function AuditTrail({ run, findings }: { run: RunDetail; findings: readonly Finding[] }) {
+function AuditTrail({ run, findings, judge }: { run: RunDetail; findings: readonly Finding[]; judge: string }) {
   const p = run.provenance
   const usage = run.result.usage
   const decisions = findings.filter((f) => run.review[String(f.mark)]).map((f) => ({ f, r: run.review[String(f.mark)] }))
@@ -606,7 +615,7 @@ function AuditTrail({ run, findings }: { run: RunDetail; findings: readonly Find
     <section className="checks-box checks-audit" aria-labelledby="audit-h">
       <h2 id="audit-h">Audit trail</h2>
       <p className="note">
-        {p ? 'Recorded by the server as the check arrived. The SHA-256 fingerprints identify the exact images Gemini was sent.'
+        {p ? `Recorded by the server as the check arrived. The SHA-256 fingerprints identify the exact images ${judge} was sent.`
           : 'This check was stored before the audit trail was added: only the model, tokens and cost were recorded.'}
       </p>
       <dl className="facts">
@@ -620,7 +629,7 @@ function AuditTrail({ run, findings }: { run: RunDetail; findings: readonly Find
         {p && <><dt>Outline image</dt><dd>{hash(p.overlay_sha256)}</dd></>}
         {usage && <><dt>Tokens</dt><dd>{tokensText(usage)}</dd></>}
         {usage && <><dt>Estimated cost</dt><dd>{usd(usage.cost_usd_est)}</dd></>}
-        {run.duration_ms !== null && <><dt>Gemini time</dt><dd>{seconds(run.duration_ms)}</dd></>}
+        {run.duration_ms !== null && <><dt>Check time</dt><dd>{seconds(run.duration_ms)} on the server</dd></>}
         <dt>Check ID</dt><dd><code className="checks-hash">{run.run_id}</code></dd>
       </dl>
       {decisions.length > 0 && (

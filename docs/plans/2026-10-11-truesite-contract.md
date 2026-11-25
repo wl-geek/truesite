@@ -325,8 +325,7 @@ def create_app(settings: Settings | None = None, *, store: Store | None = None, 
 export const SESSION_KEY = 'truesite.session'
 export function getSessionId(): string                   // crypto.randomUUID(), else a v4 built from crypto.getRandomValues
 // src/router.ts
-export type Route = { name: 'home' } | { name: 'viewer'; projectId?: string } | { name: 'live'; projectId: string; anchorId: string } | { name: 'samples' }
-  | { name: 'checks'; runId?: string }
+export type Route = { name: 'home' } | { name: 'viewer'; projectId?: string } | { name: 'live'; projectId: string; anchorId: string } | { name: 'samples' } | { name: 'checks'; runId?: string }
 export function parseRoute(pathname: string, search = ''): Route   // unknown paths (and /issues) -> home; viewer projectId from ?project=; checks runId from ?run=
 export function viewerPathFor(projectId: string): string // '/model?project=<id>'
 export function checksPathFor(runId?: string): string    // '/checks' or '/checks?run=<id>'

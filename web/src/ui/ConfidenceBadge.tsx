@@ -10,7 +10,7 @@ export function ConfidenceBadge({ value, label = true, hint = true }: { value: n
   return (
     <span className={`conf conf-${band}`}>
       <span className="conf-bars" aria-hidden="true"><i /><i /><i /></span>
-      <span>{label ? 'Confidence ' : ''}<strong>{BAND_LABEL[band]}</strong> · {shownConfidence(value).toFixed(2)}</span>
+      <span>{label ? 'Confidence ' : ''}<span className="conf-band">{BAND_LABEL[band]}</span> · {shownConfidence(value).toFixed(2)}</span>
       {hint && band === 'low' && <span className="conf-hint">— {LOW_CONFIDENCE_HINT}</span>}
     </span>
   )

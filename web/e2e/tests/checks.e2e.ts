@@ -51,7 +51,7 @@ test.describe('Checks page', () => {
     // Honest offline mode, and the copy rule.
     await expect(page.getByRole('note').filter({ hasText: 'Offline test mode.' })).toBeVisible()
     await expect(page.getByText('Visual check, not a survey.').first()).toBeVisible()
-    await expect(page.getByText('Gemini flagged no deviation in this view.')).toBeVisible()
+    await expect(page.getByText('The stand-in flagged no deviation in this view.')).toBeVisible() // never called Gemini offline
     await expect(page.getByRole('img', { name: 'Photo used for the as-built check' })).toBeVisible()
     await expect(page.getByRole('img', { name: /The BIM design render with numbered marks/ })).toBeVisible()
     await page.getByRole('button', { name: 'Outlines on photo' }).click()
@@ -92,7 +92,7 @@ test.describe('Checks page', () => {
     const runId = await checkAndOpen(page)
     const card = page.locator('#finding-1')
     await expect(card).toContainText('Confidence Low · 0.55— take a closer look')
-    await expect(card).toContainText('Gemini: <b>Nothing</b> where the design shows it.') // text, never HTML
+    await expect(card).toContainText('Stand-in: <b>Nothing</b> where the design shows it.') // text, never HTML
     const session = await page.evaluate(() => localStorage.getItem('truesite.session')!)
     const stored = async () => (await (await request.get(`/api/runs/${runId}`, { headers: { 'X-Session-Id': session } })).json()).review
 
