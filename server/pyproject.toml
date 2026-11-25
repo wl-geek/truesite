@@ -8,7 +8,7 @@ dependencies = [
     "uvicorn[standard]==0.54.0",
     "pydantic==2.14.0",
     "python-multipart==0.0.32",
-    "google-genai==2.29.0",
+    "google-genai==3.6.1",
     "httpx==0.28.1",
     "google-cloud-firestore==2.34.1",
     "google-cloud-storage==3.17.0",
