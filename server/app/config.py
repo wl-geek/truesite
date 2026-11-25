@@ -47,8 +47,8 @@ class Settings:
     # Upload limits (spec section 6: photo and render at most 4 MB each).
     max_upload_bytes: int = 4 * MiB
     # Pixels per image (width x height, read from the header before any decoding). The web app sends at most
-    # 1600 px a side (2.56 MP); a few MB of JPEG can declare far more, and every close-up of the second look
-    # (app/verify.py) decodes the whole image again.
+    # 1600 px a side (2.56 MP); a few MB of JPEG can declare far more, and the second look (app/verify.py)
+    # decodes each image of a check and keeps it while its close-ups are cropped from it.
     max_image_pixels: int = 4_000_000
     # Whole-request cap, enforced while the body streams in: three files (photo, render, outline overlay)
     # + context + multipart overhead.

@@ -3,6 +3,8 @@ from __future__ import annotations
 
 import io
 import json
+import threading
+import time
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -84,18 +86,27 @@ def test_merge(first: str, verdict: tuple[str, float], mode: str, status: str) -
 
 
 class Scripted:
-    """First pass from `first`; each verify call answers from `verdicts` by mark (an Exception is raised)."""
+    """First pass from `first`; each verify call answers from `verdicts` by mark (an Exception is raised), after
+    `delay_s`; `most_at_once` is the most verify calls that were running at the same time."""
 
     vertexai = False
 
-    def __init__(self, first: list[dict], verdicts: dict[int, object]) -> None:
+    def __init__(self, first: list[dict], verdicts: dict[int, object], *, delay_s: float = 0.0) -> None:
         self.verify_calls: list[dict] = []
+        self.at_once = self.most_at_once = 0
+        lock = threading.Lock()
 
         def generate_content(*, model, contents, config):
             if config.system_instruction.startswith(CHECK_SYSTEM):
                 payload = {"image_quality": "good", "findings": first, "unexpected": [], "summary": "s"}
             else:
-                self.verify_calls.append({"contents": contents, "config": config})
+                with lock:
+                    self.verify_calls.append({"contents": contents, "config": config})
+                    self.at_once += 1
+                    self.most_at_once = max(self.most_at_once, self.at_once)
+                time.sleep(delay_s)
+                with lock:
+                    self.at_once -= 1
                 task = json.loads(contents[-1].text.split("\n", 1)[1])
                 answer = verdicts[task["mark"]]
                 if isinstance(answer, Exception):
@@ -139,3 +150,34 @@ def test_offline_fake_agrees_with_its_first_pass(models: Path) -> None:
     plain = make_checker(ProjectRepo(models), FakeGeminiClient())(JPEG, PNG, CTX, JPEG)
     second = make_checker(ProjectRepo(models), FakeGeminiClient(), verify=True)(JPEG, PNG, CTX, JPEG)
     assert [f["status"] for f in plain["findings"]] == [f["status"] for f in second["findings"]]
+
+
+def test_decode_reads_only_jpeg_and_png() -> None:
+    assert verify.decode(JPEG).mode == verify.decode(PNG).mode == "RGB"
+    with pytest.raises(Exception):  # a GIF (or anything else) is never decoded, whatever its size claims
+        verify.decode(image_bytes("GIF"))
+
+
+def test_each_image_is_decoded_once_per_check_however_many_close_ups(models: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    # Each close-up used to decode the photo, render and outline image again, in up to 24 threads at once: about
+    # 440 MB for one check of 4 MP images. Now the three images are decoded once and every crop is cut from them.
+    opened: list[int] = []
+    real = Image.open
+
+    def counting_open(*args, **kwargs):
+        opened.append(1)
+        return real(*args, **kwargs)
+    monkeypatch.setattr(verify.Image, "open", counting_open)
+    first = [finding(m, "missing") for m in (1, 2, 3, 4)]
+    client = Scripted(first, {m: verdict("missing") for m in (1, 2, 3, 4)})
+    make_checker(ProjectRepo(models), client, verify=True)(JPEG, PNG, CTX, JPEG)
+    assert len(client.verify_calls) == 4
+    assert len(opened) == 3
+
+
+def test_close_ups_at_once_never_exceed_the_pool(models: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(verify, "MAX_WORKERS", 2)
+    first = [finding(m, "missing") for m in (1, 2, 3, 4)]
+    client = Scripted(first, {m: verdict("missing") for m in (1, 2, 3, 4)}, delay_s=0.05)
+    make_checker(ProjectRepo(models), client, verify=True)(JPEG, PNG, CTX, JPEG)
+    assert len(client.verify_calls) == 4 and client.most_at_once == 2
