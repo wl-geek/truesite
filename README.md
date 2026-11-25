@@ -173,6 +173,15 @@ On Google Cloud, in this order (see `infra/gcloud.sh`). Set `PROJECT_ID` to your
 2. `make deploy`: renders every QR sheet for the service URL, refuses to deploy unless each sheet links to it, then builds the container on Cloud Build and deploys it to Cloud Run. `GEMINI_BACKEND=apikey make deploy` uses an AI Studio key from Secret Manager instead of Agent Platform.
 3. `make verify`: fails unless `/api/health` reports `"gemini_mode": "live"` and `"store_backend": "gcp"`, the sheets are served as PDFs that link to the URL, the site layout plan, `site.usdz` and the sample photos are served, and one Ask round trip works.
 
+## Security
+
+- **No keys.** The Cloud Run service reaches Gemini, Firestore and Cloud Storage as its own least-privilege service account (Application Default Credentials). There is no API key in the code, the image or the environment; the optional AI Studio key route keeps its key in Secret Manager.
+- **Settings come from the environment**, each one documented in [.env.example](.env.example).
+- **Checked on every pull request:** the tests and a gitleaks secret scan ([CI](.github/workflows/ci.yml)), and Dependabot proposes updates weekly. The whole history was scanned on 25 Nov 2026: no secrets.
+- **Data:** photos and checks are stored in Singapore (`asia-southeast1`) and deleted after 30 days.
+
+[SECURITY.md](SECURITY.md) has the details, and how to report a vulnerability privately.
+
 ## Repository
 
 | Path | What |
@@ -182,6 +191,7 @@ On Google Cloud, in this order (see `infra/gcloud.sh`). Set `PROJECT_ID` to your
 | `bim/` | Offline pipeline: IFC → glb with element GUIDs, `elements.json`, the site building (`bim/truesite_bim/site.py`) and its layout plan, printable QR sheets (ifcopenshell) |
 | `eval/` | Overlay-accuracy and check-quality measurements, and the script that turns them into tables |
 | `infra/` | `gcloud.sh`: setup, deploy and verify on Google Cloud |
+| `SECURITY.md` | [How credentials, data and abuse are handled](SECURITY.md), and how to report a vulnerability |
 | `DEVELOPMENT.md` | [How we work](DEVELOPMENT.md): conventions, commands, where things live, gotchas |
 | `docs/` | [Brief](docs/BRIEF.md), [design spec](docs/specs/2026-10-11-truesite-design.md), [interface contract](docs/plans/2026-10-11-truesite-contract.md), [research notes](docs/research/research-notes.md), [audits](docs/audit-2026-10-17.md) |
 

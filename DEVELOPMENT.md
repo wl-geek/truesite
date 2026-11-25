@@ -59,6 +59,8 @@ Tooling: Node 20.19 or newer, Python 3.13 with `uv`, `gh` for pull requests.
 - **Server.** Gemini and store calls are blocking, so endpoints are plain `def` or use `run_in_threadpool`. `<img src>` can't send `X-Session-Id`: fetch with the header, then `URL.createObjectURL`. The daily cap is a single Firestore `Increment`.
 - **Gemini** (`server/app/gemini_client.py`): `gemini-3.8-flash` with low thinking and high media resolution, `response_json_schema` plus server-side repair, no temperature. One code path for Agent Platform (`GOOGLE_GENAI_USE_ENTERPRISE=true`, `GOOGLE_CLOUD_LOCATION=global`) and an AI Studio key; locally `GEMINI_MODE=fake`.
 - **Cloud Run.** The Dockerfile stays at the repo root, `.gcloudignore` controls the upload, and the client IP is the right-most `X-Forwarded-For` entry.
+- **Server packages.** The image installs the hash-pinned `server/requirements.txt`, not `uv.lock`. After any change to `server/pyproject.toml` (or a Dependabot update), regenerate it with the command in its header; `server/tests/test_requirements.py` fails until it matches `uv.lock`.
+- **Secrets.** None in the repo, the image or the environment: production uses the service account (see [SECURITY.md](SECURITY.md)). New settings are environment variables, added to `server/app/config.py` and `.env.example` together (a test checks).
 
 ## Windows
 
