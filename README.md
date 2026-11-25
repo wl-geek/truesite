@@ -140,16 +140,16 @@ Rebuild the site model from `bim/truesite_bim/site.py` with `make models`.
 
 ## Testing
 
-| Suite | Command | Result (18 Oct) |
+| Suite | Command | Result (26 Nov) |
 |---|---|---|
 | BIM pipeline (pytest) | `cd bim && uv run pytest -q` | 88 passed |
-| Server (pytest, Gemini mocked) | `cd server && uv run pytest -q` | 578 passed, 11 skipped (they need the Firestore emulator) |
-| Web (vitest) and types | `cd web && npx vitest run && npx tsc -b` | 585 passed; `tsc -b` clean |
-| End to end (Playwright) | in `web/e2e`, below | 166 passed, 4 skipped (desktop, iPad, iPhone, limits, live AR) |
+| Server (pytest, Gemini mocked) | `cd server && uv run pytest -q` | 610 passed, 11 skipped (they need the Firestore emulator) |
+| Web (vitest) and types | `cd web && npx vitest run && npx tsc -b` | 592 passed; `tsc -b` clean |
+| End to end (Playwright) | in `web/e2e`, below | 178 passed, 4 skipped (desktop, iPad, iPhone, limits, live AR) |
 
 `make test` runs the first three. No suite calls live Gemini.
 
-**End to end.** The Playwright suite in `web/e2e/` has its own `package.json`, so it isn't part of `make test` or the image. It drives the built app on the real FastAPI server with the offline Gemini stand-in and an in-memory store, in Chromium as a laptop, an iPad Pro 11 and an iPhone 15. It covers the start page, the laptop popup, the virtual demo (the three images in the upload, every planted defect marked, a draft and a report in Thai), the ready-made views, the 3D viewer, real 429s from a server with tight limits, axe-core WCAG 2.2 A/AA checks, tap targets and CSP reports. A `live-ar` project plays ray-traced camera videos with exact ground truth into the live view: in the 18 Oct run the overlay sat 6–9 px from the truth at P1–P4 and 2 px at D1, on a 1194 × 772 px view (the test allows 10 px, about half a degree). Each of the 13 bugs the suite found has a test that asserts the fixed behaviour (`web/e2e/support/bugs.ts`): 12 are fixed, and one, Tab leaving the usage-limit popup, is still a `test.fixme`. It is Chromium, not Safari: Quick Look and the iOS motion prompt still need a device.
+**End to end.** The Playwright suite in `web/e2e/` has its own `package.json`, so it isn't part of `make test` or the image. It drives the built app on the real FastAPI server with the offline Gemini stand-in and an in-memory store, in Chromium as a laptop, an iPad Pro 11 and an iPhone 15. It covers the start page, the laptop popup, the virtual demo (the three images in the upload, every planted defect marked, a draft and a report in Thai), the ready-made views, the 3D viewer, the Checks page (review decisions, session scoping, model text shown as plain text, long notes kept on screen), real 429s from a server with tight limits, axe-core WCAG 2.2 A/AA checks, tap targets and CSP reports. A `live-ar` project plays ray-traced camera videos with exact ground truth into the live view: in the 18 Oct run the overlay sat 6–9 px from the truth at P1–P4 and 2 px at D1, on a 1194 × 772 px view (the test allows 10 px, about half a degree). Each of the 13 bugs the suite found has a test that asserts the fixed behaviour (`web/e2e/support/bugs.ts`): 12 are fixed, and one, Tab leaving the usage-limit popup, is still a `test.fixme`. It is Chromium, not Safari: Quick Look and the iOS motion prompt still need a device.
 
 ```bash
 (cd bim && uv run python -m truesite_bim.site --sheets-only --base-url https://127.0.0.1:8813 --sheets-dir ../web/public/sheets)
