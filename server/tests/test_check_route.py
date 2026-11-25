@@ -263,3 +263,11 @@ def test_persistence_failure_still_returns_findings(client, store, monkeypatch):
     monkeypatch.setattr(store, "put_blob", boom)
     r = post(client)
     assert r.status_code == 200 and r.json()["saved"] is False and r.json()["photo_url"] is None
+
+
+def test_a_photo_that_cannot_be_decoded_still_gets_a_check_with_the_second_look_on(make_client):
+    # The stub JPEG passes upload validation (magic bytes) but cannot be decoded for the close-ups.
+    client = make_client(check_verify=True)
+    r = post(client)
+    assert r.status_code == 200, r.text
+    assert "verify: skipped, an image could not be decoded" in r.json()["result"]["warnings"]
