@@ -141,8 +141,8 @@ Rebuild the site model from `bim/truesite_bim/site.py` with `make models`.
 | Suite | Command | Result (18 Oct) |
 |---|---|---|
 | BIM pipeline (pytest) | `cd bim && uv run pytest -q` | 88 passed |
-| Server (pytest, Gemini mocked) | `cd server && uv run pytest -q` | 529 passed, 9 skipped (they need the Firestore emulator) |
-| Web (vitest) and types | `cd web && npx vitest run && npx tsc -b` | 549 passed; `tsc -b` clean |
+| Server (pytest, Gemini mocked) | `cd server && uv run pytest -q` | 578 passed, 11 skipped (they need the Firestore emulator) |
+| Web (vitest) and types | `cd web && npx vitest run && npx tsc -b` | 584 passed; `tsc -b` clean |
 | End to end (Playwright) | in `web/e2e`, below | 166 passed, 4 skipped (desktop, iPad, iPhone, limits, live AR) |
 
 `make test` runs the first three. No suite calls live Gemini.
