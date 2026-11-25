@@ -152,13 +152,18 @@ Errors are FastAPI `HTTPException` with `detail = {"code": <code>, ...}`. Paths 
 | GET `/api/projects/{project_id}` | — | `ProjectManifest` | 404 `unknown_project` |
 | GET `/api/projects/{project_id}/model.glb` | — | glb (`model/gltf-binary`, ETag; 304 on a matching `If-None-Match`) | 404 `unknown_project` |
 | POST `/api/check` | multipart: `photo` (JPEG ≤ 4 MiB), `render` (PNG ≤ 4 MiB), optional `overlay` (JPEG ≤ 4 MiB: the photo with each mark's design outline, Gemini's IMAGE 3), `context` (JSON string → `CheckContext`); header `X-Session-Id` | `CheckResponse` | 413 · 415 · 422 (loc `["body","context",…]`) · 404 `unknown_project` · 422 `unknown_element` (a mark's guid is not in the project; before any limit) · 429 `rate_limited` (+`retry_after_s`, `Retry-After`) · 429 `daily_cap` (+`retry_after_s` to midnight UTC, `Retry-After`) · 429 `model_quota` (Gemini's own quota after every fallback model; +`retry_after_s`: Google's retry delay, else 60, `Retry-After`) · 503 `busy` (cap check failed) · 503 `model_unavailable` (timeout / unavailable) · 502 `model_bad_output` · 422 `model_blocked` · 500 `model_bad_request` |
-| GET `/api/runs/{run_id}/{photo.jpg\|render.png}` | header `X-Session-Id` | image bytes (owner session only) | 404 `unknown_run` (also another session's run) · 422 (`run_id` not `RUN_ID_PATTERN`, or another file name) |
+| GET `/api/runs/{run_id}/{photo.jpg\|render.png\|overlay.jpg}` | header `X-Session-Id` | image bytes (owner session only); `overlay.jpg` only when the check sent one | 404 `unknown_run` (also another session's run, or no outline image) · 422 (`run_id` not `RUN_ID_PATTERN`, or another file name) |
+| GET `/api/runs` (optional `?project_id=`, `?limit=` 1–100, default 50) | header `X-Session-Id` | `RunList`: this session's checks as `RunSummary` rows, newest first (the Checks page) | 422 |
+| GET `/api/runs/{run_id}` | header `X-Session-Id` | `RunDetail`: the whole stored run (context, result, review, provenance, image paths), owner session only | 404 `unknown_run` (also another session's run) · 422 (`run_id` not `RUN_ID_PATTERN`) |
+| PUT `/api/runs/{run_id}/review/{mark}` (mark 1–25) | `ReviewIn` (`{"decision": "confirmed" \| "dismissed" \| null}`; null takes the decision back); header `X-Session-Id` | `ReviewOut` (`run_id`, `mark`, `decision`, `at`: the server's time, null when taken back) | 404 `unknown_run` (also another session's run) / `unknown_mark` (no finding with that mark in the run) · 422 · 429 `rate_limited` (REVIEWS_PER_IP_PER_HOUR; after the lookups; +`retry_after_s`, `Retry-After`) |
 | GET `/api/saved-results/{sample_id}` | — | `CheckResult` with `saved_at` set | 404 `unknown_sample` · 422 (`sample_id` not `SAMPLE_ID_PATTERN`) |
 | POST `/api/ask` | `AskRequest`; header `X-Session-Id` | `AskAnswer` | 404 `unknown_project` / `unknown_element` · 429 · 503/502/422/500 as for check |
 | POST `/api/issues/draft` | `IssueDraftRequest` (`run_id`, `mark`, optional `language`: `en` (default), `th`, `my`, `id`, `ms`, `vi`, `zh`, `ja`); header `X-Session-Id` | `IssueDraft`, written in that language | 404 `unknown_run` / `unknown_mark` / `unknown_element` · 429 · model errors as above |
 | POST `/api/report` | `ReportRequest` (`run_ids`: 1–8 of this session's runs, optional `language` as above); header `X-Session-Id` | `SiteReport` (`title`, `summary`, `safety[]`, `structure[]`, `progress[]`, `next_steps[]`, `checks`): Gemini's draft, safety first | 404 `unknown_run` · 422 · 429 (shares the question budget) · model errors as above |
 | POST `/api/issues` | `IssueIn`; header `X-Session-Id` | `Issue` (201) | 404 `unknown_project` / `unknown_element` · 404 `unknown_run` (not this session's stored run: send `run_id` null when the check returned `saved: false`) · 422 |
 | GET `/api/issues` (optional `?project_id=room1`; omitted = every project) | header `X-Session-Id` | `{"issues": Issue[], "demo": Issue[]}` (newest first) | 422 |
+
+POST `/api/check` also stores, with the run: the outline image (`overlay.jpg`) when sent, `duration_ms` (the server's time for the Gemini call) and a `provenance` block (the SHA-256 of the photo, render and outline image, the server's `received_at`, its `APP_VERSION`, and the client's `source`, `pose_quality` and `distance_m`). The Checks page shows them as the check's audit trail. A review decision makes no Gemini call either: a per-IP limit, no daily cap.
 
 Write limits on POST `/api/issues` (no Gemini call, so no daily cap): 404 `unknown_project` / `unknown_element` / `unknown_run` · 429 `rate_limited` (ISSUES_PER_IP_PER_HOUR; +`retry_after_s`, `Retry-After`) · 429 `issue_cap` (the session already has ISSUES_PER_SESSION issues). A `run_id` that does not match `RUN_ID_PATTERN` is a 422 on both issue POSTs. On every route that takes `X-Session-Id`, a missing or malformed header is a 422 (loc `["header","X-Session-Id"]`).
 
@@ -169,6 +174,7 @@ Client routes (the SPA fallback serves index.html):
 - `/model`: the viewer. `?project={project_id}` picks the project; the default is `site` (`DEFAULT_PROJECT_ID` in `ViewerPage.tsx`).
 - `/a/{project_id}/{anchor_id}`: live AR. The demo shows the camera overlay only. `?xr=1` brings back Walk inside (Quick Look / WebXR hit-test) and Android Start AR. `?eval=1` shows the eval crosses, and `?dev=1` adds Save as sample. `?arlag=<ms>` (up to 300; default 60) sets the frame lag the sensor fusion assumes when the browser doesn't stamp each frame's capture time. On a laptop or PC the page opens the `DeviceTip` popup every time.
 - `/samples`: `?at={P1..P4}` opens the virtual site at that QR spot (`VirtualSite.tsx`), and `?photos` opens the still sample photos (§8). `?dev=1` shows the photos too, plus Run all samples. A bare `/samples` scrolls to the start page's virtual demo section.
+- `/checks`: the Checks page (`ChecksPage.tsx`): every check from this browser session, newest first, with summary tiles and a Needs review filter. `?run={run_id}` opens one check: the photo and the design render (or the outline image) side by side, its findings in review-first order (severity high to low, then the less sure first) with Confirm finding, Dismiss as false alarm and Draft issue, and an audit trail. A run of another session shows "Check not found". The top bar links it after Virtual demo, and the virtual demo's results open the check just run ("Open in Checks").
 
 Any other path, including the old `/issues`, goes to the start page. Since #75, issues are drafted and saved from a finding, and no page lists them. `GET /api/issues` stays for the API.
 
@@ -185,6 +191,8 @@ ImageQuality = Literal["good","too_dark","blurred","marker_far","occluded"]
 PoseQuality = Literal["good","fair","poor"]
 Direction = Literal["left","right","up","down","forward","back","none"]
 Severity = Literal["high","medium","low"]
+CheckSource = Literal["virtual","live","sample"]      # where a check came from: the virtual demo, live AR, the sample photos
+ReviewDecision = Literal["confirmed","dismissed"]     # a person's decision on a finding: real, or a false alarm
 
 class Element:          guid, ifc_class, name, storey, bbox_m: list[list[float]] (2x3), load_bearing: bool | None, props: dict[str, Any]
 class Anchor:           anchor_id, project_id, qr_size_m: float, position_m: list[float] (3), normal: list[float] (3), up: list[float] (3), scale: float, label: str = ""
@@ -192,7 +200,8 @@ class ProjectManifest:  project_id, name, model_url: str, elements: list[Element
 
 class VisibleElement:   mark: int 1..25, guid, ifc_class, name = "", box: Box, key_dims: str = "" (<=200)            # extra="forbid"
 class CheckContext:     project_id, anchor_id, pose_quality: PoseQuality, distance_m: float 0..50,
-                        visible: list[VisibleElement] (1..25, marks exactly 1..n in any order), sample_id: str | None (pattern ^[a-z0-9][a-z0-9_-]{0,63}$)
+                        visible: list[VisibleElement] (1..25, marks exactly 1..n in any order), sample_id: str | None (pattern ^[a-z0-9][a-z0-9_-]{0,63}$),
+                        source: CheckSource | None = None   # kept in the run's provenance; trusted for nothing else
 
 class Offset:           direction: Direction, approx_cm: int 0..500   # design -> built, as seen in the photo; forward = nearer the camera, back = further
 class Finding:          mark, guid, name, ifc_class, status: Status, confidence: float 0..1, evidence_box: Box | None,
@@ -204,7 +213,24 @@ class CheckResult:      project_id, anchor_id, image_quality: ImageQuality, pose
                         summary: str (<=300), warnings: list[str], usage: Usage | None = None, model_version: str | None = None,
                         saved_at: str | None = None      # ISO time, set only on /api/saved-results responses
 class CheckResponse:    run_id: str, saved: bool, photo_url: str | None, result: CheckResult
-class CheckRun:         run_id, session_id, project_id, anchor_id, created_at: datetime, context: dict, result: dict, photo_key, render_key
+class CheckRun:         run_id, session_id, project_id, anchor_id, created_at: datetime, context: dict, result: dict, photo_key, render_key,
+                        overlay_key: str | None = None, duration_ms: int | None = None, provenance: Provenance | None = None,
+                        review: dict[str, FindingReview] = {}      # str(mark) -> decision; extra="ignore": runs stored before these fields load
+class FindingReview:    decision: ReviewDecision, at: datetime (server time)
+class Provenance:       photo_sha256, render_sha256, overlay_sha256: str | None, received_at: datetime (server, before the Gemini call),
+                        app_version: str (APP_VERSION), source: CheckSource | None, pose_quality: PoseQuality | None, distance_m: float | None
+class ReviewIn:         decision: ReviewDecision | None        # extra="forbid"; required key, null takes the decision back
+class ReviewOut:        run_id, mark: int, decision: ReviewDecision | None, at: datetime | None
+class StatusCounts:     present_ok, missing, misplaced, different_from_design, cannot_judge: int
+class SeverityCounts:   high, medium, low: int
+class RunSummary:       run_id, created_at, project_id, anchor_id, source: CheckSource | None, image_quality: str | None,
+                        by_status: StatusCounts, by_severity: SeverityCounts (every flagged finding), unexpected: int,
+                        lowest_confidence: float | None (least sure flagged finding), needs_review, confirmed, dismissed, reviewed (= confirmed + dismissed),
+                        high_open (high, not dismissed): int, model_version: str | None, cost_usd_est: float | None, duration_ms: int | None, summary: str
+                        # "flagged" = a finding with a severity; decisions on other marks are kept but not counted (app/summaries.py)
+class RunList:          runs: list[RunSummary]
+class RunDetail:        run_id, created_at, project_id, anchor_id, source, context: dict, result: dict, review: dict[str, FindingReview],
+                        provenance: Provenance | None, duration_ms: int | None, images: {photo, render, overlay: str | None}   # session-scoped paths
 
 class AskRequest:       project_id, guid, question: str 1..300
 class AskAnswer:        answer: str (<=600), cited_properties: list[str], confidence: float 0..1
@@ -228,6 +254,7 @@ TypeScript (`web/src/api/types.ts`): identical field names. The API's `VisibleEl
 #   STATIC_DIR [<repo>/web/dist]  MODELS_DIR [<repo>/bim/models]  MAX_UPLOAD_BYTES [4 MiB]  MAX_BODY_BYTES [13 MiB: three files + context]
 #   CHECKS_PER_IP_PER_HOUR [10]  ASKS_PER_IP_PER_HOUR [30]  DAILY_CHECK_CAP [300]  DAILY_ASK_CAP [1000]   (make deploy sets 30 checks/IP/h and daily caps of 300 and 300)
 #   ISSUES_PER_IP_PER_HOUR [30]  ISSUES_PER_SESSION [100]  API_DOCS [off; 1 = Swagger UI at /api/docs]
+#   REVIEWS_PER_IP_PER_HOUR [300]  APP_VERSION [dev; `make deploy` sets the commit, with -dirty for uncommitted changes]
 #   TRUSTED_PROXY_HOPS [1]  STORE_BACKEND [memory|gcp]  GOOGLE_CLOUD_PROJECT  GCS_BUCKET  FIRESTORE_DATABASE [(default)]
 #   GEMINI_MODE [fake|live]  (live uses GOOGLE_GENAI_USE_ENTERPRISE=true + GOOGLE_CLOUD_PROJECT + GOOGLE_CLOUD_LOCATION=global,
 #                             or GEMINI_API_KEY as the fallback backend)
@@ -248,13 +275,18 @@ class Store(Protocol):
     def try_consume_daily(self, day: str, cap: int) -> tuple[bool, int]   # day key e.g. "2026-10-12" or "2026-10-12-ask"
     def save_check_run(self, run: CheckRun) -> None
     def get_check_run(self, run_id: str, session_id: str) -> CheckRun | None
+    def list_check_runs(self, session_id: str, project_id: str | None = None, limit: int = 50) -> list[CheckRun]   # newest first; Firestore: equality filter on session_id (+ project_id), at most 200 read, sorted in Python (no composite index)
+    def set_review(self, run_id: str, session_id: str, mark: int, decision: ReviewDecision | None, at: datetime) -> bool   # only the caller's own run; False if missing or another session's; Firestore: one update of review.`<mark>`
     def save_issue(self, issue: Issue) -> None                             # upsert by id
     def list_issues(self, session_id: str, project_id: str | None = None, limit: int = 200) -> list[Issue]
     def put_saved_result(self, sample_id: str, result: dict) -> None
     def get_saved_result(self, sample_id: str) -> dict | None
     def put_blob(self, key: str, data: bytes, content_type: str) -> str
     def get_blob(self, key: str) -> bytes | None
-def blob_key(session_id: str, run_id: str, name: str) -> str          # "uploads/<session>/<run>/<name>"
+def blob_key(session_id: str, run_id: str, name: str) -> str          # "uploads/<session>/<run>/<name>": photo.jpg, render.png, overlay.jpg
+# app/summaries.py
+def summarise_run(run: CheckRun) -> RunSummary                         # counts from the stored result, read defensively; source from provenance, else context
+def run_detail(run: CheckRun) -> RunDetail
 # app/severity.py
 STRUCTURAL_CLASSES = {"IfcColumn","IfcBeam","IfcSlab","IfcFooting","IfcMember","IfcPile","IfcPlate",
                       "IfcReinforcingBar","IfcReinforcingMesh","IfcTendon"}   # rebar rates high; marks still rank it after structure
@@ -293,9 +325,10 @@ def create_app(settings: Settings | None = None, *, store: Store | None = None, 
 export const SESSION_KEY = 'truesite.session'
 export function getSessionId(): string                   // crypto.randomUUID(), else a v4 built from crypto.getRandomValues
 // src/router.ts
-export type Route = { name: 'home' } | { name: 'viewer'; projectId?: string } | { name: 'live'; projectId: string; anchorId: string } | { name: 'samples' }
-export function parseRoute(pathname: string, search = ''): Route   // unknown paths (and /issues) -> home; viewer projectId from ?project=
+export type Route = { name: 'home' } | { name: 'viewer'; projectId?: string } | { name: 'live'; projectId: string; anchorId: string } | { name: 'samples' } | { name: 'checks'; runId?: string }
+export function parseRoute(pathname: string, search = ''): Route   // unknown paths (and /issues) -> home; viewer projectId from ?project=; checks runId from ?run=
 export function viewerPathFor(projectId: string): string // '/model?project=<id>'
+export function checksPathFor(runId?: string): string    // '/checks' or '/checks?run=<id>'
 export function navigate(path: string): void             // history.pushState + notify
 export function useRoute(): Route                        // React hook (popstate + navigate); path and query
 // src/api/client.ts
@@ -303,7 +336,10 @@ export class ApiError extends Error { status: number; code?: string; retryAfterS
 export function getProject(projectId: string): Promise<ProjectManifest>
 export function postCheck(photo: Blob, render: Blob, ctx: CheckContext, overlay?: Blob | null): Promise<CheckResponse>   // 120 s timeout
 export function getSavedResult(sampleId: string): Promise<CheckResult>
-export function fetchRunImage(runId: string, name: 'photo.jpg' | 'render.png'): Promise<string>   // object URL
+export function fetchRunImage(runId: string, name: 'photo.jpg' | 'render.png' | 'overlay.jpg'): Promise<string>   // object URL
+export function listRuns(projectId?: string): Promise<RunList>                // GET /api/runs (the Checks page)
+export function getRun(runId: string): Promise<RunDetail>                     // GET /api/runs/{run_id}
+export function reviewFinding(runId: string, mark: number, decision: ReviewDecision | null): Promise<ReviewOut>   // PUT /api/runs/{run_id}/review/{mark}
 export function ask(req: AskRequest): Promise<AskAnswer>
 export function draftIssue(req: IssueDraftRequest): Promise<IssueDraft>
 export function writeReport(req: ReportRequest): Promise<SiteReport>   // POST /api/report
@@ -366,9 +402,19 @@ export function anchorCorners(snap, anchor, origin): Point[] | null   // corners
 // src/check/runCheck.ts
 export type CheckInput = { photo: Blob; photoW: number; photoH: number; videoW: number; videoH: number; K: Intrinsics; pose: Pose; anchor: Anchor;
                            poseQuality: PoseQuality; model: LoadedModel; scene: THREE.Scene; renderer: THREE.WebGLRenderer; elements: ReadonlyMap<string, Element>; sampleId?: string;
+                           source?: CheckSource;        // 'virtual' (VirtualSite), 'sample' (sampleCheckInput), 'live' (LivePage)
                            look?: ConstructionLook }   // live AR: hidden layers, cut and view distance apply at the snapshot pose
+export function checkContext(input, marks: MarkedElement[]): CheckContext   // the `context` part, with sample_id and source (null when unset)
 export function runCheck(input: CheckInput): Promise<{ response: CheckResponse | null; saved: CheckResult | null; error: ApiError | null; marks: MarkedElement[]; render: Blob | null;
                            viewNote: string | null }>   // "Checked as shown: Rebar hidden; cut above 3.3 m." or null
+// src/check/confidence.ts — the one place the confidence bands are set (tune them after a calibration analysis)
+export const CONFIDENCE_BANDS = { high: 0.85, medium: 0.6 }   // High >= 0.85, Medium >= 0.6, Low below; banded on the number as shown (two decimals)
+export function confidenceBand(c: number): 'high' | 'medium' | 'low'
+export function confidenceText(c: number, opts?: { hint?: boolean }): string   // "High · 0.92", "Medium · 0.71", "Low · 0.55 — take a closer look"
+//   ui/ConfidenceBadge.tsx shows it on every finding: the Checks page and FindingsPanel (not on can't-judge marks)
+// src/check/reviewOrder.ts
+export function isFlagged(f): boolean                       // a finding with a severity
+export function reviewFirst<F>(findings: readonly F[]): F[] // severity high -> low, then the less sure first; then can't judge (by mark); then matches (least sure first)
 ```
 
 ## 8. Samples
@@ -405,7 +451,7 @@ The four committed samples are simulated renders of the `site` project's simulat
 
 **Server routing.** `app/main.py` (Part 1) builds the app and `app.state`:
 - `settings`, `store`, `repo`, `client`, `now`
-- `check_limiter` (CHECKS_PER_IP_PER_HOUR / 3600 s), `ask_limiter` (ASKS_PER_IP_PER_HOUR / 3600 s) and `issue_limiter` (ISSUES_PER_IP_PER_HOUR / 3600 s)
+- `check_limiter` (CHECKS_PER_IP_PER_HOUR / 3600 s), `ask_limiter` (ASKS_PER_IP_PER_HOUR / 3600 s), `issue_limiter` (ISSUES_PER_IP_PER_HOUR / 3600 s) and `review_limiter` (REVIEWS_PER_IP_PER_HOUR / 3600 s)
 
 It then includes routers. Each router module exposes `router = APIRouter()` and gets everything through `app/deps.py` (Part 1):
 
@@ -419,7 +465,7 @@ def get_now(request: Request) -> Callable[[], datetime]
 SessionId = Annotated[str, Header(alias="X-Session-Id", pattern=SESSION_ID_PATTERN)]   # missing/malformed -> 422
 SettingsDep, StoreDep, RepoDep, ClientDep = Annotated[...]                            # Depends(...) aliases
 def enforce_rate_limit(request: Request, limiter_name: str) -> None
-    # per-IP limiter only -> 429 rate_limited (+Retry-After); POST /api/issues ("issue_limiter")
+    # per-IP limiter only -> 429 rate_limited (+Retry-After); POST /api/issues ("issue_limiter"), PUT /api/runs/{run_id}/review/{mark} ("review_limiter")
 def enforce_limits(request: Request, limiter_name: str, day_suffix: str, cap: int) -> None
     # per-IP limiter -> 429 rate_limited (+Retry-After); store.try_consume_daily(f"{day}{day_suffix}", cap) -> 429 daily_cap (+retry_after_s, Retry-After: to midnight UTC); store error -> 503 busy
 ```
@@ -430,6 +476,7 @@ def enforce_limits(request: Request, limiter_name: str, day_suffix: str, cap: in
 | `app/routes/check.py` | 3 | `/api/check`, `/api/runs/{run_id}/{name}`, `/api/saved-results/{sample_id}` |
 | `app/routes/ask.py` | 4 | `/api/ask` |
 | `app/routes/issues.py` | 4 | `/api/issues/draft`, `/api/report` (added in #90), `/api/issues` (POST and GET; no page calls GET since #75) |
+| `app/routes/runs.py` | Checks page (Nov) | `/api/runs` (GET), `/api/runs/{run_id}` (GET), `/api/runs/{run_id}/review/{mark}` (PUT); `main.py` includes it and adds `review_limiter` (REVIEWS_PER_IP_PER_HOUR / 3600 s) |
 
 `/api/health` and `/api/whoami` live in `main.py`. Part 1's `main.py` already contains the `include_router` lines for all four routers. Parts 3 and 4 *create* their router files, and Part 1 ships each of them as a stub (`router = APIRouter()` with no routes), so `main.py` never changes after Part 1.
 
@@ -441,7 +488,7 @@ def enforce_limits(request: Request, limiter_name: str, day_suffix: str, cap: in
 | `src/ui/LivePage.tsx` | Part 1 (stub) | Part 2 |
 | `src/ui/SamplesPage.tsx` | Part 1 (stub) | Part 3 |
 
-Later additions: `src/ui/HomePage.tsx`, the start page at `/`. `src/ui/IssuesPage.tsx` was removed in #75, because issues are saved from their finding.
+Later additions: `src/ui/HomePage.tsx`, the start page at `/`, and `src/ui/ChecksPage.tsx`, the Checks page at `/checks`. `src/ui/IssuesPage.tsx` was removed in #75, because issues are saved from their finding.
 
 `App.tsx` was meant to stay as Part 1 left it, but it has changed since (the start page, #75, #76, #78, #82): it renders `TopBar` on every route, routes `/` to `HomePage`, and sets a `document.title` per route. Change it only for a new route. Shared panels have one owner each:
 

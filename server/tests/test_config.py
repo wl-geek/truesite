@@ -11,7 +11,7 @@ ENV_VARS = [
     "STATIC_DIR", "MODELS_DIR", "MAX_UPLOAD_BYTES", "MAX_BODY_BYTES", "CHECKS_PER_IP_PER_HOUR",
     "ASKS_PER_IP_PER_HOUR", "DAILY_CHECK_CAP", "DAILY_ASK_CAP", "TRUSTED_PROXY_HOPS", "STORE_BACKEND",
     "GOOGLE_CLOUD_PROJECT", "GCS_BUCKET", "FIRESTORE_DATABASE", "GEMINI_MODE", "ISSUES_PER_IP_PER_HOUR",
-    "ISSUES_PER_SESSION", "API_DOCS", "MAX_IMAGE_PIXELS",
+    "ISSUES_PER_SESSION", "API_DOCS", "REVIEWS_PER_IP_PER_HOUR", "APP_VERSION", "MAX_IMAGE_PIXELS",
 ]
 
 
@@ -54,7 +54,7 @@ def test_every_variable_is_read(monkeypatch: pytest.MonkeyPatch) -> None:
         "DAILY_CHECK_CAP": "5", "DAILY_ASK_CAP": "6", "TRUSTED_PROXY_HOPS": "2", "STORE_BACKEND": "gcp",
         "GOOGLE_CLOUD_PROJECT": "truesite-hack", "GCS_BUCKET": "truesite-hack-uploads",
         "FIRESTORE_DATABASE": "other", "GEMINI_MODE": "live", "ISSUES_PER_IP_PER_HOUR": "7",
-        "ISSUES_PER_SESSION": "8", "API_DOCS": "1", "MAX_IMAGE_PIXELS": "9",
+        "ISSUES_PER_SESSION": "8", "API_DOCS": "1", "REVIEWS_PER_IP_PER_HOUR": "9", "APP_VERSION": "3f2a9c1", "MAX_IMAGE_PIXELS": "9",
     }
     for k, v in env.items():
         monkeypatch.setenv(k, v)
@@ -63,8 +63,14 @@ def test_every_variable_is_read(monkeypatch: pytest.MonkeyPatch) -> None:
         checks_per_ip_per_hour=3, asks_per_ip_per_hour=4, daily_check_cap=5, daily_ask_cap=6,
         trusted_proxy_hops=2, store_backend="gcp", gcp_project="truesite-hack", gcs_bucket="truesite-hack-uploads",
         firestore_database="other", gemini_mode="live", issues_per_ip_per_hour=7, issues_per_session=8,
-        api_docs=True, max_image_pixels=9,
+        api_docs=True, reviews_per_ip_per_hour=9, app_version="3f2a9c1", max_image_pixels=9,
     )
+
+
+def test_review_limit_and_app_version_defaults() -> None:
+    s = Settings.from_env()
+    assert s.reviews_per_ip_per_hour == 300  # a person may review a few dozen findings, and undo some
+    assert s.app_version == "dev"
 
 
 @pytest.mark.parametrize("value,expected", [("1", True), ("true", True), ("0", False), ("false", False), ("", False)])

@@ -183,6 +183,15 @@ setup() {
   # then deploy with GEMINI_BACKEND=apikey (it sets GOOGLE_GENAI_USE_ENTERPRISE=false and the secret).
 }
 
+app_version() {  # the commit being deployed (-dirty with uncommitted changes), for each check's audit trail; APP_VERSION overrides
+  local v="${APP_VERSION:-}"
+  if [ -z "$v" ]; then
+    v="$(git rev-parse --short=12 HEAD 2>/dev/null)" || v="dev"
+    [ "$v" = "dev" ] || git diff --quiet HEAD -- 2>/dev/null || v="$v-dirty"
+  fi
+  printf '%s' "$v" | tr -cd 'A-Za-z0-9._-'  # one --set-env-vars item: no commas
+}
+
 deploy() {
   # ---- 8. Build on Cloud Build from ./Dockerfile and deploy ----
   [ -f Dockerfile ] && [ -d bim ] && [ -d web ] || die "run this from the repo root"
@@ -197,6 +206,7 @@ deploy() {
               VERIFY_PHOTO_RESOLUTION; do
     [ -z "${!name:-}" ] || env="$env,$name=${!name}"
   done
+  env="$env,APP_VERSION=$(app_version)"
   case "$GEMINI_BACKEND" in
     enterprise) env="$env,GOOGLE_GENAI_USE_ENTERPRISE=true,GOOGLE_CLOUD_LOCATION=$GEMINI_LOCATION" ;;
     # The SDK ignores GEMINI_API_KEY while GOOGLE_GENAI_USE_ENTERPRISE=true, so the flag goes with the key.

@@ -47,6 +47,10 @@ ImageQuality = Literal["good", "too_dark", "blurred", "marker_far", "occluded"]
 PoseQuality = Literal["good", "fair", "poor"]
 Direction = Literal["left", "right", "up", "down", "forward", "back", "none"]
 Severity = Literal["high", "medium", "low"]
+# Where a check came from: the virtual demo, the ready-made sample photos, or the live camera.
+CheckSource = Literal["virtual", "live", "sample"]
+# A person's decision on one finding: the deviation is real, or it was a false alarm.
+ReviewDecision = Literal["confirmed", "dismissed"]
 
 
 # ---- project data (bim/models/<project>/) -------------------------------------------------
@@ -109,6 +113,8 @@ class CheckContext(BaseModel):
     visible: list[VisibleElement] = Field(min_length=1, max_length=25)
     # Set in sample-photo mode: a successful real result becomes that sample's saved result.
     sample_id: str | None = Field(default=None, pattern=SAMPLE_ID_PATTERN)
+    # What the client says it ran the check from (stored in the run's provenance; not trusted for anything else).
+    source: CheckSource | None = None
 
     @model_validator(mode="after")
     def _marks_1_to_n(self) -> "CheckContext":
@@ -179,8 +185,35 @@ class CheckResponse(BaseModel):
     result: CheckResult
 
 
+class FindingReview(BaseModel):
+    """A person's decision on one finding, stamped with the server's time."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    decision: ReviewDecision
+    at: datetime
+
+
+class Provenance(BaseModel):
+    """What the server received for a check, recorded as it arrived: the audit trail. The hashes identify the
+    exact images Gemini was sent; source, pose_quality and distance_m are the client's own statements."""
+
+    model_config = ConfigDict(extra="ignore")
+
+    photo_sha256: str
+    render_sha256: str
+    overlay_sha256: str | None = None
+    received_at: datetime  # server time, before the Gemini call
+    app_version: str  # APP_VERSION of the server that ran the check
+    source: CheckSource | None = None
+    pose_quality: PoseQuality | None = None
+    distance_m: float | None = None
+
+
 class CheckRun(BaseModel):
-    """Stored per check (session-scoped); the photo and render live in blobs under blob_key()."""
+    """Stored per check (session-scoped); the photo, render and outline image live in blobs under blob_key().
+
+    The fields after render_key were added for the Checks page; runs stored before them load with the defaults."""
 
     model_config = ConfigDict(extra="ignore")  # tolerate store-only fields such as expire_at
 
@@ -193,6 +226,92 @@ class CheckRun(BaseModel):
     result: dict[str, Any]
     photo_key: str
     render_key: str
+    overlay_key: str | None = None  # the outline image (IMAGE 3), when the client sent one
+    duration_ms: int | None = None  # server time for the Gemini call (and its repair)
+    provenance: Provenance | None = None
+    review: dict[str, FindingReview] = Field(default_factory=dict)  # str(mark) -> decision
+
+
+# ---- the Checks page (GET /api/runs, GET /api/runs/{run_id}, PUT /api/runs/{run_id}/review/{mark}) ----------
+class ReviewIn(BaseModel):
+    """Body of PUT /api/runs/{run_id}/review/{mark}: null takes the decision back."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    decision: ReviewDecision | None
+
+
+class ReviewOut(BaseModel):
+    run_id: str
+    mark: int
+    decision: ReviewDecision | None
+    at: datetime | None
+
+
+class StatusCounts(BaseModel):
+    present_ok: int = 0
+    missing: int = 0
+    misplaced: int = 0
+    different_from_design: int = 0
+    cannot_judge: int = 0
+
+
+class SeverityCounts(BaseModel):
+    high: int = 0
+    medium: int = 0
+    low: int = 0
+
+
+class RunSummary(BaseModel):
+    """One row of GET /api/runs. "Flagged" findings are the deviations: those with a severity."""
+
+    run_id: str
+    created_at: datetime
+    project_id: str
+    anchor_id: str
+    source: CheckSource | None
+    image_quality: str | None
+    by_status: StatusCounts
+    by_severity: SeverityCounts  # every flagged finding, reviewed or not
+    unexpected: int
+    lowest_confidence: float | None  # the least sure flagged finding; None when nothing is flagged
+    needs_review: int  # flagged findings with no decision yet
+    confirmed: int
+    dismissed: int
+    reviewed: int  # confirmed + dismissed
+    high_open: int  # high-severity findings not dismissed as false alarms
+    model_version: str | None
+    cost_usd_est: float | None
+    duration_ms: int | None
+    summary: str
+
+
+class RunList(BaseModel):
+    runs: list[RunSummary]
+
+
+class RunImages(BaseModel):
+    """Session-scoped image paths (fetch them with X-Session-Id)."""
+
+    photo: str
+    render: str
+    overlay: str | None
+
+
+class RunDetail(BaseModel):
+    """GET /api/runs/{run_id}: the whole stored check for its own session."""
+
+    run_id: str
+    created_at: datetime
+    project_id: str
+    anchor_id: str
+    source: CheckSource | None
+    context: dict[str, Any]
+    result: dict[str, Any]
+    review: dict[str, FindingReview]
+    provenance: Provenance | None
+    duration_ms: int | None
+    images: RunImages
 
 
 # ---- element Q&A ------------------------------------------------------------------------------

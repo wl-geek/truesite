@@ -167,3 +167,62 @@ def test_blobs(any_store: Store) -> None:
     assert uri.endswith(key)
     assert any_store.get_blob(key) == b"\xff\xd8\xffdata"
     assert any_store.get_blob(blob_key("s2", "run123", "photo.jpg")) is None
+
+
+def _run(session: str, run_id: str, minutes: int = 0, project: str = "room1") -> CheckRun:
+    return CheckRun(
+        run_id=run_id,
+        session_id=session,
+        project_id=project,
+        anchor_id="A1",
+        created_at=T0 + timedelta(minutes=minutes),
+        context={"visible": [{"mark": 1, "box": [0, 0, 10, 10]}], "source": "virtual"},
+        result={"findings": [{"mark": 1, "status": "missing", "confidence": 0.8, "severity": "high"},
+                             {"mark": 2, "status": "present_ok", "confidence": 0.9, "severity": None}], "summary": "x"},
+        photo_key=f"uploads/{session}/{run_id}/photo.jpg",
+        render_key=f"uploads/{session}/{run_id}/render.png",
+    )
+
+
+def test_check_runs_listed_by_session_and_project_newest_first(any_store: Store) -> None:
+    any_store.save_check_run(_run("a", "a-old-run-00000000", 0))
+    any_store.save_check_run(_run("a", "a-new-run-00000000", 5))
+    any_store.save_check_run(_run("a", "a-desk-run-0000000", 3, project="desk"))
+    any_store.save_check_run(_run("b", "b-run-000000000000", 1))
+
+    assert [r.run_id for r in any_store.list_check_runs("a")] == ["a-new-run-00000000", "a-desk-run-0000000", "a-old-run-00000000"]
+    assert [r.run_id for r in any_store.list_check_runs("a", "room1")] == ["a-new-run-00000000", "a-old-run-00000000"]
+    assert [r.run_id for r in any_store.list_check_runs("b")] == ["b-run-000000000000"]
+    assert any_store.list_check_runs("nobody") == []
+    assert [r.run_id for r in any_store.list_check_runs("a", limit=1)] == ["a-new-run-00000000"]
+    got = any_store.list_check_runs("a", "room1")[0]
+    assert got.created_at == T0 + timedelta(minutes=5) and got.result["findings"][0]["severity"] == "high"
+    assert got.review == {} and got.provenance is None and got.overlay_key is None and got.duration_ms is None
+
+
+def test_set_review_records_and_clears_a_decision_on_the_callers_own_run_only(any_store: Store) -> None:
+    run = _run("a", "a-run-000000000000")
+    any_store.save_check_run(run)
+    at = T0 + timedelta(hours=1)
+
+    assert any_store.set_review(run.run_id, "a", 1, "confirmed", at) is True
+    got = any_store.get_check_run(run.run_id, "a")
+    assert got is not None and got.review["1"].decision == "confirmed" and got.review["1"].at == at
+    assert got.result == run.result  # nothing else changes
+
+    assert any_store.set_review(run.run_id, "a", 2, "dismissed", at + timedelta(minutes=1)) is True
+    assert any_store.set_review(run.run_id, "a", 1, "dismissed", at + timedelta(minutes=2)) is True
+    got = any_store.get_check_run(run.run_id, "a")
+    assert {k: v.decision for k, v in got.review.items()} == {"1": "dismissed", "2": "dismissed"}
+    assert got.review["1"].at == at + timedelta(minutes=2)
+
+    assert any_store.set_review(run.run_id, "a", 1, None, at) is True  # undo
+    assert set(any_store.get_check_run(run.run_id, "a").review) == {"2"}
+    assert any_store.set_review(run.run_id, "a", 1, None, at) is True  # clearing twice is fine
+
+    # Another session's run, or no run at all: nothing is written.
+    assert any_store.set_review(run.run_id, "b", 2, "confirmed", at) is False
+    assert any_store.get_check_run(run.run_id, "a").review["2"].decision == "dismissed"
+    assert any_store.set_review("missing-run-0000000", "a", 1, "confirmed", at) is False
+    assert any_store.get_check_run("missing-run-0000000", "a") is None
+    assert [r.run_id for r in any_store.list_check_runs("a")] == [run.run_id]

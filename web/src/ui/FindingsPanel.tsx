@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import type { CheckResult, Finding } from '../api/types'
 import { whyItMatters } from '../check/risk'
+import { ConfidenceBadge } from './ConfidenceBadge'
 import { groupFindings, imageQualityMessage, NOT_A_SURVEY, savedLabel, statusText, summaryCounts } from './findingFormat'
 
 export type FindingsPanelProps = {
@@ -28,6 +29,8 @@ function Row({ f, selected, onSelect, onDraftIssue, saved = false }: {
         <span className="finding-text">
           <strong>{f.name || f.ifc_class}</strong>
           <span>{statusText(f)}</span>
+          {/* Can't judge has no confidence to show: below 0.5 the server hides the guess (spec 8). */}
+          {f.status !== 'cannot_judge' && <ConfidenceBadge value={f.confidence} />}
           {f.explanation && <span className="finding-why"><span className="finding-src">Gemini:</span> {f.explanation}</span>}
           {whyItMatters(f) && <span className="finding-risk"><span className="finding-src">Why it matters:</span> {whyItMatters(f)}</span>}
           {saved && <span className="finding-saved">✓ Issue saved</span>}

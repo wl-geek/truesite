@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { useRoute, type Route } from './router'
+import { ChecksPage } from './ui/ChecksPage'
 import { HomePage } from './ui/HomePage'
 import { LimitDialog } from './ui/LimitDialog'
 import { TopBar } from './ui/TopBar'
@@ -12,6 +13,7 @@ const TITLES: Record<Route['name'], string> = {
   viewer: '3D model · TrueSite',
   live: 'Live AR · TrueSite',
   samples: 'Virtual demo · TrueSite',
+  checks: 'Checks · TrueSite',
 }
 
 /** Top bar + one page per route, and the page title for each route. */
@@ -27,6 +29,7 @@ export default function App() {
       {route.name === 'viewer' && <ViewerPage key={route.projectId ?? ''} projectId={route.projectId} />}
       {route.name === 'live' && <LivePage key={`${route.projectId}/${route.anchorId}`} projectId={route.projectId} anchorId={route.anchorId} />}
       {route.name === 'samples' && <SamplesPage />}
+      {route.name === 'checks' && <ChecksPage runId={route.runId} />}
       <LimitDialog />
     </div>
   )

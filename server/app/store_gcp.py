@@ -2,10 +2,10 @@
 
 Data model
   usage/{YYYY-MM-DD[-ask]}  {checks, expire_at}                     daily cap counters (UTC day; count attempts)
-  check_runs/{run_id}       CheckRun fields + expire_at
+  check_runs/{run_id}       CheckRun fields + expire_at; review.{mark} holds a person's decision on that finding
   issues/{issue_id}         Issue fields + expire_at
   saved_results/{sample_id} {result, saved_at}                       last real result per sample photo
-  gs://<bucket>/uploads/<session_id>/<run_id>/{photo.jpg,render.png} 30-day lifecycle delete
+  gs://<bucket>/uploads/<session_id>/<run_id>/{photo.jpg,render.png,overlay.jpg} 30-day lifecycle delete
 
 `expire_at` lets a Firestore TTL policy delete old docs (see infra/gcloud.sh);
 Cloud Storage objects are deleted by the bucket lifecycle rule.
@@ -33,14 +33,19 @@ FIRESTORE_EMULATOR_HOST.
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
 from google.api_core.exceptions import NotFound
 from google.cloud import firestore, storage
 from google.cloud.firestore_v1 import FieldFilter
+from google.cloud.firestore_v1.field_path import FieldPath
+from pydantic import ValidationError
 
-from .schemas import CheckRun, Issue
+from .schemas import CheckRun, Issue, ReviewDecision
+
+log = logging.getLogger("truesite.store")
 
 RETENTION = timedelta(days=30)
 
@@ -52,6 +57,9 @@ SAVED = "saved_results"
 # Documents one issue list may read. Above ISSUES_PER_SESSION (100), which POST /api/issues
 # enforces, so the query returns all of a session's issues and the sort below sees every one.
 ISSUE_READ_LIMIT = 200
+# Documents one run list may read. A session makes at most CHECKS_PER_IP_PER_HOUR checks an hour and runs expire
+# after 30 days, so this holds every run of any session a person uses; a session with more gets 200 of them, sorted.
+RUN_READ_LIMIT = 200
 
 
 def firebase_firestore(project: str | None, database: str) -> firestore.Client:
@@ -122,6 +130,36 @@ class FirestoreGcsStore:
         if data.get("session_id") != session_id:
             return None
         return CheckRun.model_validate(data)
+
+    def list_check_runs(self, session_id: str, project_id: str | None = None, limit: int = 50) -> list[CheckRun]:
+        """Newest first, sorted here as list_issues does (no composite index). A document that no longer fits
+        CheckRun is skipped and logged, so one bad row can't take the whole list down."""
+        query = self.db.collection(RUNS).where(filter=FieldFilter("session_id", "==", session_id))
+        if project_id is not None:
+            query = query.where(filter=FieldFilter("project_id", "==", project_id))
+        rows: list[CheckRun] = []
+        for doc in query.limit(RUN_READ_LIMIT).stream():
+            try:
+                rows.append(CheckRun.model_validate(doc.to_dict()))
+            except ValidationError:
+                log.warning("check run %s does not fit CheckRun; left out of the list", doc.id)
+        rows.sort(key=lambda r: r.created_at, reverse=True)
+        return rows[:limit]
+
+    def set_review(self, run_id: str, session_id: str, mark: int, decision: ReviewDecision | None, at: datetime) -> bool:
+        """Reads only the owner field, then updates one map entry (review.`<mark>`), so two quick decisions on
+        different findings never overwrite each other. The owner never changes, so no transaction is needed."""
+        ref = self.db.collection(RUNS).document(run_id)
+        snap = ref.get(field_paths=["session_id"])
+        if not snap.exists or (snap.to_dict() or {}).get("session_id") != session_id:
+            return False
+        path = FieldPath("review", str(mark)).to_api_repr()  # review.`3`: a digit needs the backquotes
+        value = firestore.DELETE_FIELD if decision is None else {"decision": decision, "at": at}
+        try:
+            ref.update({path: value})
+        except NotFound:  # expired (TTL) between the read and the write
+            return False
+        return True
 
     # --- issues -----------------------------------------------------------------
     def save_issue(self, issue: Issue) -> None:

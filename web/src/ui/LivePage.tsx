@@ -15,7 +15,7 @@ import {
   aboutDistance, checkAvailability, coachHint, effectiveQrSize, findAnchor, isDeskAnchor, isFar, isLifeSizeFloor, scaleLabel, startDistanceM, virtualDemoHref,
   walkInsideFirst,
 } from '../scene/arMath'
-import { makeEvalMarkers, parseEvalPoints } from '../scene/evalMarkers'
+import { evalPointsUrl, makeEvalMarkers, parseEvalPoints } from '../scene/evalMarkers'
 import { paintOf } from '../scene/palette'
 import { disposePins, makePins } from '../scene/pins'
 import { pickUsdzRadius, usdzPlan } from '../scene/usdzVariants'
@@ -147,9 +147,10 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
       const anchor = findAnchor(project, anchorId)
       if (!anchor) throw new Error(UNKNOWN_ANCHOR_MESSAGE)
       model = await loadModel(project.model_url, new Set(project.elements.map((e) => e.guid)))
-      if (new URLSearchParams(window.location.search).has('eval')) {
-        // ?eval=1: green crosses at the surveyed points in web/public/eval/points.json (spec 10)
-        const points = parseEvalPoints(await fetch('/eval/points.json').then((r) => (r.ok ? r.json() : [])).catch(() => []))
+      const evalUrl = evalPointsUrl(window.location.search)
+      if (evalUrl) {
+        // ?eval=1 (site) or ?eval=room: green crosses at the taped points (spec 10, eval/README.md section 1)
+        const points = parseEvalPoints(await fetch(evalUrl).then((r) => (r.ok ? r.json() : [])).catch(() => []))
         model.ifcRoot.add(makeEvalMarkers(points))
       }
       if (cancelled) disposeModel(model)
@@ -259,7 +260,7 @@ export function LivePage({ projectId, anchorId }: LivePageProps) {
       const res = await runCheck({
         photo: snap.photo, photoW: snap.photoW, photoH: snap.photoH, videoW: snap.videoW, videoH: snap.videoH, K, pose,
         anchor: loaded.anchor, poseQuality: quality, model: loaded.model, scene: overlay.scene, renderer: overlay.renderer, elements,
-        look: overlay.look,
+        look: overlay.look, source: 'live',
       })
       if (!res.response) throw res.error ?? new ApiError('check failed', 0)
       const result = res.response.result
