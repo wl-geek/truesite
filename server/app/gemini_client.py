@@ -79,6 +79,7 @@ PRICE_OUT_PER_M = 3.75  # output price includes thinking tokens
 PRICES_PER_M = {
     "gemini-3.8-flash": (PRICE_IN_PER_M, PRICE_OUT_PER_M),
     "gemini-3.6-flash": (0.75, 3.75),
+    "gemini-3.5-flash": (1.50, 9.00),  # the first fallback costs more than 3.8 Flash's introductory price
     "gemini-3.5-flash-lite": (0.30, 2.50),
     "gemini-3.1-flash-lite": (0.25, 1.50),
 }
