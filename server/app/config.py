@@ -86,6 +86,11 @@ class Settings:
     # A second, close-up look at the marks most likely to be wrong (app/verify.py). Off unless CHECK_VERIFY=1.
     check_verify: bool = False
 
+    # A check of a shipped sample photo refreshes that sample's saved result, the fallback every visitor
+    # sees. Off unless SAVE_SAMPLE_RESULTS=1: the sample photos are public, so on the deployed service
+    # anyone could otherwise replace the fallback. Refresh them from a local server against the same store.
+    save_sample_results: bool = False
+
     @classmethod
     def from_env(cls) -> "Settings":
         return cls(
@@ -109,4 +114,5 @@ class Settings:
             gemini_mode=_choice("GEMINI_MODE", "fake", GEMINI_MODES),
             api_docs=_flag("API_DOCS"),
             check_verify=_flag("CHECK_VERIFY"),
+            save_sample_results=_flag("SAVE_SAMPLE_RESULTS"),
         )

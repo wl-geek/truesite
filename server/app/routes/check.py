@@ -109,7 +109,7 @@ async def check(
         saved = False
 
     # Separate from the run, so `saved` says only whether the run (photo, issues) was stored.
-    if await run_in_threadpool(is_shipped_sample, settings.static_dir, ctx, photo_bytes):
+    if settings.save_sample_results and await run_in_threadpool(is_shipped_sample, settings.static_dir, ctx, photo_bytes):
         try:
             await run_in_threadpool(store.put_saved_result, ctx.sample_id, {**result, "saved_at": now().isoformat()})
         except Exception:  # noqa: BLE001 - the fallback copy is a nice-to-have
