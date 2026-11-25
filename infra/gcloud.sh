@@ -183,12 +183,22 @@ setup() {
   # then deploy with GEMINI_BACKEND=apikey (it sets GOOGLE_GENAI_USE_ENTERPRISE=false and the secret).
 }
 
+app_version() {  # the commit being deployed (-dirty with uncommitted changes), for each check's audit trail; APP_VERSION overrides
+  local v="${APP_VERSION:-}"
+  if [ -z "$v" ]; then
+    v="$(git rev-parse --short=12 HEAD 2>/dev/null)" || v="dev"
+    [ "$v" = "dev" ] || git diff --quiet HEAD -- 2>/dev/null || v="$v-dirty"
+  fi
+  printf '%s' "$v" | tr -cd 'A-Za-z0-9._-'  # one --set-env-vars item: no commas
+}
+
 deploy() {
   # ---- 8. Build on Cloud Build from ./Dockerfile and deploy ----
   [ -f Dockerfile ] && [ -d bim ] && [ -d web ] || die "run this from the repo root"
   local url env secrets=""
   env="STORE_BACKEND=gcp,GCS_BUCKET=$BUCKET,GOOGLE_CLOUD_PROJECT=$PROJECT_ID,GEMINI_MODE=live"
   env="$env,DAILY_CHECK_CAP=300,DAILY_ASK_CAP=300,CHECKS_PER_IP_PER_HOUR=30,TRUSTED_PROXY_HOPS=1"  # judges share office IPs; about US$0.015 a check (eval/README.md section 3)
+  env="$env,APP_VERSION=$(app_version)"
   case "$GEMINI_BACKEND" in
     enterprise) env="$env,GOOGLE_GENAI_USE_ENTERPRISE=true,GOOGLE_CLOUD_LOCATION=$GEMINI_LOCATION" ;;
     # The SDK ignores GEMINI_API_KEY while GOOGLE_GENAI_USE_ENTERPRISE=true, so the flag goes with the key.

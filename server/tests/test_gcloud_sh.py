@@ -90,7 +90,7 @@ def stub(tmp_path: Path):
     def run(*args: str, **env: str) -> subprocess.CompletedProcess[str]:
         full_env = {**os.environ, "PATH": f"{bin_dir}{os.pathsep}{os.environ['PATH']}", "PROJECT_ID": PROJECT,
                     "STUB_LOG": str(log), "STUB_STATE": str(state), **env}
-        for var in ("BASE_URL", "BILLING_ACCOUNT", "GEMINI_BACKEND", "CLOUDSDK_CORE_PROJECT"):
+        for var in ("BASE_URL", "BILLING_ACCOUNT", "GEMINI_BACKEND", "CLOUDSDK_CORE_PROJECT", "APP_VERSION"):
             if var not in env:
                 full_env.pop(var, None)
         return subprocess.run([BASH, str(SCRIPT), *args], cwd=repo, env=full_env, capture_output=True, text=True,
@@ -122,6 +122,14 @@ def test_deploy_renders_sheets_for_the_service_url_then_deploys(stub) -> None:
     assert deploy.startswith(f"project={PROJECT} ")  # never the active gcloud config's project
     assert "DAILY_ASK_CAP=300" in deploy and "GOOGLE_GENAI_USE_ENTERPRISE=true" in deploy
     assert "--set-secrets" not in deploy
+    assert re.search(r",APP_VERSION=dev[, ]", deploy)  # not a git checkout: each check's audit trail says "dev"
+
+
+def test_deploy_records_the_app_version_for_the_audit_trail(stub) -> None:
+    run, log = stub
+    assert run("deploy", APP_VERSION="v1.2,X=1").returncode == 0  # a comma would start another variable
+    [deploy] = calls(log, "gcloud run deploy")
+    assert re.search(r",APP_VERSION=v1\.2X1[, ]", deploy)
 
 
 def test_deploy_replaces_stale_sheets(stub) -> None:
