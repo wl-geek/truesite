@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { RunSummary } from '../api/types'
 import {
-  costAndTime, cropFor, decisionLine, modelLabel, needsReview, reviewErrorMessage, reviewState, shortHash, sourceLabel, tokensText,
+  costAndTime, cropFor, decisionLine, exactTime, modelLabel, needsReview, reviewErrorMessage, reviewState, shortHash, sourceLabel, tokensText,
   totals, viewpointLabel,
 } from './checksFormat'
 
@@ -59,6 +59,12 @@ describe('Checks page wording', () => {
     expect(shortHash('abc')).toBe('abc')
     expect(tokensText({ prompt_tokens: 6912, output_tokens: 1404, thought_tokens: 1200, total_tokens: 9516, cost_usd_est: 0.015 }))
       .toBe('6,912 in · 1,404 out · 1,200 thinking · 9,516 total')
+  })
+
+  it('writes the full time in 24-hour form, like the decisions', () => {
+    const iso = new Date(2026, 10, 25, 18, 10, 31).toISOString()
+    expect(exactTime(iso, 'en-US')).toBe('Wed, Nov 25, 2026, 18:10:31')
+    expect(exactTime('not a time')).toBe('not a time')
   })
 
   it('says who decided and when, in local time', () => {

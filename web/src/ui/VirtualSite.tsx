@@ -590,7 +590,7 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
           <FindingsPanel result={outcome.result} selectedMark={selectedMark} onSelect={(f) => selectFinding(f, true)} onDraftIssue={setDraftFor}
             savedGuids={savedGuids} footer={w && <SavedIssues issues={issues} elements={w.elements} onSelect={selectIssue} />} />
           {outcome.runId && (
-            <p className="vs-model-link">Confirm or dismiss each finding, and see how sure Gemini was and the audit trail.{' '}
+            <p className="vs-model-link">Confirm or dismiss each finding, with its confidence and an audit trail.{' '}
               <Link to={checksPathFor(outcome.runId)} className="btn btn-small">Open in Checks</Link></p>
           )}
           <div className="vs-compare">

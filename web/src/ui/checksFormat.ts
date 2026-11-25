@@ -84,11 +84,13 @@ export function clockTime(iso: string): string {
   return `${String(t.getHours()).padStart(2, '0')}:${String(t.getMinutes()).padStart(2, '0')}`
 }
 
-/** The full local date and time, for a title or the audit trail. */
+/** The full local date and time, for a title or the audit trail; 24-hour, like the decision times and savedWhen. */
 export function exactTime(iso: string, locale?: string): string {
   const t = new Date(iso)
   if (Number.isNaN(t.getTime())) return iso
-  return t.toLocaleString(locale, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' })
+  return t.toLocaleString(locale, {
+    weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+  })
 }
 
 /** "Confirmed by you · 14:35" or "Dismissed as a false alarm · 14:35". */
