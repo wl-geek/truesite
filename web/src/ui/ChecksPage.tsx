@@ -34,7 +34,7 @@ const reducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)'
  * audit trail. Model text is shown as plain text only.
  */
 export function ChecksPage({ runId }: { runId?: string }) {
-  useEffect(() => window.scrollTo(0, 0), [runId])
+  useEffect(() => { window.scrollTo(0, 0) }, [runId])
   return (
     <main className="page checks-page">
       {runId ? <CheckDetail key={runId} runId={runId} /> : <CheckList />}
@@ -176,11 +176,11 @@ function SeverityChips({ run }: { run: RunSummary }) {
 
 function ReviewPill({ run }: { run: Pick<RunSummary, 'needs_review' | 'reviewed'> }) {
   const st = reviewState(run)
-  return <span className={`review-pill review-${st.kind}`}>{st.kind === 'done' && <span aria-hidden="true">✓ </span>}{st.text}</span>
+  return <span className={`review-pill review-${st.kind}`}>{st.kind === 'done' && <span aria-hidden="true">✓</span>}{st.text}</span>
 }
 
-function sourceLine(run: RunSummary): string {
-  return run.model_version === OFFLINE_MODEL ? `${sourceLabel(run.source)} · offline stand-in` : sourceLabel(run.source)
+function SourceLine({ run }: { run: RunSummary }) {
+  return <>{sourceLabel(run.source)}{run.model_version === OFFLINE_MODEL && <> · <span className="checks-nowrap">offline stand-in</span></>}</>
 }
 
 function openRun(runId: string): void {
@@ -213,7 +213,7 @@ export function RunTable({ runs }: { runs: readonly RunSummary[] }) {
                 <td className="checks-when"><time dateTime={run.created_at} title={exactTime(run.created_at)}>{when}</time></td>
                 <td>
                   <Link to={checksPathFor(run.run_id)} className="checks-open" aria-label={`Open the check at ${where}, ${when}`}>{where}</Link>
-                  <span className="checks-sub">{sourceLine(run)}</span>
+                  <span className="checks-sub"><SourceLine run={run} /></span>
                 </td>
                 <td><SeverityChips run={run} /></td>
                 <td>{run.lowest_confidence === null ? <span className="checks-muted">—</span>
@@ -240,12 +240,12 @@ export function RunCards({ runs }: { runs: readonly RunSummary[] }) {
               <ReviewPill run={run} />
             </span>
             <span className="checks-sub">
-              {sourceLine(run)} · <time dateTime={run.created_at} title={exactTime(run.created_at)}>{savedWhen(run.created_at)}</time>
+              <SourceLine run={run} /> · <time dateTime={run.created_at} title={exactTime(run.created_at)}>{savedWhen(run.created_at)}</time>
             </span>
             <SeverityChips run={run} />
             <span className="checks-card-foot">
               {run.lowest_confidence !== null && (
-                <span className="checks-card-conf">Lowest <ConfidenceBadge value={run.lowest_confidence} label={false} hint={false} /></span>
+                <span className="checks-card-conf">Lowest confidence <ConfidenceBadge value={run.lowest_confidence} label={false} hint={false} /></span>
               )}
               <span className="checks-muted">{costAndTime(run)}</span>
             </span>
@@ -261,6 +261,8 @@ export function RunCards({ runs }: { runs: readonly RunSummary[] }) {
 type Images = { photo?: string | null; render?: string | null; overlay?: string | null }
 type ImageName = 'photo.jpg' | 'render.png' | 'overlay.jpg'
 const IMAGE_KEY: Record<ImageName, keyof Images> = { 'photo.jpg': 'photo', 'render.png': 'render', 'overlay.jpg': 'overlay' }
+
+const SEVERITY_LABEL = { high: 'High severity', medium: 'Medium severity', low: 'Low severity' } as const
 
 const POSE: Record<PoseQuality, string> = { good: 'Good', fair: 'Fair', poor: 'Poor: treat these results with care' }
 
@@ -414,64 +416,64 @@ function CheckDetail({ runId }: { runId: string }) {
       {quality && <p className="warn" role="alert">{quality} Its findings are shown greyed, and issues can't be drafted from it.</p>}
       {result.pose_quality === 'poor' && <p className="warn">The alignment was poor when this photo was taken: treat these results with care.</p>}
 
-      <section className="checks-images" aria-labelledby="images-h">
-        <div className="checks-section-head">
-          <h2 id="images-h">What Gemini compared</h2>
-          <div className="seg" role="group" aria-label="Compare the photo with">
-            <button type="button" aria-pressed={compare === 'render'} onClick={() => setCompare('render')}>Design render</button>
-            <button type="button" aria-pressed={compare === 'overlay'} onClick={() => setCompare('overlay')} disabled={!run.images.overlay}
-              title={run.images.overlay ? undefined : 'This check was sent without the outline image'}>Outlines on photo</button>
-          </div>
-        </div>
-        <div className="checks-figs">
-          <figure>
-            <figcaption>Site photo · tap a box to see its finding</figcaption>
-            {images.photo
-              ? <EvidenceView imageUrl={images.photo} result={result} selectedMark={selected} dimmedMarks={dismissed} onSelect={(m) => select(m, true)} />
-              : <ImageSlot state={images.photo} what="the photo" />}
-          </figure>
-          <figure>
-            <figcaption>{compare === 'render'
-              ? 'The BIM design from the same spot, with the numbered marks Gemini was asked about'
-              : "The photo with each mark's design outline in magenta, as Gemini saw it"}</figcaption>
-            {compare === 'render'
-              ? (images.render ? <img className="checks-img" src={images.render} alt="The BIM design render with numbered marks, from the same camera pose" /> : <ImageSlot state={images.render} what="the design render" />)
-              : (images.overlay ? <img className="checks-img" src={images.overlay} alt="The site photo with each marked element's design outline" /> : <ImageSlot state={images.overlay} what="the outline image" />)}
-          </figure>
-        </div>
-      </section>
-
-      {notice && <p className="checks-notice" role="status">{notice}</p>}
-
       <div className="checks-detail-grid">
-        <section className={`checks-findings-sec${quality ? ' checks-greyed' : ''}`} aria-labelledby="findings-h">
-          <div className="checks-section-head">
-            <h2 id="findings-h">Findings to review <span className="checks-count">{flagged.length}</span></h2>
-          </div>
-          <p className="checks-tip">Highest severity first and, within it, the least sure first. Tap a finding to see it on the photo.</p>
-          {flagged.length === 0
-            ? <p className="checks-none">Gemini flagged no deviation in this view.</p>
-            : <ol className="fcards">{flagged.map((f) => <FindingCard key={f.mark} {...cardProps(f)} />)}</ol>}
-          {result.unexpected.length > 0 && (
-            <>
-              <h3 className="checks-h3">Not in the design <span className="checks-count">{result.unexpected.length}</span></h3>
-              <ul className="fcards">{result.unexpected.map((u, i) => <UnexpectedCard key={i} u={u} />)}</ul>
-            </>
-          )}
-          {unsure.length > 0 && (
-            <>
-              <h3 className="checks-h3">Can't judge from this photo <span className="checks-count">{unsure.length}</span></h3>
-              <p className="checks-tip">Gemini couldn't tell from this photo. A person should look on site, or check again from closer.</p>
-              <ol className="fcards">{unsure.map((f) => <FindingCard key={f.mark} {...cardProps(f)} />)}</ol>
-            </>
-          )}
-          {ok.length > 0 && (
-            <details className="checks-ok">
-              <summary>Matches the design <span className="checks-count">{ok.length}</span></summary>
-              <ol className="fcards">{ok.map((f) => <FindingCard key={f.mark} {...cardProps(f)} />)}</ol>
-            </details>
-          )}
-        </section>
+        <div className="checks-main">
+          <section className="checks-images" aria-labelledby="images-h">
+            <div className="checks-section-head">
+              <h2 id="images-h">What Gemini compared</h2>
+              <div className="seg" role="group" aria-label="Compare the photo with">
+                <button type="button" aria-pressed={compare === 'render'} onClick={() => setCompare('render')}>Design render</button>
+                <button type="button" aria-pressed={compare === 'overlay'} onClick={() => setCompare('overlay')} disabled={!run.images.overlay}
+                  title={run.images.overlay ? undefined : 'This check was sent without the outline image'}>Outlines on photo</button>
+              </div>
+            </div>
+            <div className="checks-figs">
+              <figure>
+                <figcaption>Site photo · tap a box for its finding</figcaption>
+                {images.photo
+                  ? <EvidenceView imageUrl={images.photo} result={result} selectedMark={selected} dimmedMarks={dismissed} onSelect={(m) => select(m, true)} />
+                  : <ImageSlot state={images.photo} what="the photo" />}
+              </figure>
+              <figure>
+                <figcaption>{compare === 'render' ? 'The BIM design from the same spot, as Gemini saw it' : 'The photo with the design outlines, as Gemini saw it'}</figcaption>
+                {compare === 'render'
+                  ? (images.render ? <img className="checks-img" src={images.render} alt="The BIM design render with numbered marks, from the same camera pose" /> : <ImageSlot state={images.render} what="the design render" />)
+                  : (images.overlay ? <img className="checks-img" src={images.overlay} alt="The site photo with each marked element's design outline" /> : <ImageSlot state={images.overlay} what="the outline image" />)}
+              </figure>
+            </div>
+          </section>
+
+          {notice && <p className="checks-notice" role="status">{notice}</p>}
+
+          <section className={`checks-findings-sec${quality ? ' checks-greyed' : ''}`} aria-labelledby="findings-h">
+            <div className="checks-section-head">
+              <h2 id="findings-h">Findings to review <span className="checks-count">{flagged.length}</span></h2>
+            </div>
+            <p className="checks-tip">Highest severity first and, within it, the least sure first. Tap a finding to see it on the photo.</p>
+            {flagged.length === 0
+              ? <p className="checks-none">Gemini flagged no deviation in this view.</p>
+              : <ol className="fcards">{flagged.map((f) => <FindingCard key={f.mark} {...cardProps(f)} />)}</ol>}
+            {result.unexpected.length > 0 && (
+              <>
+                <h3 className="checks-h3">Not in the design <span className="checks-count">{result.unexpected.length}</span></h3>
+                <ul className="fcards">{result.unexpected.map((u, i) => <UnexpectedCard key={i} u={u} photoUrl={images.photo ?? null} aspect={aspect} />)}</ul>
+              </>
+            )}
+            {unsure.length > 0 && (
+              <>
+                <h3 className="checks-h3">Can't judge from this photo <span className="checks-count">{unsure.length}</span></h3>
+                <p className="checks-tip">Gemini couldn't tell from this photo. A person should look on site, or check again from closer.</p>
+                <ol className="fcards">{unsure.map((f) => <FindingCard key={f.mark} {...cardProps(f)} />)}</ol>
+              </>
+            )}
+            {ok.length > 0 && (
+              <details className="checks-ok">
+                <summary>Matches the design <span className="checks-count">{ok.length}</span></summary>
+                <ol className="fcards">{ok.map((f) => <FindingCard key={f.mark} {...cardProps(f)} />)}</ol>
+              </details>
+            )}
+          </section>
+        </div>
 
         <aside className="checks-aside" aria-label="About this check">
           {result.summary && (
@@ -505,12 +507,12 @@ function ImageSlot({ state, what }: { state: string | null | undefined; what: st
 }
 
 /** The photo around a finding's evidence box, with the box drawn on it. */
-function EvidenceCrop({ url, box, aspect }: { url: string; box: Box; aspect: number }) {
+function EvidenceCrop({ url, box, aspect, dashed = false }: { url: string; box: Box; aspect: number; dashed?: boolean }) {
   const c = cropFor(box, aspect)
   return (
     <span className="fcard-crop" aria-hidden="true">
       <img src={url} alt="" style={c.img} />
-      <span className="fcard-crop-box" style={c.box} />
+      <span className={`fcard-crop-box${dashed ? ' fcard-crop-dashed' : ''}`} style={c.box} />
     </span>
   )
 }
@@ -540,7 +542,7 @@ export function FindingCard({ f, element, photoUrl, aspect, selected, onSelect, 
           </span>
           <span className="fcard-status">{statusText(f)}</span>
           <span className="fcard-badges">
-            {f.severity && <span className={`badge badge-${f.severity}`}>{f.severity} severity</span>}
+            {f.severity && <span className={`badge badge-${f.severity}`}>{SEVERITY_LABEL[f.severity]}</span>}
             {f.status !== 'cannot_judge' && <ConfidenceBadge value={f.confidence} />}
           </span>
           {f.explanation && <span className="fcard-why"><span className="finding-src">Gemini:</span> {f.explanation}</span>}
@@ -552,9 +554,9 @@ export function FindingCard({ f, element, photoUrl, aspect, selected, onSelect, 
           {review ? (
             <>
               <p className={`fcard-decision fcard-decision-${review.decision}`} role="status">
-                {review.decision === 'confirmed' && <span aria-hidden="true">✓ </span>}{decisionLine(review)}
+                {review.decision === 'confirmed' && <span aria-hidden="true">✓</span>}{decisionLine(review)}
               </p>
-              <button type="button" className="btn btn-small" onClick={() => onDecide(null)} disabled={busy}>
+              <button type="button" className="btn" onClick={() => onDecide(null)} disabled={busy}>
                 {busy ? 'Saving…' : 'Undo decision'}
               </button>
             </>
@@ -575,15 +577,17 @@ export function FindingCard({ f, element, photoUrl, aspect, selected, onSelect, 
   )
 }
 
-function UnexpectedCard({ u }: { u: UnexpectedItem }) {
+function UnexpectedCard({ u, photoUrl, aspect }: { u: UnexpectedItem; photoUrl: string | null; aspect: number | null }) {
   return (
     <li className="fcard fcard-unexpected">
       <div className="fcard-main fcard-static">
-        <span className="fcard-crop fcard-crop-none" aria-hidden="true">?</span>
+        {u.evidence_box && photoUrl && aspect
+          ? <EvidenceCrop url={photoUrl} box={u.evidence_box} aspect={aspect} dashed />
+          : <span className="fcard-crop fcard-crop-none" aria-hidden="true">No box</span>}
         <span className="fcard-body">
           <span className="fcard-status">{u.description}</span>
           <span className="fcard-badges">
-            <span className="badge badge-medium">medium severity</span>
+            <span className="badge badge-medium">{SEVERITY_LABEL.medium}</span>
             <ConfidenceBadge value={u.confidence} />
           </span>
           <span className="finding-risk"><span className="finding-src">Why it matters:</span> Not in the design: a person should look before work continues here.</span>

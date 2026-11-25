@@ -33,7 +33,7 @@ describe('ChecksPage', () => {
     const html = card()
     const t = text(html)
     expect(t).toContain('3 RC column C2 IfcColumn'.replace('IfcColumn', 'Column'))
-    expect(t).toContain('Missing high severity Confidence Low · 0.55 — take a closer look')
+    expect(t).toContain('Missing High severity Confidence Low · 0.55 — take a closer look')
     expect(t).toContain('Gemini: Nothing visible where the design shows it.')
     expect(t).toContain('Why it matters: The floor above is not carried as designed')
     expect(t).toContain('Confirm finding Dismiss as false alarm Draft issue')

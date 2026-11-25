@@ -589,6 +589,10 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
           <p className="vs-tip">Pick a finding to turn to it and see its details.</p>
           <FindingsPanel result={outcome.result} selectedMark={selectedMark} onSelect={(f) => selectFinding(f, true)} onDraftIssue={setDraftFor}
             savedGuids={savedGuids} footer={w && <SavedIssues issues={issues} elements={w.elements} onSelect={selectIssue} />} />
+          {outcome.runId && (
+            <p className="vs-model-link">Confirm or dismiss each finding, and see how sure Gemini was and the audit trail.{' '}
+              <Link to={checksPathFor(outcome.runId)} className="btn btn-small">Open in Checks</Link></p>
+          )}
           <div className="vs-compare">
             <figure>
               <figcaption>Your view: the site photo</figcaption>
@@ -615,10 +619,6 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
                 from {reportScope(reportRuns, vp.id)}: safety first, then structure, then progress.</p>
               <button type="button" className="btn btn-accent" onClick={() => setReportOpen(true)}>Write today's site report</button>
             </div>
-          )}
-          {outcome.runId && (
-            <p className="vs-model-link">Confirm or dismiss each finding, and see how sure Gemini was and the audit trail.{' '}
-              <Link to={checksPathFor(outcome.runId)} className="btn btn-small">Open in Checks</Link></p>
           )}
           <p className="vs-model-link">The 3D model shows this check and your saved issues too.{' '}
             <Link to="/model" className="btn btn-small">Open the 3D model</Link></p>
