@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 import pytest
@@ -83,3 +84,30 @@ def test_unknown_choices_are_rejected(monkeypatch: pytest.MonkeyPatch, name: str
     monkeypatch.setenv(name, value)
     with pytest.raises(ValueError, match=name):
         Settings.from_env()
+
+
+# ---- .env.example ---------------------------------------------------------------------------------------------
+ENV_EXAMPLE = REPO_ROOT / ".env.example"
+ENV_READ = re.compile(r"""(?:_int|_flag|_choice|os\.environ\.get|os\.getenv)\(\s*["']([A-Z][A-Z0-9_]+)["']""")
+
+
+def env_example() -> dict[str, str]:
+    """The uncommented NAME=value lines, quotes stripped as a dotenv loader does."""
+    rows = re.findall(r"^([A-Z][A-Z0-9_]+)=(.*)$", ENV_EXAMPLE.read_text(encoding="utf-8"), re.M)
+    return {name: value.strip().strip('"') for name, value in rows}
+
+
+def test_env_example_documents_every_variable_the_server_reads() -> None:
+    read = {name for path in (REPO_ROOT / "server" / "app").rglob("*.py")
+            for name in ENV_READ.findall(path.read_text(encoding="utf-8"))}
+    documented = set(re.findall(r"^#? ?([A-Z][A-Z0-9_]+)=", ENV_EXAMPLE.read_text(encoding="utf-8"), re.M))
+    assert {"STATIC_DIR", "MAX_IMAGE_PIXELS", "CHECK_VERIFY_POLICY"} <= read  # the pattern still finds them
+    assert sorted(read - documented) == []
+
+
+def test_env_example_holds_the_defaults_and_no_key(monkeypatch: pytest.MonkeyPatch) -> None:
+    example = env_example()
+    assert "GEMINI_API_KEY" not in example and "GOOGLE_API_KEY" not in example  # documented, commented out, empty
+    for name, value in example.items():
+        monkeypatch.setenv(name, value)
+    assert Settings.from_env() == Settings(gcp_project="your-project-id")
