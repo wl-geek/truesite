@@ -7,6 +7,7 @@ import type { Anchor, CheckResult, Element, Finding } from '../api/types'
 import { saveLastCheck } from '../check/lastCheck'
 import { checkErrorMessage, toCheckError } from '../check/messages'
 import { loadReportRuns, rememberReportRun, reportScope, type ReportRun } from '../check/reportRuns'
+import type { ProgressStep } from '../check/progress'
 import { runCheck, storedRunId } from '../check/runCheck'
 import { releaseRenderer, watchContextLoss } from '../scene/glContext'
 import { appleDeviceName, isAppleMobile } from '../scene/walkthrough'
@@ -24,6 +25,8 @@ import { samplePose } from '../sim/samplePose'
 import { markFindings } from '../sim/findings3d'
 import { notCheckedText, scoreCheck, scoreLine, type Score } from '../sim/score'
 import { buildWorld, makeAsBuilt, photoFinish, rng } from '../sim/world'
+import { CheckProgress } from './CheckProgress'
+import { secondLookSummary } from './checksFormat'
 import { typeLabel } from './elementFacts'
 import { ElementPanel } from './ElementPanel'
 import { EvidenceView } from './EvidenceView'
@@ -52,7 +55,14 @@ type World = {
   anchor: Anchor; eye: [number, number, number]; elements: Map<string, Element>; multiStorey: boolean; restoreColours: () => void
   highlight: ReturnType<typeof overlayHighlighter>
 }
-type Outcome = { result: CheckResult; photoUrl: string; renderUrl: string | null; runId: string | null; latencyMs: number; score: Score }
+/**
+ * A check's results. `first-look` is Gemini's first pass, shown while the close-up second look settles `pending` marks;
+ * `first-look-only` is that first pass when the settled answer never came (not stored, no Draft issue).
+ */
+type Outcome = {
+  result: CheckResult; photoUrl: string; renderUrl: string | null; runId: string | null; latencyMs: number; score: Score
+  phase: 'first-look' | 'first-look-only' | 'final'; pending: number
+}
 
 /**
  * Free one visit's models, GPU memory and both WebGL contexts now, not at garbage collection (audit A-56, B-06):
@@ -91,6 +101,7 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
   const [motionOn, setMotionOn] = useState(false)
   const [coach, setCoach] = useState(true)
   const [checking, setChecking] = useState(false)
+  const [progress, setProgress] = useState<{ step: ProgressStep; startedAt: number } | null>(null)
   const [outcome, setOutcome] = useState<Outcome | null>(null)
   const [resultsOpen, setResultsOpen] = useState(false)
   const [selected, setSelected] = useState<string | null>(null)
@@ -472,10 +483,35 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
   async function check(): Promise<void> {
     const w = worldRef.current
     if (!w || checking) return
+    const startedAt = performance.now()
     setChecking(true)
+    setProgress({ step: { step: 'photo' }, startedAt })
     setNotice(null)
     setCheckFailed(false)
     setCoach(false)
+    const previous = outcome
+    let photoUrl: string | null = null
+    let renderUrl: string | null = null
+    let shownFirstLook = false
+    // Shows a result: Gemini's first look as soon as it is back, then the settled answer in its place.
+    const show = (world: World, next: Outcome) => {
+      if (previous && !shownFirstLook) {
+        URL.revokeObjectURL(previous.photoUrl)
+        if (previous.renderUrl) URL.revokeObjectURL(previous.renderUrl)
+      }
+      setOutcome(next)
+      if (!shownFirstLook) { // a pick made, or results hidden, during the first look stay as they are
+        setSelectedMark(null)
+        setSelected(null)
+        setResultsOpen(true)
+      }
+      if (pinsRef.current) disposePins(pinsRef.current)
+      pinsRef.current = makePins(next.result.findings, world.elements, { radiusM: 0.18, dim: next.result.image_quality !== 'good' })
+      world.pinScene.add(pinsRef.current)
+      unmarkRef.current?.()
+      unmarkRef.current = markFindings(world.world, world.design, world.asBuilt, next.result.findings)
+      dirty.current = true
+    }
     try {
       const shot = await snapshot(w)
       const started = performance.now()
@@ -483,40 +519,45 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
         photo: shot.photo, photoW: shot.sw, photoH: shot.sh, videoW: shot.sw, videoH: shot.sh, K: shot.K, pose: shot.pose,
         anchor: w.anchor, poseQuality: 'good', model: w.check.model, scene: w.check.scene, renderer: w.check.renderer, elements: w.elements,
         source: 'virtual',
+        onStep: (step) => setProgress({ step, startedAt }),
+        onFirstLook: (look, render) => {
+          photoUrl ??= URL.createObjectURL(shot.photo)
+          renderUrl ??= URL.createObjectURL(render)
+          show(w, {
+            result: look.result, photoUrl, renderUrl, runId: null, latencyMs: performance.now() - started,
+            score: scoreCheck(look.result.findings, SITE_AS_BUILT), phase: 'first-look', pending: look.pending.length,
+          })
+          shownFirstLook = true
+        },
       })
       const result = res.response?.result
       if (!result) throw res.error ?? new ApiError('check failed', 0)
-      if (outcome) {
-        URL.revokeObjectURL(outcome.photoUrl)
-        if (outcome.renderUrl) URL.revokeObjectURL(outcome.renderUrl)
-      }
+      photoUrl ??= URL.createObjectURL(shot.photo)
+      renderUrl ??= res.render ? URL.createObjectURL(res.render) : null
       const runId = storedRunId(res.response)
       if (runId) setReportRuns(rememberReportRun(PROJECT_ID, reportRuns, { runId, spot: vp.id }))
-      setOutcome({
-        result, photoUrl: URL.createObjectURL(shot.photo), renderUrl: res.render ? URL.createObjectURL(res.render) : null, runId,
-        latencyMs: performance.now() - started, score: scoreCheck(result.findings, SITE_AS_BUILT),
+      show(w, {
+        result, photoUrl, renderUrl, runId, latencyMs: performance.now() - started, score: scoreCheck(result.findings, SITE_AS_BUILT),
+        phase: 'final', pending: 0,
       })
-      setSelectedMark(null)
-      setSelected(null)
-      setResultsOpen(true)
       saveLastCheck(PROJECT_ID, { result, runId, at: new Date().toISOString() })
-      if (pinsRef.current) disposePins(pinsRef.current)
-      pinsRef.current = makePins(result.findings, w.elements, { radiusM: 0.18, dim: result.image_quality !== 'good' })
-      w.pinScene.add(pinsRef.current)
-      unmarkRef.current?.()
-      unmarkRef.current = markFindings(w.world, w.design, w.asBuilt, result.findings)
-      dirty.current = true
     } catch (e) {
-      setNotice(checkErrorMessage(toCheckError(e)))
-      setCheckFailed(true)
+      if (shownFirstLook) { // the first look stands on its own; only the close-ups are missing
+        setOutcome((o) => (o ? { ...o, phase: 'first-look-only' } : o))
+        setNotice("The close-up second look didn't come back, so these are Gemini's first-look results. They weren't saved.")
+      } else {
+        setNotice(checkErrorMessage(toCheckError(e)))
+        setCheckFailed(true)
+      }
     } finally {
       setChecking(false)
+      setProgress(null)
     }
   }
 
   const w = worldRef.current
   const element = selected && w ? w.elements.get(selected) : undefined
-  const canDraft = outcome !== null && imageQualityMessage(outcome.result.image_quality) === null
+  const canDraft = outcome !== null && outcome.phase === 'final' && imageQualityMessage(outcome.result.image_quality) === null
   const rootStyle = { '--dock-l': `${docks.left}px`, '--dock-r': `${docks.right}px` } as CSSProperties
   const classes = ['vs', element ? 'vs-has-element' : '', outcome && resultsOpen ? 'vs-has-results' : ''].filter(Boolean).join(' ')
 
@@ -553,6 +594,7 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
       )}
 
       <div className="vs-bottom">
+        {progress && <CheckProgress progress={progress.step} startedAt={progress.startedAt} />}
         {notice && <p className="vs-notice" role="status">{notice}</p>}
         {checkFailed && (
           <Link to="/samples?photos" className="vs-btn vs-btn-light">Use a ready-made view instead</Link>
@@ -580,14 +622,15 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
       </div>
 
       {outcome && resultsOpen && (
-        <aside className="vs-results" aria-label="Check results">
+        <aside className="vs-results" aria-label="Check results" data-check={outcome.phase}>
           <div className="vs-results-head">
             <h2>As-built check · {vp.id}</h2>
             <button type="button" className="vs-btn vs-btn-light" onClick={() => setResultsOpen(false)}>Hide results</button>
           </div>
           <ScoreCard score={outcome.score} offline={offline} />
+          <SecondLookLine outcome={outcome} />
           <p className="vs-tip">Pick a finding to turn to it and see its details.</p>
-          <FindingsPanel result={outcome.result} selectedMark={selectedMark} onSelect={(f) => selectFinding(f, true)} onDraftIssue={setDraftFor}
+          <FindingsPanel result={outcome.result} selectedMark={selectedMark} onSelect={(f) => selectFinding(f, true)} onDraftIssue={outcome.phase === 'final' ? setDraftFor : undefined}
             savedGuids={savedGuids} footer={w && <SavedIssues issues={issues} elements={w.elements} onSelect={selectIssue} />} />
           {outcome.runId && (
             <p className="vs-model-link">Confirm or dismiss each finding, with its confidence and an audit trail.{' '}
@@ -620,7 +663,8 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
               <button type="button" className="btn btn-accent" onClick={() => setReportOpen(true)}>Write today's site report</button>
             </div>
           )}
-          <p className="vs-model-link">The 3D model shows this check and your saved issues too.{' '}
+          <p className="vs-model-link">{outcome.phase === 'final' ? 'The 3D model shows this check and your saved issues too.'
+            : 'The 3D model shows your last stored check and saved issues.'}{' '}
             <Link to="/model" className="btn btn-small">Open the 3D model</Link></p>
           <p className="vs-judged">{judgedLine(outcome)}</p>
           {notice && <p className="note" role="status">{notice}</p>}
@@ -678,9 +722,25 @@ function ScoreCard({ score, offline }: { score: Score; offline: boolean }) {
 }
 
 /** "Checked by gemini-3.8-flash in 6.2 s · 18 elements compared · about US$0.004". */
+/** Under the scorecard: the second look under way, then what it changed. */
+function SecondLookLine({ outcome }: { outcome: Outcome }) {
+  if (outcome.phase === 'first-look') {
+    const marks = outcome.pending === 1 ? '1 mark' : `${outcome.pending} marks`
+    return (
+      <p className="vs-second-look is-running">
+        <span className="vs-second-look-dot" aria-hidden="true" />
+        <span><strong>First look.</strong> Gemini is looking again close up at {marks}, so some findings can still change.</span>
+      </p>
+    )
+  }
+  if (outcome.phase === 'first-look-only') return null // the notice says why
+  const summary = secondLookSummary(outcome.result.warnings)
+  return summary ? <p className="vs-second-look"><strong>Second look:</strong> {summary}.</p> : null
+}
+
 function judgedLine(o: Outcome): string {
   const by = o.result.model_version === 'fake' ? 'the offline stand-in (not Gemini)' : o.result.model_version ?? 'Gemini'
-  const parts = [`Checked by ${by} in ${(o.latencyMs / 1000).toFixed(1)} s`,
+  const parts = [`${o.phase === 'final' ? 'Checked by' : 'First look by'} ${by} in ${(o.latencyMs / 1000).toFixed(1)} s`,
     `${o.result.findings.length} elements compared`]
   if (o.result.usage) parts.push(`about US$${o.result.usage.cost_usd_est.toFixed(3)}`)
   return parts.join(' · ')

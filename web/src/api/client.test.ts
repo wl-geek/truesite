@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   ApiError, ask, createIssue, draftIssue, fetchRunImage, getProject, getRun, getSavedResult, listIssues, listRuns, postCheck,
-  reviewFinding, writeReport,
+  reviewFinding, takeEvents, writeReport,
 } from './client'
 import type { CheckContext } from './types'
 
@@ -251,5 +251,78 @@ describe('Checks page calls', () => {
     expect(url).toMatch(/^blob:/)
     expect(calls[0].url).toBe('/api/runs/r1/overlay.jpg')
     URL.revokeObjectURL(url)
+  })
+})
+
+describe('a streamed check', () => {
+  const sse = (event: string, data: unknown) => `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`
+  const streamed = (chunks: string[], open = false) => new Response(new ReadableStream<Uint8Array>({
+    start(c) {
+      chunks.forEach((ch) => c.enqueue(new TextEncoder().encode(ch)))
+      if (!open) c.close()
+    },
+  }), { status: 200, headers: { 'Content-Type': 'text/event-stream' } })
+  const first = { result: { findings: [{ mark: 2, status: 'misplaced' }] }, pending: [2, 5] }
+  const done = { run_id: 'r1', saved: true, photo_url: null, result: { findings: [{ mark: 2, status: 'present_ok' }] } }
+  const post = (onFirstLook?: (l: unknown) => void) =>
+    postCheck(new Blob(['j']), new Blob(['p']), CTX, null, onFirstLook)
+
+  it('asks for the stream, hands over the first look, then returns the settled answer', async () => {
+    const whole = sse('first_look', first) + sse('done', done)
+    mockFetch(() => streamed([whole.slice(0, 17), whole.slice(17, 90), whole.slice(90)])) // events split across chunks
+    const looks: unknown[] = []
+    const res = await post((l) => looks.push(l))
+    expect(new Headers(calls[0].init.headers).get('Accept')).toBe('text/event-stream, application/json')
+    expect(looks).toEqual([first])
+    expect(res).toEqual(done)
+  })
+
+  it('takes plain JSON when the server has no first look to send', async () => {
+    mockFetch(() => jsonResponse(200, done))
+    const looks: unknown[] = []
+    expect(await post((l) => looks.push(l))).toEqual(done)
+    expect(looks).toEqual([])
+  })
+
+  it('does not ask for the stream without a first-look handler', async () => {
+    mockFetch(() => jsonResponse(200, done))
+    await post()
+    expect(new Headers(calls[0].init.headers).get('Accept')).toBeNull()
+  })
+
+  it('turns an error event into an ApiError, as the HTTP error would have been', async () => {
+    mockFetch(() => streamed([sse('first_look', first), sse('error', { status: 503, detail: { code: 'model_unavailable' } })]))
+    const err = await caught(post(() => undefined))
+    expect([err.status, err.code]).toEqual([503, 'model_unavailable'])
+  })
+
+  it('fails as a network error when the stream ends before the answer', async () => {
+    mockFetch(() => streamed([sse('first_look', first)]))
+    const err = await caught(post(() => undefined))
+    expect([err.status, err.code]).toEqual([0, 'network'])
+  })
+
+  it('keeps reading when the page fails to show the first look', async () => {
+    mockFetch(() => streamed([sse('first_look', first), sse('done', done)]))
+    expect(await post(() => { throw new Error('render failed') })).toEqual(done)
+  })
+
+  it('times out a stream that stops sending', async () => {
+    vi.useFakeTimers()
+    try {
+      mockFetch(() => streamed([sse('first_look', first)], true))
+      const p = caught(post(() => undefined))
+      await vi.advanceTimersByTimeAsync(120_000)
+      const err = await p
+      expect([err.status, err.code]).toEqual([0, 'timeout'])
+    } finally {
+      vi.useRealTimers()
+    }
+  })
+
+  it('splits complete events off the buffer, CRLF or LF', () => {
+    expect(takeEvents('event: a\r\ndata: {"x":1}\r\n\r\nevent: b\ndata: 2\n\nevent: c\nda')).toEqual({
+      events: [{ event: 'a', data: '{"x":1}' }, { event: 'b', data: '2' }], rest: 'event: c\nda',
+    })
   })
 })

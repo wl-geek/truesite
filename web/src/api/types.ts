@@ -128,6 +128,15 @@ export interface CheckResponse {
   result: CheckResult
 }
 
+/**
+ * POST /api/check's `event: first_look`: with the close-up second look on, the first pass (repaired, with severity) as
+ * soon as it answers, and the marks the second look is still settling. The CheckResponse (`event: done`) follows.
+ */
+export interface FirstLook {
+  result: CheckResult
+  pending: number[]
+}
+
 /** Server-side record of one check (never sent to the browser as is; mirrored for completeness). */
 export interface CheckRun {
   run_id: string

@@ -5,7 +5,7 @@
  */
 import { PerspectiveCamera, Vector3, type Plane, type Scene, type WebGLRenderer } from 'three'
 import { ApiError, getSavedResult, postCheck } from '../api/client'
-import type { Anchor, CheckContext, CheckResponse, CheckResult, CheckSource, Element, MarkedElement, PoseQuality } from '../api/types'
+import type { Anchor, CheckContext, CheckResponse, CheckResult, CheckSource, Element, FirstLook, MarkedElement, PoseQuality } from '../api/types'
 import { modelMatrixIfc, projectionMatrixGL, type Intrinsics, type Pose } from '../pose'
 import { applyProjection } from '../scene/arCamera'
 import { poseAnchor } from '../scene/arMath'
@@ -42,7 +42,18 @@ export type CheckInput = {
    * and view distance are applied at the snapshot pose. Without it (sample photos) the whole model is used.
    */
   look?: ConstructionLook
+  /** Where the check has got to, for the progress view (ui/CheckProgress.tsx). */
+  onStep?: (step: CheckStep) => void
+  /** Gemini's first look and the design render it judged, while the close-up second look settles (the settled answer
+   * is still the outcome). */
+  onFirstLook?: (look: FirstLook, render: Blob) => void
 }
+
+/** The steps of a check the page can show; it marks the photo itself before calling runCheck. */
+export type CheckStep =
+  | { step: 'design' } // drawing the design from the photo's camera position
+  | { step: 'gemini'; marks: number } // sent: Gemini's first look at the marked elements
+  | { step: 'second_look'; marks: number; pending: number } // first look back; close-ups of `pending` marks
 
 export type CheckOutcome = {
   response: CheckResponse | null
@@ -101,6 +112,7 @@ export async function runCheck(input: CheckInput): Promise<CheckOutcome> {
   const prevMatrix = model.ifcRoot.matrix.clone()
   const prevVisible = model.ifcRoot.visible
   // Finding pins from an earlier check live under ifcRoot: keep them out of both renders.
+  input.onStep?.({ step: 'design' })
   const pins = model.ifcRoot.getObjectByName('finding-pins')
   const pinsVisible = pins?.visible ?? false
   if (pins) pins.visible = false
@@ -146,8 +158,17 @@ export async function runCheck(input: CheckInput): Promise<CheckOutcome> {
   }
 
   const context = checkContext(input, marks)
+  const count = marks.length
+  const rendered = render
+  input.onStep?.({ step: 'gemini', marks: count })
+  const firstLook = input.onStep || input.onFirstLook
+    ? (look: FirstLook) => {
+      input.onStep?.({ step: 'second_look', marks: count, pending: look.pending.length })
+      input.onFirstLook?.(look, rendered)
+    }
+    : undefined
   try {
-    return { response: await postCheck(input.photo, render, context, overlay), saved: null, error: null, marks, render, viewNote: note }
+    return { response: await postCheck(input.photo, render, context, overlay, firstLook), saved: null, error: null, marks, render, viewNote: note }
   } catch (e) {
     const err = e instanceof ApiError ? e : new ApiError(e instanceof Error ? e.message : String(e), 0)
     if (shouldUseSaved(err, input.sampleId)) {
