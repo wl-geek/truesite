@@ -55,10 +55,13 @@ type World = {
   anchor: Anchor; eye: [number, number, number]; elements: Map<string, Element>; multiStorey: boolean; restoreColours: () => void
   highlight: ReturnType<typeof overlayHighlighter>
 }
-/** A check's results. `first-look` is Gemini's first pass, shown while the close-up second look settles `pending` marks. */
+/**
+ * A check's results. `first-look` is Gemini's first pass, shown while the close-up second look settles `pending` marks;
+ * `first-look-only` is that first pass when the settled answer never came (not stored, no Draft issue).
+ */
 type Outcome = {
   result: CheckResult; photoUrl: string; renderUrl: string | null; runId: string | null; latencyMs: number; score: Score
-  phase: 'first-look' | 'final'; pending: number
+  phase: 'first-look' | 'first-look-only' | 'final'; pending: number
 }
 
 /**
@@ -497,11 +500,11 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
         if (previous.renderUrl) URL.revokeObjectURL(previous.renderUrl)
       }
       setOutcome(next)
-      if (!shownFirstLook) { // a pick made during the first look stays
+      if (!shownFirstLook) { // a pick made, or results hidden, during the first look stay as they are
         setSelectedMark(null)
         setSelected(null)
+        setResultsOpen(true)
       }
-      setResultsOpen(true)
       if (pinsRef.current) disposePins(pinsRef.current)
       pinsRef.current = makePins(next.result.findings, world.elements, { radiusM: 0.18, dim: next.result.image_quality !== 'good' })
       world.pinScene.add(pinsRef.current)
@@ -540,7 +543,7 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
       saveLastCheck(PROJECT_ID, { result, runId, at: new Date().toISOString() })
     } catch (e) {
       if (shownFirstLook) { // the first look stands on its own; only the close-ups are missing
-        setOutcome((o) => (o ? { ...o, phase: 'final' } : o))
+        setOutcome((o) => (o ? { ...o, phase: 'first-look-only' } : o))
         setNotice("The close-up second look didn't come back, so these are Gemini's first-look results. They weren't saved.")
       } else {
         setNotice(checkErrorMessage(toCheckError(e)))
@@ -660,7 +663,8 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
               <button type="button" className="btn btn-accent" onClick={() => setReportOpen(true)}>Write today's site report</button>
             </div>
           )}
-          <p className="vs-model-link">The 3D model shows this check and your saved issues too.{' '}
+          <p className="vs-model-link">{outcome.phase === 'final' ? 'The 3D model shows this check and your saved issues too.'
+            : 'The 3D model shows your last stored check and saved issues.'}{' '}
             <Link to="/model" className="btn btn-small">Open the 3D model</Link></p>
           <p className="vs-judged">{judgedLine(outcome)}</p>
           {notice && <p className="note" role="status">{notice}</p>}
@@ -723,19 +727,20 @@ function SecondLookLine({ outcome }: { outcome: Outcome }) {
   if (outcome.phase === 'first-look') {
     const marks = outcome.pending === 1 ? '1 mark' : `${outcome.pending} marks`
     return (
-      <p className="vs-second-look is-running" role="status">
+      <p className="vs-second-look is-running">
         <span className="vs-second-look-dot" aria-hidden="true" />
         <span><strong>First look.</strong> Gemini is looking again close up at {marks}, so some findings can still change.</span>
       </p>
     )
   }
+  if (outcome.phase === 'first-look-only') return null // the notice says why
   const summary = secondLookSummary(outcome.result.warnings)
   return summary ? <p className="vs-second-look"><strong>Second look:</strong> {summary}.</p> : null
 }
 
 function judgedLine(o: Outcome): string {
   const by = o.result.model_version === 'fake' ? 'the offline stand-in (not Gemini)' : o.result.model_version ?? 'Gemini'
-  const parts = [`${o.phase === 'first-look' ? 'First look by' : 'Checked by'} ${by} in ${(o.latencyMs / 1000).toFixed(1)} s`,
+  const parts = [`${o.phase === 'final' ? 'Checked by' : 'First look by'} ${by} in ${(o.latencyMs / 1000).toFixed(1)} s`,
     `${o.result.findings.length} elements compared`]
   if (o.result.usage) parts.push(`about US$${o.result.usage.cost_usd_est.toFixed(3)}`)
   return parts.join(' · ')

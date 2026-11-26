@@ -13,7 +13,10 @@ export function CheckProgress({ progress, startedAt }: { progress: ProgressStep;
     return () => clearInterval(timer)
   }, [])
   const rows = progressRows(progress)
-  const current = rows.find((r) => r.state === 'now')
+  const current = rows.find((r) => r.state === 'now')?.label ?? ''
+  // Filled after the first paint: a live region that mounts with its text already in it is often not read out.
+  const [said, setSaid] = useState('')
+  useEffect(() => setSaid(current), [current])
   return (
     <section className="check-progress" aria-label="Check progress">
       <p className="check-progress-head">
@@ -29,7 +32,7 @@ export function CheckProgress({ progress, startedAt }: { progress: ProgressStep;
         ))}
       </ol>
       <p className="check-progress-hint">A check usually takes 20 to 30 seconds.</p>
-      <p className="check-progress-sr" role="status">{current?.label}</p>
+      <p className="check-progress-sr" role="status">{said}</p>
     </section>
   )
 }

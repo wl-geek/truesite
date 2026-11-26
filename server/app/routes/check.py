@@ -80,6 +80,21 @@ def _settle(fut: asyncio.Future, value: object) -> None:
         fut.set_result(value)
 
 
+# Streamed checks still settling: held here so a check whose page has gone is not garbage-collected half way.
+_SETTLING: set[asyncio.Future] = set()
+
+
+def _settled(fut: asyncio.Future) -> None:
+    _SETTLING.discard(fut)
+    if fut.cancelled():
+        return
+    err = fut.exception()  # also marks it retrieved when no stream is left to read it
+    if isinstance(err, GeminiError):
+        log.warning("check failed after its first look: %s", err)
+    elif err is not None:
+        log.error("check failed after its first look", exc_info=err)
+
+
 def parse_context(raw: str) -> CheckContext:
     try:
         return CheckContext.model_validate_json(raw)
@@ -173,20 +188,27 @@ async def check(
         log.warning("check failed: %s", err)
         raise http_error_for(err) from err
 
+    # The settled answer is stored even if the page goes away mid-stream (Starlette then cancels the stream): Gemini has
+    # answered and been paid for. The stream only waits on it.
+    async def settle() -> CheckResponse:
+        result = await task
+        return await finished(result, round((time.perf_counter() - started) * 1000))
+
+    settling = asyncio.ensure_future(settle())
+    _SETTLING.add(settling)
+    settling.add_done_callback(_settled)
+
     async def events() -> AsyncIterator[str]:
         yield sse("first_look", first_look.result())
         try:
-            result = await task
+            response = await asyncio.shield(settling)
         except GeminiError as err:
-            log.warning("check failed after its first look: %s", err)
             exc = http_error_for(err)
             yield sse("error", {"status": exc.status_code, "detail": exc.detail})
             return
         except Exception:  # noqa: BLE001 - the headers are sent: say so in the stream
-            log.exception("check failed after its first look")
             yield sse("error", {"status": 500, "detail": {"code": "internal_error"}})
             return
-        response = await finished(result, round((time.perf_counter() - started) * 1000))
         yield sse("done", response.model_dump(mode="json"))
 
     return StreamingResponse(events(), media_type="text/event-stream", headers={"Cache-Control": "no-store"})

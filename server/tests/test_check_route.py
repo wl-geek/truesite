@@ -342,3 +342,62 @@ def test_a_failure_before_the_first_look_is_a_plain_http_error(make_client):
     client.app.state.client = TimeoutClient()
     r = stream_post(client)
     assert r.status_code == 503 and r.json()["detail"]["code"] == "model_unavailable"
+
+
+def test_a_page_that_leaves_after_the_first_look_still_gets_its_check_stored(make_client, store, monkeypatch):
+    # uvicorn speaks ASGI 2.3, where Starlette cancels a stream when the client goes away (a reload, a sleeping iPad).
+    # Gemini has answered and been paid for by then, so the check must still be stored.
+    import asyncio
+    import threading
+    import time
+
+    import httpx
+
+    finished = threading.Event()
+
+    def second_look(first_pass, _p, _r, _o, _ctx, *, client, on_first_pass=None):
+        out = first_pass()
+        on_first_pass(out, [2])
+        time.sleep(0.3)  # the close-ups, after the page has gone
+        finished.set()
+        return out, {}, ["verify: mark 2 Door D-01: kept"]
+    monkeypatch.setattr(services, "second_look", second_look)
+    app = make_client(check_verify=True).app
+    req = httpx.Request("POST", "http://test/api/check", files={"photo": ("p.jpg", JPEG, "image/jpeg"),
+                        "render": ("r.png", PNG, "image/png")}, data={"context": context()},
+                        headers={"X-Session-Id": new_session(), **STREAM})
+    body = req.read()
+    scope = {"type": "http", "asgi": {"version": "3.0", "spec_version": "2.3"}, "http_version": "1.1", "method": "POST",
+             "scheme": "http", "path": "/api/check", "raw_path": b"/api/check", "query_string": b"", "root_path": "",
+             "headers": [(k.lower().encode(), v.encode()) for k, v in req.headers.items()],
+             "client": ("198.51.100.7", 5000), "server": ("test", 80)}
+
+    async def leave_after_first_look() -> list[bytes]:
+        seen_first_look = asyncio.Event()
+        asked = False
+        sent: list[bytes] = []
+
+        async def receive():
+            nonlocal asked
+            if not asked:
+                asked = True
+                return {"type": "http.request", "body": body, "more_body": False}
+            await seen_first_look.wait()
+            return {"type": "http.disconnect"}
+
+        async def send(message):
+            if message["type"] == "http.response.body":
+                sent.append(message.get("body", b""))
+                if b"first_look" in message.get("body", b""):
+                    seen_first_look.set()
+
+        await app(scope, receive, send)
+        for _ in range(60):  # the save runs on after the stream has gone
+            if store.runs:
+                break
+            await asyncio.sleep(0.05)
+        return sent
+
+    sent = asyncio.run(leave_after_first_look())
+    assert any(b"first_look" in chunk for chunk in sent) and not any(b"event: done" in chunk for chunk in sent)
+    assert finished.is_set() and len(store.runs) == 1
