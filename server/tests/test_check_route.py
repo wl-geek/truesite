@@ -271,3 +271,74 @@ def test_a_photo_that_cannot_be_decoded_still_gets_a_check_with_the_second_look_
     r = post(client)
     assert r.status_code == 200, r.text
     assert "verify: skipped, an image could not be decoded" in r.json()["result"]["warnings"]
+
+
+STREAM = {"Accept": "text/event-stream, application/json"}
+
+
+def stream_post(client, **kw):
+    files = {"photo": ("p.jpg", JPEG, "image/jpeg"), "render": ("r.png", PNG, "image/png")}
+    return client.post("/api/check", files=files, data={"context": context()},
+                       headers={"X-Session-Id": kw.get("session") or new_session(), **STREAM})
+
+
+def events(text: str) -> list[tuple[str, dict]]:
+    out = []
+    for block in text.strip().split("\n\n"):
+        lines = dict(line.split(": ", 1) for line in block.split("\n"))
+        out.append((lines["event"], json.loads(lines["data"])))
+    return out
+
+
+def first_look_then(final_status: str | Exception):
+    """A second look that hands over the first pass, then settles mark 2 as `final_status` (or raises it)."""
+    def second_look(first_pass, _photo, _render, _overlay, _ctx, *, client, on_first_pass=None):
+        out = first_pass()
+        if on_first_pass:
+            on_first_pass(out, [2])
+        if isinstance(final_status, Exception):
+            raise final_status
+        findings = [{**f, "status": final_status} if f["mark"] == 2 else f for f in out["result"]["findings"]]
+        return {**out, "result": {**out["result"], "findings": findings}}, {}, ["verify: mark 2 Door D-01: settled"]
+    return second_look
+
+
+def test_a_check_streams_its_first_look_then_the_settled_answer(make_client, monkeypatch):
+    monkeypatch.setattr(services, "second_look", first_look_then("present_ok"))
+    client = make_client(check_verify=True)
+    session = new_session()
+    r = stream_post(client, session=session)
+    assert r.status_code == 200, r.text
+    assert r.headers["content-type"].startswith("text/event-stream")
+    assert "content-encoding" not in r.headers  # never held back by gzip
+    (kind1, look), (kind2, done) = events(r.text)
+    assert (kind1, kind2) == ("first_look", "done")
+    assert look["pending"] == [2]
+    assert {f["mark"]: f["status"] for f in look["result"]["findings"]}[2] == "misplaced"
+    assert {f["mark"]: f["status"] for f in done["result"]["findings"]}[2] == "present_ok"
+    assert done["saved"] is True
+    image = client.get(f"/api/runs/{done['run_id']}/photo.jpg", headers={"X-Session-Id": session})
+    assert image.status_code == 200  # the settled check is stored as before
+
+
+def test_a_failure_after_the_first_look_arrives_in_the_stream(make_client, monkeypatch):
+    from app.gemini_client import GeminiError
+    monkeypatch.setattr(services, "second_look", first_look_then(GeminiError("timeout", "slow")))
+    r = stream_post(make_client(check_verify=True))
+    (kind1, _look), (kind2, err) = events(r.text)
+    assert (kind1, kind2) == ("first_look", "error")
+    assert err == {"status": 503, "detail": {"code": "model_unavailable"}}
+
+
+def test_a_check_with_no_first_look_answers_plain_json(client):
+    # The second look is off, so there is nothing to show early: the same JSON as without the Accept header.
+    r = stream_post(client)
+    assert r.status_code == 200 and r.headers["content-type"].startswith("application/json")
+    assert r.json()["saved"] is True
+
+
+def test_a_failure_before_the_first_look_is_a_plain_http_error(make_client):
+    client = make_client(check_verify=True)
+    client.app.state.client = TimeoutClient()
+    r = stream_post(client)
+    assert r.status_code == 503 and r.json()["detail"]["code"] == "model_unavailable"

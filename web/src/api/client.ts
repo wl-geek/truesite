@@ -9,7 +9,7 @@
 import { getSessionId } from '../session'
 import { reportUsageLimit, usageLimitOf } from './limits'
 import type {
-  AskAnswer, AskRequest, CheckContext, CheckResponse, CheckResult, Issue, IssueDraft, IssueDraftRequest, IssueIn,
+  AskAnswer, AskRequest, CheckContext, CheckResponse, CheckResult, FirstLook, Issue, IssueDraft, IssueDraftRequest, IssueIn,
   IssueList, ProjectManifest, ReportRequest, ReviewDecision, ReviewOut, RunDetail, RunList, SiteReport,
 } from './types'
 
@@ -92,14 +92,88 @@ export function getProject(projectId: string): Promise<ProjectManifest> {
   return getJson(`/api/projects/${encodeURIComponent(projectId)}`)
 }
 
-/** `overlay` (optional) is IMAGE 3: the photo with each marked element's design outline (check/outlines.ts). */
-export async function postCheck(photo: Blob, render: Blob, ctx: CheckContext, overlay?: Blob | null): Promise<CheckResponse> {
+/**
+ * `overlay` (optional) is IMAGE 3: the photo with each marked element's design outline (check/outlines.ts).
+ * With `onFirstLook`, the server may stream (text/event-stream, contract section 4): Gemini's first look comes as soon as it
+ * answers, while the close-up second look settles; the settled CheckResponse is still what this returns.
+ */
+export async function postCheck(photo: Blob, render: Blob, ctx: CheckContext, overlay?: Blob | null,
+  onFirstLook?: (look: FirstLook) => void): Promise<CheckResponse> {
   const form = new FormData()
   form.append('photo', photo, 'photo.jpg')
   form.append('render', render, 'render.png')
   if (overlay) form.append('overlay', overlay, 'overlay.jpg')
   form.append('context', JSON.stringify(ctx))
-  return (await (await request('/api/check', { method: 'POST', body: form }, CHECK_TIMEOUT_MS)).json()) as CheckResponse
+  const started = Date.now()
+  const init: RequestInit = { method: 'POST', body: form }
+  if (onFirstLook) init.headers = { Accept: 'text/event-stream, application/json' }
+  const res = await request('/api/check', init, CHECK_TIMEOUT_MS)
+  if (!onFirstLook || !res.body || !(res.headers.get('Content-Type') ?? '').startsWith('text/event-stream')) {
+    return (await res.json()) as CheckResponse
+  }
+  return readCheckStream(res.body, onFirstLook, CHECK_TIMEOUT_MS - (Date.now() - started))
+}
+
+export type StreamEvent = { event: string; data: string }
+
+/** The complete server-sent events (each ends with a blank line) at the front of `buffer`, and what is left after them. */
+export function takeEvents(buffer: string): { events: StreamEvent[]; rest: string } {
+  const text = buffer.replace(/\r\n/g, '\n')
+  const events: StreamEvent[] = []
+  let start = 0
+  for (let end = text.indexOf('\n\n'); end !== -1; end = text.indexOf('\n\n', start)) {
+    let event = 'message'
+    const data: string[] = []
+    for (const line of text.slice(start, end).split('\n')) {
+      if (line.startsWith('event:')) event = line.slice(6).trim()
+      else if (line.startsWith('data:')) data.push(line.slice(5).replace(/^ /, ''))
+    }
+    events.push({ event, data: data.join('\n') })
+    start = end + 2
+  }
+  return { events, rest: text.slice(start) }
+}
+
+function streamError(data: string): ApiError {
+  const { status, detail } = JSON.parse(data) as { status?: number; detail?: { code?: string; retry_after_s?: number } }
+  const code = typeof detail?.code === 'string' ? detail.code : undefined
+  return new ApiError(code ?? `HTTP ${status}`, typeof status === 'number' ? status : 0, code, detail?.retry_after_s)
+}
+
+async function readCheckStream(body: ReadableStream<Uint8Array>, onFirstLook: (look: FirstLook) => void,
+  timeoutMs: number): Promise<CheckResponse> {
+  const reader = body.getReader()
+  const decoder = new TextDecoder()
+  let timer: ReturnType<typeof setTimeout> | undefined
+  const timedOut = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new ApiError('Request timed out', 0, 'timeout')), Math.max(0, timeoutMs))
+  })
+  let buffer = ''
+  try {
+    for (;;) {
+      const { done, value } = await Promise.race([reader.read(), timedOut])
+      if (value) buffer += decoder.decode(value, { stream: true })
+      const { events, rest } = takeEvents(buffer)
+      buffer = rest
+      for (const e of events) {
+        if (e.event === 'done') return JSON.parse(e.data) as CheckResponse
+        if (e.event === 'error') throw streamError(e.data)
+        if (e.event === 'first_look') {
+          try {
+            onFirstLook(JSON.parse(e.data) as FirstLook)
+          } catch {
+            /* showing the first look is extra: the settled answer still comes */
+          }
+        }
+      }
+      if (done) throw new ApiError('The check stopped before it finished', 0, 'network')
+    }
+  } catch (e) {
+    throw e instanceof ApiError ? e : new ApiError('Network error', 0, 'network')
+  } finally {
+    clearTimeout(timer)
+    reader.cancel().catch(() => undefined)
+  }
 }
 
 export function getSavedResult(sampleId: string): Promise<CheckResult> {

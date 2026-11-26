@@ -207,11 +207,16 @@ def _raw_findings(raw: Any) -> dict[int, dict]:
 
 
 def checked(first_pass: Callable[[], dict], photo_jpeg: bytes, render_png: bytes, overlay_jpeg: Optional[bytes],
-            ctx: CheckContext, *, client: Any, settings: Optional[VerifySettings] = None) -> tuple[dict, dict, list[str]]:
+            ctx: CheckContext, *, client: Any, settings: Optional[VerifySettings] = None,
+            on_first_pass: Optional[Callable[[dict, list[int]], None]] = None) -> tuple[dict, dict, list[str]]:
     """Run `first_pass()` (gemini_client.check_asbuilt's output) while the thin and small marks get their close-up
     look, then look again at the marks it flagged. Returns the first pass's output with its raw result changed by the
     verdicts (see `merge`), the second looks' summed usage, and one note per look, then one on timing, for the
-    warnings."""
+    warnings.
+
+    `on_first_pass(out, pending)`, when given, gets the first pass's output and the marks being looked at again as soon
+    as the first pass answers, so the page can show it while the close-ups settle. It runs on this thread; if it
+    raises, the check carries on without it."""
     cfg = settings or VerifySettings.from_env()
     mode = policy()
     model = cfg.model or gemini_client.MODEL_ID
@@ -271,6 +276,11 @@ def checked(first_pass: Callable[[], dict], photo_jpeg: bytes, render_png: bytes
         late = [m for m in late if m not in futures][:cfg.max_late]
         for m in late:
             futures[m] = pool.submit(one, m)
+        if on_first_pass is not None and futures:
+            try:
+                on_first_pass(out, sorted(futures))
+            except Exception:  # noqa: BLE001 - showing the first look early must never cost the check
+                log.exception("handing over the first look failed")
         wait(list(futures.values()), timeout=min(cfg.timeout_ms / 1000 + 1, cfg.grace_ms / 1000))
         notes: list[str] = []
         findings = dict(raw_findings)

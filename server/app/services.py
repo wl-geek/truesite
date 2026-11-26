@@ -19,7 +19,7 @@ from .verify import checked as second_look
 
 log = logging.getLogger("truesite.gemini")
 
-Checker = Callable[..., dict]  # (photo_jpeg, render_png, ctx, overlay_jpeg=None)
+Checker = Callable[..., dict]  # (photo_jpeg, render_png, ctx, overlay_jpeg=None, on_first_look=None)
 VISUAL_CHECK_LABEL = "Visual check, not a survey."  # spec 4.4: every drafted issue carries it
 
 
@@ -51,26 +51,35 @@ def log_usage(what: str, out: dict) -> None:
 
 
 def make_checker(repo: ProjectRepo, client: Any, *, verify: bool = False) -> Checker:
-    """`verify` adds the close-up second look at flagged, thin and small marks (app/verify.py)."""
+    """`verify` adds the close-up second look at flagged, thin and small marks (app/verify.py). With it on, a checker
+    given `on_first_look(result, pending)` hands over the first pass, repaired like the final result, as soon as it
+    answers, with the marks the second look is still settling."""
 
-    def check(photo_jpeg: bytes, render_png: bytes, ctx: CheckContext, overlay_jpeg: bytes | None = None) -> dict:
+    def check(photo_jpeg: bytes, render_png: bytes, ctx: CheckContext, overlay_jpeg: bytes | None = None,
+              on_first_look: Callable[[dict, list[int]], None] | None = None) -> dict:
         def first_pass() -> dict:
             return gemini_client.check_asbuilt(photo_jpeg, render_png, ctx.model_dump(mode="json"),
                                                project_note=repo.check_note(ctx.project_id), overlay_jpeg=overlay_jpeg,
                                                client=client)
 
+        def finished(out: dict, usage: dict, notes: list[str]) -> dict:
+            result = repair_check(out["result"], ctx, repo.elements_by_guid(ctx.project_id))
+            return result.model_copy(update={"usage": Usage(**usage), "model_version": out.get("model_version"),
+                                             "warnings": [*result.warnings, *notes]}).model_dump(mode="json")
+
+        def hand_over(look: Callable[[dict, list[int]], None]) -> Callable[[dict, list[int]], None]:
+            return lambda out, pending: look(finished(out, dict(out["usage"]), []), pending)
+
         notes: list[str] = []
         if verify:
-            out, extra, notes = second_look(first_pass, photo_jpeg, render_png, overlay_jpeg, ctx, client=client)
+            out, extra, notes = second_look(first_pass, photo_jpeg, render_png, overlay_jpeg, ctx, client=client,
+                                            on_first_pass=hand_over(on_first_look) if on_first_look else None)
             usage = {k: round(v + extra.get(k, 0), 6) for k, v in out["usage"].items()}
         else:
             out = first_pass()
             usage = dict(out["usage"])
-        result = repair_check(out["result"], ctx, repo.elements_by_guid(ctx.project_id))
-        result = result.model_copy(update={"usage": Usage(**usage), "model_version": out.get("model_version"),
-                                           "warnings": [*result.warnings, *notes]})
         log_usage("check", {"usage": usage, "attempts": out.get("attempts"), "latency_ms": out.get("latency_ms")})
-        return result.model_dump(mode="json")
+        return finished(out, usage, notes)
 
     return check
 

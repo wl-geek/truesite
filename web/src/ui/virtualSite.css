@@ -123,6 +123,12 @@
 .vs-score-list .miss > span:first-child { color: #ff8f6b; }
 .vs-score-tag { font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: #9fb3c8; }
 .vs-score .note { color: #c9d6e4; margin: 6px 0 0; }
+/* The close-up second look: under way while the first look shows, then what it changed (VirtualSite SecondLookLine). */
+.vs-second-look { margin: 0; padding: 8px 12px; border-radius: 10px; background: var(--white); border: 1px solid var(--line); font-size: 13.5px; }
+.vs-second-look.is-running { display: flex; gap: 8px; align-items: baseline; border-color: var(--orange); }
+.vs-second-look-dot { flex: none; width: 9px; height: 9px; border-radius: 50%; background: var(--orange); animation: vs-pulse 1.2s ease-in-out infinite; }
+@keyframes vs-pulse { 50% { opacity: 0.3; } }
+@media (prefers-reduced-motion: reduce) { .vs-second-look-dot { animation: none; } }
 .vs-compare { display: grid; gap: 10px; }
 .vs-compare figure { margin: 0; }
 .vs-compare figcaption { margin-bottom: 4px; color: var(--muted); font-size: 12.5px; font-weight: 600; }

@@ -261,3 +261,35 @@ def test_an_image_that_cannot_be_decoded_skips_the_second_look(models: Path) -> 
     assert out is stub
     assert usage == {"prompt_tokens": 0, "output_tokens": 0, "thought_tokens": 0, "total_tokens": 0, "cost_usd_est": 0.0}
     assert notes == ["verify: skipped, an image could not be decoded"]
+
+
+def test_the_first_look_is_handed_over_while_the_close_ups_settle(models: Path) -> None:
+    first = [finding(1, "present_ok"), finding(2, "misplaced"), finding(3, "present_ok"), finding(4, "present_ok")]
+    client = Scripted(first, {2: verdict("present_ok"), 3: verdict("missing"), 4: verdict("present_ok")})
+    looks: list[tuple[dict, list[int]]] = []
+    result = make_checker(ProjectRepo(models), client, verify=True)(JPEG, PNG, CTX, JPEG,
+                                                                    on_first_look=lambda r, p: looks.append((r, p)))
+    assert len(looks) == 1
+    look, pending = looks[0]
+    assert pending == [2, 3, 4]  # the thin and small marks, then the flagged one
+    assert {f["mark"]: f["status"] for f in look["findings"]}[2] == "misplaced"  # as the first pass said, repaired
+    assert {f["mark"]: f["severity"] for f in look["findings"]}[2] is not None
+    assert not any(w.startswith("verify:") for w in look["warnings"])
+    assert {f["mark"]: f["status"] for f in result["findings"]}[2] == "present_ok"  # the final answer still settles it
+
+
+def test_a_failing_first_look_handover_does_not_cost_the_check(models: Path) -> None:
+    first = [finding(1, "present_ok"), finding(2, "misplaced"), finding(3, "present_ok"), finding(4, "present_ok")]
+    client = Scripted(first, {2: verdict("present_ok"), 3: verdict("present_ok"), 4: verdict("present_ok")})
+
+    def boom(_result: dict, _pending: list[int]) -> None:
+        raise RuntimeError("the page went away")
+    result = make_checker(ProjectRepo(models), client, verify=True)(JPEG, PNG, CTX, JPEG, on_first_look=boom)
+    assert {f["mark"]: f["status"] for f in result["findings"]}[2] == "present_ok"
+
+
+def test_without_the_second_look_there_is_no_early_first_look(models: Path) -> None:
+    client = Scripted([finding(m, "missing") for m in (1, 2, 3, 4)], {})
+    looks: list[object] = []
+    make_checker(ProjectRepo(models), client)(JPEG, PNG, CTX, JPEG, on_first_look=lambda r, p: looks.append(r))
+    assert looks == []
