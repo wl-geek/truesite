@@ -1,7 +1,7 @@
 [
   {
     "sample_id": "site-p1-south",
-    "label": "P1 · South side from the car park",
+    "label": "P1 · South approach",
     "project_id": "site",
     "anchor_id": "P1",
     "simulated": true,
@@ -20,7 +20,7 @@
   },
   {
     "sample_id": "site-p2-slab",
-    "label": "P2 · Under the level 1 slab",
+    "label": "P2 · Under the slab",
     "project_id": "site",
     "anchor_id": "P2",
     "simulated": true,
@@ -39,7 +39,7 @@
   },
   {
     "sample_id": "site-p3-openbay",
-    "label": "P3 · Looking up through the open bay",
+    "label": "P3 · Under the open bay",
     "project_id": "site",
     "anchor_id": "P3",
     "simulated": true,

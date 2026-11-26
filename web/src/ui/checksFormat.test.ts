@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { RunSummary } from '../api/types'
 import {
-  costAndTime, cropFor, decisionLine, exactTime, modelLabel, needsReview, reviewErrorMessage, reviewState, shortHash, sourceLabel, tokensText,
-  totals, viewpointLabel,
+  costAndTime, cropFor, decisionLine, exactTime, modelLabel, needsReview, reviewErrorMessage, reviewState, secondLookSummary, serverNotes,
+  shortHash, sourceLabel, tokensText, totals, viewpointLabel,
 } from './checksFormat'
 
 const run = (over: Partial<RunSummary> = {}): RunSummary => ({
@@ -91,5 +91,36 @@ describe('Checks page wording', () => {
     expect(reviewErrorMessage({ status: 404, code: 'unknown_run' })).toBe('This check is no longer on the server, so the decision was not saved.')
     expect(reviewErrorMessage({ status: 0, code: 'network' })).toBe('No connection. Your decision was not saved: try again.')
     expect(reviewErrorMessage({ status: 500 })).toBe("Couldn't save your decision. Try again.")
+  })
+})
+
+// Notes as server/app/verify.py writes them; like a live P1 check, three close-ups are not back in time.
+const VERIFY_NOTES = [
+  'verify: mark 3 Steel column C2: present_ok kept (present_ok 0.91)',
+  'verify: mark 7 Guardrail G1: missing -> present_ok',
+  'verify: mark 9 Purlin P4: present_ok -> cannot_judge (missing 0.62)',
+  'verify: mark 10 Beam B3: misplaced kept (misplaced 0.80)',
+  'verify: mark 11 ran out of time',
+  'verify: mark 12 ran out of time',
+  'verify: mark 18 Brace X2: present_ok kept (missing 0.40)',
+  'verify: mark 24 ran out of time',
+  'verify: timing {"model":"gemini-3.8-flash","decode_s":0.062,"first_pass_s":21.4,"quiet":5,"late":3,"failed":0,"unfinished":3,"total_s":27.29}',
+]
+
+describe('secondLookSummary', () => {
+  it('turns the close-up notes into one line and drops the timing', () => {
+    expect(secondLookSummary(['Photo is a little dark', ...VERIFY_NOTES])).toBe(
+      '8 marks looked at again close up: 2 changed, 3 unchanged, 3 not back in time (left as the first look said)')
+    expect(serverNotes(['Photo is a little dark', ...VERIFY_NOTES])).toEqual(['Photo is a little dark'])
+  })
+
+  it('counts failed looks, says when it was skipped, and is null without a second look', () => {
+    expect(secondLookSummary(['verify: mark 2 failed (unavailable)', 'verify: mark 4 Door D-01: misplaced -> present_ok']))
+      .toBe('2 marks looked at again close up: 1 changed, 0 unchanged, 1 could not be checked (left as the first look said)')
+    expect(secondLookSummary(['verify: mark 4 Door D-01: present_ok kept (present_ok 0.90)']))
+      .toBe('1 mark looked at again close up: 0 changed, 1 unchanged')
+    expect(secondLookSummary(['verify: skipped, an image could not be decoded'])).toBe('Skipped: an image could not be read')
+    expect(secondLookSummary(['Photo is a little dark'])).toBeNull()
+    expect(secondLookSummary([])).toBeNull()
   })
 })

@@ -220,8 +220,12 @@ def checked(first_pass: Callable[[], dict], photo_jpeg: bytes, render_png: bytes
     usage = {"prompt_tokens": 0, "output_tokens": 0, "thought_tokens": 0, "total_tokens": 0, "cost_usd_est": 0.0}
     t0, cpu0 = time.monotonic(), time.process_time()  # process CPU: every thread of this check (and any other at once)
     # Decoded once here, not once per close-up: 24 close-ups each decoding three 4 MP images needed about 440 MB.
-    render, photo = decode(render_png), decode(photo_jpeg)
-    overlay = decode(overlay_jpeg) if overlay_jpeg else None
+    try:
+        render, photo = decode(render_png), decode(photo_jpeg)
+        overlay = decode(overlay_jpeg) if overlay_jpeg else None
+    except Exception as err:  # noqa: BLE001 - a truncated or unreadable upload: the first pass alone still answers
+        log.warning("verify skipped, an image could not be decoded: %s", err)
+        return first_pass(), usage, ["verify: skipped, an image could not be decoded"]
     timing: dict[str, Any] = {"model": model, "decode_s": round(time.monotonic() - t0, 3)}
     calls: dict[int, dict] = {}  # mark -> when it started, how long its crops and its call took (worker threads write)
 

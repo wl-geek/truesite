@@ -70,7 +70,7 @@ describe('ElementPanel with a check result', () => {
     const text = textOf(tree)
     expect(text).toContain('As-built check · mark 8')
     expect(text).toContain('Misplaced, about 60 cm left')
-    expect(text).toContain('high')
+    expect(text).toContain('High')
     expect(text).toContain('Gemini: It stands to the left of its outline.')
     expect(text).toContain('Why it matters:')
     const [draft] = buttons(tree, 'Draft issue')

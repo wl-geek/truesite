@@ -67,3 +67,21 @@ To measure on real photos instead:
 - a pad footing under a shifted column, which Gemini often says moved with it
 
 Runs vary a lot, and P3 alone has gone from 0 to 3 of 4. Read single runs as rough: the shipped version averages about 10 of 16 found and 4 false alarms over 3 runs.
+
+## 4. The close-up second look on the deployed service (simulated as-built, 22 and 25 Nov 2026)
+
+**Simulated, not photos.** The same virtual demo check at P1–P4 (1180 × 820 view, opening framing, headless Chromium) on the deployed service with `gemini-3.8-flash` through Agent Platform: 5 rounds of the four spots, one check after another, 20 checks per version. Found and false alarms are counted as in section 3, and a "strict" find also needs the right status (missing against moved). Cost is estimated from the token usage the service logs.
+
+| | Without the second look (22 Nov) | **With the close-up second look (25 Nov)** |
+|---|---|---|
+| Found, of 16 (mean of 5 rounds) | 9.2 | **12.2 (11–13)** |
+| Found, strict | 4.6 | **11.8** |
+| False alarms per round of 4 checks | 4.6 | **1.8 (1–3)** |
+| Seconds per check | 13.7 | **24.5 (18–36), median 24.3** |
+| US$ per check | 0.013 | **0.049** |
+
+**Caught in every round:** column C2 (from P1 and P2), column B2's sideways shift, beam D1–D2 (P2, P4), the missing east edge protection (P2, P4), edge beam B3–C3, purlin P4 B–C and the truss T3 diagonal.
+
+**Still missed:** column C1 from P1, a 60 cm shift straight away from the camera (0 of 5; from P2 the same shift is sideways and was caught 4 of 5 times). Column C2 from P3, far and partly hidden: 0 of 5, three times as "can't judge". Beam C2–D2 from P2: 1 of 5. The false alarms were spread over 8 elements, none more than twice in 20 checks.
+
+The second look is `server/app/verify.py` (README, How it works, step 5). These runs predate the 6-second cap on close-ups still out after the first look.

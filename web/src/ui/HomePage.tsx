@@ -98,7 +98,8 @@ export function HomePage() {
           </Step>
           <Step n={3} tag="AI" icon="scan" title="Check as-built with Gemini">
             Gemini compares your photo with the design, pins what is off and drafts the issue, in the crew's language
-            if needed. At the end of the day it writes the site report. A person edits and saves each issue.
+            if needed. At the end of the day it writes the site report. A person edits and saves each issue, and
+            confirms or dismisses each finding in <Link to="/checks">Checks</Link>, with its confidence and an audit trail.
           </Step>
         </ol>
         <p className="home-fineprint">Visual check, not a survey: offsets are rough, in tens of centimetres.</p>

@@ -1,8 +1,8 @@
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
-import type { Finding, RunSummary } from '../api/types'
-import { ChecksPage, FindingCard, RunCards, RunTable, Tiles } from './ChecksPage'
+import type { Finding, RunDetail, RunSummary } from '../api/types'
+import { AuditTrail, ChecksPage, FindingCard, RunCards, RunTable, Tiles } from './ChecksPage'
 
 const text = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/&#x27;/g, "'").replace(/\s+/g, ' ').trim()
 
@@ -90,5 +90,31 @@ describe('ChecksPage', () => {
   it('sums the tiles', () => {
     const t = text(renderToStaticMarkup(createElement(Tiles, { sum: { checks: 4, toReview: 5, highOpen: 2, reviewed: 3, confirmed: 2, dismissed: 1, checksToReview: 2 } })))
     expect(t).toBe('Checks run 4 from this browser Findings to review 5 in 2 checks High severity 2 structure and guardrails, false alarms left out Reviewed 3 2 confirmed · 1 dismissed')
+  })
+})
+
+describe('AuditTrail', () => {
+  const run = (warnings: string[]): RunDetail => ({
+    run_id: 'AbC_d-1234567890xyz', created_at: '2026-11-25T09:00:00Z', project_id: 'site', anchor_id: 'P1', source: 'live',
+    context: {}, review: {}, provenance: null, duration_ms: 27300, images: { photo: 'p', render: 'r', overlay: null },
+    result: {
+      project_id: 'site', anchor_id: 'P1', image_quality: 'good', pose_quality: 'good', findings: [], unexpected: [], summary: '',
+      warnings, usage: null, model_version: 'gemini-3.8-flash', saved_at: null,
+    },
+  })
+  const trail = (warnings: string[]) => text(renderToStaticMarkup(createElement(AuditTrail, { run: run(warnings), findings: [], judge: 'Gemini' })))
+
+  it('shows the second look as one line, never the raw verify notes or timing', () => {
+    const t = trail(['Photo is a little dark', 'verify: mark 7 Guardrail G1: missing -> present_ok', 'verify: mark 11 ran out of time',
+      'verify: timing {"model":"gemini-3.8-flash","unfinished":1,"total_s":27.29}'])
+    expect(t).toContain('Second look 2 marks looked at again close up: 1 changed, 0 unchanged, 1 not back in time')
+    expect(t).toContain('Server notes Photo is a little dark')
+    expect(t).not.toContain('verify:')
+  })
+
+  it('hides Server notes when only second-look notes were left', () => {
+    const t = trail(['verify: mark 3 Steel column C2: present_ok kept (present_ok 0.91)', 'verify: timing {"total_s":9}'])
+    expect(t).not.toContain('Server notes')
+    expect(t).not.toContain('verify:')
   })
 })

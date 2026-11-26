@@ -44,7 +44,7 @@ test("per-address limit, ready-made view: the photo's saved result, with the rea
   await page.goto('/samples?photos')
   const card = page.locator('.sample-card').first()
   await card.click()
-  await expect(page.locator('.sample-results h2.sample-results-title')).toHaveText('P1 · South side from the car park', { timeout: 60_000 })
+  await expect(page.locator('.sample-results h2.sample-results-title')).toHaveText('P1 · South approach', { timeout: 60_000 })
   await expect(page.locator('.sample-results').getByRole('status')).toHaveCount(0)
   await card.click()
   await expect(page.locator('.sample-results').getByRole('status')).toHaveText(

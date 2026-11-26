@@ -6,7 +6,7 @@ import { whyItMatters } from '../check/risk'
 import { checksPathFor, navigate } from '../router'
 import {
   costAndTime, cropFor, decisionLine, exactTime, modelLabel, needsReview, OFFLINE_MODEL, reviewErrorMessage, reviewState, seconds,
-  shortHash, sourceLabel, tokensText, totals, usd, viewpointLabel, type Totals,
+  secondLookSummary, serverNotes, shortHash, sourceLabel, tokensText, totals, usd, viewpointLabel, type Totals,
 } from './checksFormat'
 import { ConfidenceBadge } from './ConfidenceBadge'
 import { typeLabel } from './elementFacts'
@@ -606,8 +606,10 @@ function UnexpectedCard({ u, photoUrl, aspect }: { u: UnexpectedItem; photoUrl: 
   )
 }
 
-function AuditTrail({ run, findings, judge }: { run: RunDetail; findings: readonly Finding[]; judge: string }) {
+export function AuditTrail({ run, findings, judge }: { run: RunDetail; findings: readonly Finding[]; judge: string }) {
   const p = run.provenance
+  const secondLook = secondLookSummary(run.result.warnings)
+  const notes = serverNotes(run.result.warnings)
   const usage = run.result.usage
   const decisions = findings.filter((f) => run.review[String(f.mark)]).map((f) => ({ f, r: run.review[String(f.mark)] }))
   const hash = (h: string | null) => h ? <code className="checks-hash" title={h}>{shortHash(h)}</code> : <span className="checks-muted">Not sent</span>
@@ -630,6 +632,7 @@ function AuditTrail({ run, findings, judge }: { run: RunDetail; findings: readon
         {usage && <><dt>Tokens</dt><dd>{tokensText(usage)}</dd></>}
         {usage && <><dt>Estimated cost</dt><dd>{usd(usage.cost_usd_est)}</dd></>}
         {run.duration_ms !== null && <><dt>Check time</dt><dd>{seconds(run.duration_ms)} on the server</dd></>}
+        {secondLook && <><dt>Second look</dt><dd>{secondLook}</dd></>}
         <dt>Check ID</dt><dd><code className="checks-hash">{run.run_id}</code></dd>
       </dl>
       {decisions.length > 0 && (
@@ -638,10 +641,10 @@ function AuditTrail({ run, findings, judge }: { run: RunDetail; findings: readon
           <ul className="checks-log">{decisions.map(({ f, r }) => <li key={f.mark}>Mark {f.mark}, {f.name}: {decisionLine(r)}</li>)}</ul>
         </>
       )}
-      {run.result.warnings.length > 0 && (
+      {notes.length > 0 && (
         <>
           <h3 className="checks-h3">Server notes</h3>
-          <ul className="checks-log">{run.result.warnings.map((w, i) => <li key={i}>{w}</li>)}</ul>
+          <ul className="checks-log">{notes.map((w, i) => <li key={i}>{w}</li>)}</ul>
         </>
       )}
     </section>

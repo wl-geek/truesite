@@ -248,3 +248,16 @@ def test_verify_settings_from_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("VERIFY_PHOTO_RESOLUTION", "ultra")
     with pytest.raises(ValueError):
         VerifySettings.from_env()
+
+
+def test_an_image_that_cannot_be_decoded_skips_the_second_look(models: Path) -> None:
+    # A truncated JPEG passes upload validation (its header still gives a size), then fails to decode here.
+    truncated = image_bytes("JPEG", (400, 300))
+    truncated = truncated[: len(truncated) // 2]
+    with pytest.raises(Exception):
+        verify.decode(truncated)
+    stub = {"result": {"findings": [finding(1, "misplaced")]}, "usage": {"total_tokens": 7}}
+    out, usage, notes = verify.checked(lambda: stub, truncated, PNG, JPEG, CTX, client=None)
+    assert out is stub
+    assert usage == {"prompt_tokens": 0, "output_tokens": 0, "thought_tokens": 0, "total_tokens": 0, "cost_usd_est": 0.0}
+    assert notes == ["verify: skipped, an image could not be decoded"]

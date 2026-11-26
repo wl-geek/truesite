@@ -105,3 +105,17 @@ def test_any_report_answer_becomes_a_report_within_its_limits_with_the_label(raw
         assert len(items) == min(cap, len(given))
         assert all(item.strip() and len(item) <= 200 for item in items)
         assert items == [truncate_text(x, 200) for x in given[:cap]]  # whole items, never letters
+
+
+def test_a_finding_dismissed_on_the_checks_page_is_not_reported():
+    from app.schemas import FindingReview
+    run = stored_run(1)
+    run.result = {"findings": [{"mark": 1, "status": "missing", "name": "Column C1"},
+                               {"mark": 2, "status": "misplaced", "name": "Beam B2"},
+                               {"mark": 3, "status": "missing", "name": "Rail R3"}]}
+    at = datetime(2026, 10, 17, 10, tzinfo=timezone.utc)
+    run.review = {"2": FindingReview(decision="dismissed", at=at), "3": FindingReview(decision="confirmed", at=at)}
+    with patch.object(services.gemini_client, "write_report", return_value={"result": {}}) as write:
+        services.make_reporter(None)([run])
+    sent = write.call_args.args[0]["checks"][0]["deviations"]
+    assert [d["name"] for d in sent] == ["Column C1", "Rail R3"]

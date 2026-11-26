@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import type { CheckResult, Finding } from '../api/types'
 import { whyItMatters } from '../check/risk'
 import { ConfidenceBadge } from './ConfidenceBadge'
-import { groupFindings, imageQualityMessage, NOT_A_SURVEY, savedLabel, statusText, summaryCounts } from './findingFormat'
+import { groupFindings, imageQualityMessage, NOT_A_SURVEY, savedLabel, severityLabel, statusText, summaryCounts } from './findingFormat'
 
 export type FindingsPanelProps = {
   result: CheckResult
@@ -35,7 +35,7 @@ function Row({ f, selected, onSelect, onDraftIssue, saved = false }: {
           {whyItMatters(f) && <span className="finding-risk"><span className="finding-src">Why it matters:</span> {whyItMatters(f)}</span>}
           {saved && <span className="finding-saved">✓ Issue saved</span>}
         </span>
-        {f.severity && <span className={`badge badge-${f.severity}`}>{f.severity}</span>}
+        {f.severity && <span className={`badge badge-${f.severity}`}>{severityLabel(f.severity)}</span>}
       </button>
       {onDraftIssue && f.severity && (
         <button type="button" className="btn btn-small" onClick={() => onDraftIssue(f)}>Draft issue</button>

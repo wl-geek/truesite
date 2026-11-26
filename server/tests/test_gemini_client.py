@@ -696,3 +696,5 @@ def test_costs_follow_the_model_that_answered():
     assert gc.usage_dict(lite)["cost_usd_est"] == round((4500 * 0.30 + (1500 + 300) * 2.50) / 1e6, 6)
     assert gc.usage_dict(fake_response(GOOD_CHECK))["cost_usd_est"] == round(gc.estimate_cost_usd(4500, 1500, 300), 6)
     assert gc.prices_per_m("some-new-model") == (gc.PRICE_IN_PER_M, gc.PRICE_OUT_PER_M)
+    assert gc.prices_per_m("gemini-3.5-flash") == (1.50, 9.00)  # the first fallback
+    assert gc.prices_per_m("gemini-3.5-flash-lite") == (0.30, 2.50)  # the longest prefix wins

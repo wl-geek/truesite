@@ -41,6 +41,7 @@ flowchart LR
   SNAP -->|photo + render + outlines + visible elements| RUN
   subgraph GCP["Google Cloud"]
     RUN["Cloud Run: FastAPI<br/>limits · validation · severity"] --> GEM["Gemini 3.8 Flash<br/>on Agent Platform (global)"]
+    RUN --> VER["Second look: close-up crops<br/>of thin, small and flagged marks"] -->|one call per mark| GEM
     RUN --> FS[(Cloud Firestore via the<br/>Firebase Admin SDK:<br/>runs · issues · daily cap)]
     RUN --> GCS[(Cloud Storage:<br/>photos · renders, 30-day lifecycle)]
   end
@@ -57,8 +58,9 @@ flowchart LR
    - with the motion sensors on, sensor fusion (`web/src/scene/fusion.ts`): the code's orientation in the world is averaged over many views, and every frame is posed from it and the device rotation at that frame, so the model holds still instead of shaking with the QR noise.
 3. **Overlay.** The model is drawn at true scale: 1:1 on the upright site sheets P1–P4, and at the sheet's own scale on a desk code (1:100 on the site's D1). It is levelled by gravity (`web/src/scene/level.ts`) and shows an alignment badge and the distance. See [AR modes](#ar-modes).
 4. **As-built check.** From the snapshot pose, the browser renders an ID buffer to find the visible elements and numbers up to 25 of them, structure and guardrails first. Gemini gets the photo, a design render with the numbered marks, and the photo with a thin ring just outside each marked element's design position (`web/src/check/outlines.ts`). It judges each element at its own outline and returns JSON.
-5. **Server rules.** The server repairs the answer: one finding per mark, clamped boxes, low confidence becomes "can't judge", and offsets are rounded to 10 cm. **Severity comes from the element class in code** (structure, rebar and guardrails rate high), never from the model.
-6. **Act.** Findings are pinned in 3D, and every check is listed on the Checks page (`/checks`) for a person to confirm or dismiss each finding. Questions are answered from the element's own properties, with the fields cited. Issues are drafted by Gemini, in the crew's language if you pick one (eight languages), and saved by a person. Gemini also drafts a site report from the checks, safety first.
+5. **Second look.** Gemini looks again at the marks a full-frame view most often gets wrong (`server/app/verify.py`), each on close-up crops of the same three images around its own mark: up to 16 thin or small marks (braces, purlins, truss members, guardrails, far elements), started alongside the first look, then up to 10 that the first look flagged or could not judge. A close-up that is sure the element fits its outline (confidence 0.6 or more) clears a flag, one that is sure the outline is empty (0.75 or more) marks the element missing, and when the two looks disagree on what is wrong the mark becomes "can't judge". A close-up not back 6 seconds after the first look leaves its mark as the first look said. The close-ups' tokens are added to the check's usage and cost.
+6. **Server rules.** The server repairs the answer: one finding per mark, clamped boxes, low confidence becomes "can't judge", and offsets are rounded to 10 cm. **Severity comes from the element class in code** (structure, rebar and guardrails rate high), never from the model.
+7. **Act.** Findings are pinned in 3D, and every check is listed on the Checks page (`/checks`) for a person to confirm or dismiss each finding. Questions are answered from the element's own properties, with the fields cited. Issues are drafted by Gemini, in the crew's language if you pick one (eight languages), and saved by a person. Gemini also drafts a site report from the checks, safety first.
 
 **Google Cloud:**
 - **Cloud Run** (`asia-southeast1`): API plus web app on one origin.
@@ -105,9 +107,9 @@ While the camera runs, the view is full screen with an Exit button. **Transparen
 - **Limits** on the deployed service:
   - 30 checks per IP per hour on each Cloud Run instance (judges share office IPs) and 300 a day across all users
   - questions, issue drafts and site reports share a daily budget of 300
-  - 4 MB per uploaded image
+  - 4 MB and 4 megapixels per uploaded image
   - at most 2 Cloud Run instances
-- **Cost:** a check costs about US$0.015 (about 6,900 input and 2,600 output tokens, from the usage logged on the deployed service).
+- **Cost and time:** a check costs about US$0.05 with the close-up second look and US$0.013 without, estimated from the token usage on the deployed service (25 and 22 Nov). On 25 Nov a check with the second look took 24.5 s on average (18–36 s).
 
 ## Accuracy
 
@@ -118,7 +120,7 @@ While the camera runs, the view is full screen with an Exit button. **Transparen
 | Steadiness on a stand, **ray-traced test videos** (`web/e2e/tests/live-ar-stability.e2e.ts`) | under 0.6 px a frame with the motion sensors in every case (0.02–0.58 px measured), down from 1–44 px before the steadiness fixes of 17 Oct |
 | Virtual demo check at P1 on the deployed service (the run in the demo video) | found 2 of the 5 planted defects in view, no false alarms |
 | Overlay error on a real phone or tablet at 1, 2, 3 m | **Not measured on a device yet** (`eval/overlay.csv` has no rows) |
-| As-built check, **simulated**: the virtual demo's simulated as-built at P1–P4 with live Gemini 3.8 Flash, 16 planted defects in view across the four spots | Found 12, 11 and 7 of 16, with 5, 8 and 0 false alarms, in three runs (the third on the deployed service): about 10 found and 4 false alarms on average. It finds elements not built and a column 60 cm off sideways; it misses a 60 cm shift towards or away from the camera, and thin far members. Runs vary a lot. |
+| As-built check, **simulated**: the virtual demo's simulated as-built at P1–P4 with live Gemini 3.8 Flash on the deployed service, 16 planted defects in view across the four spots, 5 rounds of 4 checks | **With the close-up second look (25 Nov):** 12.2 of 16 found on average (11–13), 1.8 false alarms a round (1–3), 24.5 s a check. **Without it (22 Nov):** 9.2 found, 4.6 false alarms a round, 13.7 s a check. It finds elements not built, a column 60 cm off sideways and the missing edge protection every time; it still misses a 60 cm shift straight towards or away from the camera, and calls a far, partly hidden column "can't judge". |
 
 Simulation numbers are not field accuracy, and no real site photos have been scored yet: the four ready-made photos are simulated too and not yet labelled (`eval/labels.json` is empty). We publish what we measure ([how, and the full check table](eval/README.md)).
 
@@ -138,16 +140,16 @@ Rebuild the site model from `bim/truesite_bim/site.py` with `make models`.
 
 ## Testing
 
-| Suite | Command | Result (18 Oct) |
+| Suite | Command | Result (26 Nov) |
 |---|---|---|
 | BIM pipeline (pytest) | `cd bim && uv run pytest -q` | 88 passed |
-| Server (pytest, Gemini mocked) | `cd server && uv run pytest -q` | 578 passed, 11 skipped (they need the Firestore emulator) |
-| Web (vitest) and types | `cd web && npx vitest run && npx tsc -b` | 585 passed; `tsc -b` clean |
-| End to end (Playwright) | in `web/e2e`, below | 166 passed, 4 skipped (desktop, iPad, iPhone, limits, live AR) |
+| Server (pytest, Gemini mocked) | `cd server && uv run pytest -q` | 610 passed, 11 skipped (they need the Firestore emulator) |
+| Web (vitest) and types | `cd web && npx vitest run && npx tsc -b` | 592 passed; `tsc -b` clean |
+| End to end (Playwright) | in `web/e2e`, below | 178 passed, 4 skipped (desktop, iPad, iPhone, limits, live AR) |
 
 `make test` runs the first three. No suite calls live Gemini.
 
-**End to end.** The Playwright suite in `web/e2e/` has its own `package.json`, so it isn't part of `make test` or the image. It drives the built app on the real FastAPI server with the offline Gemini stand-in and an in-memory store, in Chromium as a laptop, an iPad Pro 11 and an iPhone 15. It covers the start page, the laptop popup, the virtual demo (the three images in the upload, every planted defect marked, a draft and a report in Thai), the ready-made views, the 3D viewer, real 429s from a server with tight limits, axe-core WCAG 2.2 A/AA checks, tap targets and CSP reports. A `live-ar` project plays ray-traced camera videos with exact ground truth into the live view: in the 18 Oct run the overlay sat 6–9 px from the truth at P1–P4 and 2 px at D1, on a 1194 × 772 px view (the test allows 10 px, about half a degree). Each of the 13 bugs the suite found has a test that asserts the fixed behaviour (`web/e2e/support/bugs.ts`): 12 are fixed, and one, Tab leaving the usage-limit popup, is still a `test.fixme`. It is Chromium, not Safari: Quick Look and the iOS motion prompt still need a device.
+**End to end.** The Playwright suite in `web/e2e/` has its own `package.json`, so it isn't part of `make test` or the image. It drives the built app on the real FastAPI server with the offline Gemini stand-in and an in-memory store, in Chromium as a laptop, an iPad Pro 11 and an iPhone 15. It covers the start page, the laptop popup, the virtual demo (the three images in the upload, every planted defect marked, a draft and a report in Thai), the ready-made views, the 3D viewer, the Checks page (review decisions, session scoping, model text shown as plain text, long notes kept on screen), real 429s from a server with tight limits, axe-core WCAG 2.2 A/AA checks, tap targets and CSP reports. A `live-ar` project plays ray-traced camera videos with exact ground truth into the live view: in the 18 Oct run the overlay sat 6–9 px from the truth at P1–P4 and 2 px at D1, on a 1194 × 772 px view (the test allows 10 px, about half a degree). Each of the 13 bugs the suite found has a test that asserts the fixed behaviour (`web/e2e/support/bugs.ts`): 12 are fixed, and one, Tab leaving the usage-limit popup, is still a `test.fixme`. It is Chromium, not Safari: Quick Look and the iOS motion prompt still need a device.
 
 ```bash
 (cd bim && uv run python -m truesite_bim.site --sheets-only --base-url https://127.0.0.1:8813 --sheets-dir ../web/public/sheets)

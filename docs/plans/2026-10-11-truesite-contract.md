@@ -151,7 +151,7 @@ Errors are FastAPI `HTTPException` with `detail = {"code": <code>, ...}`. Paths 
 | GET `/api/whoami` | — | `{"ip", "x_forwarded_for", "peer"}` (day-1 X-Forwarded-For check) | — |
 | GET `/api/projects/{project_id}` | — | `ProjectManifest` | 404 `unknown_project` |
 | GET `/api/projects/{project_id}/model.glb` | — | glb (`model/gltf-binary`, ETag; 304 on a matching `If-None-Match`) | 404 `unknown_project` |
-| POST `/api/check` | multipart: `photo` (JPEG ≤ 4 MiB), `render` (PNG ≤ 4 MiB), optional `overlay` (JPEG ≤ 4 MiB: the photo with each mark's design outline, Gemini's IMAGE 3), `context` (JSON string → `CheckContext`); header `X-Session-Id` | `CheckResponse` | 413 · 415 · 422 (loc `["body","context",…]`) · 404 `unknown_project` · 422 `unknown_element` (a mark's guid is not in the project; before any limit) · 429 `rate_limited` (+`retry_after_s`, `Retry-After`) · 429 `daily_cap` (+`retry_after_s` to midnight UTC, `Retry-After`) · 429 `model_quota` (Gemini's own quota after every fallback model; +`retry_after_s`: Google's retry delay, else 60, `Retry-After`) · 503 `busy` (cap check failed) · 503 `model_unavailable` (timeout / unavailable) · 502 `model_bad_output` · 422 `model_blocked` · 500 `model_bad_request` |
+| POST `/api/check` | multipart: `photo` (JPEG ≤ 4 MiB), `render` (PNG ≤ 4 MiB), optional `overlay` (JPEG ≤ 4 MiB: the photo with each mark's design outline, Gemini's IMAGE 3), `context` (JSON string → `CheckContext`); header `X-Session-Id` | `CheckResponse` | 413 (over 4 MiB, or over MAX_IMAGE_PIXELS (4 megapixels) by the image header, before any limit or model call) · 415 · 422 (loc `["body","context",…]`) · 404 `unknown_project` · 422 `unknown_element` (a mark's guid is not in the project; before any limit) · 429 `rate_limited` (+`retry_after_s`, `Retry-After`) · 429 `daily_cap` (+`retry_after_s` to midnight UTC, `Retry-After`) · 429 `model_quota` (Gemini's own quota after every fallback model; +`retry_after_s`: Google's retry delay, else 60, `Retry-After`) · 503 `busy` (cap check failed) · 503 `model_unavailable` (timeout / unavailable) · 502 `model_bad_output` · 422 `model_blocked` · 500 `model_bad_request` |
 | GET `/api/runs/{run_id}/{photo.jpg\|render.png\|overlay.jpg}` | header `X-Session-Id` | image bytes (owner session only); `overlay.jpg` only when the check sent one | 404 `unknown_run` (also another session's run, or no outline image) · 422 (`run_id` not `RUN_ID_PATTERN`, or another file name) |
 | GET `/api/runs` (optional `?project_id=`, `?limit=` 1–100, default 50) | header `X-Session-Id` | `RunList`: this session's checks as `RunSummary` rows, newest first (the Checks page) | 422 |
 | GET `/api/runs/{run_id}` | header `X-Session-Id` | `RunDetail`: the whole stored run (context, result, review, provenance, image paths), owner session only | 404 `unknown_run` (also another session's run) · 422 (`run_id` not `RUN_ID_PATTERN`) |
@@ -167,12 +167,12 @@ POST `/api/check` also stores, with the run: the outline image (`overlay.jpg`) w
 
 Write limits on POST `/api/issues` (no Gemini call, so no daily cap): 404 `unknown_project` / `unknown_element` / `unknown_run` · 429 `rate_limited` (ISSUES_PER_IP_PER_HOUR; +`retry_after_s`, `Retry-After`) · 429 `issue_cap` (the session already has ISSUES_PER_SESSION issues). A `run_id` that does not match `RUN_ID_PATTERN` is a 422 on both issue POSTs. On every route that takes `X-Session-Id`, a missing or malformed header is a 422 (loc `["header","X-Session-Id"]`).
 
-Every response carries the headers from `app/security_headers.py`: `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY`, a `Permissions-Policy` that keeps camera, gyroscope, accelerometer, magnetometer and xr-spatial-tracking for `self`, and the CSP as `Content-Security-Policy-Report-Only` (not enforced yet). `/api` responses that set no `Cache-Control` get `no-store`. `/api/docs` and `/api/openapi.json` exist only with `API_DOCS=1`.
+Every response carries the headers from `app/security_headers.py`: `X-Content-Type-Options: nosniff`, `Referrer-Policy: strict-origin-when-cross-origin`, `X-Frame-Options: DENY`, a `Permissions-Policy` that keeps camera, gyroscope, accelerometer, magnetometer and xr-spatial-tracking for `self`, an enforced baseline `Content-Security-Policy` (`object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'`), the full CSP as `Content-Security-Policy-Report-Only`, and `Strict-Transport-Security: max-age=31536000` when the request came over HTTPS (Cloud Run's `X-Forwarded-Proto`). `/api` responses that set no `Cache-Control` get `no-store`. `/api/docs` and `/api/openapi.json` exist only with `API_DOCS=1`.
 
 Client routes (the SPA fallback serves index.html):
 - `/`: the start page.
 - `/model`: the viewer. `?project={project_id}` picks the project; the default is `site` (`DEFAULT_PROJECT_ID` in `ViewerPage.tsx`).
-- `/a/{project_id}/{anchor_id}`: live AR. The demo shows the camera overlay only. `?xr=1` brings back Walk inside (Quick Look / WebXR hit-test) and Android Start AR. `?eval=1` shows the eval crosses, and `?dev=1` adds Save as sample. `?arlag=<ms>` (up to 300; default 60) sets the frame lag the sensor fusion assumes when the browser doesn't stamp each frame's capture time. On a laptop or PC the page opens the `DeviceTip` popup every time.
+- `/a/{project_id}/{anchor_id}`: live AR. The demo shows the camera overlay only. `?xr=1` brings back Walk inside (Quick Look / WebXR hit-test) and Android Start AR. `?eval=1` shows the eval crosses (`?eval=room` the room-size set around P1, `eval/README.md` §1b), and `?dev=1` adds Save as sample. `?arlag=<ms>` (up to 300; default 60) sets the frame lag the sensor fusion assumes when the browser doesn't stamp each frame's capture time. On a laptop or PC the page opens the `DeviceTip` popup every time.
 - `/samples`: `?at={P1..P4}` opens the virtual site at that QR spot (`VirtualSite.tsx`), and `?photos` opens the still sample photos (§8). `?dev=1` shows the photos too, plus Run all samples. A bare `/samples` scrolls to the start page's virtual demo section.
 - `/checks`: the Checks page (`ChecksPage.tsx`): every check from this browser session, newest first, with summary tiles and a Needs review filter. `?run={run_id}` opens one check: the photo and the design render (or the outline image) side by side, its findings in review-first order (severity high to low, then the less sure first) with Confirm finding, Dismiss as false alarm and Draft issue, and an audit trail. A run of another session shows "Check not found". The top bar links it after Virtual demo, and the virtual demo's results open the check just run ("Open in Checks").
 
@@ -259,6 +259,11 @@ TypeScript (`web/src/api/types.ts`): identical field names. The API's `VisibleEl
 #   GEMINI_MODE [fake|live]  (live uses GOOGLE_GENAI_USE_ENTERPRISE=true + GOOGLE_CLOUD_PROJECT + GOOGLE_CLOUD_LOCATION=global,
 #                             or GEMINI_API_KEY as the fallback backend)
 #   GEMINI_FALLBACK_MODEL [gemini-3.5-flash,gemini-3.5-flash-lite]   (read by app/gemini_client.py: tried in order on 429/503; "" turns it off)
+#   MAX_IMAGE_PIXELS [4000000: width x height per uploaded image, read from the header; 413 above]
+#   SAVE_SAMPLE_RESULTS [off; 1 = a check of a shipped sample photo refreshes its saved result]
+#   CHECK_VERIFY [off; 1 = the close-up second look, app/verify.py; `make deploy` sets 1]  CHECK_VERIFY_POLICY [both|downgrade|upgrade; read by app/verify.py]
+# config.VerifySettings, read at each check: VERIFY_MODEL ["": the check's own model]  VERIFY_TIMEOUT_MS [14000]  VERIFY_GRACE_MS [6000]
+#   VERIFY_MAX_QUIET [16]  VERIFY_MAX_LATE [10]  VERIFY_WORKERS [16]  VERIFY_PHOTO_RESOLUTION [high|medium]
 # app/projects.py
 class UnknownProject(Exception): ...
 class UnknownElement(Exception): ...
@@ -301,10 +306,18 @@ def repair_check(raw: dict, ctx: CheckContext, elements: dict[str, Element]) -> 
 def with_project_identity(ctx: CheckContext, elements: dict[str, Element]) -> CheckContext   # mark names/classes from the project
 # app/services.py
 Checker = Callable[..., dict]   # (photo_jpeg, render_png, ctx: CheckContext, overlay_jpeg: bytes | None = None) -> CheckResult.model_dump(mode="json")
-def make_checker(repo: ProjectRepo, client: Any) -> Checker   # gemini_client.check_asbuilt(..., project_note=repo.check_note(...), overlay_jpeg=...) -> repair_check -> + usage/model_version
+def make_checker(repo: ProjectRepo, client: Any, *, verify: bool = False) -> Checker   # gemini_client.check_asbuilt(..., project_note=repo.check_note(...), overlay_jpeg=...) -> repair_check -> + usage/model_version; verify=True wraps the call in verify.checked
 def make_asker(repo: ProjectRepo, client: Any) -> Callable[[AskRequest], AskAnswer]
 def make_drafter(repo: ProjectRepo, client: Any) -> Callable[..., IssueDraft]    # (run: CheckRun, mark: int, language: str = "en")
-def make_reporter(client: Any) -> Callable[..., SiteReport]                     # (runs: list[CheckRun], language: str = "en"): deviations only, severity from each check
+def make_reporter(client: Any) -> Callable[..., SiteReport]                     # (runs: list[CheckRun], language: str = "en"): deviations only, severity from each check; findings dismissed on the Checks page are left out
+# app/verify.py — the close-up second look (CHECK_VERIFY=1)
+def checked(first_pass: Callable[[], dict], photo_jpeg: bytes, render_png: bytes, overlay_jpeg: bytes | None, ctx: CheckContext, *,
+            client: Any, settings: VerifySettings | None = None) -> tuple[dict, dict, list[str]]
+    # Close-up crops of the three images per mark, one call each: thin or small marks (up to VERIFY_MAX_QUIET, started with the first pass),
+    # then flagged or can't-judge marks (up to VERIFY_MAX_LATE). merge(): a flag is cleared at confidence >= 0.6 present_ok, a mark becomes
+    # missing at >= 0.75, two looks that disagree on the problem become cannot_judge. A look not back VERIFY_GRACE_MS after the first pass
+    # leaves its mark as the first pass said. Returns (first pass with merged findings, summed usage, "verify: ..." notes for the warnings);
+    # an image that cannot be decoded skips the second look with one note.
 def http_error_for(err: GeminiError) -> HTTPException         # timeout|unavailable -> 503 model_unavailable; rate_limited -> 429 model_quota (+retry_after_s); bad_output -> 502;
                                                              # blocked -> 422 model_blocked; bad_request -> 500 model_bad_request
 def build_client(settings: Settings) -> Any                   # GEMINI_MODE=fake -> FakeGeminiClient(); live -> gemini_client.default_client()
@@ -414,7 +427,7 @@ export function confidenceText(c: number, opts?: { hint?: boolean }): string   /
 //   ui/ConfidenceBadge.tsx shows it on every finding: the Checks page and FindingsPanel (not on can't-judge marks)
 // src/check/reviewOrder.ts
 export function isFlagged(f): boolean                       // a finding with a severity
-export function reviewFirst<F>(findings: readonly F[]): F[] // severity high -> low, then the less sure first; then can't judge (by mark); then matches (least sure first)
+export function reviewFirst<F>(findings: readonly F[]): F[] // severity high -> low, guardrails (SAFETY_CLASSES) first within it, then the less sure first; then can't judge (by mark); then matches (least sure first)
 ```
 
 ## 8. Samples
