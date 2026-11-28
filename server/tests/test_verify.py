@@ -350,8 +350,8 @@ def test_the_confirming_look_runs_only_when_a_close_up_reports_a_deviation(monke
                                        settings=VerifySettings(scope="all", confirm=True, grace_ms=3000))
     statuses = {f["mark"]: f["status"] for f in out["result"]["findings"]}
     assert statuses == {1: "present_ok", 2: "missing", 3: "present_ok", 4: "missing"}
-    assert len(asked) == 5  # four close-ups, and one confirming look for the door (the small far beam needs none)
-    assert usage["cost_usd_est"] == pytest.approx(0.005)
+    assert len(asked) == 6  # four close-ups, and a confirming look each for the door and the far beam
+    assert usage["cost_usd_est"] == pytest.approx(0.006)
     assert any(n.endswith("Beam far: present_ok -> missing") for n in notes)
 
 

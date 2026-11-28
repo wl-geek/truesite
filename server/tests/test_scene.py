@@ -56,5 +56,17 @@ def test_an_outline_that_is_free_to_see_and_empty_stays_missing() -> None:
              "offset": {"direction": "none", "approx_cm": 0}, "explanation": "The outline encloses only sky."}
     changed, note = verify.merge(first, empty, "both")
     assert changed["status"] == "missing" and note == "present_ok -> missing"
-    # even when it names something in front: the close-up itself reports the deviation
-    assert verify.merge(first, {**empty, "hidden_by": "a prop"}, "both")[0]["status"] == "missing"
+    # but an outline wholly covered by a named site object cannot be called missing
+    assert verify.merge(first, {**empty, "hidden_by": "a tarp"}, "both")[0]["status"] == "cannot_judge"
+
+
+def test_a_missing_behind_a_site_object_that_covers_half_the_outline_becomes_cannot_judge() -> None:
+    first = {"mark": 1, "status": "missing", "confidence": 0.9, "evidence_box": [0, 0, 0, 0],
+             "offset": {"direction": "none", "approx_cm": 0}, "explanation": "first pass"}
+    look = {"hidden_by": "a worker", "visible": "part", "material_seen": "ground", "status": "missing", "confidence": 0.95,
+            "offset": {"direction": "none", "approx_cm": 0}, "explanation": "No footing shows around the worker."}
+    changed, note = verify.merge(first, look, "both")
+    assert changed["status"] == "cannot_judge" and note == "missing -> cannot_judge (hidden by a worker)"
+    assert changed["explanation"] == "Partly hidden by a worker from this spot. Check it from another viewpoint."
+    assert verify.merge(first, {**look, "visible": "most"}, "both")[0] is None  # most of it shows: the flag stands
+    assert verify.merge(first, {**look, "status": "misplaced"}, "both")[0]["status"] == "cannot_judge"  # looks disagree

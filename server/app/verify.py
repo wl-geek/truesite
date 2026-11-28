@@ -210,11 +210,14 @@ def merge(first: dict, verdict: dict, mode: str, *, ifc_class: str = "", confirm
     hidden = " ".join(str(verdict.get("hidden_by") or "").split())
     # The close-up, told what is on site, finds the whole outline covered by a site object. An outline it can see and
     # finds empty is a deviation, not this: so it must name what hides it and report no deviation itself.
-    if verdict.get("visible") == "none" and hidden and after not in DEVIATIONS:
+    # Likewise a "missing" where a named site object covers half the outline or more: behind a pallet or a person the
+    # element cannot be called missing. (28 Nov, cluttered site: 7 false alarms of this kind against 2 real defects.)
+    part_hidden = verdict.get("visible") in ("part", "none") and hidden and after == "missing"
+    if (verdict.get("visible") == "none" and hidden and after not in DEVIATIONS) or part_hidden:
         after, conf = "cannot_judge", max(conf, 0.9)
         unseen = {**first, "status": "cannot_judge", "confidence": 0.5, "offset": {"direction": "none", "approx_cm": 0},
-                  "explanation": f"Hidden by {hidden} from this spot. Check it from another viewpoint." if hidden
-                  else "Hidden from this spot. Check it from another viewpoint."}
+                  "explanation": f"{'Partly hidden' if part_hidden else 'Hidden'} by {hidden} from this spot. "
+                                 "Check it from another viewpoint."}
         if before == "present_ok" and mode != "downgrade":
             return unseen, f"present_ok -> cannot_judge (hidden by {hidden or 'something'})"
         if before in DEVIATIONS and mode != "upgrade":
@@ -376,10 +379,11 @@ def checked(first_pass: Callable[[], dict], photo_jpeg: bytes, render_png: bytes
         """With VERIFY_CONFIRM, a close-up that reports a deviation is followed at once by a wider one of the same mark
         (`answer["confirm"]`, None if that call fails). It runs here, before the first pass is known, so it costs no
         waiting; `merge` needs it only for a mark the first pass passed."""
-        # Thin and small marks need no confirming look: one close-up that finds their outline empty was right 19 times
-        # out of 22, and a wider second look loses them among their neighbours (28 Nov: it held back 5 real defects).
-        if (not (cfg.confirm and wanted) or is_thin(visible[mark]) or _status(answer["result"]) not in DEVIATIONS
-                or closed.is_set()):
+        # Thin members need no confirming look: one close-up that finds their outline empty was right 19 times out of
+        # 22, and a wider second look loses them among their neighbours (28 Nov: it held back 5 real defects). Small
+        # marks of other kinds do need it: a 2 cm pad footing looks like the ground it sits on.
+        if (not (cfg.confirm and wanted) or visible[mark].ifc_class in THIN_CLASSES
+                or _status(answer["result"]) not in DEVIATIONS or closed.is_set()):
             return answer
         try:
             second = ask(request_for(mark, **WIDE_CROP))
@@ -462,7 +466,7 @@ def checked(first_pass: Callable[[], dict], photo_jpeg: bytes, render_png: bytes
                                                "evidence_box": [0, 0, 0, 0], "offset": {"direction": "none", "approx_cm": 0},
                                                "explanation": ""}
             changed, note = merge(first, answer["result"], mode, ifc_class=visible[mark].ifc_class,
-                                  confirm=answer.get("confirm"), need_confirm=cfg.confirm and not is_thin(visible[mark]))
+                                  confirm=answer.get("confirm"), need_confirm=cfg.confirm and visible[mark].ifc_class not in THIN_CLASSES)
             # Why each look said what it said, in the model's own words: for working out a miss or a false alarm.
             looks.append({"mark": mark, "name": visible[mark].name, "first": _why(first), "close_up": _why(answer["result"]),
                           **({"confirm": _why(answer["confirm"])} if answer.get("confirm") else {}), "note": note})
