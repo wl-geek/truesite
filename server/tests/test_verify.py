@@ -336,7 +336,7 @@ def test_the_confirming_look_runs_only_when_a_close_up_reports_a_deviation(monke
 
     def fake_ask(client: object, request: dict) -> dict:
         asked.append(len(asked))
-        status = "missing" if request["mark"] == 4 else "present_ok"
+        status = "missing" if request["mark"] in (2, 4) else "present_ok"
         return {"result": verdict(status), "usage": {"prompt_tokens": 1, "output_tokens": 1, "thought_tokens": 0,
                                                      "total_tokens": 2, "cost_usd_est": 0.001}}
 
@@ -349,8 +349,8 @@ def test_the_confirming_look_runs_only_when_a_close_up_reports_a_deviation(monke
     out, usage, notes = verify.checked(lambda: first, JPEG, PNG, None, CTX, client=object(),
                                        settings=VerifySettings(scope="all", confirm=True, grace_ms=3000))
     statuses = {f["mark"]: f["status"] for f in out["result"]["findings"]}
-    assert statuses == {1: "present_ok", 2: "present_ok", 3: "present_ok", 4: "missing"}
-    assert len(asked) == 5  # four close-ups, and one confirming look for mark 4
+    assert statuses == {1: "present_ok", 2: "missing", 3: "present_ok", 4: "missing"}
+    assert len(asked) == 5  # four close-ups, and one confirming look for the door (the small far beam needs none)
     assert usage["cost_usd_est"] == pytest.approx(0.005)
     assert any(n.endswith("Beam far: present_ok -> missing") for n in notes)
 

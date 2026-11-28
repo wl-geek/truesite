@@ -159,15 +159,17 @@ def _status(item: Any) -> str:
     return status if isinstance(status, str) else "cannot_judge"
 
 
+def is_thin(v: Any) -> bool:
+    """A thin member (brace, purlin, truss member, guardrail) or a mark that is small in the frame."""
+    return v.ifc_class in THIN_CLASSES or _box_area(v.box) < SMALL_BOX
+
+
 def quiet_candidates(ctx: CheckContext, limit: int = MAX_QUIET, scope: str = "thin") -> list[int]:
     """Thin or small marks, smallest first: the ones a full-frame look most often passes by mistake. They don't depend
     on the first pass, so their close-ups start with it. With scope "all" every other mark follows, smallest first."""
-    def thin(v: Any) -> bool:
-        return v.ifc_class in THIN_CLASSES or _box_area(v.box) < SMALL_BOX
-
-    marks = sorted((_box_area(v.box), v.mark) for v in ctx.visible if thin(v))
+    marks = sorted((_box_area(v.box), v.mark) for v in ctx.visible if is_thin(v))
     if scope == "all":
-        marks += sorted((_box_area(v.box), v.mark) for v in ctx.visible if not thin(v))
+        marks += sorted((_box_area(v.box), v.mark) for v in ctx.visible if not is_thin(v))
     return [m for _, m in marks][:limit]
 
 
@@ -374,7 +376,10 @@ def checked(first_pass: Callable[[], dict], photo_jpeg: bytes, render_png: bytes
         """With VERIFY_CONFIRM, a close-up that reports a deviation is followed at once by a wider one of the same mark
         (`answer["confirm"]`, None if that call fails). It runs here, before the first pass is known, so it costs no
         waiting; `merge` needs it only for a mark the first pass passed."""
-        if not (cfg.confirm and wanted) or _status(answer["result"]) not in DEVIATIONS or closed.is_set():
+        # Thin and small marks need no confirming look: one close-up that finds their outline empty was right 19 times
+        # out of 22, and a wider second look loses them among their neighbours (28 Nov: it held back 5 real defects).
+        if (not (cfg.confirm and wanted) or is_thin(visible[mark]) or _status(answer["result"]) not in DEVIATIONS
+                or closed.is_set()):
             return answer
         try:
             second = ask(request_for(mark, **WIDE_CROP))
@@ -457,7 +462,7 @@ def checked(first_pass: Callable[[], dict], photo_jpeg: bytes, render_png: bytes
                                                "evidence_box": [0, 0, 0, 0], "offset": {"direction": "none", "approx_cm": 0},
                                                "explanation": ""}
             changed, note = merge(first, answer["result"], mode, ifc_class=visible[mark].ifc_class,
-                                  confirm=answer.get("confirm"), need_confirm=cfg.confirm)
+                                  confirm=answer.get("confirm"), need_confirm=cfg.confirm and not is_thin(visible[mark]))
             # Why each look said what it said, in the model's own words: for working out a miss or a false alarm.
             looks.append({"mark": mark, "name": visible[mark].name, "first": _why(first), "close_up": _why(answer["result"]),
                           **({"confirm": _why(answer["confirm"])} if answer.get("confirm") else {}), "note": note})
