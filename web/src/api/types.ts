@@ -232,6 +232,30 @@ export interface RunDetail {
   duration_ms: number | null
   /** Session-scoped image paths: fetch them with X-Session-Id (fetchRunImage). */
   images: { photo: string; render: string; overlay: string | null }
+  /** str(mark) -> what this session's checks from other viewpoints said about the same element, when they add something. */
+  views?: Record<string, MarkViews>
+}
+
+/** What a check from another viewpoint said about the same element (matched by guid). */
+export interface OtherView {
+  anchor_id: string
+  run_id: string
+  mark: number | null
+  status: Status
+  confidence: number | null
+  created_at: string
+}
+
+/**
+ * confirmed: every other view that could judge it flags it too. disputed: another view sees it as built.
+ * flagged_elsewhere: this view sees it as built or can't judge it, another flags it. seen_ok_elsewhere: this view
+ * can't judge it, another sees it as built.
+ */
+export type MultiViewVerdict = 'confirmed' | 'disputed' | 'flagged_elsewhere' | 'seen_ok_elsewhere'
+
+export interface MarkViews {
+  verdict: MultiViewVerdict
+  views: OtherView[]
 }
 
 /** PUT /api/runs/{run_id}/review/{mark}: decision and at are null once the decision is taken back. */

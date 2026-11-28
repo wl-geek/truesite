@@ -298,6 +298,27 @@ class RunImages(BaseModel):
     overlay: str | None
 
 
+class OtherView(BaseModel):
+    """What a check from another viewpoint said about the same element (matched by guid)."""
+
+    anchor_id: str
+    run_id: str
+    mark: int | None
+    status: Status
+    confidence: float | None
+    created_at: datetime
+
+
+MultiViewVerdict = Literal["confirmed", "disputed", "flagged_elsewhere", "seen_ok_elsewhere"]
+
+
+class MarkViews(BaseModel):
+    """One mark of a check, seen from the session's other viewpoints (app/multiview.py)."""
+
+    verdict: MultiViewVerdict
+    views: list[OtherView]
+
+
 class RunDetail(BaseModel):
     """GET /api/runs/{run_id}: the whole stored check for its own session."""
 
@@ -312,6 +333,7 @@ class RunDetail(BaseModel):
     provenance: Provenance | None
     duration_ms: int | None
     images: RunImages
+    views: dict[str, MarkViews] = Field(default_factory=dict)  # str(mark) -> other viewpoints, when they add something
 
 
 # ---- element Q&A ------------------------------------------------------------------------------

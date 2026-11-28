@@ -29,6 +29,18 @@ describe('ChecksPage', () => {
     expect(text(renderToStaticMarkup(createElement(ChecksPage, { runId: 'AbC_d-1234567890xyz' })))).toBe('Loading the check…')
   })
 
+  it('shows what another viewpoint said about the same element, with a link to that check', () => {
+    const other = { anchor_id: 'P2', run_id: 'q'.repeat(22), mark: 7, status: 'missing' as const, confidence: 0.9, created_at: '2026-11-28T09:00:00Z' }
+    const html = card({ views: { verdict: 'confirmed', views: [other] } })
+    expect(text(html)).toContain('Confirmed from P2. P2 sees it as missing too. Two viewpoints agree. Open the P2 check')
+    expect(html).toContain('class="fcard-views fcard-views-confirmed"')
+    expect(html).toContain(`href="/checks?run=${'q'.repeat(22)}"`)
+    const disputed = card({ views: { verdict: 'disputed', views: [{ ...other, status: 'present_ok' }] } })
+    expect(text(disputed)).toContain('Viewpoints disagree. P2 sees it as built. Take a closer look on site before you decide.')
+    expect(text(disputed)).toContain('Confirm finding Dismiss as false alarm') // a disagreement never removes the decision
+    expect(card()).not.toContain('fcard-views')
+  })
+
   it('offers Confirm, Dismiss and Draft issue on a flagged finding, with its band, why it matters and the crop', () => {
     const html = card()
     const t = text(html)
