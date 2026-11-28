@@ -22,7 +22,8 @@ export type Deviation = (
  * an uncast column, setting-out errors, the open bay's beams not cast, steel not erected, a missing guardrail.
  * Each spot opens with two or three of them in view (asBuilt.test.ts checks the framing).
  * They are a demo scene, chosen to be visible from the QR spots: two earlier ones (a column moved straight away from P1,
- * which one photo cannot show, and a beam in the slab's shade) went on 28 Nov. The harder set stays in our test logs.
+ * which one photo cannot show, and a beam in the slab's shade) went on 28 Nov for a purlin and a roof brace that the
+ * check marks from P4. The harder set stays in our test logs.
  * The stands sit on grid lines, so a purlin or truss member in line with the stand hides behind a slab-mat bar:
  * choose members off that line (measured in the check's ID buffer: every one here gets a numbered mark).
  */
@@ -30,13 +31,13 @@ export const SITE_AS_BUILT: readonly Deviation[] = [
   { element: 'RC column C2', kind: 'missing', note: 'not cast yet: only its rebar cage stands', featuredAt: 'P1', notShownAt: ['P3'] },
   { element: 'RC column B2', kind: 'shifted', offsetM: [-0.6, 0, 0], alsoMoves: ['Column cage B2'], featuredAt: 'P1' },
   { element: 'Beam D1-D2', kind: 'missing', note: 'not cast yet: the open bay is still to pour', featuredAt: 'P2' },
-  { element: 'Brace wall south C-D (1)', kind: 'missing', note: 'not installed yet', featuredAt: 'P2' },
   { element: 'Truss T3 diagonal 6', kind: 'missing', featuredAt: 'P3' },
   { element: 'Purlin P4 B-C', kind: 'missing', featuredAt: 'P3' },
   { element: 'Edge beam B3-C3', kind: 'missing', note: 'not erected yet', featuredAt: 'P3' },
-  { element: 'Edge protection east', kind: 'missing', note: 'missing (a fall hazard at level 1)', featuredAt: 'P4' },
+  { element: 'Edge protection east', kind: 'missing', note: 'missing (a fall hazard at level 1)', featuredAt: 'P2' },
   { element: 'Purlin P6 C-D', kind: 'missing', featuredAt: 'P4' },
-  { element: 'Purlin P4 C-D', kind: 'missing', featuredAt: 'P4' },
+  { element: 'Purlin P2 C-D', kind: 'missing', featuredAt: 'P4' },
+  { element: 'Brace roof north C-D (1)', kind: 'missing', note: 'not installed yet', featuredAt: 'P4' },
 ]
 
 /** Compass word for a plan offset (IFC x east, y north, z up). */

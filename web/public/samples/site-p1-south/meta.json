@@ -28,18 +28,18 @@
       3.4027254334865438
     ]
   },
-  "captured_at": "2026-11-28T14:45:46.506Z",
+  "captured_at": "2026-11-28T15:03:02.240Z",
   "simulated": true,
   "staged": [
     "RC column C2: not cast yet: only its rebar cage stands",
     "RC column B2: about 60 cm west of the design",
     "Beam D1-D2: not cast yet: the open bay is still to pour",
-    "Brace wall south C-D (1): not installed yet",
     "Truss T3 diagonal 6: missing",
     "Purlin P4 B-C: missing",
     "Edge beam B3-C3: not erected yet",
     "Edge protection east: missing (a fall hazard at level 1)",
     "Purlin P6 C-D: missing",
-    "Purlin P4 C-D: missing"
+    "Purlin P2 C-D: missing",
+    "Brace roof north C-D (1): not installed yet"
   ]
 }

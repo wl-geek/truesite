@@ -32,8 +32,8 @@ export const CLUTTER: readonly ClutterItem[] = [
   // Ground floor, bay B-C between rows 1 and 2: what P1 and P2 look into. Things stand in the open middle of each
   // opening view, between the columns' sight lines, not in front of an element the check marks.
   { what: 'pallet', at: [9.6, 3.4], r: 0.8, rot: 0.2, n: 0.9 },
-  { what: 'bags', at: [9.9, 2.0], r: 0.6, rot: 0.3 },
-  { what: 'barrow', at: [9.0, 6.4], r: 0.8, rot: 2.2 },
+  { what: 'bags', at: [9.9, 2.6], r: 0.6, rot: 0.3 },
+  { what: 'barrow', at: [9.0, 5.8], r: 0.8, rot: 2.2 },
   { what: 'worker', at: [8.4, 3.0], r: 0.4, rot: 0.6 },
   ...([[8.3, 1.6], [8.3, 4.4], [1.5, 1.5], [4.5, 1.3], [1.5, 4.5], [4.5, 4.7]] as const)
     .map(([x, y]): ClutterItem => ({ what: 'prop', at: [x, y], r: 0.15 })),
@@ -42,7 +42,6 @@ export const CLUTTER: readonly ClutterItem[] = [
   { what: 'pallet', at: [15.8, 2.3], r: 0.8, rot: -0.15, n: 0.7 },
   { what: 'mixer', at: [13.6, 3.6], r: 0.8, rot: 0.5 },
   { what: 'rebar', at: [16.0, 4.4], r: 0.5 },
-  { what: 'cage', at: [13.2, 10.6], r: 0.4 },
   // Outside: cones by the south entrance, tape posts across the open bay, a scaffold tower at the north-east corner.
   { what: 'cone', at: [8.0, -1.6], r: 0.2 },
   { what: 'cone', at: [10.0, -1.6], r: 0.2 },
