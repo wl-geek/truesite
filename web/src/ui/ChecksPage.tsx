@@ -82,7 +82,8 @@ function CheckList() {
       <header className="checks-head">
         <p className="eyebrow">As-built checks</p>
         <h1>Checks</h1>
-        <p className="checks-lede">Every check from this browser, newest first. Confirm what Gemini flagged, or dismiss it as a false alarm.</p>
+        <p className="checks-lede">Every check from this browser, newest first. Confirm what Gemini flagged, or dismiss it as a false alarm.
+          Checked from two spots? Each finding shows what the other viewpoint saw.</p>
       </header>
       {runs === null && !error && <p className="checks-status" role="status">Loading your checks…</p>}
       {error && (

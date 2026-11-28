@@ -61,6 +61,20 @@ export function AboutSection() {
           </ol>
         </div>
 
+        <div className="about-band">
+          <h3 className="about-h3">What we measured</h3>
+          <div className="about-stats about-stats-measured">
+            <p><strong>9 of 10</strong><span>planted mistakes found across the four viewpoints, on average over five full runs (46 of 50)</span></p>
+            <p><strong>0 of 49</strong><span>false alarms were confirmed by a second viewpoint: when two viewpoints agree, the finding holds</span></p>
+            <p><strong>About 20 s</strong><span>for one check: a first look at every marked element, then a close-up second look</span></p>
+          </div>
+          <p className="about-source">
+            Our virtual site: ten planted mistakes, simulated photos, live Gemini on the deployed service, November 2026.
+            On a cluttered copy of the site the same mistakes were found, with more false alarms. Not yet measured on
+            real site photos.
+          </p>
+        </div>
+
         <div className="about-pair">
           <div className="about-panel">
             <h3>Built on Google Cloud</h3>

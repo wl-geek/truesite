@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { checksPathFor, navigate, parseRoute, viewerPathFor } from './router'
+import { checksPathFor, navigate, parseRoute, viewerPathFor, virtualDemoPathFor } from './router'
 
 describe('parseRoute', () => {
   it('maps the client routes', () => {
@@ -88,5 +88,13 @@ describe('router (mutation-tested)', () => {
     expect(heard).toEqual(['/samples?at=P1'])
     navigate('/samples?at=P2') // same page, another query: a new entry
     expect(w.history.pushState).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('virtualDemoPathFor', () => {
+  it('opens a QR spot on the tidy site, or on the cluttered one', () => {
+    expect(virtualDemoPathFor('P2')).toBe('/samples?at=P2')
+    expect(virtualDemoPathFor('P2', true)).toBe('/samples?at=P2&clutter')
+    expect(parseRoute('/samples', '?at=P2&clutter').name).toBe(parseRoute('/samples', '?at=P2').name)
   })
 })

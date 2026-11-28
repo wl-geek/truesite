@@ -1,4 +1,5 @@
 import { useEffect, type MouseEvent, type ReactNode } from 'react'
+import { virtualDemoPathFor } from '../router'
 import { AboutSection } from './AboutSection'
 import { Link } from './Link'
 import { DEMO_YOUTUBE_URL } from './links'
@@ -85,7 +86,7 @@ export function HomePage() {
       </section>
 
       <section id="how" className="home-section home-wrap" aria-labelledby="how-title">
-        <p className="home-kicker">Three steps on site</p>
+        <p className="home-kicker">Four steps on site</p>
         <h2 id="how-title">How it works</h2>
         <ol className="home-steps">
           <Step n={1} tag="AR" icon="qr" title="Scan the code">
@@ -98,8 +99,12 @@ export function HomePage() {
           </Step>
           <Step n={3} tag="AI" icon="scan" title="Check as-built with Gemini">
             Gemini compares your photo with the design, pins what is off and drafts the issue, in the crew's language
-            if needed. At the end of the day it writes the site report. A person edits and saves each issue, and
-            confirms or dismisses each finding in <Link to="/checks">Checks</Link>, with its confidence and an audit trail.
+            if needed. At the end of the day it writes the site report.
+          </Step>
+          <Step n={4} tag="You" icon="check" title="Review and confirm">
+            Every check lands in <Link to="/checks">Checks</Link>. A person confirms or dismisses each finding, with its
+            confidence and an audit trail. Checked from two spots? TrueSite compares the viewpoints: when they agree, the
+            finding is surer.
           </Step>
         </ol>
         <p className="home-fineprint">Visual check, not a survey: offsets are rough, in tens of centimetres.</p>
@@ -259,11 +264,12 @@ export function HomePage() {
             <li><strong>Pick a QR spot.</strong> You stand on its X, where the sheet's code places you in the model.</li>
             <li><strong>Look around.</strong> Drag, or turn your phone. You stay on the spot, as you would on site.</li>
             <li><strong>Check as-built.</strong> Gemini pins what's off on your view; Draft issue turns a finding into an issue.</li>
+            <li><strong>Go again from a second spot.</strong> Switch spots at the top of the demo. TrueSite compares the two viewpoints, and <Link to="/checks">Checks</Link> keeps every finding for you to confirm or dismiss.</li>
           </ol>
           <ul className="vp-grid">
             {SITE_VIEWPOINTS.map((v) => (
               <li key={v.id}>
-                <Link to={`/samples?at=${v.id}`} className="vp-card vp-card-sim">
+                <Link to={virtualDemoPathFor(v.id)} className="vp-card vp-card-sim">
                   <ViewpointPlan active={v} />
                   <span className="vp-text">
                     <span className="vp-title"><span className="vp-id">{v.id}</span>{v.name}</span>
@@ -274,6 +280,11 @@ export function HomePage() {
               </li>
             ))}
           </ul>
+          <p className="sim-more">
+            <span><strong>Real sites are messy.</strong> The cluttered site has the same four spots, with pallets, props,
+              scaffolding and people in the way. You can also switch Site clutter on inside the demo.</span>
+            <Link to={virtualDemoPathFor('P2', true)} className="btn">Open the cluttered site</Link>
+          </p>
         </div>
       </section>
 

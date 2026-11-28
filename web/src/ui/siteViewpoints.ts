@@ -25,6 +25,18 @@ export const SITE_VIEWPOINTS: readonly Viewpoint[] = [
   { id: 'P4', name: 'East gable', stand: [22, 6], look: [-1, 0], shows: 'The east edge and the roof over the open bay', startPitchDeg: 34 },
 ]
 
+/**
+ * The other QR spots, the most useful second viewpoint first: the one that sees most of the same elements
+ * (measured on the logged sweeps: P1 and P2 share the ground-storey columns and beams, P2 and P4 the east bay).
+ */
+const SECOND_LOOK: Record<Viewpoint['id'], Viewpoint['id'][]> = {
+  P1: ['P2', 'P3', 'P4'], P2: ['P1', 'P4', 'P3'], P3: ['P2', 'P1', 'P4'], P4: ['P2', 'P3', 'P1'],
+}
+
+export function otherViewpoints(current: Viewpoint['id']): Viewpoint[] {
+  return SECOND_LOOK[current].map((id) => SITE_VIEWPOINTS.find((v) => v.id === id)!)
+}
+
 const COMPASS: Record<string, string> = { '0,1': 'north', '0,-1': 'south', '1,0': 'east', '-1,0': 'west' }
 
 export function compass([dx, dy]: [number, number]): string {

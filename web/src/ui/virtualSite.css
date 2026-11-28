@@ -139,3 +139,25 @@
 .vs-report p { margin: 0; font-size: 14px; }
 .vs-report .btn { justify-self: start; }
 .vs-model-link { display: grid; gap: 8px; justify-items: start; margin: 0; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--white); color: var(--muted); font-size: 13.5px; }
+
+/* Where you are, and the other QR spots one tap away. */
+.vs-where { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-width: 0; }
+.vs-chip-tag, .vs-chip-note { white-space: nowrap; }
+@media (max-width: 480px) { .vs-chip-name { display: none; } }
+.vs-chip-note { padding: 2px 7px; border-radius: 6px; background: rgba(255, 255, 255, 0.16); font-size: 12px; font-weight: 700; }
+.vs-spots { display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: rgba(11, 31, 51, 0.82); }
+.vs-spot { display: grid; place-items: center; min-width: 40px; min-height: 34px; padding: 0 8px; border-radius: 8px; color: var(--white); font-size: 14px; font-weight: 700; text-decoration: none; transition: background-color 0.15s; }
+.vs-spot:hover { background: rgba(255, 255, 255, 0.16); }
+.vs-spot[aria-current='page'] { background: var(--orange); color: var(--ink); }
+.vs-spot:focus-visible { outline: 3px solid var(--white); outline-offset: 1px; }
+
+/* Under a check: what the other spots saw, and the way to them. */
+.vs-views { display: grid; gap: 8px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--white); font-size: 13.5px; }
+.vs-views h3 { margin: 0; font-size: 14px; }
+.vs-views p { margin: 0; color: var(--muted); }
+.vs-views p strong { color: var(--ink); }
+.vs-views-spots { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.vs-views-name { font-weight: 500; }
+.vs-views-done { color: var(--muted); font-weight: 500; }
+@media (max-width: 480px) { .vs-views-name { display: none; } }
+@media (prefers-reduced-motion: reduce) { .vs-spot { transition: none; } }

@@ -155,7 +155,7 @@
 /* ---- wider screens ---- */
 @media (min-width: 720px) {
   .home-hero { padding: 48px 0 64px; }
-  .home-steps { grid-template-columns: repeat(3, 1fr); }
+  .home-steps { grid-template-columns: repeat(2, 1fr); }
   .home-step { grid-template-columns: 1fr; padding: 22px; }
   .home-step-icon { grid-row: auto; margin-bottom: 8px; }
   .home-protocol { grid-template-columns: repeat(3, 1fr); }
@@ -240,3 +240,13 @@
 .home-theme { background: #071624; border-top: 1px solid rgba(255, 255, 255, 0.06); }
 .home-theme p { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; margin: 0 auto; padding-top: 16px; padding-bottom: 16px; color: var(--white); font-size: 16px; font-weight: 600; }
 .home-theme-tag { padding: 3px 10px; border-radius: 999px; background: var(--orange); color: var(--ink); font-size: 12px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* Four steps side by side once there is room for them. */
+@media (min-width: 1040px) { .home-steps { grid-template-columns: repeat(4, 1fr); } }
+
+/* Under the virtual demo's spots: the cluttered site. */
+.sim-more { display: grid; gap: 12px; align-items: center; margin: 18px 0 0; padding: 14px 16px; border: 1px solid var(--line); border-radius: 14px; background: var(--white); }
+.sim-more span { color: var(--muted); }
+.sim-more strong { color: var(--ink); }
+.sim-more .btn { justify-self: start; }
+@media (min-width: 720px) { .sim-more { grid-template-columns: 1fr auto; } }

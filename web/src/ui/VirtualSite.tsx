@@ -16,7 +16,7 @@ import { deviceRotation, requestMotionPermission } from '../scene/motion'
 import { paintOf } from '../scene/palette'
 import { disposePins, makePins } from '../scene/pins'
 import { applyTypeColours, type Inset, insetView, NO_INSET } from '../scene/viewer'
-import { checksPathFor } from '../router'
+import { checksPathFor, navigate, virtualDemoPathFor } from '../router'
 import { describeDeviation, plantedNote, SITE_AS_BUILT } from '../sim/asBuilt'
 import { deviceLook, dragLook, forwardOf, type LookAngles, lookToward, turnBetween, yawOf } from '../sim/lookAngles'
 import { overlayHighlighter } from '../sim/overlayPick'
@@ -38,6 +38,7 @@ import { FindingsPanel } from './FindingsPanel'
 import { IssueDialog } from './IssueDialog'
 import { ReportDialog } from './ReportDialog'
 import { Link } from './Link'
+import { OtherViewpoints } from './OtherViewpoints'
 import { ReloadPrompt } from './ReloadPrompt'
 import { SITE_VIEWPOINTS } from './siteViewpoints'
 import { useMedia, WIDE } from './useMedia'
@@ -568,7 +569,17 @@ export function VirtualSite({ viewpointId, clutter = false, onExit }: { viewpoin
       <canvas ref={canvasRef} className="vs-canvas" tabIndex={0} aria-label="Drag or use the arrow keys to look around; tap an element for its details" />
 
       <div className="vs-top">
-        <span className="vs-chip"><span className="vs-chip-tag">Virtual demo</span>{vp.id} · {vp.name}</span>
+        <div className="vs-where">
+          <span className="vs-chip">
+            <span className="vs-chip-tag">Virtual demo</span>{vp.id}<span className="vs-chip-name"> · {vp.name}</span>
+            {clutter && <span className="vs-chip-note">cluttered site</span>}
+          </span>
+          <nav className="vs-spots" aria-label="QR spots">
+            {SITE_VIEWPOINTS.map((v) => (
+              <Link key={v.id} to={virtualDemoPathFor(v.id, clutter)} className="vs-spot" current={v.id === vp.id} aria-label={`${v.id}, ${v.name}`}>{v.id}</Link>
+            ))}
+          </nav>
+        </div>
         <button type="button" className="vs-btn" onClick={onExit}>Exit</button>
       </div>
 
@@ -584,6 +595,7 @@ export function VirtualSite({ viewpointId, clutter = false, onExit }: { viewpoin
             <li>Turn on the spot: {touch ? `drag, or tap Turn with device and turn your ${handheld}` : 'drag, or use the arrow keys'}.</li>
             <li>Tap an element for its details; switch the BIM overlay off to see the bare site.</li>
             <li>Aim at the work and tap <strong>Check as-built</strong>.</li>
+            {clutter && <li>This is the cluttered test site: pallets, props, scaffolding and people that the model doesn't have.</li>}
           </ul>
           <button type="button" className="vs-btn" onClick={() => { setCoach(false); canvasRef.current?.focus({ preventScroll: true, focusVisible: false }) }}>Start looking around</button>
         </div>
@@ -607,6 +619,11 @@ export function VirtualSite({ viewpointId, clutter = false, onExit }: { viewpoin
               <input type="checkbox" role="switch" checked={showDesign} onChange={toggleDesign} disabled={status !== 'ready'} />
               <span className="vs-switch-track" aria-hidden="true"><span className="vs-switch-knob" /></span>
               BIM overlay
+            </label>
+            <label className={`vs-switch${checking ? ' vs-switch-off' : ''}`} title="Pallets, props, scaffolding and people on the site, as on a real one">
+              <input type="checkbox" role="switch" checked={clutter} onChange={() => navigate(virtualDemoPathFor(vp.id, !clutter))} disabled={checking} />
+              <span className="vs-switch-track" aria-hidden="true"><span className="vs-switch-knob" /></span>
+              Site clutter
             </label>
             {touch && (
               <button type="button" className="vs-tool" aria-pressed={motionOn} onClick={() => void toggleMotion()} disabled={status !== 'ready'}>
@@ -637,6 +654,9 @@ export function VirtualSite({ viewpointId, clutter = false, onExit }: { viewpoin
           {outcome.runId && (
             <p className="vs-model-link">Confirm or dismiss each finding, with its confidence and an audit trail.{' '}
               <Link to={checksPathFor(outcome.runId)} className="btn btn-small">Open in Checks</Link></p>
+          )}
+          {outcome.runId && outcome.phase === 'final' && (
+            <OtherViewpoints runId={outcome.runId} current={vp.id} clutter={clutter} checkedSpots={reportRuns.map((r) => r.spot)} />
           )}
           <div className="vs-compare">
             <figure>
