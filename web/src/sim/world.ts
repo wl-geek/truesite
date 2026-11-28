@@ -73,12 +73,12 @@ export function rng(seed: string): () => number {
   return () => ((s = (s * 1664525 + 1013904223) >>> 0) / 2 ** 32)
 }
 
-function canvas(w: number, h: number): [HTMLCanvasElement, CanvasRenderingContext2D] {
+export function canvas(w: number, h: number): [HTMLCanvasElement, CanvasRenderingContext2D] {
   const c = Object.assign(document.createElement('canvas'), { width: w, height: h })
   return [c, c.getContext('2d')!]
 }
 
-function texture(c: HTMLCanvasElement): CanvasTexture {
+export function texture(c: HTMLCanvasElement): CanvasTexture {
   const t = new CanvasTexture(c)
   t.colorSpace = SRGBColorSpace
   return t

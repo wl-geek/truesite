@@ -24,6 +24,7 @@ import { pickElement } from '../scene/pick'
 import { samplePose } from '../sim/samplePose'
 import { markFindings } from '../sim/findings3d'
 import { notCheckedText, scoreCheck, scoreLine, type Score } from '../sim/score'
+import { addClutter } from '../sim/clutter'
 import { buildWorld, makeAsBuilt, photoFinish, rng } from '../sim/world'
 import { CheckProgress } from './CheckProgress'
 import { secondLookSummary } from './checksFormat'
@@ -81,7 +82,7 @@ export function releaseWorld(w: Pick<World, 'renderer' | 'asBuilt' | 'design' | 
  * design is overlaid on it, like live AR: tap an element for its details (and, after a check, its result).
  * Check as-built takes what you see as the site photo and runs the real check against the BIM design.
  */
-export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onExit: () => void }) {
+export function VirtualSite({ viewpointId, clutter = false, onExit }: { viewpointId: string; clutter?: boolean; onExit: () => void }) {
   const vp = SITE_VIEWPOINTS.find((v) => v.id === viewpointId) ?? SITE_VIEWPOINTS[0]
   const rootRef = useRef<HTMLDivElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
@@ -143,6 +144,7 @@ export function VirtualSite({ viewpointId, onExit }: { viewpointId: string; onEx
       makeAsBuilt(asBuilt, project.elements, SITE_AS_BUILT)
       const world = buildWorld(PROJECT_ID, project.anchors)
       world.add(asBuilt.ifcRoot)
+      if (clutter) addClutter(world) // the cluttered test site: /samples?at=P1&clutter
       const overlay = new Scene()
       overlay.add(new HemisphereLight(0xffffff, 0x8899aa, 2.4))
       overlay.add(design.ifcRoot)
