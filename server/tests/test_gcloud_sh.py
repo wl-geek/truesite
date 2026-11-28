@@ -92,7 +92,7 @@ def stub(tmp_path: Path):
                     "STUB_LOG": str(log), "STUB_STATE": str(state), **env}
         for var in ("BASE_URL", "BILLING_ACCOUNT", "GEMINI_BACKEND", "CLOUDSDK_CORE_PROJECT", "CPU", "MEMORY",
                     "VERIFY_MODEL", "VERIFY_TIMEOUT_MS", "VERIFY_GRACE_MS", "VERIFY_MAX_QUIET", "VERIFY_MAX_LATE",
-                    "VERIFY_WORKERS", "VERIFY_PHOTO_RESOLUTION", "APP_VERSION"):
+                    "VERIFY_WORKERS", "VERIFY_PHOTO_RESOLUTION", "VERIFY_SCOPE", "VERIFY_CONFIRM", "VERIFY_SCENE", "VERIFY_SCENE_WAIT_MS", "VERIFY_HEDGE_MS", "APP_VERSION"):
             if var not in env:
                 full_env.pop(var, None)
         return subprocess.run([BASH, str(SCRIPT), *args], cwd=repo, env=full_env, capture_output=True, text=True,

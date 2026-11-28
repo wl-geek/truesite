@@ -292,7 +292,7 @@ def events(text: str) -> list[tuple[str, dict]]:
 
 def first_look_then(final_status: str | Exception):
     """A second look that hands over the first pass, then settles mark 2 as `final_status` (or raises it)."""
-    def second_look(first_pass, _photo, _render, _overlay, _ctx, *, client, on_first_pass=None):
+    def second_look(first_pass, _photo, _render, _overlay, _ctx, *, client, on_first_pass=None, materials=None):
         out = first_pass()
         if on_first_pass:
             on_first_pass(out, [2])
@@ -355,7 +355,7 @@ def test_a_page_that_leaves_after_the_first_look_still_gets_its_check_stored(mak
 
     finished = threading.Event()
 
-    def second_look(first_pass, _p, _r, _o, _ctx, *, client, on_first_pass=None):
+    def second_look(first_pass, _p, _r, _o, _ctx, *, client, on_first_pass=None, materials=None):
         out = first_pass()
         on_first_pass(out, [2])
         time.sleep(0.3)  # the close-ups, after the page has gone

@@ -72,8 +72,12 @@ def make_checker(repo: ProjectRepo, client: Any, *, verify: bool = False) -> Che
 
         notes: list[str] = []
         if verify:
+            by_guid = repo.elements_by_guid(ctx.project_id)
+            materials = {v.mark: str((getattr(by_guid.get(v.guid), "props", None) or {}).get("Material") or "")
+                         for v in ctx.visible}
             out, extra, notes = second_look(first_pass, photo_jpeg, render_png, overlay_jpeg, ctx, client=client,
-                                            on_first_pass=hand_over(on_first_look) if on_first_look else None)
+                                            on_first_pass=hand_over(on_first_look) if on_first_look else None,
+                                            materials=materials)
             usage = {k: round(v + extra.get(k, 0), 6) for k, v in out["usage"].items()}
         else:
             out = first_pass()

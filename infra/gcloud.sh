@@ -203,7 +203,7 @@ deploy() {
   # Its settings (config.VerifySettings; the code's defaults otherwise), passed on when set: VERIFY_GRACE_MS=8000 make deploy.
   local name
   for name in VERIFY_MODEL VERIFY_TIMEOUT_MS VERIFY_GRACE_MS VERIFY_MAX_QUIET VERIFY_MAX_LATE VERIFY_WORKERS \
-              VERIFY_PHOTO_RESOLUTION; do
+              VERIFY_PHOTO_RESOLUTION VERIFY_SCOPE VERIFY_CONFIRM VERIFY_SCENE VERIFY_SCENE_WAIT_MS VERIFY_HEDGE_MS; do
     [ -z "${!name:-}" ] || env="$env,$name=${!name}"
   done
   env="$env,APP_VERSION=$(app_version)"
