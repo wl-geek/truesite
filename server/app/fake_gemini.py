@@ -100,7 +100,7 @@ class _Models:
             payload = _ask(contents)
         elif system == gemini_client.REPORT_SYSTEM:
             payload = _report(contents)
-        elif system == VERIFY_SYSTEM:
+        elif system.startswith(VERIFY_SYSTEM):
             payload = _verify(contents)
         else:
             payload = _issue(contents)

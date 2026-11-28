@@ -52,6 +52,7 @@ async function getJsonFile(url: string): Promise<unknown> {
 /**
  * The virtual site's tools (the details live on the start page, #virtual):
  *   /samples?at=P1    the 3D view at a QR spot (VirtualSite)
+ *   /samples?at=P1&clutter   the same spot on the cluttered test site (pallets, props, scaffold, stains)
  *   /samples?photos   ready-made still photos of the same site, each with a saved result for when Gemini is busy
  *   /samples          goes to the start page's virtual site section
  */
@@ -176,7 +177,7 @@ export function SamplesPage() {
   }
   const ready = useMemo(() => samples ?? [], [samples])
 
-  if (site) return <VirtualSite key={site} viewpointId={site} onExit={backToVirtualDemo} />
+  if (site) return <VirtualSite key={site} viewpointId={site} clutter={params.has('clutter')} onExit={backToVirtualDemo} />
   if (!photos) return null
 
   return (
