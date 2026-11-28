@@ -47,6 +47,11 @@ export function checksPathFor(runId?: string): string {
   return runId ? `/checks?run=${encodeURIComponent(runId)}` : '/checks'
 }
 
+/** The virtual demo at one QR spot; `clutter` opens the cluttered test site (pallets, props, scaffolding, people). */
+export function virtualDemoPathFor(spot: string, clutter = false): string {
+  return `/samples?at=${encodeURIComponent(spot)}${clutter ? '&clutter' : ''}`
+}
+
 export function navigate(path: string): void {
   if (path !== window.location.pathname + window.location.search) window.history.pushState(null, '', path)
   window.dispatchEvent(new Event(NAV_EVENT))

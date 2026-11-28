@@ -177,7 +177,7 @@ export function SamplesPage() {
   }
   const ready = useMemo(() => samples ?? [], [samples])
 
-  if (site) return <VirtualSite key={site} viewpointId={site} clutter={params.has('clutter')} onExit={backToVirtualDemo} />
+  if (site) return <VirtualSite key={`${site}${params.has('clutter') ? ':clutter' : ''}`} viewpointId={site} clutter={params.has('clutter')} onExit={backToVirtualDemo} />
   if (!photos) return null
 
   return (

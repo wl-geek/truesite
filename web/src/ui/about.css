@@ -25,6 +25,8 @@
 .about-stats p { display: grid; align-content: start; gap: 10px; margin: 0; padding: 22px 22px 24px; border-radius: 16px; background: rgba(255, 106, 19, 0.1); border: 1px solid rgba(255, 106, 19, 0.3); }
 .about-stats strong { color: #ffb27f; font-size: 36px; line-height: 1; letter-spacing: -0.02em; }
 .about-stats span { font-size: 15px; line-height: 1.45; color: #d5e1ec; }
+.about-stats-measured p { background: rgba(122, 160, 255, 0.1); border-color: rgba(122, 160, 255, 0.32); }
+.about-stats-measured strong { color: #b9ccff; font-size: 32px; }
 .about-source { margin: 14px 0 0; color: #9fb3c8; font-size: 13px; line-height: 1.5; }
 
 /* Works with your BIM: four steps */
