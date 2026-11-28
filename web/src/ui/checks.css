@@ -180,3 +180,12 @@
 
 .checks-nowrap { white-space: nowrap; }
 @media (prefers-reduced-motion: reduce) { .checks-row, .checks-card, .fcard, .checks-ok summary::before { transition: none; } }
+
+/* ---- other viewpoints (check/multiView.ts) ---- */
+.checks-views-sum { margin: -2px 0 12px; padding: 8px 12px; border-radius: 10px; background: #eef4fb; color: #1c3b5e; font-size: 14px; }
+.fcard-views { margin: 0; padding: 9px 14px 10px 16px; border-top: 1px solid #e8eef4; font-size: 14px; line-height: 1.45; color: #1c3b5e; background: #f4f8fc; overflow-wrap: anywhere; }
+@media (min-width: 700px) { .fcard-views { padding-left: calc(16px + 156px + 16px); } }
+.fcard-views strong { font-weight: 700; }
+.fcard-views-confirmed { background: #e9f6ec; color: #1d5a24; }
+.fcard-views-disputed, .fcard-views-elsewhere { background: #fff3e8; color: #6b2e06; }
+.fcard-views-link { display: inline-block; margin-left: 8px; padding: 6px 0; color: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { ApiError, fetchRunImage, getProject, getRun, listRuns, reviewFinding } from '../api/client'
-import type { Box, Element, Finding, PoseQuality, ReviewDecision, RunDetail, RunSummary, UnexpectedItem } from '../api/types'
+import type { Box, Element, Finding, MarkViews, PoseQuality, ReviewDecision, RunDetail, RunSummary, UnexpectedItem } from '../api/types'
+import { countViews, viewsNote, viewsSummary } from '../check/multiView'
 import { isFlagged, reviewFirst } from '../check/reviewOrder'
 import { whyItMatters } from '../check/risk'
 import { checksPathFor, navigate } from '../router'
@@ -359,8 +360,13 @@ function CheckDetail({ runId }: { runId: string }) {
   const judge = offline ? 'the stand-in' : 'Gemini' // who judged this check: the offline stand-in is never called Gemini
   const quality = imageQualityMessage(result.image_quality)
   const flagged = findings.filter(isFlagged)
-  const unsure = findings.filter((f) => f.status === 'cannot_judge')
-  const ok = findings.filter((f) => f.status === 'present_ok')
+  // Other viewpoints (app/multiview.py): a finding this view passed or couldn't judge, and another view flagged, moves up.
+  const views = run.views ?? {}
+  const viewsCount = countViews(views)
+  const flaggedElsewhere = (f: Finding) => !isFlagged(f) && views[String(f.mark)]?.verdict === 'flagged_elsewhere'
+  const elsewhere = findings.filter(flaggedElsewhere)
+  const unsure = findings.filter((f) => f.status === 'cannot_judge' && !flaggedElsewhere(f))
+  const ok = findings.filter((f) => f.status === 'present_ok' && !flaggedElsewhere(f))
   const toReview = flagged.filter((f) => !run.review[String(f.mark)]).length
   const reviewed = flagged.length - toReview
   const where = viewpointLabel(run.project_id, run.anchor_id)
@@ -397,6 +403,7 @@ function CheckDetail({ runId }: { runId: string }) {
     review: run.review[String(f.mark)] ?? null, busy: pending.has(f.mark), error: errors[f.mark] ?? null,
     onDecide: (d: ReviewDecision | null) => void decide(f, d),
     onDraft: quality === null ? () => setDraftFor(f) : undefined, issueSaved: savedMarks.has(f.mark), by: offline ? 'Stand-in' : 'Gemini',
+    views: views[String(f.mark)] ?? null,
   })
 
   return (
@@ -457,9 +464,17 @@ function CheckDetail({ runId }: { runId: string }) {
               <h2 id="findings-h">Findings to review <span className="checks-count">{flagged.length}</span></h2>
             </div>
             <p className="checks-tip">Highest severity first, guardrails first within it, then the least sure. Tap a finding to see it on the photo.</p>
+            {viewsCount && <p className="checks-views-sum"><span className="finding-src">Other viewpoints:</span> {viewsSummary(viewsCount)}</p>}
             {flagged.length === 0
               ? <p className="checks-none">{offline ? 'The stand-in' : 'Gemini'} flagged no deviation in this view.</p>
               : <ol className="fcards">{flagged.map((f) => <FindingCard key={f.mark} {...cardProps(f)} />)}</ol>}
+            {elsewhere.length > 0 && (
+              <>
+                <h3 className="checks-h3">Flagged from another viewpoint <span className="checks-count">{elsewhere.length}</span></h3>
+                <p className="checks-tip">This photo shows them as built, or can't show them. Another viewpoint flags them, so a person should look on site.</p>
+                <ol className="fcards">{elsewhere.map((f) => <FindingCard key={f.mark} {...cardProps(f)} />)}</ol>
+              </>
+            )}
             {result.unexpected.length > 0 && (
               <>
                 <h3 className="checks-h3">Not in the design <span className="checks-count">{result.unexpected.length}</span></h3>
@@ -530,10 +545,13 @@ type FindingCardProps = {
   onDecide: (d: ReviewDecision | null) => void; onDraft?: () => void; issueSaved: boolean
   /** Who wrote the explanation: "Gemini", or "Stand-in" for the offline stand-in. */
   by?: string
+  /** What this session's checks from other viewpoints said about the same element. */
+  views?: MarkViews | null
 }
 
-export function FindingCard({ f, element, photoUrl, aspect, selected, onSelect, review, busy, error, onDecide, onDraft, issueSaved, by = 'Gemini' }: FindingCardProps) {
+export function FindingCard({ f, element, photoUrl, aspect, selected, onSelect, review, busy, error, onDecide, onDraft, issueSaved, by = 'Gemini', views = null }: FindingCardProps) {
   const flagged = isFlagged(f)
+  const note = views ? viewsNote(views) : null
   const why = whyItMatters(f)
   const kind = element ? typeLabel(element) : f.ifc_class.replace(/^Ifc/, '')
   const classes = ['fcard', `fcard-${f.severity ?? f.status}`, selected ? 'fcard-selected' : '', review ? `fcard-${review.decision}` : ''].filter(Boolean)
@@ -558,6 +576,12 @@ export function FindingCard({ f, element, photoUrl, aspect, selected, onSelect, 
           {why && <span className="finding-risk"><span className="finding-src">Why it matters:</span> {why}</span>}
         </span>
       </button>
+      {note && (
+        <p className={`fcard-views fcard-views-${note.tone}`}>
+          <strong>{note.title}.</strong> {note.text}
+          {note.links.map((l) => <Link key={l.runId} to={checksPathFor(l.runId)} className="fcard-views-link">Open the {l.anchorId} check</Link>)}
+        </p>
+      )}
       {flagged && (
         <div className="fcard-actions">
           {review ? (

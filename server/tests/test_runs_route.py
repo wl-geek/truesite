@@ -253,3 +253,26 @@ def test_the_provenance_source_wins_over_the_context():
                       app_version="dev", source="virtual")
     assert summarise_run(_stored([], provenance=prov)).source == "virtual"
     assert json.loads(_stored([], provenance=prov).model_dump_json())["provenance"]["source"] == "virtual"
+
+
+# ---- other viewpoints (app/multiview.py) ---------------------------------------------------------------------------
+def test_detail_shows_what_another_viewpoint_said_about_the_same_element(client, clock):
+    session = new_session()
+    first = post(client, session).json()
+    assert client.get(f"/api/runs/{first['run_id']}", headers=hdr(session)).json()["views"] == {}  # one viewpoint so far
+    clock.wall += timedelta(minutes=5)
+    second = post(client, session, ctx=context(anchor_id="D1")).json()
+    detail = client.get(f"/api/runs/{first['run_id']}", headers=hdr(session)).json()
+    mark = str(door_mark(first))
+    # The stand-in calls the door misplaced from both viewpoints: confirmed. The wall matches from both: nothing to add.
+    assert list(detail["views"]) == [mark] and detail["views"][mark]["verdict"] == "confirmed"
+    view = detail["views"][mark]["views"][0]
+    assert (view["anchor_id"], view["run_id"], view["status"]) == ("D1", second["run_id"], "misplaced")
+    assert view["mark"] == door_mark(second)
+
+
+def test_another_sessions_viewpoints_never_show(client):
+    a, b = new_session(), new_session()
+    mine = post(client, a).json()["run_id"]
+    post(client, b, ctx=context(anchor_id="D1"))
+    assert client.get(f"/api/runs/{mine}", headers=hdr(a)).json()["views"] == {}

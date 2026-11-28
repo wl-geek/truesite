@@ -13,6 +13,7 @@ from fastapi import APIRouter, HTTPException, Path, Query, Request
 
 from ..deps import NowDep, SessionId, StoreDep, enforce_rate_limit
 from ..schemas import PROJECT_ID_PATTERN, RUN_ID_PATTERN, ReviewIn, ReviewOut, RunDetail, RunList
+from ..multiview import other_views
 from ..summaries import run_detail, summarise_run
 
 router = APIRouter()
@@ -39,7 +40,9 @@ def get_run(run_id: RunIdPath, session_id: SessionId, store: StoreDep) -> RunDet
     run = store.get_check_run(run_id, session_id)
     if run is None:
         raise _not_found("unknown_run")
-    return run_detail(run)
+    detail = run_detail(run)
+    detail.views = other_views(run, store.list_check_runs(session_id, run.project_id, 100))
+    return detail
 
 
 @router.put("/api/runs/{run_id}/review/{mark}", response_model=ReviewOut)
