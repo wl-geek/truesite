@@ -200,10 +200,16 @@ deploy() {
   env="$env,DAILY_CHECK_CAP=300,DAILY_ASK_CAP=300,CHECKS_PER_IP_PER_HOUR=30,TRUSTED_PROXY_HOPS=1"  # judges share office IPs
   # The close-up second look (server/app/verify.py): about US$0.05 a check with it, US$0.013 without. CHECK_VERIFY=0 turns it off.
   env="$env,CHECK_VERIFY=${CHECK_VERIFY:-1}"
-  # Its settings (config.VerifySettings; the code's defaults otherwise), passed on when set: VERIFY_GRACE_MS=8000 make deploy.
+  # The deployed check runs the full second look, measured on 28 Nov (clean site: 42 of 48 planted defects found per
+  # view against 37, 2 false alarms against 5; about 22 s and US$0.10 a check): a close-up for every mark, a confirming
+  # look before a new flag, the site objects read first, and a second ask for a slow close-up. The code's own defaults
+  # are the older, lighter look. To deploy that instead:
+  #   VERIFY_SCOPE=thin VERIFY_CONFIRM=0 VERIFY_SCENE=0 VERIFY_HEDGE_MS=0 VERIFY_GRACE_MS=6000 VERIFY_WORKERS=16 make deploy
+  : "${VERIFY_SCOPE:=all}" "${VERIFY_CONFIRM:=1}" "${VERIFY_SCENE:=1}" "${VERIFY_HEDGE_MS:=5000}" "${VERIFY_GRACE_MS:=14000}" "${VERIFY_WORKERS:=24}"
+  # Its settings (config.VerifySettings), passed on when set: VERIFY_GRACE_MS=8000 make deploy.
   local name
   for name in VERIFY_MODEL VERIFY_TIMEOUT_MS VERIFY_GRACE_MS VERIFY_MAX_QUIET VERIFY_MAX_LATE VERIFY_WORKERS \
-              VERIFY_PHOTO_RESOLUTION; do
+              VERIFY_PHOTO_RESOLUTION VERIFY_SCOPE VERIFY_CONFIRM VERIFY_SCENE VERIFY_SCENE_WAIT_MS VERIFY_HEDGE_MS; do
     [ -z "${!name:-}" ] || env="$env,$name=${!name}"
   done
   env="$env,APP_VERSION=$(app_version)"

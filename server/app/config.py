@@ -126,6 +126,7 @@ class Settings:
 
 
 VERIFY_RESOLUTIONS = ("high", "medium")
+VERIFY_SCOPES = ("thin", "all")
 
 
 @dataclass(frozen=True)
@@ -147,6 +148,20 @@ class VerifySettings:
     max_late: int = 10
     # Close-ups running at once for one check.
     workers: int = 16
+    # Which marks get a close-up alongside the first pass: "thin" (thin or small marks only) or "all" (every mark, thin
+    # and small first). In the logged sweeps the close-up was right on 75 of 77 planted defects it looked at, and every
+    # defect the check missed was a mark the first pass had passed and no close-up had looked at.
+    scope: str = "thin"
+    # A flag the first pass did not raise needs a second, wider close-up that agrees before it is shown.
+    confirm: bool = False
+    # First list what is on site but not in the design (app/scene.py) and tell each close-up what stands at its
+    # element; the close-ups wait at most scene_wait_ms for that list.
+    scene: bool = False
+    scene_wait_ms: int = 9_000
+    # A close-up not answered after this long is asked a second time alongside, and the first answer wins (0: never).
+    # About one close-up in five runs into Gemini's deadline whatever the load, and a lost close-up leaves its mark as
+    # the first pass said: on 28 Nov that was half of the false alarms left.
+    hedge_ms: int = 0
     # Media resolution of the photo crops ("high" or "medium"); the render crop is always medium.
     photo_resolution: str = "high"
 
@@ -160,5 +175,10 @@ class VerifySettings:
             max_quiet=_int("VERIFY_MAX_QUIET", d.max_quiet),
             max_late=_int("VERIFY_MAX_LATE", d.max_late),
             workers=max(1, _int("VERIFY_WORKERS", d.workers)),
+            scope=_choice("VERIFY_SCOPE", d.scope, VERIFY_SCOPES),
+            confirm=_flag("VERIFY_CONFIRM"),
+            scene=_flag("VERIFY_SCENE"),
+            scene_wait_ms=max(0, _int("VERIFY_SCENE_WAIT_MS", d.scene_wait_ms)),
+            hedge_ms=max(0, _int("VERIFY_HEDGE_MS", d.hedge_ms)),
             photo_resolution=_choice("VERIFY_PHOTO_RESOLUTION", d.photo_resolution, VERIFY_RESOLUTIONS),
         )

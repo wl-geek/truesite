@@ -15,6 +15,7 @@ from types import SimpleNamespace
 from typing import Any
 
 from . import gemini_client
+from . import scene
 from .verify import VERIFY_SYSTEM
 
 
@@ -53,7 +54,8 @@ def _check(contents: list[Any]) -> dict:
 def _verify(contents: list[Any]) -> dict:
     """The close-up second look agrees with the first pass, so offline results don't change with CHECK_VERIFY=1."""
     task = _json_after(_texts(contents)[-1], "(JSON):\n")
-    return {"status": task.get("first_look", "cannot_judge"), "confidence": 0.9,
+    status = task.get("first_look", "cannot_judge")
+    return {"status": status, "confidence": 0.9 if status != "cannot_judge" else 0.5,  # an unsure "can't judge" changes nothing
             "offset": {"direction": "none", "approx_cm": 0}, "explanation": "Offline second look."}
 
 
@@ -100,6 +102,8 @@ class _Models:
             payload = _ask(contents)
         elif system == gemini_client.REPORT_SYSTEM:
             payload = _report(contents)
+        elif system == scene.SCENE_SYSTEM:
+            payload = {"objects": []}  # the offline site is tidy
         elif system.startswith(VERIFY_SYSTEM):
             payload = _verify(contents)
         else:

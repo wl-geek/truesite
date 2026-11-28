@@ -92,7 +92,7 @@ def stub(tmp_path: Path):
                     "STUB_LOG": str(log), "STUB_STATE": str(state), **env}
         for var in ("BASE_URL", "BILLING_ACCOUNT", "GEMINI_BACKEND", "CLOUDSDK_CORE_PROJECT", "CPU", "MEMORY",
                     "VERIFY_MODEL", "VERIFY_TIMEOUT_MS", "VERIFY_GRACE_MS", "VERIFY_MAX_QUIET", "VERIFY_MAX_LATE",
-                    "VERIFY_WORKERS", "VERIFY_PHOTO_RESOLUTION", "APP_VERSION"):
+                    "VERIFY_WORKERS", "VERIFY_PHOTO_RESOLUTION", "VERIFY_SCOPE", "VERIFY_CONFIRM", "VERIFY_SCENE", "VERIFY_SCENE_WAIT_MS", "VERIFY_HEDGE_MS", "APP_VERSION"):
             if var not in env:
                 full_env.pop(var, None)
         return subprocess.run([BASH, str(SCRIPT), *args], cwd=repo, env=full_env, capture_output=True, text=True,
@@ -138,12 +138,19 @@ def test_deploy_passes_the_second_look_settings_and_the_instance_size_when_set(s
     run, log = stub
     assert run("deploy").returncode == 0
     [plain] = calls(log, "gcloud run deploy")
-    assert "--cpu 1 " in plain and "--memory 1Gi " in plain and "VERIFY_" not in plain
+    assert "--cpu 1 " in plain and "--memory 1Gi " in plain
+    # the deployed check runs the full second look unless told otherwise
+    assert ("CHECK_VERIFY=1,VERIFY_GRACE_MS=14000,VERIFY_WORKERS=24,VERIFY_SCOPE=all,VERIFY_CONFIRM=1,VERIFY_SCENE=1,"
+            "VERIFY_HEDGE_MS=5000,APP_VERSION=") in plain
     log.write_text("")
     r = run("deploy", VERIFY_GRACE_MS="8000", VERIFY_MODEL="gemini-3.6-flash", CPU="2", MEMORY="2Gi")
     assert r.returncode == 0, r.stderr
     [deploy] = calls(log, "gcloud run deploy")
-    assert "CHECK_VERIFY=1,VERIFY_MODEL=gemini-3.6-flash,VERIFY_GRACE_MS=8000" in deploy
+    assert "CHECK_VERIFY=1,VERIFY_MODEL=gemini-3.6-flash,VERIFY_GRACE_MS=8000," in deploy
+    log.write_text("")
+    assert run("deploy", VERIFY_SCOPE="thin", VERIFY_CONFIRM="0", VERIFY_SCENE="0", VERIFY_HEDGE_MS="0").returncode == 0
+    [light] = calls(log, "gcloud run deploy")  # the older, lighter look
+    assert "VERIFY_SCOPE=thin,VERIFY_CONFIRM=0,VERIFY_SCENE=0,VERIFY_HEDGE_MS=0," in light
     assert "--cpu 2 " in deploy and "--memory 2Gi " in deploy
 
 

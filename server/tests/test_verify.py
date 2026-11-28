@@ -14,7 +14,7 @@ from PIL import Image
 from app import verify
 from app.config import VerifySettings
 from app.fake_gemini import FakeGeminiClient
-from app.gemini_client import CHECK_SYSTEM
+from app.gemini_client import CHECK_SYSTEM, GeminiError
 from app.projects import ProjectRepo
 from app.schemas import CheckContext
 from app.services import make_checker
@@ -66,7 +66,7 @@ def test_quiet_candidates_are_thin_or_small_marks_smallest_first() -> None:
 @pytest.mark.parametrize("first,verdict,mode,status", [
     ("missing", ("present_ok", 0.9), "both", "present_ok"),  # a false alarm removed
     ("missing", ("present_ok", 0.5), "both", "missing"),  # not sure enough to remove it
-    ("missing", ("cannot_judge", 0.9), "both", "missing"),
+    ("missing", ("cannot_judge", 0.9), "both", "missing"),  # unchanged unless VERIFY_CONFIRM is on
     ("missing", ("misplaced", 0.9), "both", "cannot_judge"),  # the looks disagree on what is wrong
     ("misplaced", ("misplaced", 0.9), "both", "misplaced"),
     ("different_from_design", ("missing", 0.9), "both", "different_from_design"),
@@ -293,3 +293,155 @@ def test_without_the_second_look_there_is_no_early_first_look(models: Path) -> N
     looks: list[object] = []
     make_checker(ProjectRepo(models), client)(JPEG, PNG, CTX, JPEG, on_first_look=lambda r, p: looks.append(r))
     assert looks == []
+
+
+def test_quiet_candidates_with_scope_all_take_every_mark_thin_and_small_first() -> None:
+    assert verify.quiet_candidates(CTX, scope="all") == [4, 3, 2, 1]
+    assert verify.quiet_candidates(CTX, 3, "all") == [4, 3, 2]
+
+
+def verdict(status: str, confidence: float = 0.9) -> dict:
+    return {"status": status, "confidence": confidence, "offset": {"direction": "left", "approx_cm": 60}, "explanation": "close-up"}
+
+
+def test_a_close_up_may_report_a_passed_column_as_moved_but_not_a_thin_member() -> None:
+    def merged(ifc_class: str, **kw: object) -> tuple[dict | None, str]:
+        return verify.merge(finding(1, "present_ok"), verdict("misplaced"), "both", ifc_class=ifc_class, **kw)
+
+    changed, note = merged("IfcColumn", confirm=verdict("misplaced"), need_confirm=True)
+    assert changed is not None and changed["status"] == "misplaced" and changed["offset"]["approx_cm"] == 60
+    assert note == "present_ok -> misplaced"
+    for thin in ("IfcMember", "IfcRailing", ""):
+        assert merged(thin, confirm=verdict("misplaced"), need_confirm=True)[0] is None
+    assert merged("IfcColumn")[0] is None  # with VERIFY_CONFIRM off, as before: only an empty outline adds a flag
+
+
+def test_a_new_flag_needs_a_confirming_close_up_that_says_the_same() -> None:
+    def merged(confirm: dict | None) -> tuple[dict | None, str]:
+        return verify.merge(finding(1, "present_ok"), verdict("missing"), "both", ifc_class="IfcBeam", confirm=confirm,
+                            need_confirm=True)
+
+    assert merged(verdict("missing"))[0]["status"] == "missing"
+    assert merged(verdict("different_from_design"))[0]["status"] == "missing"  # the same problem in other words
+    for confirm, why in ((None, "no second close-up"), (verdict("present_ok"), "present_ok 0.90"),
+                         (verdict("misplaced"), "misplaced 0.90"), (verdict("missing", 0.5), "missing 0.50")):
+        changed, note = merged(confirm)
+        assert changed is None and note == f"present_ok kept (missing 0.90, not confirmed: {why})"
+    # a flag the first pass raised itself is not held back: two looks already agree
+    assert verify.merge(finding(1, "missing"), verdict("missing"), "both", need_confirm=True)[0] is None
+
+
+def test_the_confirming_look_runs_only_when_a_close_up_reports_a_deviation(monkeypatch: pytest.MonkeyPatch) -> None:
+    asked: list[int] = []
+
+    def fake_ask(client: object, request: dict) -> dict:
+        asked.append(len(asked))
+        status = "missing" if request["mark"] in (2, 4) else "present_ok"
+        return {"result": verdict(status), "usage": {"prompt_tokens": 1, "output_tokens": 1, "thought_tokens": 0,
+                                                     "total_tokens": 2, "cost_usd_est": 0.001}}
+
+    def fake_request(mark: int, task: dict, *crops: object, **kwargs: object) -> dict:
+        return {"mark": mark}
+
+    monkeypatch.setattr(verify, "_ask", fake_ask)
+    monkeypatch.setattr(verify, "build_verify_request", fake_request)
+    first = {"result": {"findings": [finding(m, "present_ok") for m in (1, 2, 3, 4)]}, "usage": {}}
+    out, usage, notes = verify.checked(lambda: first, JPEG, PNG, None, CTX, client=object(),
+                                       settings=VerifySettings(scope="all", confirm=True, grace_ms=3000))
+    statuses = {f["mark"]: f["status"] for f in out["result"]["findings"]}
+    assert statuses == {1: "present_ok", 2: "missing", 3: "present_ok", 4: "missing"}
+    assert len(asked) == 6  # four close-ups, and a confirming look each for the door and the far beam
+    assert usage["cost_usd_est"] == pytest.approx(0.006)
+    assert any(n.endswith("Beam far: present_ok -> missing") for n in notes)
+
+
+def test_a_flag_becomes_cannot_judge_when_the_close_up_cannot_see_the_element() -> None:
+    changed, note = verify.merge(finding(1, "missing"), verdict("cannot_judge", 0.9), "both", need_confirm=True)
+    assert changed is not None and changed["status"] == "cannot_judge" and note == "missing -> cannot_judge (unseen 0.90)"
+    assert verify.merge(finding(1, "missing"), verdict("cannot_judge", 0.6), "both", need_confirm=True)[0] is None  # not sure enough
+    assert verify.merge(finding(1, "missing"), verdict("cannot_judge", 0.9), "upgrade", need_confirm=True)[0] is None
+    assert verify.merge(finding(1, "missing"), verdict("cannot_judge", 0.9), "both")[0] is None  # off by default
+
+
+def test_a_close_up_may_not_report_a_passed_beam_as_moved() -> None:
+    assert verify.merge(finding(1, "present_ok"), verdict("misplaced"), "both", ifc_class="IfcBeam", confirm=verdict("misplaced"),
+                        need_confirm=True)[0] is None
+
+
+def test_on_a_thin_member_a_confirming_moved_counts_as_missing() -> None:
+    def merged(ifc_class: str) -> dict | None:
+        return verify.merge(finding(1, "present_ok"), verdict("missing"), "both", ifc_class=ifc_class,
+                            confirm=verdict("misplaced"), need_confirm=True)[0]
+
+    assert merged("IfcMember")["status"] == "missing"  # no bar inside the outline, said two ways
+    assert merged("IfcBeam") is None
+
+
+def test_a_slow_close_up_is_asked_again_and_the_first_answer_wins(monkeypatch: pytest.MonkeyPatch) -> None:
+    import threading
+    import time as clock
+
+    calls: list[float] = []
+    lock = threading.Lock()
+
+    def fake_ask(client: object, request: dict) -> dict:
+        with lock:
+            calls.append(clock.monotonic())
+            first = len(calls) == 1
+        if first:
+            clock.sleep(1.0)  # the slow one
+        return {"result": verdict("present_ok"), "usage": {"prompt_tokens": 1, "output_tokens": 1, "thought_tokens": 0,
+                                                           "total_tokens": 2, "cost_usd_est": 0.001}}
+
+    monkeypatch.setattr(verify, "_ask", fake_ask)
+    monkeypatch.setattr(verify, "build_verify_request", lambda mark, task, *crops, **kw: {"mark": mark})
+    one_mark = CTX.model_copy(update={"visible": CTX.visible[2:3]})  # the purlin
+    first = {"result": {"findings": [finding(3, "missing")]}, "usage": {}}
+    started = clock.monotonic()
+    out, _usage, notes = verify.checked(lambda: first, JPEG, PNG, None, one_mark, client=object(),
+                                        settings=VerifySettings(hedge_ms=100, grace_ms=3000))
+    assert out["result"]["findings"][0]["status"] == "present_ok"  # the second ask answered; the flag was cleared
+    assert len(calls) == 2 and clock.monotonic() - started < 0.9
+
+
+def test_two_close_ups_that_find_a_column_out_of_its_outline_report_it_moved() -> None:
+    moved = {**verdict("misplaced"), "explanation": "stands left of its outline"}
+    changed, note = verify.merge(finding(1, "present_ok"), verdict("missing"), "both", ifc_class="IfcColumn", confirm=moved,
+                                 need_confirm=True)
+    assert changed["status"] == "misplaced" and note == "present_ok -> misplaced"
+    assert changed["explanation"] == "stands left of its outline" and changed["offset"]["approx_cm"] == 60
+    # a beam stays held back when the two close-ups name different problems
+    assert verify.merge(finding(1, "present_ok"), verdict("missing"), "both", ifc_class="IfcBeam", confirm=moved,
+                        need_confirm=True)[0] is None
+
+
+def test_scope_all_is_not_cut_short_by_the_thin_marks_limit(monkeypatch: pytest.MonkeyPatch) -> None:
+    asked: list[int] = []
+    monkeypatch.setattr(verify, "_ask", lambda client, request: (asked.append(request["mark"]), {
+        "result": verdict("present_ok"), "usage": {"prompt_tokens": 1, "output_tokens": 1, "thought_tokens": 0,
+                                                   "total_tokens": 2, "cost_usd_est": 0.0}})[1])
+    monkeypatch.setattr(verify, "build_verify_request", lambda mark, task, *crops, **kw: {"mark": mark})
+    first = {"result": {"findings": [finding(m, "present_ok") for m in (1, 2, 3, 4)]}, "usage": {}}
+    verify.checked(lambda: first, JPEG, PNG, None, CTX, client=object(),
+                   settings=VerifySettings(scope="all", max_quiet=2, grace_ms=3000))
+    assert sorted(asked) == [1, 2, 3, 4]
+
+
+def test_no_close_up_thread_is_left_waiting_after_the_check_returns(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A duplicate call still queued when the check ends is cancelled; the worker waiting on it must give up."""
+    import threading
+    import time as clock
+
+    def fake_ask(client: object, request: dict) -> dict:
+        clock.sleep(0.6)
+        raise GeminiError("unavailable", "slow, then refused")
+
+    monkeypatch.setattr(verify, "_ask", fake_ask)
+    monkeypatch.setattr(verify, "build_verify_request", lambda mark, task, *crops, **kw: {"mark": mark})
+    first = {"result": {"findings": [finding(m, "missing") for m in (1, 2, 3, 4)]}, "usage": {}}
+    verify.checked(lambda: first, JPEG, PNG, None, CTX, client=object(),
+                   settings=VerifySettings(scope="all", workers=1, hedge_ms=50, grace_ms=200))
+    deadline = clock.monotonic() + 6
+    while clock.monotonic() < deadline and any(t.name.startswith("verify_") for t in threading.enumerate()):
+        clock.sleep(0.1)
+    assert not [t.name for t in threading.enumerate() if t.name.startswith("verify_")]
