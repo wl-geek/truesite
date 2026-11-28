@@ -4,7 +4,7 @@
  */
 import type { Finding } from '../api/types'
 import { MAX_MARKS } from '../check/marks'
-import type { Deviation } from './asBuilt'
+import type { Deviation, ViewpointId } from './asBuilt'
 
 const DEVIATIONS = new Set<Finding['status']>(['missing', 'misplaced', 'different_from_design'])
 
@@ -23,10 +23,12 @@ export type Score = {
 /** The elements a planted defect changed: the element, plus what moved with it (a shifted column's cage). */
 const touched = (d: Deviation): string[] => [d.element, ...(d.kind === 'shifted' ? d.alsoMoves ?? [] : [])]
 
-export function scoreCheck(findings: readonly Finding[], planted: readonly Deviation[]): Score {
+/** `at`: the QR spot the check was made from. A defect that spot cannot show (`notShownAt`) is not scored there. */
+export function scoreCheck(findings: readonly Finding[], planted: readonly Deviation[], at?: ViewpointId): Score {
   const byName = new Map(findings.map((f) => [f.name, f]))
   const plantedNames = new Set(planted.flatMap(touched))
-  const inView = planted.filter((d) => byName.has(d.element)).map((d) => {
+  const shown = (d: Deviation) => byName.has(d.element) && !(at && d.notShownAt?.includes(at))
+  const inView = planted.filter(shown).map((d) => {
     const finding = byName.get(d.element)!
     const flagged = touched(d).some((n) => DEVIATIONS.has(byName.get(n)?.status ?? 'present_ok'))
     return { planted: d, finding, found: flagged }
@@ -34,7 +36,7 @@ export function scoreCheck(findings: readonly Finding[], planted: readonly Devia
   return {
     inView,
     falseAlarms: findings.filter((f) => DEVIATIONS.has(f.status) && !plantedNames.has(f.name)),
-    notChecked: planted.filter((d) => !byName.has(d.element)),
+    notChecked: planted.filter((d) => !shown(d)),
   }
 }
 

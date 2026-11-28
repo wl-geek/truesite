@@ -282,7 +282,7 @@ export function HomePage() {
           </ul>
           <p className="sim-more">
             <span><strong>Real sites are messy.</strong> The cluttered site has the same four spots, with pallets, props,
-              scaffolding and people in the way. You can also switch Site clutter on inside the demo.</span>
+              scaffolding and people around the work. You can also switch Site clutter on inside the demo.</span>
             <Link to={virtualDemoPathFor('P2', true)} className="btn">Open the cluttered site</Link>
           </p>
         </div>
