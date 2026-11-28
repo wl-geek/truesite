@@ -82,3 +82,14 @@ describe('planted defects the check did not cover (audit C-24)', () => {
     expect(`${text.heading} ${text.note}`).not.toMatch(/elsewhere|out of this view/i)
   })
 })
+
+describe('a defect a spot cannot show', () => {
+  it('is not scored at that spot, and is listed as not checked there', () => {
+    const planted: Deviation[] = [{ element: 'RC column C2', kind: 'missing', featuredAt: 'P1', notShownAt: ['P3'] }]
+    const passed = [{ ...f('RC column C2', 'present_ok') }]
+    expect(scoreCheck(passed, planted, 'P3').inView).toEqual([])
+    expect(scoreCheck(passed, planted, 'P3').notChecked).toHaveLength(1)
+    expect(scoreCheck(passed, planted, 'P1').inView).toHaveLength(1)
+    expect(scoreCheck(passed, planted).inView).toHaveLength(1) // no spot given: scored as before
+  })
+})

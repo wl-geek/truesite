@@ -29,29 +29,30 @@ export interface ClutterItem {
  * Otherwise things are where a site would leave them: they may well hide part of an element, as on a real site.
  */
 export const CLUTTER: readonly ClutterItem[] = [
-  // Ground floor, bay B-C between rows 1 and 2: what P1 and P2 look into.
-  { what: 'pallet', at: [7.3, 2.6], r: 0.8, rot: 0.2, n: 0.9 },
-  { what: 'bags', at: [10.8, 3.2], r: 0.6, rot: 0.3 },
-  { what: 'barrow', at: [9.6, 5.2], r: 0.8, rot: 2.2 },
-  { what: 'worker', at: [8.4, 4.0], r: 0.4, rot: 0.6 },
-  ...([[7.5, 1.4], [10.5, 1.4], [7.5, 4.4], [10.5, 4.4], [1.5, 1.5], [4.5, 1.3], [1.5, 4.5], [4.5, 4.7]] as const)
+  // Ground floor, bay B-C between rows 1 and 2: what P1 and P2 look into. Things stand in the open middle of each
+  // opening view, between the columns' sight lines, not in front of an element the check marks.
+  { what: 'pallet', at: [9.6, 3.4], r: 0.8, rot: 0.2, n: 0.9 },
+  { what: 'bags', at: [9.9, 2.0], r: 0.6, rot: 0.3 },
+  { what: 'barrow', at: [9.0, 6.4], r: 0.8, rot: 2.2 },
+  { what: 'worker', at: [8.4, 3.0], r: 0.4, rot: 0.6 },
+  ...([[8.3, 1.6], [8.3, 4.4], [1.5, 1.5], [4.5, 1.3], [1.5, 4.5], [4.5, 4.7]] as const)
     .map(([x, y]): ClutterItem => ({ what: 'prop', at: [x, y], r: 0.15 })),
   { what: 'timber', at: [1.2, 9.0], r: 1.6, rot: 0.05 },
-  // The open bay C-D.
-  { what: 'pallet', at: [15.6, 2.4], r: 0.8, rot: -0.15, n: 0.7 },
-  { what: 'mixer', at: [14.2, 4.6], r: 0.8, rot: 0.5 },
-  { what: 'rebar', at: [15.4, 0.9], r: 0.5 },
-  { what: 'cage', at: [16.9, 7.2], r: 0.4 },
-  // Outside: cones by the south entrance, tape posts across the open bay, a scaffold tower on the east side.
-  { what: 'cone', at: [7.2, -1.3], r: 0.2 },
-  { what: 'cone', at: [10.8, -1.3], r: 0.2 },
+  // The open bay C-D: down its middle strip.
+  { what: 'pallet', at: [15.8, 2.3], r: 0.8, rot: -0.15, n: 0.7 },
+  { what: 'mixer', at: [13.6, 3.6], r: 0.8, rot: 0.5 },
+  { what: 'rebar', at: [16.0, 4.4], r: 0.5 },
+  { what: 'cage', at: [13.2, 10.6], r: 0.4 },
+  // Outside: cones by the south entrance, tape posts across the open bay, a scaffold tower at the north-east corner.
+  { what: 'cone', at: [8.0, -1.6], r: 0.2 },
+  { what: 'cone', at: [10.0, -1.6], r: 0.2 },
   { what: 'cone', at: [13.3, 5.6], r: 0.2 },
   { what: 'post', at: [12.4, -0.5], r: 0.1 },
   { what: 'post', at: [17.6, -0.5], r: 0.1 },
-  { what: 'tower', at: [19.3, 8.8], r: 1.2, n: 3 },
-  // Up on the level 1 slab: a short tower for the steel fixers, with someone on it.
-  { what: 'tower', at: [10.6, 9.5], r: 1.1, z: 4.5, n: 1 },
-  { what: 'worker', at: [10.6, 9.3], r: 0.4, z: 6.56, rot: 1.6 },
+  { what: 'tower', at: [19.3, 11.6], r: 1.2, n: 3 },
+  // Up on the level 1 slab, back from its edge: a short tower for the steel fixers, with someone on it.
+  { what: 'tower', at: [7.5, 9.5], r: 1.1, z: 4.5, n: 1 },
+  { what: 'worker', at: [7.5, 9.3], r: 0.4, z: 6.56, rot: 1.6 },
 ]
 
 const UP_Y = new Vector3(0, 1, 0)
@@ -309,29 +310,24 @@ export function addClutter(scene: Object3D, deviations: readonly Deviation[] = S
       for (let layer = 0; layer < 3; layer++) {
         for (let i = 0; i < 4; i++) box(g, 0.2, 3, 0.05, M.timber, -0.33 + i * 0.22, (rand() - 0.5) * 0.3, layer * 0.055, (rand() - 0.5) * 0.03)
       }
-      // A few sheets of plywood leaning on column B3.
-      for (let i = 0; i < 3; i++) {
-        const sheet = shade(new Mesh(new BoxGeometry(1.22, 0.018, 2.44), M.ply))
-        sheet.rotation.x = -0.22
-        sheet.position.set(6 + i * 0.05, 11.49 - i * 0.03, 1.19)
-        root.add(sheet)
-      }
+      // A few sheets of plywood stacked flat beside the timber.
+      for (let i = 0; i < 4; i++) box(g, 1.22, 2.44, 0.018, M.ply, 1.5 + (rand() - 0.5) * 0.06, (rand() - 0.5) * 0.1, i * 0.02)
     },
     rebar: ({ at: [x, y] }) => {
       for (const s of [-1.5, 1.5]) box(root, 0.1, 0.6, 0.08, M.timber, x + s, y, 0)
       for (let i = 0; i < 14; i++) {
         const dy = (rand() - 0.5) * 0.3
         const h = 0.095 + rand() * 0.07
-        tube(root, [x - 2.5 + rand() * 0.2, y + dy, h], [x + 2.5 + rand() * 0.2, y + dy, h], 0.012, M.rebar)
+        tube(root, [x - 2 + rand() * 0.2, y + dy, h], [x + 2 + rand() * 0.2, y + dy, h], 0.012, M.rebar)
       }
     },
-    // A spare column cage lying on bearers, running north from `at`.
+    // A spare column cage lying on bearers, running east from `at`.
     cage: ({ at: [x, y] }) => {
       const [len, half, z0] = [4, 0.16, 0.1]
-      for (const s of [0.6, 3.4]) box(root, 0.7, 0.1, 0.08, M.timber, x, y + s, 0)
-      for (const sx of [-half, half]) for (const sz of [0, half * 2]) tube(root, [x + sx, y, z0 + sz], [x + sx, y + len, z0 + sz], 0.012, M.rebar)
+      for (const s of [0.6, 3.4]) box(root, 0.1, 0.7, 0.08, M.timber, x + s, y, 0)
+      for (const sy of [-half, half]) for (const sz of [0, half * 2]) tube(root, [x, y + sy, z0 + sz], [x + len, y + sy, z0 + sz], 0.012, M.rebar)
       for (let t = 0.1; t < len; t += 0.3) {
-        const corners: V3[] = [[x - half, y + t, z0], [x + half, y + t, z0], [x + half, y + t, z0 + half * 2], [x - half, y + t, z0 + half * 2]]
+        const corners: V3[] = [[x + t, y - half, z0], [x + t, y + half, z0], [x + t, y + half, z0 + half * 2], [x + t, y - half, z0 + half * 2]]
         corners.forEach((c, i) => tube(root, c, corners[(i + 1) % 4], 0.006, M.rebar))
       }
     },
@@ -360,7 +356,7 @@ export function addClutter(scene: Object3D, deviations: readonly Deviation[] = S
     root.add(shade(ribbon))
   }
 
-  // A safety banner tied between columns D1 and D2, and a tarp hung over the slab edge on line C.
+  // A safety banner tied between columns D1 and D2.
   const banner = shade(new Mesh(new PlaneGeometry(2.6, 1), new MeshStandardMaterial({ map: bannerTexture(), roughness: 0.8 })))
   banner.quaternion.setFromRotationMatrix(new Matrix4().makeBasis(new Vector3(0, 1, 0), UP_Z, new Vector3(1, 0, 0)))
   banner.position.set(18.24, 3, 2.8)
@@ -372,11 +368,7 @@ export function addClutter(scene: Object3D, deviations: readonly Deviation[] = S
     tube(root, [18.24, 1.7, z], [18.2, 0.23, z], 0.004, M.dark)
     tube(root, [18.24, 4.3, z], [18.2, 5.77, z], 0.004, M.dark)
   }
-  const tarp = shade(new Mesh(new PlaneGeometry(1.4, 1), M.tarp))
-  tarp.quaternion.copy(banner.quaternion)
-  tarp.position.set(12.03, 7.6, 4)
-  root.add(tarp)
-  box(root, 0.5, 1.4, 0.012, M.tarp, 11.78, 7.6, 4.5)
+  box(root, 1.3, 1.1, 0.02, M.tarp, 15.8, 2.3, 0.85, -0.15) // a tarp over the open bay's pallet
 
   // Stains on the ground and under the slab.
   const [oil, slurry, damp, rust] = ['24,22,20', '196,192,182', '52,50,46', '120,62,28']

@@ -9,28 +9,34 @@ export type ViewpointId = 'P1' | 'P2' | 'P3' | 'P4'
  * One deviation of the as-built from the design; `featuredAt` is the QR spot whose opening view shows it. A shifted
  * concrete column takes its rebar cage with it (`alsoMoves`), as it would on site.
  */
-export type Deviation =
+export type Deviation = (
   | { element: string; kind: 'missing'; note?: string; featuredAt: ViewpointId }
   | { element: string; kind: 'shifted'; offsetM: [number, number, number]; alsoMoves?: string[]; featuredAt: ViewpointId }
+) & {
+  /** QR spots where too little of the element is in frame to judge it: its check there is not scored. */
+  notShownAt?: ViewpointId[]
+}
 
 /**
  * Realistic site defects, each big enough for a camera to resolve from its QR spot (thin bracing far away is not):
  * an uncast column, setting-out errors, the open bay's beams not cast, steel not erected, a missing guardrail.
  * Each spot opens with two or three of them in view (asBuilt.test.ts checks the framing).
+ * They are a demo scene, chosen to be visible from the QR spots: two earlier ones (a column moved straight away from P1,
+ * which one photo cannot show, and a beam in the slab's shade) went on 28 Nov. The harder set stays in our test logs.
  * The stands sit on grid lines, so a purlin or truss member in line with the stand hides behind a slab-mat bar:
  * choose members off that line (measured in the check's ID buffer: every one here gets a numbered mark).
  */
 export const SITE_AS_BUILT: readonly Deviation[] = [
-  { element: 'RC column C2', kind: 'missing', note: 'not cast yet: only its rebar cage stands', featuredAt: 'P1' },
+  { element: 'RC column C2', kind: 'missing', note: 'not cast yet: only its rebar cage stands', featuredAt: 'P1', notShownAt: ['P3'] },
   { element: 'RC column B2', kind: 'shifted', offsetM: [-0.6, 0, 0], alsoMoves: ['Column cage B2'], featuredAt: 'P1' },
-  { element: 'RC column C1', kind: 'shifted', offsetM: [0, 0.6, 0], alsoMoves: ['Column cage C1'], featuredAt: 'P2' },
-  { element: 'Beam C2-D2', kind: 'missing', note: 'not cast yet: the open bay is still to pour', featuredAt: 'P2' },
   { element: 'Beam D1-D2', kind: 'missing', note: 'not cast yet: the open bay is still to pour', featuredAt: 'P2' },
+  { element: 'Brace wall south C-D (1)', kind: 'missing', note: 'not installed yet', featuredAt: 'P2' },
   { element: 'Truss T3 diagonal 6', kind: 'missing', featuredAt: 'P3' },
   { element: 'Purlin P4 B-C', kind: 'missing', featuredAt: 'P3' },
   { element: 'Edge beam B3-C3', kind: 'missing', note: 'not erected yet', featuredAt: 'P3' },
   { element: 'Edge protection east', kind: 'missing', note: 'missing (a fall hazard at level 1)', featuredAt: 'P4' },
   { element: 'Purlin P6 C-D', kind: 'missing', featuredAt: 'P4' },
+  { element: 'Purlin P4 C-D', kind: 'missing', featuredAt: 'P4' },
 ]
 
 /** Compass word for a plan offset (IFC x east, y north, z up). */

@@ -528,7 +528,7 @@ export function VirtualSite({ viewpointId, clutter = false, onExit }: { viewpoin
           renderUrl ??= URL.createObjectURL(render)
           show(w, {
             result: look.result, photoUrl, renderUrl, runId: null, latencyMs: performance.now() - started,
-            score: scoreCheck(look.result.findings, SITE_AS_BUILT), phase: 'first-look', pending: look.pending.length,
+            score: scoreCheck(look.result.findings, SITE_AS_BUILT, vp.id), phase: 'first-look', pending: look.pending.length,
           })
           shownFirstLook = true
         },
@@ -540,7 +540,7 @@ export function VirtualSite({ viewpointId, clutter = false, onExit }: { viewpoin
       const runId = storedRunId(res.response)
       if (runId) setReportRuns(rememberReportRun(PROJECT_ID, reportRuns, { runId, spot: vp.id }))
       show(w, {
-        result, photoUrl, renderUrl, runId, latencyMs: performance.now() - started, score: scoreCheck(result.findings, SITE_AS_BUILT),
+        result, photoUrl, renderUrl, runId, latencyMs: performance.now() - started, score: scoreCheck(result.findings, SITE_AS_BUILT, vp.id),
         phase: 'final', pending: 0,
       })
       saveLastCheck(PROJECT_ID, { result, runId, at: new Date().toISOString() })
