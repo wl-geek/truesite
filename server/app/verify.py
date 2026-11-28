@@ -150,7 +150,7 @@ def build_verify_request(mark: int, task: dict, render_crop: bytes, overlay_crop
         types.Part.from_text(text="The element (JSON):\n" + json.dumps(task, ensure_ascii=False)),
     ]
     config = types.GenerateContentConfig(
-        system_instruction=VERIFY_SYSTEM,
+        system_instruction=VERIFY_SYSTEM + gemini_client.clutter_rule(),
         response_mime_type="application/json",
         response_json_schema=gemini_json_schema(VerifyWire),
         thinking_config=types.ThinkingConfig(thinking_level=types.ThinkingLevel.LOW),  # 3.8 Flash has no MINIMAL

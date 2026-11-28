@@ -289,10 +289,25 @@ A column moved towards or away from the camera stays mostly inside its outline b
 Far, thin members are easy to pass by mistake: in a row of purlins or truss members, look inside each one's own outline for its bar; an outline that holds only sky or background while its neighbours hold bars is missing."""
 
 
+# Added to the check's and the second look's instructions with CHECK_PROMPT_CLUTTER=1 (off by default). On the cluttered
+# test site (28 Nov, /samples?at=P1&clutter) elements standing behind pallets, props, scaffolding or a person were
+# reported missing, not cannot_judge. Measured over 3 sweeps per site: the rule halved those false alarms (26 to 13) but
+# also hid real mistakes behind "can't judge" (36 to 31 of 48 found), and did not help on the clean site (5 to 8 false
+# alarms). So it stays an experiment until its wording does better.
+CLUTTER_RULE = """\
+A real site is cluttered. Stacked materials, pallets, equipment, scaffolding, temporary props, tarps, banners, vehicles and people are not in the design and are not elements. When something like that stands in front of an element and covers its outline, the element is hidden: answer cannot_judge, never missing. Answer missing only when you can see what lies behind the outline (sky, ground or the building beyond) and the element is not there. Clutter never stands in for an element: a scaffold tube or a temporary prop is not a column, a brace or a guardrail. A rebar cage is part of the building, not clutter."""
+
+
+def clutter_rule() -> str:
+    """CLUTTER_RULE on its own line when CHECK_PROMPT_CLUTTER=1, else ""."""
+    on = (os.environ.get("CHECK_PROMPT_CLUTTER") or "").strip().lower() in ("1", "true", "yes", "on")
+    return f"\n{CLUTTER_RULE}" if on else ""
+
+
 def check_system() -> str:
-    """The check's system instruction: CHECK_SYSTEM, plus CHECK_FOCUS when CHECK_PROMPT_FOCUS=1."""
+    """The check's system instruction: CHECK_SYSTEM, plus CLUTTER_RULE (CHECK_PROMPT_CLUTTER=1) and CHECK_FOCUS (CHECK_PROMPT_FOCUS=1)."""
     focus = (os.environ.get("CHECK_PROMPT_FOCUS") or "").strip().lower() in ("1", "true", "yes", "on")
-    return f"{CHECK_SYSTEM}\n{CHECK_FOCUS}" if focus else CHECK_SYSTEM
+    return f"{CHECK_SYSTEM}{clutter_rule()}" + (f"\n{CHECK_FOCUS}" if focus else "")
 
 
 ASK_SYSTEM = """\

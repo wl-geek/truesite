@@ -698,3 +698,15 @@ def test_costs_follow_the_model_that_answered():
     assert gc.prices_per_m("some-new-model") == (gc.PRICE_IN_PER_M, gc.PRICE_OUT_PER_M)
     assert gc.prices_per_m("gemini-3.5-flash") == (1.50, 9.00)  # the first fallback
     assert gc.prices_per_m("gemini-3.5-flash-lite") == (0.30, 2.50)  # the longest prefix wins
+
+
+def test_clutter_rule_is_off_by_default_and_can_be_turned_on(monkeypatch: pytest.MonkeyPatch) -> None:
+    """With the rule on, something that isn't in the design hiding an element makes it cannot_judge, not missing."""
+    monkeypatch.delenv("CHECK_PROMPT_CLUTTER", raising=False)
+    monkeypatch.delenv("CHECK_PROMPT_FOCUS", raising=False)
+    assert gc.check_system() == gc.CHECK_SYSTEM and gc.clutter_rule() == ""
+    monkeypatch.setenv("CHECK_PROMPT_CLUTTER", "1")
+    assert gc.check_system() == f"{gc.CHECK_SYSTEM}\n{gc.CLUTTER_RULE}"
+    assert "cannot_judge, never missing" in gc.CLUTTER_RULE and "rebar cage is part of the building" in gc.CLUTTER_RULE
+    monkeypatch.setenv("CHECK_PROMPT_FOCUS", "1")
+    assert gc.check_system() == f"{gc.CHECK_SYSTEM}\n{gc.CLUTTER_RULE}\n{gc.CHECK_FOCUS}"
